@@ -1,26 +1,509 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* KER Design System - Verbeterd voor ouderen */
+  /* Hoog contrast, heldere kleuren, goed leesbaar */
+
+  /* Basis kleuren */
+  --background: #FAF5F3;
+  --foreground: #1A1A1A;
+  --card: #FFFFFF;
+  --card-foreground: #1A1A1A;
+
+  /* Primary - KER Magenta/Paars */
+  --primary: #8B2B6B;
+  --primary-foreground: #FFFFFF;
+  --primary-light: #F3E8F0;
+
+  /* Secondary */
+  --secondary: #F5EBE8;
+  --secondary-foreground: #1A1A1A;
+
+  /* Muted */
+  --muted: #F0E8E5;
+  --muted-foreground: #5A5A5A;
+
+  /* Border */
+  --border: #E0D5D0;
+  --border-strong: #C0B0A8;
+
+  /* Input */
+  --input: #FFFFFF;
+  --ring: #8B2B6B;
+
+  /* Emoticon kleuren - Helder en duidelijk */
+  --emoticon-green: #4CAF50;
+  --emoticon-yellow: #FFB300;
+  --emoticon-red: #E53935;
+
+  /* Accent kleuren voor scores */
+  --accent-green: #2E7D32;
+  --accent-green-bg: #E8F5E9;
+  --accent-amber: #F57C00;
+  --accent-amber-bg: #FFF3E0;
+  --accent-red: #C62828;
+  --accent-red-bg: #FFEBEE;
+}
+
+.dark {
+  /* Dark mode - ook hoog contrast */
+  --background: #1A1518;
+  --foreground: #F5F0EE;
+  --card: #2A2025;
+  --card-foreground: #F5F0EE;
+  --primary: #D4A0C4;
+  --primary-foreground: #1A1518;
+  --primary-light: #3A2535;
+  --secondary: #2A2025;
+  --secondary-foreground: #F5F0EE;
+  --muted: #352830;
+  --muted-foreground: #B0A5A8;
+  --border: #453840;
+  --border-strong: #554850;
+  --input: #2A2025;
+  --ring: #D4A0C4;
+
+  --emoticon-green: #66BB6A;
+  --emoticon-yellow: #FFCA28;
+  --emoticon-red: #EF5350;
+
+  --accent-green: #81C784;
+  --accent-green-bg: #1B3D1E;
+  --accent-amber: #FFB74D;
+  --accent-amber-bg: #3D2A10;
+  --accent-red: #EF5350;
+  --accent-red-bg: #3D1A1A;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-light: var(--primary-light);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-emoticon-green: var(--emoticon-green);
+  --color-emoticon-yellow: var(--emoticon-yellow);
+  --color-emoticon-red: var(--emoticon-red);
+  --color-accent-green: var(--accent-green);
+  --color-accent-green-bg: var(--accent-green-bg);
+  --color-accent-amber: var(--accent-amber);
+  --color-accent-amber-bg: var(--accent-amber-bg);
+  --color-accent-red: var(--accent-red);
+  --color-accent-red-bg: var(--accent-red-bg);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* Base styles */
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================
+   KER DESIGN SYSTEM - COMPONENTEN
+   ============================================ */
+
+/* KER Card - Basis card styling */
+.ker-card {
+  background: var(--card);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--border);
+}
+
+/* KER Pill badge */
+.ker-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+/* KER Button - Basis */
+.ker-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.875rem 1.75rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  border: none;
+  min-height: 48px; /* Minimaal voor touch targets */
+}
+
+.ker-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ker-btn-primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.ker-btn-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary), black 10%);
+  transform: translateY(-1px);
+}
+
+.ker-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.ker-btn-secondary {
+  background: var(--card);
+  color: var(--foreground);
+  border: 2px solid var(--border);
+}
+
+.ker-btn-secondary:hover:not(:disabled) {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+/* KER Input */
+.ker-input {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  border: 2px solid var(--border);
+  background: var(--input);
+  color: var(--foreground);
+  font-size: 1rem;
+  min-height: 48px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ker-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(139, 43, 107, 0.1);
+}
+
+.ker-input::placeholder {
+  color: var(--muted-foreground);
+}
+
+/* KER Radio/Checkbox style */
+.ker-radio {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  border: 2px solid var(--border-strong);
+  background: var(--card);
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ker-radio.selected {
+  border-color: var(--primary);
+  background: var(--primary);
+}
+
+/* ============================================
+   EMOTICON BUTTONS
+   ============================================ */
+
+.emoticon-btn {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 3px solid transparent;
+}
+
+.emoticon-btn:hover:not(:disabled) {
+  transform: scale(1.08);
+}
+
+.emoticon-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.emoticon-btn.selected {
+  border-color: var(--foreground);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* ============================================
+   KER HEADER
+   ============================================ */
+
+.ker-header {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.ker-header-content {
+  max-width: 28rem;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ============================================
+   KER FOOTER NAVIGATION
+   ============================================ */
+
+.ker-footer-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  padding: 0.5rem 1rem;
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+.ker-footer-content {
+  max-width: 28rem;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+/* ============================================
+   KER PROGRESS
+   ============================================ */
+
+.ker-progress-bar {
+  height: 0.5rem;
+  background: var(--muted);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.ker-progress-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+/* ============================================
+   KER PAGE LAYOUT
+   ============================================ */
+
+.ker-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--background);
+  display: flex;
+  flex-direction: column;
+}
+
+.ker-page-content {
+  flex: 1;
+  padding: 1.5rem 1rem;
+  padding-bottom: 6rem; /* Ruimte voor footer */
+  max-width: 28rem;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ============================================
+   SELECTIE OPTIES (taken, uren etc)
+   ============================================ */
+
+.ker-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  border: 2px solid var(--border);
+  background: var(--card);
+  text-align: left;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.ker-option:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.ker-option.selected {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+/* ============================================
+   ANIMATIES
+   ============================================ */
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounce-subtle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 0.6s ease-in-out;
+}
+
+/* Loading dots */
+.loading-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  background: var(--primary);
+  border-radius: 9999px;
+  animation: bounce-subtle 0.6s ease-in-out infinite;
+}
+
+.loading-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.loading-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+/* ============================================
+   MOBILE NAVIGATION
+   ============================================ */
+
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.75rem;
+  color: var(--muted-foreground);
+  transition: color 0.15s ease;
+  text-decoration: none;
+  min-width: 4rem;
+}
+
+.mobile-nav-item.active {
+  color: var(--primary);
+}
+
+.mobile-nav-item:hover {
+  color: var(--primary);
+}
+
+.mobile-nav-item span {
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+
+/* ============================================
+   SCORE INDICATORS
+   ============================================ */
+
+.score-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.score-badge.green {
+  background: var(--accent-green-bg);
+  color: var(--accent-green);
+}
+
+.score-badge.amber {
+  background: var(--accent-amber-bg);
+  color: var(--accent-amber);
+}
+
+.score-badge.red {
+  background: var(--accent-red-bg);
+  color: var(--accent-red);
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Touch-friendly spacing */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Focus visible for accessibility */
+*:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection color */
+::selection {
+  background: var(--primary);
+  color: var(--primary-foreground);
 }

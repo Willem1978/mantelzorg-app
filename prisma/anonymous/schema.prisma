@@ -1,0 +1,346 @@
+// ============================================
+// ANONYMOUS DATABASE - Geanonimiseerde gegevens
+// Deze database bevat GEEN identificeerbare gegevens
+// Alleen anonieme IDs en locatie op gemeente niveau
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/@prisma/client/anonymous"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("ANONYMOUS_DATABASE_URL")
+}
+
+// ============================================
+// ANONIEM MANTELZORGER PROFIEL
+// ============================================
+
+model AnonCaregiver {
+  id              String   @id // Dit is de anonymousId van de User in identity db
+
+  // Locatie - alleen gemeente niveau (via PDOK)
+  municipalityCode String?  // CBS gemeentecode
+  municipalityName String?  // Gemeentenaam
+  provinceCode     String?  // Provinciecode
+  provinceName     String?  // Provincienaam
+
+  // Demografisch (geanonimiseerd)
+  ageRange         AgeRange?  // Leeftijdscategorie, niet exacte leeftijd
+  careRecipientType CareRecipientType?
+
+  // Zorgsituatie (geen identificeerbare info)
+  careHoursPerWeek  CareHoursRange?
+  careDurationYears CareDurationRange?
+
+  // Status
+  intakeCompletedAt DateTime?
+  isActive          Boolean  @default(true)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relaties naar anonieme data
+  intakeResponses   IntakeResponse[]
+  monthlyCheckIns   MonthlyCheckIn[]
+  tasks             Task[]
+  wellbeingScores   WellbeingScore[]
+  organisationLinks AnonCaregiverOrganisation[]
+}
+
+enum AgeRange {
+  UNDER_25
+  AGE_25_34
+  AGE_35_44
+  AGE_45_54
+  AGE_55_64
+  AGE_65_74
+  AGE_75_PLUS
+}
+
+enum CareRecipientType {
+  PARTNER
+  PARENT
+  CHILD
+  OTHER_FAMILY
+  FRIEND_ACQUAINTANCE
+  OTHER
+}
+
+enum CareHoursRange {
+  LESS_THAN_8
+  HOURS_8_TO_20
+  HOURS_20_TO_40
+  MORE_THAN_40
+}
+
+enum CareDurationRange {
+  LESS_THAN_1_YEAR
+  YEARS_1_TO_3
+  YEARS_3_TO_5
+  MORE_THAN_5_YEARS
+}
+
+// ============================================
+// INTAKE VRAGEN & ANTWOORDEN
+// ============================================
+
+model IntakeCategory {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+
+  questions   IntakeQuestion[]
+}
+
+model IntakeQuestion {
+  id          String   @id @default(uuid())
+  categoryId  String
+  category    IntakeCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  question    String
+  description String?
+  type        QuestionType @default(FOUR_CHOICE)
+  order       Int      @default(0)
+  isRequired  Boolean  @default(true)
+  isActive    Boolean  @default(true)
+
+  // Voor scoring
+  positiveDirection Boolean @default(true) // true = hogere score is beter
+
+  responses   IntakeResponse[]
+}
+
+enum QuestionType {
+  FOUR_CHOICE  // 4 opties van positief naar negatief
+  TEXT         // Open vraag
+}
+
+model IntakeResponse {
+  id           String   @id @default(uuid())
+  caregiverId  String
+  caregiver    AnonCaregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+  questionId   String
+  question     IntakeQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  value        String   // 1-4 voor FOUR_CHOICE, tekst voor TEXT
+  score        Int?     // Genormaliseerde score (1-4)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([caregiverId, questionId])
+}
+
+// ============================================
+// WELZIJNSSCORES (berekend uit intake/check-ins)
+// ============================================
+
+model WellbeingScore {
+  id           String   @id @default(uuid())
+  caregiverId  String
+  caregiver    AnonCaregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  // Scores per categorie (1-10 schaal)
+  overallScore       Float
+  physicalScore      Float?
+  emotionalScore     Float?
+  socialScore        Float?
+  supportScore       Float?
+  balanceScore       Float?
+
+  // Type meting
+  measurementType    MeasurementType
+  measurementDate    DateTime @default(now())
+
+  createdAt          DateTime @default(now())
+
+  @@index([caregiverId, measurementDate])
+}
+
+enum MeasurementType {
+  INTAKE           // Initiële intake
+  MONTHLY_CHECKIN  // Maandelijkse check-in
+  MANUAL           // Handmatige invoer
+}
+
+// ============================================
+// MAANDELIJKSE CHECK-INS
+// ============================================
+
+model MonthlyCheckIn {
+  id           String   @id @default(uuid())
+  caregiverId  String
+  caregiver    AnonCaregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  month        DateTime // Eerste dag van de maand
+
+  // Snelle scores (1-4 schaal)
+  overallFeeling     Int?  // Hoe voel je je algemeen?
+  energyLevel        Int?  // Hoeveel energie heb je?
+  stressLevel        Int?  // Hoeveel stress ervaar je?
+  supportFeeling     Int?  // Voel je je gesteund?
+
+  // Open vragen (geanonimiseerd - geen namen/adressen)
+  positiveMoment     String?  // Wat ging goed?
+  challenge          String?  // Wat was lastig?
+  needHelp           String?  // Waar wil je hulp bij?
+
+  completedAt        DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([caregiverId, month])
+}
+
+// ============================================
+// TAKEN
+// ============================================
+
+model Task {
+  id           String   @id @default(uuid())
+  caregiverId  String
+  caregiver    AnonCaregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  title        String
+  description  String?
+  category     TaskCategory @default(OTHER)
+  priority     TaskPriority @default(MEDIUM)
+  status       TaskStatus   @default(TODO)
+
+  dueDate      DateTime?
+  completedAt  DateTime?
+
+  // Suggestie vanuit systeem
+  isSuggested     Boolean  @default(false)
+  suggestedReason String?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+enum TaskCategory {
+  SELF_CARE
+  ADMINISTRATION
+  APPOINTMENTS
+  SOCIAL
+  HEALTH
+  OTHER
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+// ============================================
+// HULPBRONNEN
+// ============================================
+
+model Resource {
+  id           String   @id @default(uuid())
+  title        String
+  description  String
+  content      String?  @db.Text
+  url          String?
+  type         ResourceType
+  category     String
+
+  // Locatie (gemeente niveau)
+  isNational       Boolean  @default(true)
+  municipalityCodes String[] // CBS gemeentecodes waar beschikbaar
+  provinceCode     String?
+
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([category])
+  @@index([isNational])
+}
+
+enum ResourceType {
+  ARTICLE
+  LOCAL_SERVICE
+  NATIONAL_SERVICE
+  TIP
+  VIDEO
+  TOOL
+}
+
+// ============================================
+// ORGANISATIES (publieke info, geen personen)
+// ============================================
+
+model Organisation {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  logo         String?
+
+  // Publieke contact info
+  website      String?
+  publicEmail  String?  // Algemeen contactadres, geen personen
+  publicPhone  String?
+
+  // Locatie (gemeente niveau)
+  municipalityCode String?
+  municipalityName String?
+  provinceCode     String?
+  provinceName     String?
+
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  caregivers   AnonCaregiverOrganisation[]
+}
+
+// Anonieme koppeling mantelzorger-organisatie
+model AnonCaregiverOrganisation {
+  id             String   @id @default(uuid())
+  caregiverId    String
+  caregiver      AnonCaregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  // Toestemming voor data delen
+  shareWellbeing Boolean @default(true)
+  shareNeeds     Boolean @default(true)
+  shareProgress  Boolean @default(false)
+
+  joinedAt       DateTime @default(now())
+
+  @@unique([caregiverId, organisationId])
+}
+
+// ============================================
+// LOCATIE CACHE (PDOK data)
+// ============================================
+
+model MunicipalityCache {
+  code         String   @id // CBS gemeentecode
+  name         String
+  provinceCode String
+  provinceName String
+
+  // Bounding box voor zoeken
+  minLat       Float?
+  maxLat       Float?
+  minLon       Float?
+  maxLon       Float?
+
+  updatedAt    DateTime @updatedAt
+}

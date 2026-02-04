@@ -1,0 +1,285 @@
+"use client"
+
+import Link from "next/link"
+import { Card, CardHeader, CardTitle, CardContent, Button } from "@/components/ui"
+import { cn } from "@/lib/utils"
+
+// Emoticon components
+const EmoticonHappy = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 100 100" className={cn("w-full h-full", className)}>
+    <circle cx="50" cy="50" r="45" fill="currentColor" />
+    <circle cx="35" cy="42" r="5" fill="#1a1a1a" />
+    <circle cx="65" cy="42" r="5" fill="#1a1a1a" />
+    <path d="M 32 58 Q 50 75 68 58" stroke="#1a1a1a" strokeWidth="4" fill="none" strokeLinecap="round" />
+  </svg>
+)
+
+const EmoticonNeutral = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 100 100" className={cn("w-full h-full", className)}>
+    <circle cx="50" cy="50" r="45" fill="currentColor" />
+    <circle cx="35" cy="42" r="5" fill="#1a1a1a" />
+    <circle cx="65" cy="42" r="5" fill="#1a1a1a" />
+    <line x1="35" y1="62" x2="65" y2="62" stroke="#1a1a1a" strokeWidth="4" strokeLinecap="round" />
+  </svg>
+)
+
+const EmoticonSad = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 100 100" className={cn("w-full h-full", className)}>
+    <circle cx="50" cy="50" r="45" fill="currentColor" />
+    <circle cx="35" cy="42" r="5" fill="#1a1a1a" />
+    <circle cx="65" cy="42" r="5" fill="#1a1a1a" />
+    <path d="M 32 68 Q 50 55 68 68" stroke="#1a1a1a" strokeWidth="4" fill="none" strokeLinecap="round" />
+  </svg>
+)
+
+const getEmoticon = (score: number) => {
+  if (score >= 7) return <EmoticonHappy className="text-green-400" />
+  if (score >= 5) return <EmoticonNeutral className="text-yellow-400" />
+  return <EmoticonSad className="text-red-400" />
+}
+
+// Demo data
+const stats = [
+  { label: "Totaal mantelzorgers", value: 156, change: "+12 deze maand", icon: "👥" },
+  { label: "Check-ins deze maand", value: 89, change: "57% deelname", icon: "📋" },
+  { label: "Hulpvragen open", value: 23, change: "8 nieuw", icon: "🆘" },
+  { label: "Gemiddeld welzijn", value: "6.4", change: "+0.3 vs vorige maand", icon: "❤️" },
+]
+
+const recentCaregivers = [
+  { id: "1", initials: "MV", wellbeing: 7, status: "goed", lastCheckIn: "2 dagen geleden", needsAttention: false },
+  { id: "2", initials: "PJ", wellbeing: 4, status: "hulp nodig", lastCheckIn: "1 week geleden", needsAttention: true },
+  { id: "3", initials: "AB", wellbeing: 6, status: "aandacht", lastCheckIn: "3 dagen geleden", needsAttention: false },
+  { id: "4", initials: "KD", wellbeing: 3, status: "hulp nodig", lastCheckIn: "2 weken geleden", needsAttention: true },
+  { id: "5", initials: "SM", wellbeing: 8, status: "goed", lastCheckIn: "1 dag geleden", needsAttention: false },
+]
+
+const wellbeingDistribution = [
+  { label: "Goed (7-10)", count: 67, percentage: 43, color: "bg-green-500" },
+  { label: "Aandacht (5-6)", count: 54, percentage: 35, color: "bg-yellow-500" },
+  { label: "Hulp nodig (1-4)", count: 35, percentage: 22, color: "bg-red-500" },
+]
+
+const needsByCategory = [
+  { category: "Respijtzorg", count: 34, percentage: 22 },
+  { category: "Emotionele steun", count: 28, percentage: 18 },
+  { category: "Praktische hulp", count: 25, percentage: 16 },
+  { category: "Financieel advies", count: 19, percentage: 12 },
+  { category: "Informatie", count: 50, percentage: 32 },
+]
+
+export default function OrganisationDashboardPage() {
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Organisatie Dashboard
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Overzicht van mantelzorgers binnen uw organisatie
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Button variant="outline">
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Exporteren
+          </Button>
+          <Button>
+            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Uitnodigen
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats grid */}
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((stat) => (
+          <div key={stat.label} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-gray-500">{stat.label}</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                <p className="text-sm text-teal-600 mt-1">{stat.change}</p>
+              </div>
+              <span className="text-2xl">{stat.icon}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Wellbeing distribution and needs */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Wellbeing distribution */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Welzijnsverdeling</h2>
+
+          <div className="flex items-center gap-4 mb-6">
+            {wellbeingDistribution.map((item) => (
+              <div key={item.label} className="flex-1 text-center">
+                <div className={cn(
+                  "w-14 h-14 mx-auto rounded-full flex items-center justify-center",
+                  item.color === "bg-green-500" && "text-green-400",
+                  item.color === "bg-yellow-500" && "text-yellow-400",
+                  item.color === "bg-red-500" && "text-red-400"
+                )}>
+                  {item.color === "bg-green-500" && <EmoticonHappy />}
+                  {item.color === "bg-yellow-500" && <EmoticonNeutral />}
+                  {item.color === "bg-red-500" && <EmoticonSad />}
+                </div>
+                <p className="text-2xl font-bold text-gray-900 mt-2">{item.count}</p>
+                <p className="text-xs text-gray-500">{item.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Bar chart */}
+          <div className="h-4 bg-gray-100 rounded-full overflow-hidden flex">
+            {wellbeingDistribution.map((item) => (
+              <div
+                key={item.label}
+                className={cn("h-full transition-all", item.color)}
+                style={{ width: `${item.percentage}%` }}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Needs distribution */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Behoeften overzicht</h2>
+          <div className="space-y-4">
+            {needsByCategory.map((need) => (
+              <div key={need.category}>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-gray-700">{need.category}</span>
+                  <span className="text-gray-500">{need.count} mantelzorgers</span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-2">
+                  <div
+                    className="bg-teal-500 h-2 rounded-full transition-all"
+                    style={{ width: `${need.percentage}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Caregivers needing attention */}
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Aandacht nodig</h2>
+          <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-medium">
+            {recentCaregivers.filter(c => c.needsAttention).length} mantelzorgers
+          </span>
+        </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {recentCaregivers
+            .filter((c) => c.needsAttention)
+            .map((caregiver) => (
+              <Link
+                key={caregiver.id}
+                href={`/organisatie/mantelzorgers/${caregiver.id}`}
+                className="flex items-center gap-4 p-4 bg-red-50 rounded-xl hover:bg-red-100 transition-colors"
+              >
+                <div className="w-12 h-12 flex-shrink-0">
+                  {getEmoticon(caregiver.wellbeing)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-gray-900">Mantelzorger {caregiver.initials}</p>
+                  <p className="text-sm text-gray-500 truncate">
+                    Check-in: {caregiver.lastCheckIn}
+                  </p>
+                </div>
+                <span className="bg-red-200 text-red-800 px-2 py-1 rounded-full text-xs font-medium">
+                  {caregiver.wellbeing}/10
+                </span>
+              </Link>
+            ))}
+        </div>
+      </div>
+
+      {/* Recent activity table */}
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Alle mantelzorgers</h2>
+          <Link href="/organisatie/mantelzorgers">
+            <Button variant="ghost" size="sm">Bekijk alles →</Button>
+          </Link>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Mantelzorger</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Welzijn</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Laatste check-in</th>
+                <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Status</th>
+                <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Actie</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentCaregivers.map((caregiver) => (
+                <tr key={caregiver.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10">
+                        {getEmoticon(caregiver.wellbeing)}
+                      </div>
+                      <span className="font-medium text-gray-900">
+                        Mantelzorger {caregiver.initials}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className={cn(
+                      "inline-block px-2 py-1 rounded-full text-xs font-medium",
+                      caregiver.wellbeing >= 7 && "bg-green-100 text-green-800",
+                      caregiver.wellbeing >= 5 && caregiver.wellbeing < 7 && "bg-yellow-100 text-yellow-800",
+                      caregiver.wellbeing < 5 && "bg-red-100 text-red-800"
+                    )}>
+                      {caregiver.wellbeing}/10
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-sm text-gray-500">
+                    {caregiver.lastCheckIn}
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className={cn(
+                      "inline-flex items-center text-xs",
+                      caregiver.status === "goed" && "text-green-600",
+                      caregiver.status === "aandacht" && "text-yellow-600",
+                      caregiver.status === "hulp nodig" && "text-red-600"
+                    )}>
+                      <span className={cn(
+                        "w-2 h-2 rounded-full mr-1.5",
+                        caregiver.status === "goed" && "bg-green-500",
+                        caregiver.status === "aandacht" && "bg-yellow-500",
+                        caregiver.status === "hulp nodig" && "bg-red-500"
+                      )} />
+                      {caregiver.status.charAt(0).toUpperCase() + caregiver.status.slice(1)}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-right">
+                    <Link href={`/organisatie/mantelzorgers/${caregiver.id}`}>
+                      <Button variant="ghost" size="sm">Bekijk</Button>
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}

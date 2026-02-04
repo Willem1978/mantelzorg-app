@@ -1,0 +1,136 @@
+// ============================================
+// IDENTITY DATABASE - Persoonlijke gegevens (AVG)
+// Deze database bevat identificeerbare gegevens
+// en is strikt gescheiden van anonieme data
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/@prisma/client/identity"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("IDENTITY_DATABASE_URL")
+}
+
+// ============================================
+// AUTHENTICATIE & IDENTIFICATIE
+// ============================================
+
+model User {
+  id            String    @id @default(uuid()) // UUID voor extra anonimiteit
+  email         String    @unique
+  passwordHash  String
+  emailVerified DateTime?
+
+  // Link naar anonieme data (UUID die NIET te herleiden is)
+  anonymousId   String    @unique @default(uuid())
+
+  role          UserRole  @default(CAREGIVER)
+
+  // AVG: Toestemming tracking
+  privacyConsentAt    DateTime?
+  marketingConsentAt  DateTime?
+  dataProcessingConsentAt DateTime?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+
+  // Relaties
+  profile       UserProfile?
+  sessions      Session[]
+  orgMembership OrganisationMember?
+}
+
+model UserProfile {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Persoonlijke gegevens - apart van anonieme data
+  firstName   String?
+  lastName    String?
+  phoneNumber String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
+
+  // Security
+  ipAddress    String?
+  userAgent    String?
+
+  createdAt    DateTime @default(now())
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================
+// ORGANISATIE LEDEN (met persoonlijke data)
+// ============================================
+
+model OrganisationMember {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Organisatie ID (verwijst naar anonymous db)
+  organisationId String
+
+  role           OrgMemberRole @default(MEMBER)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ============================================
+// AVG: Data verwijdering requests
+// ============================================
+
+model DataDeletionRequest {
+  id          String   @id @default(uuid())
+  userId      String
+  anonymousId String   // Om ook anonieme data te kunnen verwijderen
+
+  requestedAt DateTime @default(now())
+  processedAt DateTime?
+  status      DeletionStatus @default(PENDING)
+
+  // Audit trail
+  processedBy String?
+  notes       String?
+}
+
+enum UserRole {
+  CAREGIVER
+  ORG_MEMBER
+  ORG_ADMIN
+  ADMIN
+}
+
+enum OrgMemberRole {
+  MEMBER
+  ADMIN
+}
+
+enum DeletionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
