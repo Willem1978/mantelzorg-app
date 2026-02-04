@@ -65,8 +65,6 @@ function StreetSearch({ label, value, onChange, placeholder }: StreetSearchProps
         straat: r.straat || "",
         woonplaats: r.woonplaats || "",
         gemeente: r.gemeente || "",
-        postcode: r.postcode || "",
-        wijknaam: r.wijknaam || "",
       }))
       setResults(mapped)
       setShowResults(true)
