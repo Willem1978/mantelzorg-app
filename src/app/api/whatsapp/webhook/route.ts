@@ -193,6 +193,9 @@ export async function POST(request: NextRequest) {
           if (!user) {
             clearOnboardingSession(message.from)
             response = `❌ Email niet gevonden.\n\nProbeer opnieuw met een willekeurig bericht.`
+          } else if (!user.password) {
+            clearOnboardingSession(message.from)
+            response = `❌ Account heeft geen wachtwoord.\n\nProbeer opnieuw met een willekeurig bericht.`
           } else {
             const passwordMatch = await bcrypt.compare(command, user.password)
 
