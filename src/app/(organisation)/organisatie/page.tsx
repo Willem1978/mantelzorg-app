@@ -4,6 +4,8 @@ import Link from "next/link"
 import { Card, CardHeader, CardTitle, CardContent, Button } from "@/components/ui"
 import { cn } from "@/lib/utils"
 
+export const dynamic = 'force-dynamic'
+
 // Emoticon components
 const EmoticonHappy = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 100 100" className={cn("w-full h-full", className)}>
