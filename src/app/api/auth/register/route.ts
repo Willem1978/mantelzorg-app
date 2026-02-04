@@ -3,6 +3,8 @@ import bcrypt from "bcryptjs"
 import crypto from "crypto"
 import { prisma } from "@/lib/prisma"
 
+export const dynamic = 'force-dynamic'
+
 interface RegisterBody {
   email: string
   password: string
