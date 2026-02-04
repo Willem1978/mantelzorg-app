@@ -3,6 +3,8 @@ import { parseIncomingWhatsAppMessage } from '@/lib/twilio'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import {
+
+export const dynamic = 'force-dynamic'
   startTestSession,
   getTestSession,
   updateTestAnswer,
