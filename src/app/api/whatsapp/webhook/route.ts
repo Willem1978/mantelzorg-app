@@ -480,17 +480,21 @@ export async function POST(request: NextRequest) {
     // Als we interactieve knoppen willen gebruiken, stuur dan het content template
     // Dit werkt binnen de 24-uurs sessie window
     if (useInteractiveButtons && interactiveContentSid) {
-      // Stuur eerst de tekst via TwiML, dan de knoppen via Content API
+      // Stuur EERST het interactieve bericht via Twilio API (met knoppen)
+      // Dan stuur een lege TwiML response terug naar Twilio
+      try {
+        await sendInteractiveResponse(message.from, interactiveContentSid)
+        console.log('Interactive buttons sent successfully')
+      } catch (err) {
+        console.error('Failed to send interactive buttons:', err)
+        // Fallback: stuur gewoon de tekst response
+      }
+
+      // Stuur ook de tekst response via TwiML
       const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Message>${response}</Message>
 </Response>`
-
-      // Stuur interactieve knoppen async (na de TwiML response)
-      // We wachten niet op het resultaat om de response snel te houden
-      sendInteractiveResponse(message.from, interactiveContentSid).catch(err => {
-        console.error('Failed to send interactive buttons:', err)
-      })
 
       return new NextResponse(twiml, {
         status: 200,
