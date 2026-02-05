@@ -482,14 +482,19 @@ export async function POST(request: NextRequest) {
     // 2. DAN de knoppen via Content Template
     // 3. Return lege TwiML om dubbele berichten te voorkomen
     if (useInteractiveButtons && interactiveContentSid) {
+      // Format het to-nummer met whatsapp: prefix (message.from heeft dit niet)
+      const formattedTo = message.from.startsWith('whatsapp:')
+        ? message.from
+        : `whatsapp:${message.from}`
+
       try {
         // Stuur EERST de tekst (vraag) via Twilio API
         await twilioClient?.messages.create({
           from: whatsappFrom,
-          to: message.from,
+          to: formattedTo,
           body: response,
         })
-        console.log('Text message sent successfully')
+        console.log('Text message sent successfully to:', formattedTo)
 
         // Stuur DAN de knoppen via Content Template
         await sendInteractiveResponse(message.from, interactiveContentSid)
