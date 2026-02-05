@@ -189,13 +189,8 @@ export async function POST(request: NextRequest) {
             const questionNum = updatedSession.currentQuestion + 1
             response = `📊 *Vraag ${questionNum}/${BELASTBAARHEID_QUESTIONS.length}*\n\n${nextQuestion.vraag}`
 
-            // Stuur interactieve knoppen als Content SID beschikbaar is
-            if (CONTENT_SIDS.testAnswer) {
-              useInteractiveButtons = true
-              interactiveContentSid = CONTENT_SIDS.testAnswer
-            } else {
-              response += `\n\n🔴 Ja\n🟠 Soms\n🟢 Nee`
-            }
+            // Gebruik altijd tekst met kleur emoji's
+            response += `\n\n🔴 Ja\n🟠 Soms\n🟢 Nee`
           }
         }
       } else if (command === 'stop' || command === 'stoppen') {
@@ -206,12 +201,8 @@ export async function POST(request: NextRequest) {
         // Ongeldig antwoord - stuur interactieve knoppen opnieuw
         response = `❌ Kies een antwoord:`
 
-        if (CONTENT_SIDS.testAnswer) {
-          useInteractiveButtons = true
-          interactiveContentSid = CONTENT_SIDS.testAnswer
-        } else {
-          response += `\n\n🔴 Ja\n🟠 Soms\n🟢 Nee\n\n_Typ "stop" om te stoppen_`
-        }
+        // Gebruik altijd tekst met kleur emoji's
+        response += `\n\n🔴 Ja\n🟠 Soms\n🟢 Nee\n\n_Typ "stop" om te stoppen_`
       }
     }
 
@@ -378,13 +369,8 @@ export async function POST(request: NextRequest) {
 
         response = `📊 *Mantelzorg Balanstest*\n\nIk stel je 12 korte vragen.\n\n*Vraag 1/12*\n\n${firstQuestion?.vraag}`
 
-        // Stuur interactieve knoppen als Content SID beschikbaar is
-        if (CONTENT_SIDS.testAnswer) {
-          useInteractiveButtons = true
-          interactiveContentSid = CONTENT_SIDS.testAnswer
-        } else {
-          response += `\n\n🔴 Ja\n🟠 Soms\n🟢 Nee`
-        }
+        // Gebruik altijd tekst met kleur emoji's (Content Template ondersteunt geen emoji's goed)
+        response += `\n\n🔴 Ja\n🟠 Soms\n🟢 Nee`
 
         session.currentStep = 'questions'
       } else if (command === 'menu' || command === 'start' || command === 'help' || command === 'hulp' || command === '0') {
