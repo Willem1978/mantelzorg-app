@@ -477,26 +477,43 @@ export async function POST(request: NextRequest) {
       response = '❌ Geen response gegenereerd. Stuur een willekeurig bericht om opnieuw te beginnen.'
     }
 
-    // Als we interactieve knoppen willen gebruiken, stuur dan het content template
-    // Dit werkt binnen de 24-uurs sessie window
+    // Als we interactieve knoppen willen gebruiken, stuur dan:
+    // 1. EERST de tekst response via Twilio API
+    // 2. DAN de knoppen via Content Template
+    // 3. Return lege TwiML om dubbele berichten te voorkomen
     if (useInteractiveButtons && interactiveContentSid) {
-      // Stuur EERST het interactieve bericht via Twilio API (met knoppen)
-      // Dan stuur een lege TwiML response terug naar Twilio
       try {
+        // Stuur EERST de tekst (vraag) via Twilio API
+        await twilioClient?.messages.create({
+          from: whatsappFrom,
+          to: message.from,
+          body: response,
+        })
+        console.log('Text message sent successfully')
+
+        // Stuur DAN de knoppen via Content Template
         await sendInteractiveResponse(message.from, interactiveContentSid)
         console.log('Interactive buttons sent successfully')
       } catch (err) {
-        console.error('Failed to send interactive buttons:', err)
-        // Fallback: stuur gewoon de tekst response
-      }
-
-      // Stuur ook de tekst response via TwiML
-      const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+        console.error('Failed to send messages:', err)
+        // Fallback: stuur gewoon de tekst response via TwiML
+        const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Message>${response}</Message>
 </Response>`
+        return new NextResponse(twiml, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/xml',
+          },
+        })
+      }
 
-      return new NextResponse(twiml, {
+      // Return lege TwiML - berichten zijn al gestuurd via API
+      const emptyTwiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response></Response>`
+
+      return new NextResponse(emptyTwiml, {
         status: 200,
         headers: {
           'Content-Type': 'text/xml',
