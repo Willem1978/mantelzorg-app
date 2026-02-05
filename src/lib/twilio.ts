@@ -89,7 +89,7 @@ export function formatTextMenu(options: { emoji: string; label: string }[]): str
  * Maak een tekst-gebaseerd antwoordmenu (ja/soms/nee)
  */
 export function formatAnswerOptions(): string {
-  return `1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee`
+  return `🔴 Ja\n🟠 Soms\n🟢 Nee`
 }
 
 // ============================================

@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ============================================
@@ -89,13 +90,26 @@ model Caregiver {
   postalCode      String?
   city            String?
 
+  // Locatie (PDOK)
+  street          String?  // Straatnaam
+  municipality    String?  // Gemeente
+  neighborhood    String?  // Wijk
+
   // Zorgsituatie
-  careRecipient   String?  // Wie verzorg je? (partner, ouder, kind, etc.)
-  careHoursPerWeek Int?
-  careSince       DateTime?
+  careRecipient       String?  // Wie verzorg je? (partner, ouder, kind, etc.)
+  careRecipientName   String?  // Naam van de naaste
+  careHoursPerWeek    Int?
+  careSince           DateTime?
+
+  // Locatie naaste (PDOK)
+  careRecipientStreet       String?
+  careRecipientCity         String?
+  careRecipientMunicipality String?
+  careRecipientNeighborhood String?
 
   // Status
   intakeCompleted Boolean  @default(false)
+  profileCompleted Boolean @default(false)  // Locatiegegevens ingevuld
   onboardedAt     DateTime?
 
   createdAt       DateTime @default(now())

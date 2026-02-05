@@ -180,38 +180,54 @@ export default function ProfielPage() {
   const [passwordError, setPasswordError] = useState("")
 
   useEffect(() => {
-    // Laad profiel uit localStorage
+    // Laad profiel uit API
+    const loadProfile = async () => {
+      try {
+        const res = await fetch("/api/profile")
+        if (res.ok) {
+          const data = await res.json()
+          setProfile((prev) => ({
+            ...prev,
+            naam: data.naam || prev.naam,
+            email: data.email || prev.email,
+            adres: data.straat ? {
+              weergavenaam: `${data.straat}, ${data.woonplaats}`,
+              straat: data.straat,
+              woonplaats: data.woonplaats,
+              gemeente: data.gemeente,
+              postcode: data.postcode,
+              wijknaam: data.wijk,
+            } : prev.adres,
+            naasteNaam: data.naasteNaam || prev.naasteNaam,
+            naasteRelatie: data.naasteRelatie || prev.naasteRelatie,
+            naasteAdres: data.naasteStraat ? {
+              weergavenaam: `${data.naasteStraat}, ${data.naasteWoonplaats}`,
+              straat: data.naasteStraat,
+              woonplaats: data.naasteWoonplaats,
+              gemeente: data.naasteGemeente,
+              wijknaam: data.naasteWijk,
+            } : prev.naasteAdres,
+          }))
+        }
+      } catch {
+        // Fall back to localStorage
+      }
+    }
+    loadProfile()
+
+    // Laad test resultaten uit localStorage (voor weergave)
     const testResult = localStorage.getItem("belastbaarheidstest_result")
     if (testResult) {
       try {
         const parsed = JSON.parse(testResult)
         setProfile((prev) => ({
           ...prev,
-          naam: parsed.gegevens?.naam || "",
-          email: parsed.gegevens?.email || "",
-          adres: parsed.gegevens?.mantelzorgerStraat || null,
-          naasteAdres: parsed.gegevens?.zorgvragerStraat || null,
           testScore: parsed.score,
           testNiveau: parsed.niveau,
           testDatum: parsed.completedAt,
         }))
       } catch {
         // Negeer parse errors
-      }
-    }
-
-    // Laad naaste gegevens uit localStorage
-    const naasteData = localStorage.getItem("naaste_gegevens")
-    if (naasteData) {
-      try {
-        const parsed = JSON.parse(naasteData)
-        setProfile((prev) => ({
-          ...prev,
-          naasteNaam: parsed.naam || "",
-          naasteRelatie: parsed.relatie || "",
-        }))
-      } catch {
-        // Negeer
       }
     }
   }, [])
@@ -221,7 +237,31 @@ export default function ProfielPage() {
     setSaveMessage("")
 
     try {
-      // Update localStorage met nieuwe gegevens
+      // Sla profiel op via API
+      const res = await fetch("/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          naam: profile.naam,
+          // Locatie mantelzorger
+          straat: profile.adres?.straat,
+          woonplaats: profile.adres?.woonplaats,
+          postcode: profile.adres?.postcode,
+          gemeente: profile.adres?.gemeente,
+          wijk: profile.adres?.wijknaam,
+          // Naaste
+          naasteNaam: profile.naasteNaam,
+          naasteRelatie: profile.naasteRelatie,
+          naasteStraat: profile.naasteAdres?.straat,
+          naasteWoonplaats: profile.naasteAdres?.woonplaats,
+          naasteGemeente: profile.naasteAdres?.gemeente,
+          naasteWijk: profile.naasteAdres?.wijknaam,
+        }),
+      })
+
+      if (!res.ok) throw new Error("API error")
+
+      // Update ook localStorage voor offline toegang
       const testResult = localStorage.getItem("belastbaarheidstest_result")
       if (testResult) {
         const parsed = JSON.parse(testResult)
@@ -235,7 +275,6 @@ export default function ProfielPage() {
         localStorage.setItem("belastbaarheidstest_result", JSON.stringify(parsed))
       }
 
-      // Sla naaste gegevens apart op
       localStorage.setItem("naaste_gegevens", JSON.stringify({
         naam: profile.naasteNaam,
         relatie: profile.naasteRelatie,

@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
               useInteractiveButtons = true
               interactiveContentSid = CONTENT_SIDS.testAnswer
             } else {
-              response += `\n\n1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee`
+              response += `\n\n🔴 Ja\n🟠 Soms\n🟢 Nee`
             }
           }
         }
@@ -210,7 +210,7 @@ export async function POST(request: NextRequest) {
           useInteractiveButtons = true
           interactiveContentSid = CONTENT_SIDS.testAnswer
         } else {
-          response += `\n\n1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee\n\n_Typ "stop" om te stoppen_`
+          response += `\n\n🔴 Ja\n🟠 Soms\n🟢 Nee\n\n_Typ "stop" om te stoppen_`
         }
       }
     }
@@ -383,7 +383,7 @@ export async function POST(request: NextRequest) {
           useInteractiveButtons = true
           interactiveContentSid = CONTENT_SIDS.testAnswer
         } else {
-          response += `\n\n1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee`
+          response += `\n\n🔴 Ja\n🟠 Soms\n🟢 Nee`
         }
 
         session.currentStep = 'questions'

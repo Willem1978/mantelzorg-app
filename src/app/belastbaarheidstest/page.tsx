@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui"
 import { cn } from "@/lib/utils"
 import { searchStreets } from "@/lib/pdok"
@@ -248,6 +249,8 @@ interface GegevensData {
 
 export default function BelastbaarheidstestPage() {
   const router = useRouter()
+  const { data: session, status } = useSession()
+  const isLoggedIn = status === "authenticated" && !!session?.user
 
   const [currentStep, setCurrentStep] = useState<Step>("intro")
   const [currentVraagIndex, setCurrentVraagIndex] = useState(0)
@@ -378,6 +381,43 @@ export default function BelastbaarheidstestPage() {
     if (!gegevens.mantelzorgerStraat) { setGegevensError("Selecteer je adres via de zoekfunctie"); return }
     if (!gegevens.zorgvragerStraat) { setGegevensError("Selecteer de woonplaats van je naaste via de zoekfunctie"); return }
     setCurrentStep("account")
+  }
+
+  // Handler voor ingelogde gebruikers - direct opslaan zonder gegevens formulier
+  const handleSaveForLoggedInUser = async () => {
+    setIsSaving(true)
+    const score = berekenScore()
+    const niveau = getBelastingNiveau(score)
+    const totaleUren = berekenTotaleUren()
+
+    try {
+      await fetch("/api/belastbaarheidstest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          // Gebruik sessie gegevens - backend haalt dit uit de sessie
+          registratie: {
+            voornaam: session?.user?.name || "",
+            email: session?.user?.email || "",
+            woonplaats: "",
+            gemeente: "",
+            woonplaatsNaaste: "",
+            gemeenteNaaste: "",
+          },
+          antwoorden,
+          taken,
+          score,
+          niveau: niveau.niveau,
+          totaleUren,
+        }),
+      })
+      // Redirect naar dashboard na opslaan
+      router.push("/dashboard?from=test")
+    } catch {
+      // Bij error toch naar dashboard
+      router.push("/dashboard")
+    }
+    setIsSaving(false)
   }
 
   const handleAccountKeuze = async (keuze: "register" | "login" | "gast") => {
@@ -1015,12 +1055,29 @@ export default function BelastbaarheidstestPage() {
         {/* Footer */}
         <footer className="fixed bottom-0 left-0 right-0 bg-background p-4">
           <div className="max-w-md mx-auto">
-            <button
-              onClick={() => setCurrentStep("gegevens")}
-              className="ker-btn ker-btn-primary w-full"
-            >
-              Rapport opslaan
-            </button>
+            {isLoggedIn ? (
+              <button
+                onClick={handleSaveForLoggedInUser}
+                disabled={isSaving}
+                className="ker-btn ker-btn-primary w-full"
+              >
+                {isSaving ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                    Opslaan...
+                  </span>
+                ) : (
+                  "Rapport opslaan"
+                )}
+              </button>
+            ) : (
+              <button
+                onClick={() => setCurrentStep("gegevens")}
+                className="ker-btn ker-btn-primary w-full"
+              >
+                Rapport opslaan
+              </button>
+            )}
           </div>
         </footer>
       </div>

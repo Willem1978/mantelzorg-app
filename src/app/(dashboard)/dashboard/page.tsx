@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
@@ -12,11 +13,29 @@ interface TestStatus {
   completedAt?: string
 }
 
+interface ProfileStatus {
+  profileCompleted: boolean
+  intakeCompleted: boolean
+}
+
+interface OpenTask {
+  id: string
+  title: string
+  description: string
+  link: string
+  icon: string
+  priority: "high" | "medium" | "low"
+}
+
 export default function DashboardPage() {
+  const { data: session } = useSession()
   const [testStatus, setTestStatus] = useState<TestStatus>({ hasTest: false })
+  const [profileStatus, setProfileStatus] = useState<ProfileStatus>({ profileCompleted: false, intakeCompleted: false })
+  const [openTasks, setOpenTasks] = useState<OpenTask[]>([])
   const [userName, setUserName] = useState("daar")
 
   useEffect(() => {
+    // Laad test resultaat uit localStorage
     const localResult = localStorage.getItem("belastbaarheidstest_result")
     if (localResult) {
       try {
@@ -34,7 +53,57 @@ export default function DashboardPage() {
         // Negeer parse errors
       }
     }
-  }, [])
+
+    // Laad profiel status vanuit API
+    const loadProfile = async () => {
+      try {
+        const res = await fetch("/api/profile")
+        if (res.ok) {
+          const data = await res.json()
+          setProfileStatus({
+            profileCompleted: data.profileCompleted || false,
+            intakeCompleted: data.intakeCompleted || false,
+          })
+          if (data.naam) {
+            setUserName(data.naam.split(" ")[0])
+          }
+
+          // Bouw openstaande taken lijst
+          const tasks: OpenTask[] = []
+
+          if (!data.profileCompleted) {
+            tasks.push({
+              id: "profile",
+              title: "Maak je profiel compleet",
+              description: "Vul je locatie en die van je naaste in voor betere hulp",
+              link: "/profiel",
+              icon: "📍",
+              priority: "high",
+            })
+          }
+
+          if (!data.intakeCompleted && !localResult) {
+            tasks.push({
+              id: "balanstest",
+              title: "Doe de Balanstest",
+              description: "Ontdek hoe het met je gaat als mantelzorger",
+              link: "/belastbaarheidstest",
+              icon: "📊",
+              priority: "high",
+            })
+          }
+
+          setOpenTasks(tasks)
+        }
+      } catch {
+        // Ignore API errors, fall back to localStorage
+      }
+    }
+
+    if (session?.user) {
+      loadProfile()
+    }
+  }, [session])
 
   return (
     <div className="ker-page-content">
@@ -50,6 +119,40 @@ export default function DashboardPage() {
           </p>
         </div>
       </div>
+
+      {/* Openstaande taken */}
+      {openTasks.length > 0 && (
+        <div className="mb-6">
+          <h2 className="text-sm font-bold text-foreground uppercase tracking-wide mb-3">
+            Openstaande taken
+          </h2>
+          <div className="space-y-3">
+            {openTasks.map((task) => (
+              <Link key={task.id} href={task.link} className="block">
+                <div className={cn(
+                  "ker-card border-2 hover:border-primary/50 transition-colors",
+                  task.priority === "high" && "border-l-4 border-l-[var(--accent-amber)]"
+                )}>
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[var(--accent-amber-bg)] flex items-center justify-center flex-shrink-0">
+                      <span className="text-xl">{task.icon}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground">{task.title}</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {task.description}
+                      </p>
+                    </div>
+                    <svg className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Belastbaarheidstest - Hoofdfocus */}
       {!testStatus.hasTest ? (
