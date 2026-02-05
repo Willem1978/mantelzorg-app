@@ -388,15 +388,8 @@ export async function POST(request: NextRequest) {
 
         session.currentStep = 'questions'
       } else if (command === 'menu' || command === 'start' || command === 'help' || command === 'hulp' || command === '0') {
-        // Hoofdmenu - met interactieve knoppen als beschikbaar
-        response = `👋 Hoi ${caregiver.user.name}!`
-
-        if (CONTENT_SIDS.mainMenu) {
-          useInteractiveButtons = true
-          interactiveContentSid = CONTENT_SIDS.mainMenu
-        } else {
-          response += `\n\n*Wat wil je doen?*\n\n1️⃣ Balanstest\n2️⃣ Mijn taken\n3️⃣ Hulp vinden\n4️⃣ Dashboard\n5️⃣ Contact`
-        }
+        // Hoofdmenu - altijd tekst met alle opties (geen interactieve knoppen)
+        response = `👋 Hoi ${caregiver.user.name}!\n\n*Wat wil je doen?*\n\n1️⃣ Balanstest 📊\n2️⃣ Mijn taken 📋\n3️⃣ Hulp vinden 🗺️\n4️⃣ Dashboard 📈\n5️⃣ Contact 💬\n\n_Typ het nummer van je keuze_`
       } else if (command === '2' || command === 'taken' || command === 'tasks' || command === 'mijn status' || command === 'status') {
         // Taken voor vandaag
         const today = new Date()
@@ -462,9 +455,9 @@ export async function POST(request: NextRequest) {
         const isGreeting = greetings.some(g => command.includes(g))
 
         if (isGreeting) {
-          response = `👋 Hoi ${caregiver.user.name}!\n\n*Wat wil je doen?*\n\n1️⃣ Balanstest\n2️⃣ Mijn taken\n3️⃣ Hulp vinden\n4️⃣ Dashboard\n5️⃣ Contact`
+          response = `👋 Hoi ${caregiver.user.name}!\n\n*Wat wil je doen?*\n\n1️⃣ Balanstest 📊\n2️⃣ Mijn taken 📋\n3️⃣ Hulp vinden 🗺️\n4️⃣ Dashboard 📈\n5️⃣ Contact 💬\n\n_Typ het nummer van je keuze_`
         } else {
-          response = `*Wat wil je doen?*\n\n1️⃣ Balanstest\n2️⃣ Mijn taken\n3️⃣ Hulp vinden\n4️⃣ Dashboard\n5️⃣ Contact`
+          response = `*Wat wil je doen?*\n\n1️⃣ Balanstest 📊\n2️⃣ Mijn taken 📋\n3️⃣ Hulp vinden 🗺️\n4️⃣ Dashboard 📈\n5️⃣ Contact 💬\n\n_Typ het nummer van je keuze_`
         }
       }
     }
