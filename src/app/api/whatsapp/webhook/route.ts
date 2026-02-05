@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { parseIncomingWhatsAppMessage } from '@/lib/twilio'
+import {
+  parseIncomingWhatsAppMessage,
+  sendQuickReplyMessage,
+  sendContentTemplateMessage,
+  CONTENT_SIDS,
+  twilioClient,
+} from '@/lib/twilio'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import {
@@ -16,6 +22,8 @@ import {
   updateOnboardingSession,
   clearOnboardingSession,
 } from '@/lib/whatsapp-session'
+
+const whatsappFrom = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,11 +47,21 @@ export async function POST(request: NextRequest) {
 
     const message = parseIncomingWhatsAppMessage(formDataObj)
 
+    // Check voor interactieve knop response
+    // Twilio stuurt ButtonText als de gebruiker op een Quick Reply knop klikt
+    const buttonText = formDataObj.ButtonText as string | undefined
+    const listId = formDataObj.ListId as string | undefined // Voor list selecties
+
     console.log('Inkomend WhatsApp bericht:', {
       from: message.from,
       body: message.body,
+      buttonText: buttonText,
+      listId: listId,
       messageId: message.messageId,
     })
+
+    // Gebruik buttonText als beschikbaar (knop geklikt), anders body (tekst getypt)
+    const userInput = buttonText || message.body
 
     // Zoek gebruiker op basis van telefoonnummer
     const caregiver = await prisma.caregiver.findFirst({
@@ -57,19 +75,41 @@ export async function POST(request: NextRequest) {
 
     let response = ''
 
+    // Helper functie om interactieve berichten te sturen (async, naast TwiML response)
+    const sendInteractiveResponse = async (
+      to: string,
+      contentSid?: string
+    ) => {
+      if (!twilioClient || !contentSid) return
+
+      try {
+        // Gebruik content template voor echte knoppen
+        await sendContentTemplateMessage(to, contentSid)
+        console.log('Sent interactive message with contentSid:', contentSid)
+      } catch (error) {
+        console.error('Failed to send interactive response:', error)
+      }
+    }
+
+    // Stuur altijd eerst een lege TwiML response, dan het interactieve bericht apart
+    // Dit voorkomt dubbele berichten
+    let useInteractiveButtons = false
+    let interactiveContentSid: string | undefined
+
     // Check eerst of er een actieve test sessie is (ook voor gasten)
     const testSession = getTestSession(message.from)
 
     if (testSession && testSession.currentStep === 'questions') {
       // Gebruiker is bezig met test - verwerk antwoord
-      const command = message.body.toLowerCase().trim()
+      // Accepteer zowel getypte tekst als knop-clicks
+      const command = userInput.toLowerCase().trim()
       const validAnswers = ['ja', 'soms', 'nee', 'j', 's', 'n']
       let normalizedAnswer = command
 
-      // Normaliseer antwoord
-      if (command === 'j' || command === '1') normalizedAnswer = 'ja'
-      else if (command === 's' || command === '2') normalizedAnswer = 'soms'
-      else if (command === 'n' || command === '3') normalizedAnswer = 'nee'
+      // Normaliseer antwoord - accepteer ook knop tekst
+      if (command === 'j' || command === '1' || command === 'ja') normalizedAnswer = 'ja'
+      else if (command === 's' || command === '2' || command === 'soms') normalizedAnswer = 'soms'
+      else if (command === 'n' || command === '3' || command === 'nee') normalizedAnswer = 'nee'
 
       if (validAnswers.includes(normalizedAnswer) || ['1', '2', '3'].includes(command)) {
         const updatedSession = updateTestAnswer(message.from, normalizedAnswer)
@@ -143,20 +183,35 @@ export async function POST(request: NextRequest) {
           response += `_Typ 0 voor menu_`
           clearTestSession(message.from)
         } else if (updatedSession) {
-          // Volgende vraag
+          // Volgende vraag - stuur interactieve knoppen
           const nextQuestion = getCurrentQuestion(updatedSession)
           if (nextQuestion) {
             const questionNum = updatedSession.currentQuestion + 1
-            response = `📊 *Vraag ${questionNum}/${BELASTBAARHEID_QUESTIONS.length}*\n\n${nextQuestion.vraag}\n\n1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee\n\n💬 Typ het nummer (of ja/soms/nee)`
+            response = `📊 *Vraag ${questionNum}/${BELASTBAARHEID_QUESTIONS.length}*\n\n${nextQuestion.vraag}`
+
+            // Stuur interactieve knoppen als Content SID beschikbaar is
+            if (CONTENT_SIDS.testAnswer) {
+              useInteractiveButtons = true
+              interactiveContentSid = CONTENT_SIDS.testAnswer
+            } else {
+              response += `\n\n1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee`
+            }
           }
         }
-      } else if (command === 'stop') {
+      } else if (command === 'stop' || command === 'stoppen') {
         // Stop de test
         clearTestSession(message.from)
         response = `❌ Test gestopt.\n\n_Typ 0 voor menu_`
       } else {
-        // Ongeldig antwoord
-        response = `❌ Ongeldig antwoord.\n\nTyp:\n1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee\n\nOf typ "stop" om te stoppen.`
+        // Ongeldig antwoord - stuur interactieve knoppen opnieuw
+        response = `❌ Kies een antwoord:`
+
+        if (CONTENT_SIDS.testAnswer) {
+          useInteractiveButtons = true
+          interactiveContentSid = CONTENT_SIDS.testAnswer
+        } else {
+          response += `\n\n1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee\n\n_Typ "stop" om te stoppen_`
+        }
       }
     }
 
@@ -166,19 +221,27 @@ export async function POST(request: NextRequest) {
 
       if (onboardingSession) {
       // Gebruiker is bezig met onboarding
-      const command = message.body.trim()
+      const command = userInput.trim()
 
       if (onboardingSession.currentStep === 'choice') {
-        if (command === '1') {
+        // Accepteer zowel nummers als knopteksten
+        if (command === '1' || command === 'ja, koppelen' || command === 'koppelen') {
           // Gebruiker heeft al een account - start login flow
           updateOnboardingSession(message.from, 'login_email')
           response = `✅ Prima! Laten we inloggen.\n\n📧 Wat is je email adres?`
-        } else if (command === '2') {
+        } else if (command === '2' || command === 'nee, nieuw' || command === 'nieuw') {
           // Gebruiker heeft nog geen account - start registratie flow
           updateOnboardingSession(message.from, 'register_name')
           response = `✅ Welkom! Laten we je account aanmaken.\n\n👤 Wat is je naam?`
         } else {
-          response = `Kies een optie:\n\n1️⃣ Ik heb al een account\n2️⃣ Ik heb nog geen account\n\nTyp 1 of 2`
+          response = `Kies een optie:`
+
+          if (CONTENT_SIDS.onboardingChoice) {
+            useInteractiveButtons = true
+            interactiveContentSid = CONTENT_SIDS.onboardingChoice
+          } else {
+            response += `\n\n1️⃣ Ik heb al een account\n2️⃣ Ik heb nog geen account\n\nTyp 1 of 2`
+          }
         }
       } else if (onboardingSession.currentStep === 'login_email') {
         // Opslaan email en vraag om wachtwoord
@@ -288,49 +351,53 @@ export async function POST(request: NextRequest) {
 
     // Geen onboarding sessie actief - check of gebruiker ingelogd is
     if (!response && !caregiver) {
-      // Nieuwe gebruiker - laat direct alle opties zien
-      const command = message.body.toLowerCase().trim()
+      // Nieuwe gebruiker - stuur link naar website
+      const command = userInput.toLowerCase().trim()
+      const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
 
-      if (command === 'account' || command === '6') {
-        // Start account aanmaken proces
-        startOnboardingSession(message.from)
-        response = `📝 Account aanmaken\n\nHeb je al een account?\n\n1️⃣ Ja, ik wil inloggen\n2️⃣ Nee, nieuw account aanmaken\n\n💬 Typ 1 of 2`
-      } else if (command === '1' || command === 'test' || command === 'belastbaarheidstest') {
-        // Start test zonder account
-        const session = startTestSession(message.from)
-        const firstQuestion = getCurrentQuestion(session)
-
-        response = `📊 *Mantelzorg Balanstest*\n\nIk ga je 12 vragen stellen over je zorgsituatie.\n\nBeantwoord elke vraag met:\n1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee\n\nKlaar om te beginnen?\n\n*Vraag 1/12*\n\n${firstQuestion?.vraag}\n\n1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee`
-
-        session.currentStep = 'questions'
-      } else if (command === '2' || command === 'hulp' || command === 'help' || command === 'buurt') {
-        response = `🗺️ *Hulp in de Buurt*\n\n📞 Mantelzorglijn\n    030-760 60 55\n    (ma-vr 9-17u)\n\n🚨 Crisis?\n    113 (24/7 gratis)\n\n🌐 Meer hulpbronnen:\n    ${process.env.NEXTAUTH_URL}/hulp\n\n❤️ Je staat er niet alleen voor!\n\n_Typ 0 voor menu_`
-      } else if (command === '3' || command === 'praten' || command === 'contact') {
-        response = `💬 *Persoonlijk Contact*\n\nWil je met iemand praten?\n\n📞 Direct bellen:\n    Mantelzorglijn: 030-760 60 55\n    Crisis: 113 (24/7)\n\n✉️ Online hulp:\n    ${process.env.NEXTAUTH_URL}/hulpvragen\n\n_Typ 0 voor menu_`
-      } else if (command === '4' || command === 'info' || command === 'informatie') {
-        response = `ℹ️ *Over Mantelzorgmaatje*\n\nWij helpen mantelzorgers met:\n• Belastbaarheidstest\n• Lokale hulpbronnen\n• Persoonlijk contact\n• Taken beheer (met account)\n\n💡 Tip: Maak een gratis account aan om je voortgang bij te houden!\n\nTyp "account" om te starten.\n\n_Typ 0 voor menu_`
+      if (command === '1' || command === 'test' || command === 'balanstest') {
+        response = `📊 *Balanstest*\n\nDoe de test op onze website:\n\n🔗 ${baseUrl}/belastbaarheidstest\n\n_Typ 0 voor menu_`
+      } else if (command === '2' || command === 'account' || command === 'inloggen' || command === 'login') {
+        response = `🔐 *Inloggen of Registreren*\n\nGa naar onze website:\n\n📝 Nieuw account:\n${baseUrl}/register\n\n🔑 Inloggen:\n${baseUrl}/login\n\n_Typ 0 voor menu_`
+      } else if (command === '3' || command === 'hulp' || command === 'help') {
+        response = `🗺️ *Hulp & Contact*\n\n📞 Mantelzorglijn: 030-760 60 55\n🚨 Crisis: 113 (24/7)\n\n🌐 Website: ${baseUrl}\n\n_Typ 0 voor menu_`
       } else {
-        // Hoofdmenu voor gasten
-        response = `👋 Welkom bij Mantelzorgmaatje!\n\nJe ondersteunt iemand met zorg. Dat is mooi, maar ook zwaar. Wij zijn er om je te helpen.\n\n📋 *Wat wil je doen?*\n\n1️⃣ Balanstest (hoe gaat het met jou?)\n2️⃣ Hulp in de buurt vinden\n3️⃣ Praten met iemand\n4️⃣ Meer informatie\n\n6️⃣ Account aanmaken / Inloggen\n\n💬 Typ een nummer om te starten!`
+        // Hoofdmenu voor gasten - simpele opties
+        response = `👋 *Welkom bij KER!*\n\nWij helpen mantelzorgers.\n\n1️⃣ Balanstest\n2️⃣ Inloggen/Registreren\n3️⃣ Hulp & Contact\n\n🌐 ${baseUrl}`
       }
     }
 
     // Ingelogde gebruikers - command handler
     if (!response && caregiver) {
-      const command = message.body.toLowerCase().trim()
+      const command = userInput.toLowerCase().trim()
 
-      if (command === '1' || command === 'test' || command === 'belastbaarheidstest') {
+      if (command === '1' || command === 'test' || command === 'balanstest' || command === 'balanstest' || command === 'mantelzorg balanstest' || command === 'check-in' || command === 'checkin') {
         // Start test
         const session = startTestSession(message.from)
         const firstQuestion = getCurrentQuestion(session)
 
-        response = `📊 *Mantelzorg Balanstest*\n\nIk ga je 12 vragen stellen over je zorgsituatie.\n\nBeantwoord elke vraag met:\n1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee\n\nKlaar om te beginnen?\n\n*Vraag 1/12*\n\n${firstQuestion?.vraag}\n\n1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee`
+        response = `📊 *Mantelzorg Balanstest*\n\nIk stel je 12 korte vragen.\n\n*Vraag 1/12*\n\n${firstQuestion?.vraag}`
+
+        // Stuur interactieve knoppen als Content SID beschikbaar is
+        if (CONTENT_SIDS.testAnswer) {
+          useInteractiveButtons = true
+          interactiveContentSid = CONTENT_SIDS.testAnswer
+        } else {
+          response += `\n\n1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee`
+        }
 
         session.currentStep = 'questions'
       } else if (command === 'menu' || command === 'start' || command === 'help' || command === 'hulp' || command === '0') {
-        // Hoofdmenu
-        response = `👋 Hoi ${caregiver.user.name}!\n\n📋 *MENU* - Typ een nummer:\n\n1️⃣ Mantelzorg Balanstest 📊\n2️⃣ Mijn taken voor vandaag\n3️⃣ Hulp in de buurt 🗺️\n4️⃣ Mijn dashboard\n5️⃣ Persoonlijk contact 💬\n\n💬 Typ het nummer!`
-      } else if (command === '2' || command === 'taken' || command === 'tasks') {
+        // Hoofdmenu - met interactieve knoppen als beschikbaar
+        response = `👋 Hoi ${caregiver.user.name}!`
+
+        if (CONTENT_SIDS.mainMenu) {
+          useInteractiveButtons = true
+          interactiveContentSid = CONTENT_SIDS.mainMenu
+        } else {
+          response += `\n\n*Wat wil je doen?*\n\n1️⃣ Balanstest\n2️⃣ Mijn taken\n3️⃣ Hulp vinden\n4️⃣ Dashboard\n5️⃣ Contact`
+        }
+      } else if (command === '2' || command === 'taken' || command === 'tasks' || command === 'mijn status' || command === 'status') {
         // Taken voor vandaag
         const today = new Date()
         today.setHours(0, 0, 0, 0)
@@ -361,6 +428,7 @@ export async function POST(request: NextRequest) {
           response += `🔗 Beheer taken:\n${process.env.NEXTAUTH_URL}/taken\n\n_Typ 0 voor menu_`
         }
       } else if (command === '3' || command === 'hulp' || command === 'help' || command === 'buurt') {
+        // Hulp in de buurt
         response = `🗺️ *Hulp in de Buurt*\n\n📞 Mantelzorglijn\n    030-760 60 55\n    (ma-vr 9-17u)\n\n🌐 Lokale hulp & steunpunten:\n    ${process.env.NEXTAUTH_URL}/hulp\n\n💬 Hulpvraag stellen:\n    ${process.env.NEXTAUTH_URL}/hulpvragen\n\n❤️ Je staat er niet alleen voor!\n\n_Typ 0 voor menu_`
       } else if (command === '4' || command === 'dashboard' || command === 'status') {
         // Dashboard / Mijn overzicht
@@ -394,19 +462,42 @@ export async function POST(request: NextRequest) {
         const isGreeting = greetings.some(g => command.includes(g))
 
         if (isGreeting) {
-          response = `👋 Hoi ${caregiver.user.name}!\n\n📋 *MENU* - Typ een nummer:\n\n1️⃣ Mantelzorg Balanstest 📊\n2️⃣ Mijn taken voor vandaag\n3️⃣ Hulp in de buurt 🗺️\n4️⃣ Mijn dashboard\n5️⃣ Persoonlijk contact 💬\n\n💬 Typ het nummer!`
+          response = `👋 Hoi ${caregiver.user.name}!\n\n*Wat wil je doen?*\n\n1️⃣ Balanstest\n2️⃣ Mijn taken\n3️⃣ Hulp vinden\n4️⃣ Dashboard\n5️⃣ Contact`
         } else {
-          // Elk ander bericht - toon ook menu
-          response = `📋 *MENU* - Typ een nummer:\n\n1️⃣ Mantelzorg Balanstest 📊\n2️⃣ Mijn taken voor vandaag\n3️⃣ Hulp in de buurt 🗺️\n4️⃣ Mijn dashboard\n5️⃣ Persoonlijk contact 💬\n\n💬 Typ gewoon het nummer van je keuze!`
+          response = `*Wat wil je doen?*\n\n1️⃣ Balanstest\n2️⃣ Mijn taken\n3️⃣ Hulp vinden\n4️⃣ Dashboard\n5️⃣ Contact`
         }
       }
     }
 
     // Stuur TwiML response terug
     console.log('Response to send:', response)
+    console.log('Use interactive buttons:', useInteractiveButtons, interactiveContentSid)
 
     if (!response) {
       response = '❌ Geen response gegenereerd. Stuur een willekeurig bericht om opnieuw te beginnen.'
+    }
+
+    // Als we interactieve knoppen willen gebruiken, stuur dan het content template
+    // Dit werkt binnen de 24-uurs sessie window
+    if (useInteractiveButtons && interactiveContentSid) {
+      // Stuur eerst de tekst via TwiML, dan de knoppen via Content API
+      const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Message>${response}</Message>
+</Response>`
+
+      // Stuur interactieve knoppen async (na de TwiML response)
+      // We wachten niet op het resultaat om de response snel te houden
+      sendInteractiveResponse(message.from, interactiveContentSid).catch(err => {
+        console.error('Failed to send interactive buttons:', err)
+      })
+
+      return new NextResponse(twiml, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/xml',
+        },
+      })
     }
 
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>

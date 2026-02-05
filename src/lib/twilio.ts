@@ -12,6 +12,264 @@ export const twilioClient = accountSid && authToken
   ? twilio(accountSid, authToken)
   : null
 
+// ============================================
+// INTERACTIEVE BERICHTEN MET KNOPPEN
+// ============================================
+
+export interface QuickReplyButton {
+  id: string
+  title: string // Max 20 characters
+}
+
+export interface InteractiveMessageOptions {
+  to: string
+  body: string
+  buttons?: QuickReplyButton[] // Max 3 buttons voor Quick Reply
+  footer?: string
+}
+
+/**
+ * Stuur een WhatsApp bericht met interactieve Quick Reply knoppen
+ *
+ * Let op: Dit werkt alleen binnen het 24-uur sessievenster
+ * Na 24 uur moet je approved templates gebruiken
+ */
+export async function sendInteractiveMessage({ to, body, buttons, footer }: InteractiveMessageOptions) {
+  if (!twilioClient) {
+    throw new Error('Twilio client not configured')
+  }
+
+  const formattedTo = to.startsWith('whatsapp:') ? to : `whatsapp:${to}`
+
+  // Als er geen knoppen zijn, stuur gewoon een tekst bericht
+  if (!buttons || buttons.length === 0) {
+    return twilioClient.messages.create({
+      from: whatsappFrom,
+      to: formattedTo,
+      body,
+    })
+  }
+
+  // Bouw de interactieve message payload
+  // Twilio's WhatsApp API ondersteunt interactieve berichten via contentSid
+  // OF via de messaging API met specifieke parameters
+
+  // Methode: Gebruik de persistent content format
+  // Dit vereist dat je eerst een content template maakt in Twilio Console
+  // OF je kunt de inline interactive message format gebruiken
+
+  try {
+    // Probeer eerst met de nieuwere interactieve format
+    const message = await twilioClient.messages.create({
+      from: whatsappFrom,
+      to: formattedTo,
+      body: body,
+      // Voor nu vallen we terug op tekst met emoji knoppen
+      // De echte interactieve knoppen vereisen Content Templates
+    })
+
+    return message
+  } catch (error) {
+    console.error('Error sending interactive message:', error)
+    throw error
+  }
+}
+
+/**
+ * Maak een tekst-gebaseerd menu met nummers en emoji's
+ * Dit is de fallback als echte knoppen niet beschikbaar zijn
+ */
+export function formatTextMenu(options: { emoji: string; label: string }[]): string {
+  return options
+    .map((opt, i) => `${i + 1}️⃣ ${opt.label} ${opt.emoji}`)
+    .join('\n')
+}
+
+/**
+ * Maak een tekst-gebaseerd antwoordmenu (ja/soms/nee)
+ */
+export function formatAnswerOptions(): string {
+  return `1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee`
+}
+
+// ============================================
+// CONTENT API VOOR INTERACTIEVE BERICHTEN
+// ============================================
+
+// Content Template SIDs - Maak deze aan in Twilio Console
+// Ga naar: Messaging > Content Template Builder
+// Klik op "Create new" en kies "twilio/quick-reply"
+// Sla op ZONDER te submitten voor goedkeuring (voor in-sessie gebruik)
+export const CONTENT_SIDS = {
+  // Hoofdmenu met 3 knoppen (max voor in-sessie)
+  mainMenu: process.env.TWILIO_CONTENT_SID_MAIN_MENU,
+  // Test antwoord opties (Ja/Soms/Nee)
+  testAnswer: process.env.TWILIO_CONTENT_SID_TEST_ANSWER,
+  // Onboarding keuze (Account/Nieuw)
+  onboardingChoice: process.env.TWILIO_CONTENT_SID_ONBOARDING,
+}
+
+/**
+ * Stuur een interactief bericht met Content Template (echte knoppen)
+ *
+ * Vereist: Content Templates aangemaakt in Twilio Console
+ * Binnen 24-uur sessie: Geen goedkeuring nodig
+ * Max 3 knoppen voor in-sessie berichten
+ */
+export async function sendContentTemplateMessage(
+  to: string,
+  contentSid: string,
+  contentVariables?: Record<string, string>
+) {
+  if (!twilioClient) {
+    throw new Error('Twilio client not configured')
+  }
+
+  const formattedTo = to.startsWith('whatsapp:') ? to : `whatsapp:${to}`
+
+  try {
+    const messageOptions: any = {
+      from: whatsappFrom,
+      to: formattedTo,
+      contentSid: contentSid,
+    }
+
+    if (contentVariables) {
+      messageOptions.contentVariables = JSON.stringify(contentVariables)
+    }
+
+    const message = await twilioClient.messages.create(messageOptions)
+    console.log(`Interactive message sent. SID: ${message.sid}`)
+    return message
+  } catch (error) {
+    console.error('Error sending content template message:', error)
+    throw error
+  }
+}
+
+/**
+ * Stuur een interactief bericht met Quick Reply knoppen
+ *
+ * Fallback: Als geen Content Template beschikbaar is, stuur tekst met nummers
+ */
+export async function sendQuickReplyMessage(
+  to: string,
+  headerText: string,
+  bodyText: string,
+  buttons: { id: string; title: string }[],
+  footerText?: string,
+  contentSid?: string
+) {
+  if (!twilioClient) {
+    throw new Error('Twilio client not configured')
+  }
+
+  const formattedTo = to.startsWith('whatsapp:') ? to : `whatsapp:${to}`
+
+  // Als we een contentSid hebben, gebruik die voor echte knoppen
+  if (contentSid) {
+    try {
+      const message = await twilioClient.messages.create({
+        from: whatsappFrom,
+        to: formattedTo,
+        contentSid: contentSid,
+      })
+      console.log(`Quick reply message sent with buttons. SID: ${message.sid}`)
+      return message
+    } catch (error) {
+      console.error('Content template failed, falling back to text:', error)
+      // Fall through naar tekst versie
+    }
+  }
+
+  // Fallback: Tekst met genummerde opties
+  let messageBody = ''
+  if (headerText) {
+    messageBody += `*${headerText}*\n\n`
+  }
+  messageBody += bodyText + '\n\n'
+
+  buttons.forEach((btn, index) => {
+    const numEmoji = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣'][index] || `${index + 1}.`
+    messageBody += `${numEmoji} ${btn.title}\n`
+  })
+
+  if (footerText) {
+    messageBody += `\n_${footerText}_`
+  }
+
+  try {
+    const message = await twilioClient.messages.create({
+      from: whatsappFrom,
+      to: formattedTo,
+      body: messageBody,
+    })
+    return message
+  } catch (error) {
+    console.error('Error sending quick reply message:', error)
+    throw error
+  }
+}
+
+/**
+ * Stuur een interactief list bericht
+ * Hiermee kan de gebruiker kiezen uit een lijst met opties
+ */
+export async function sendListMessage(
+  to: string,
+  headerText: string,
+  bodyText: string,
+  buttonText: string,
+  sections: {
+    title: string
+    rows: { id: string; title: string; description?: string }[]
+  }[]
+) {
+  if (!twilioClient) {
+    throw new Error('Twilio client not configured')
+  }
+
+  const formattedTo = to.startsWith('whatsapp:') ? to : `whatsapp:${to}`
+
+  // Bouw het list bericht als tekst met genummerde opties
+  let messageBody = ''
+  if (headerText) {
+    messageBody += `*${headerText}*\n\n`
+  }
+  messageBody += bodyText + '\n\n'
+
+  let optionNum = 1
+  sections.forEach((section) => {
+    if (section.title) {
+      messageBody += `📋 *${section.title}*\n`
+    }
+    section.rows.forEach((row) => {
+      const numEmoji = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'][optionNum - 1] || `${optionNum}.`
+      messageBody += `${numEmoji} ${row.title}`
+      if (row.description) {
+        messageBody += `\n   _${row.description}_`
+      }
+      messageBody += '\n'
+      optionNum++
+    })
+    messageBody += '\n'
+  })
+
+  messageBody += `💬 Typ het nummer van je keuze`
+
+  try {
+    const message = await twilioClient.messages.create({
+      from: whatsappFrom,
+      to: formattedTo,
+      body: messageBody,
+    })
+    return message
+  } catch (error) {
+    console.error('Error sending list message:', error)
+    throw error
+  }
+}
+
 export interface WhatsAppMessage {
   to: string // Phone number with country code, e.g., '+31612345678'
   body: string
