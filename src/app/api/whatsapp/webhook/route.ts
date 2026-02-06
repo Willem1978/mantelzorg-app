@@ -51,6 +51,13 @@ export const dynamic = 'force-dynamic'
 const prisma = new PrismaClient()
 
 /**
+ * Strip 'whatsapp:' prefix van telefoonnummer voor URLs
+ */
+function stripWhatsAppPrefix(phoneNumber: string): string {
+  return phoneNumber.replace('whatsapp:', '')
+}
+
+/**
  * ===========================================
  * WHATSAPP WEBHOOK - VOLLEDIGE FLOW
  * ===========================================
@@ -393,7 +400,7 @@ async function handleOnboardingSession(
 
     if (num === 1) {
       // Inloggen - stuur naar login pagina met telefoonnummer
-      const loginUrl = `${process.env.NEXTAUTH_URL}/login?phone=${encodeURIComponent(phoneNumber)}`
+      const loginUrl = `${process.env.NEXTAUTH_URL}/login?phone=${encodeURIComponent(stripWhatsAppPrefix(phoneNumber))}`
       clearOnboardingSession(phoneNumber)
       return {
         response: `🔑 *Inloggen*\n\nOpen de link hieronder om in te loggen:\n\n🔗 ${loginUrl}\n\n_Na het inloggen wordt je WhatsApp automatisch gekoppeld en worden je testresultaten opgeslagen._`,
@@ -402,7 +409,7 @@ async function handleOnboardingSession(
 
     if (num === 2) {
       // Registreren - stuur naar registratie pagina met telefoonnummer
-      const registerUrl = `${process.env.NEXTAUTH_URL}/register-whatsapp?phone=${encodeURIComponent(phoneNumber)}`
+      const registerUrl = `${process.env.NEXTAUTH_URL}/register-whatsapp?phone=${encodeURIComponent(stripWhatsAppPrefix(phoneNumber))}`
       clearOnboardingSession(phoneNumber)
       return {
         response: `✨ *Account aanmaken*\n\nOpen de link hieronder om je account aan te maken:\n\n🔗 ${registerUrl}\n\n_Na registratie wordt je WhatsApp automatisch gekoppeld en worden je testresultaten opgeslagen._`,
@@ -978,13 +985,13 @@ function handleGuestMenu(phoneNumber: string, input: string): string {
 
   // 2. Account aanmaken - link naar browser
   if (command === '2' || command === 'account' || command === 'nieuw') {
-    const registerUrl = `${process.env.NEXTAUTH_URL}/register-whatsapp?phone=${encodeURIComponent(phoneNumber)}`
+    const registerUrl = `${process.env.NEXTAUTH_URL}/register-whatsapp?phone=${encodeURIComponent(stripWhatsAppPrefix(phoneNumber))}`
     return `✨ *Account aanmaken*\n\nMet een account kan ik je beter helpen:\n• Je testresultaten worden bewaard\n• Je krijgt persoonlijke tips\n• Hulp afgestemd op jouw situatie\n\n🔗 *Maak je account aan:*\n${registerUrl}\n\n_Klik op de link hierboven_`
   }
 
   // 3. Inloggen - link naar browser
   if (command === '3' || command === 'inloggen' || command === 'login') {
-    const loginUrl = `${process.env.NEXTAUTH_URL}/login?phone=${encodeURIComponent(phoneNumber)}`
+    const loginUrl = `${process.env.NEXTAUTH_URL}/login?phone=${encodeURIComponent(stripWhatsAppPrefix(phoneNumber))}`
     return `🔑 *Inloggen*\n\nFijn om je weer te zien!\n\n🔗 *Log in op je account:*\n${loginUrl}\n\n_Klik op de link hierboven_\n\nNa het inloggen wordt je WhatsApp automatisch gekoppeld.`
   }
 
@@ -1246,7 +1253,7 @@ async function saveTestResults(
           vraagTekst: vraag?.vraag || vraagId,
           antwoord: antwoord as string,
           score: scoreVal,
-          gewicht: vraag?.weight || 1.0,
+          gewicht: 1.0, // Alle vragen hebben gelijk gewicht
         },
       })
     }

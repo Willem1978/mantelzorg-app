@@ -182,19 +182,20 @@ export const RELATIE_OPTIES = [
   'Anders',
 ]
 
+// 12 vragen, max score = 24 (12 × 2 punten per "ja")
 export const BELASTBAARHEID_QUESTIONS = [
-  { id: 'q1', vraag: 'Slaap je minder goed door de zorg?', weight: 1.5 },
-  { id: 'q2', vraag: 'Heb je last van je lichaam door het zorgen?', weight: 1.0 },
-  { id: 'q3', vraag: 'Kost het zorgen veel tijd en energie?', weight: 1.0 },
-  { id: 'q4', vraag: 'Is de band met je naaste veranderd?', weight: 1.5 },
-  { id: 'q5', vraag: 'Maakt het gedrag van je naaste je verdrietig, bang of boos?', weight: 1.5 },
-  { id: 'q6', vraag: 'Heb je verdriet dat je naaste anders is dan vroeger?', weight: 1.0 },
-  { id: 'q7', vraag: 'Slokt de zorg al je energie op?', weight: 1.5 },
-  { id: 'q8', vraag: 'Pas je je dagelijks leven aan voor de zorg?', weight: 1.0 },
-  { id: 'q9', vraag: 'Pas je regelmatig je plannen aan om te helpen?', weight: 1.0 },
-  { id: 'q10', vraag: 'Kom je niet meer toe aan dingen die je leuk vindt?', weight: 1.0 },
-  { id: 'q11', vraag: 'Kost het zorgen net zoveel tijd als je werk?', weight: 1.5 },
-  { id: 'q12', vraag: 'Geeft de zorg je ook geldproblemen?', weight: 1.0 },
+  { id: 'q1', vraag: 'Slaap je minder goed door de zorg?' },
+  { id: 'q2', vraag: 'Heb je last van je lichaam door het zorgen?' },
+  { id: 'q3', vraag: 'Kost het zorgen veel tijd en energie?' },
+  { id: 'q4', vraag: 'Is de band met je naaste veranderd?' },
+  { id: 'q5', vraag: 'Maakt het gedrag van je naaste je verdrietig, bang of boos?' },
+  { id: 'q6', vraag: 'Heb je verdriet dat je naaste anders is dan vroeger?' },
+  { id: 'q7', vraag: 'Slokt de zorg al je energie op?' },
+  { id: 'q8', vraag: 'Pas je je dagelijks leven aan voor de zorg?' },
+  { id: 'q9', vraag: 'Pas je regelmatig je plannen aan om te helpen?' },
+  { id: 'q10', vraag: 'Kom je niet meer toe aan dingen die je leuk vindt?' },
+  { id: 'q11', vraag: 'Kost het zorgen net zoveel tijd als je werk?' },
+  { id: 'q12', vraag: 'Geeft de zorg je ook geldproblemen?' },
 ]
 
 // ===========================================
@@ -256,16 +257,13 @@ export function calculateScore(answers: Record<string, string>): number {
 
   BELASTBAARHEID_QUESTIONS.forEach((question) => {
     const answer = answers[question.id]
-    let score = 0
 
-    if (answer === 'ja') score = 2
-    else if (answer === 'soms') score = 1
-    else if (answer === 'nee') score = 0
-
-    totalScore += score * question.weight
+    if (answer === 'ja') totalScore += 2
+    else if (answer === 'soms') totalScore += 1
+    // nee = 0 punten
   })
 
-  return Math.round(totalScore)
+  return totalScore // Max = 12 vragen × 2 = 24
 }
 
 export function getScoreLevel(score: number): string {
