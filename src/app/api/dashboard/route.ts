@@ -523,6 +523,20 @@ export async function GET() {
         caregiver.municipality,           // Locatie mantelzorger
         caregiver.careRecipientMunicipality // Locatie zorgvrager
       ),
+
+      // Locatie info voor UI
+      locatie: {
+        mantelzorger: {
+          straat: caregiver.street,
+          gemeente: caregiver.municipality,
+          woonplaats: caregiver.city,
+        },
+        zorgvrager: {
+          straat: caregiver.careRecipientStreet,
+          gemeente: caregiver.careRecipientMunicipality,
+          woonplaats: caregiver.careRecipientCity,
+        },
+      },
     })
   } catch (error) {
     console.error("Dashboard GET error:", error)

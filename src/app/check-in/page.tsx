@@ -33,9 +33,17 @@ const checkInQuestions = [
   },
   {
     id: "c5",
-    question: "Is er iets waar je extra hulp bij zou willen?",
+    question: "Waar zou je extra hulp bij willen?",
     tip: "We kunnen je helpen met het vinden van de juiste ondersteuning.",
-    isText: true,
+    isMultiSelect: true,
+    options: [
+      { value: "geen", label: "Nergens, het gaat goed", icon: "✅" },
+      { value: "huishouden", label: "Huishouden", icon: "🧹" },
+      { value: "zorgtaken", label: "Zorgtaken", icon: "🩺" },
+      { value: "tijd_voor_mezelf", label: "Tijd voor mezelf", icon: "🧘" },
+      { value: "administratie", label: "Administratie", icon: "📋" },
+      { value: "emotioneel", label: "Praten met iemand", icon: "💬" },
+    ],
   },
 ]
 
@@ -43,10 +51,10 @@ export default function CheckInPage() {
   const router = useRouter()
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [answers, setAnswers] = useState<Record<string, string>>({})
+  const [selectedOptions, setSelectedOptions] = useState<string[]>([])
   const [isCompleted, setIsCompleted] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isTransitioning, setIsTransitioning] = useState(false)
-  const [textInput, setTextInput] = useState("")
 
   const currentQuestion = checkInQuestions[currentQuestionIndex]
   const totalQuestions = checkInQuestions.length
@@ -60,8 +68,8 @@ export default function CheckInPage() {
       [currentQuestion.id]: value,
     }))
 
-    // Auto-advance after delay (niet voor tekst vragen)
-    if (!currentQuestion.isText) {
+    // Auto-advance after delay (niet voor multi-select vragen)
+    if (!currentQuestion.isMultiSelect) {
       setIsTransitioning(true)
       setTimeout(() => {
         if (!isLastQuestion) {
@@ -74,6 +82,23 @@ export default function CheckInPage() {
     }
   }
 
+  const toggleOption = (value: string) => {
+    if (value === "geen") {
+      // Als "geen" geselecteerd wordt, deselecteer alles en selecteer alleen "geen"
+      setSelectedOptions(["geen"])
+    } else {
+      // Als een andere optie geselecteerd wordt, verwijder "geen" en toggle de optie
+      setSelectedOptions(prev => {
+        const withoutGeen = prev.filter(v => v !== "geen")
+        if (withoutGeen.includes(value)) {
+          return withoutGeen.filter(v => v !== value)
+        } else {
+          return [...withoutGeen, value]
+        }
+      })
+    }
+  }
+
   const handlePrevious = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex((prev) => prev - 1)
@@ -81,10 +106,10 @@ export default function CheckInPage() {
   }
 
   const handleNext = () => {
-    if (currentQuestion.isText) {
+    if (currentQuestion.isMultiSelect) {
       setAnswers((prev) => ({
         ...prev,
-        [currentQuestion.id]: textInput,
+        [currentQuestion.id]: selectedOptions.join(","),
       }))
     }
 
@@ -118,7 +143,7 @@ export default function CheckInPage() {
     let total = 0
 
     checkInQuestions.forEach((q) => {
-      if (!q.isText && answers[q.id]) {
+      if (!q.isMultiSelect && answers[q.id]) {
         const answer = answers[q.id]
         const isReversed = q.reversed
 
@@ -232,8 +257,8 @@ export default function CheckInPage() {
     )
   }
 
-  // Text vraag
-  if (currentQuestion.isText) {
+  // Multi-select vraag
+  if (currentQuestion.isMultiSelect && currentQuestion.options) {
     return (
       <div className="min-h-screen bg-background">
         {/* Progress pill */}
@@ -264,12 +289,26 @@ export default function CheckInPage() {
                 {currentQuestion.question}
               </p>
 
-              <textarea
-                value={textInput}
-                onChange={(e) => setTextInput(e.target.value)}
-                placeholder="Typ hier je antwoord..."
-                className="ker-input min-h-[150px] resize-none"
-              />
+              <div className="grid grid-cols-2 gap-3">
+                {currentQuestion.options.map((option) => {
+                  const isSelected = selectedOptions.includes(option.value)
+                  return (
+                    <button
+                      key={option.value}
+                      onClick={() => toggleOption(option.value)}
+                      className={cn(
+                        "p-4 rounded-xl border-2 transition-all text-left",
+                        isSelected
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:border-primary/50"
+                      )}
+                    >
+                      <span className="text-2xl block mb-1">{option.icon}</span>
+                      <span className="text-sm font-medium">{option.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
 
               {/* Tip */}
               {currentQuestion.tip && (
@@ -308,7 +347,11 @@ export default function CheckInPage() {
 
             <button
               onClick={handleNext}
-              className="ker-btn ker-btn-primary flex items-center gap-2"
+              disabled={selectedOptions.length === 0}
+              className={cn(
+                "ker-btn flex items-center gap-2",
+                selectedOptions.length > 0 ? "ker-btn-primary" : "ker-btn-secondary opacity-50"
+              )}
             >
               {isLastQuestion ? "afronden" : "volgende"}
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -22,13 +22,23 @@ interface LandelijkeHulpbron {
   soortHulp: string | null
 }
 
+interface LocatieInfo {
+  straat: string | null
+  gemeente: string | null
+  woonplaats: string | null
+}
+
 interface HulpData {
   perCategorie: Record<string, Hulpbron[]>
   landelijk: LandelijkeHulpbron[]
-  zwareTaken: { naam: string; moeilijkheid: string }[]
+  zwareTaken: { naam: string; moeilijkheid: string; categorie?: string }[]
   mantelzorgerGemeente: string | null
   zorgvragerGemeente: string | null
   testNiveau: "LAAG" | "GEMIDDELD" | "HOOG" | null
+  locatie: {
+    mantelzorger: LocatieInfo
+    zorgvrager: LocatieInfo
+  }
 }
 
 interface HelpRequest {
@@ -42,30 +52,39 @@ interface HelpRequest {
   response?: string
 }
 
-// Icons voor hulp categorieën
-const CATEGORIE_ICONS: Record<string, string> = {
-  'Persoonlijke verzorging': '🛁',
-  'Huishoudelijke taken': '🧹',
-  'Vervoer': '🚗',
-  'Administratie en aanvragen': '📋',
-  'Sociaal contact en activiteiten': '👥',
-  'Bereiden en/of nuttigen van maaltijden': '🍽️',
-  'Boodschappen': '🛒',
-  'Klusjes in en om het huis': '🔧',
-  'Mantelzorgondersteuning': '💜',
-}
+// Alle categorieën met icons
+const ALLE_CATEGORIEEN = [
+  { naam: 'Persoonlijke verzorging', icon: '🛁', kort: 'Verzorging', voorWie: 'zorgvrager' },
+  { naam: 'Huishoudelijke taken', icon: '🧹', kort: 'Huishouden', voorWie: 'zorgvrager' },
+  { naam: 'Vervoer', icon: '🚗', kort: 'Vervoer', voorWie: 'zorgvrager' },
+  { naam: 'Administratie en aanvragen', icon: '📋', kort: 'Administratie', voorWie: 'zorgvrager' },
+  { naam: 'Sociaal contact en activiteiten', icon: '👥', kort: 'Sociaal', voorWie: 'zorgvrager' },
+  { naam: 'Bereiden en/of nuttigen van maaltijden', icon: '🍽️', kort: 'Maaltijden', voorWie: 'zorgvrager' },
+  { naam: 'Boodschappen', icon: '🛒', kort: 'Boodschappen', voorWie: 'zorgvrager' },
+  { naam: 'Klusjes in en om het huis', icon: '🔧', kort: 'Klusjes', voorWie: 'zorgvrager' },
+  { naam: 'Mantelzorgondersteuning', icon: '💜', kort: 'Voor jou', voorWie: 'mantelzorger' },
+]
 
-// Korte namen voor de categorieën
-const CATEGORIE_KORTE_NAMEN: Record<string, string> = {
-  'Persoonlijke verzorging': 'Verzorging',
-  'Huishoudelijke taken': 'Huishouden',
+// Mapping van taak namen naar categorieën
+const TAAK_NAAR_CATEGORIE: Record<string, string> = {
+  'Wassen/aankleden': 'Persoonlijke verzorging',
+  'Persoonlijke verzorging': 'Persoonlijke verzorging',
+  'Toiletgang': 'Persoonlijke verzorging',
+  'Medicijnen': 'Persoonlijke verzorging',
+  'Toezicht': 'Persoonlijke verzorging',
+  'Medische zorg': 'Persoonlijke verzorging',
+  'Huishouden': 'Huishoudelijke taken',
+  'Huishoudelijke taken': 'Huishoudelijke taken',
   'Vervoer': 'Vervoer',
-  'Administratie en aanvragen': 'Administratie',
-  'Sociaal contact en activiteiten': 'Sociaal',
-  'Bereiden en/of nuttigen van maaltijden': 'Maaltijden',
+  'Vervoer/begeleiding': 'Vervoer',
+  'Administratie': 'Administratie en aanvragen',
+  'Administratie en aanvragen': 'Administratie en aanvragen',
+  'Sociaal contact': 'Sociaal contact en activiteiten',
+  'Sociaal contact en activiteiten': 'Sociaal contact en activiteiten',
+  'Activiteiten': 'Sociaal contact en activiteiten',
+  'Maaltijden': 'Bereiden en/of nuttigen van maaltijden',
   'Boodschappen': 'Boodschappen',
-  'Klusjes in en om het huis': 'Klusjes',
-  'Mantelzorgondersteuning': 'Voor jou',
+  'Klusjes': 'Klusjes in en om het huis',
 }
 
 // Hulpvraag categorieën
@@ -106,15 +125,26 @@ export default function HulpPage() {
 
       if (dashboardRes.ok) {
         const dashboardData = await dashboardRes.json()
+
+        // Voeg categorie toe aan zware taken
+        const zwareTaken = (dashboardData.test?.zorgtaken || [])
+          .filter((t: any) => t.moeilijkheid === 'JA' || t.moeilijkheid === 'SOMS')
+          .map((t: any) => ({
+            ...t,
+            categorie: TAAK_NAAR_CATEGORIE[t.naam] || null
+          }))
+
         setHulpData({
           perCategorie: dashboardData.hulpbronnen?.perCategorie || {},
           landelijk: dashboardData.hulpbronnen?.landelijk || [],
-          zwareTaken: dashboardData.test?.zorgtaken?.filter(
-            (t: any) => t.moeilijkheid === 'JA' || t.moeilijkheid === 'SOMS'
-          ) || [],
+          zwareTaken,
           mantelzorgerGemeente: dashboardData.hulpbronnen?.mantelzorgerGemeente || null,
           zorgvragerGemeente: dashboardData.hulpbronnen?.zorgvragerGemeente || null,
           testNiveau: dashboardData.test?.niveau || null,
+          locatie: dashboardData.locatie || {
+            mantelzorger: { straat: null, gemeente: null, woonplaats: null },
+            zorgvrager: { straat: null, gemeente: null, woonplaats: null },
+          },
         })
       }
 
@@ -168,9 +198,36 @@ export default function HulpPage() {
     )
   }
 
-  const categorien = Object.keys(hulpData?.perCategorie || {})
   const aantalZwareTaken = hulpData?.zwareTaken?.length || 0
   const openHulpvragen = helpRequests.filter(r => r.status !== 'RESOLVED' && r.status !== 'CLOSED').length
+
+  // Bepaal welke categorieën zware taken hebben
+  const zwareTaakCategorieen = new Set(
+    hulpData?.zwareTaken?.map(t => t.categorie).filter(Boolean) || []
+  )
+
+  // Sorteer categorieën: eerst met zware taken, dan de rest
+  const gesorteerdeCategorieen = [...ALLE_CATEGORIEEN].sort((a, b) => {
+    const aHeeftZwaar = zwareTaakCategorieen.has(a.naam)
+    const bHeeftZwaar = zwareTaakCategorieen.has(b.naam)
+    if (aHeeftZwaar && !bHeeftZwaar) return -1
+    if (!aHeeftZwaar && bHeeftZwaar) return 1
+    return 0
+  })
+
+  // Split categorieën in voor zorgvrager en voor mantelzorger
+  const categorieenZorgvrager = gesorteerdeCategorieen.filter(c => c.voorWie === 'zorgvrager')
+  const categorieenMantelzorger = gesorteerdeCategorieen.filter(c => c.voorWie === 'mantelzorger')
+
+  // Helper functie voor locatie string
+  const formatLocatie = (loc: LocatieInfo | undefined) => {
+    if (!loc) return null
+    const parts = [loc.straat, loc.woonplaats || loc.gemeente].filter(Boolean)
+    return parts.length > 0 ? parts.join(', ') : null
+  }
+
+  const locatieMantelzorger = formatLocatie(hulpData?.locatie?.mantelzorger)
+  const locatieZorgvrager = formatLocatie(hulpData?.locatie?.zorgvrager)
 
   return (
     <div className="ker-page-content">
@@ -261,49 +318,89 @@ export default function HulpPage() {
       {/* TAB: Hulpbronnen */}
       {activeTab === 'bronnen' && (
         <div className="space-y-6">
-          {/* Locatie info */}
-          {(hulpData?.mantelzorgerGemeente || hulpData?.zorgvragerGemeente) && (
-            <div className="text-xs text-muted-foreground space-y-1">
-              {hulpData.mantelzorgerGemeente && (
-                <p>📍 Jouw regio: <span className="font-medium">{hulpData.mantelzorgerGemeente}</span></p>
-              )}
-              {hulpData.zorgvragerGemeente && hulpData.zorgvragerGemeente !== hulpData.mantelzorgerGemeente && (
-                <p>💝 Regio naaste: <span className="font-medium">{hulpData.zorgvragerGemeente}</span></p>
-              )}
+          {/* SECTIE: Hulp voor de zorgvrager */}
+          <div className="ker-card">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-xl">💝</span>
+              <div>
+                <h2 className="font-semibold text-foreground">Hulp voor je naaste</h2>
+                {locatieZorgvrager && (
+                  <p className="text-xs text-muted-foreground">📍 {locatieZorgvrager}</p>
+                )}
+              </div>
             </div>
-          )}
 
-          {/* Categorie knoppen */}
-          <div>
-            <p className="text-sm font-medium text-foreground mb-3">Zoek hulp per categorie:</p>
             <div className="flex flex-wrap gap-2">
-              {categorien.map((categorie) => (
-                <button
-                  key={categorie}
-                  onClick={() => setSelectedCategorie(selectedCategorie === categorie ? null : categorie)}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all",
-                    selectedCategorie === categorie
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted hover:bg-muted/80 text-foreground"
-                  )}
-                >
-                  <span>{CATEGORIE_ICONS[categorie] || '📌'}</span>
-                  <span>{CATEGORIE_KORTE_NAMEN[categorie] || categorie}</span>
-                  <span className="text-xs opacity-70">
-                    ({hulpData?.perCategorie?.[categorie]?.length || 0})
-                  </span>
-                </button>
-              ))}
+              {categorieenZorgvrager.map((categorie) => {
+                const heeftZwareTaak = zwareTaakCategorieen.has(categorie.naam)
+                const aantalHulpbronnen = hulpData?.perCategorie?.[categorie.naam]?.length || 0
+                const isSelected = selectedCategorie === categorie.naam
+
+                return (
+                  <button
+                    key={categorie.naam}
+                    onClick={() => setSelectedCategorie(isSelected ? null : categorie.naam)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all border-2",
+                      isSelected
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : heeftZwareTaak
+                          ? "bg-[var(--accent-amber-bg)] border-[var(--accent-amber)] text-foreground"
+                          : "bg-muted border-transparent hover:bg-muted/80 text-foreground"
+                    )}
+                  >
+                    <span>{categorie.icon}</span>
+                    <span>{categorie.kort}</span>
+                    <span className="text-xs opacity-70">({aantalHulpbronnen})</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* SECTIE: Hulp voor de mantelzorger */}
+          <div className="ker-card">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-xl">💜</span>
+              <div>
+                <h2 className="font-semibold text-foreground">Hulp voor jou</h2>
+                {locatieMantelzorger && (
+                  <p className="text-xs text-muted-foreground">📍 {locatieMantelzorger}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {categorieenMantelzorger.map((categorie) => {
+                const aantalHulpbronnen = hulpData?.perCategorie?.[categorie.naam]?.length || 0
+                const isSelected = selectedCategorie === categorie.naam
+
+                return (
+                  <button
+                    key={categorie.naam}
+                    onClick={() => setSelectedCategorie(isSelected ? null : categorie.naam)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all border-2",
+                      isSelected
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-primary/10 border-primary/30 hover:bg-primary/20 text-foreground"
+                    )}
+                  >
+                    <span>{categorie.icon}</span>
+                    <span>{categorie.kort}</span>
+                    <span className="text-xs opacity-70">({aantalHulpbronnen})</span>
+                  </button>
+                )
+              })}
             </div>
           </div>
 
           {/* Geselecteerde categorie */}
-          {selectedCategorie && hulpData?.perCategorie?.[selectedCategorie] && (
+          {selectedCategorie && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  {CATEGORIE_ICONS[selectedCategorie]} {selectedCategorie}
+                  {ALLE_CATEGORIEEN.find(c => c.naam === selectedCategorie)?.icon} {selectedCategorie}
                 </p>
                 <button
                   onClick={() => setSelectedCategorie(null)}
@@ -312,11 +409,19 @@ export default function HulpPage() {
                   ✕ Sluiten
                 </button>
               </div>
-              <div className="space-y-2">
-                {hulpData.perCategorie[selectedCategorie].map((hulp, i) => (
-                  <HulpbronCard key={i} hulp={hulp} />
-                ))}
-              </div>
+
+              {hulpData?.perCategorie?.[selectedCategorie] && hulpData.perCategorie[selectedCategorie].length > 0 ? (
+                <div className="space-y-2">
+                  {hulpData.perCategorie[selectedCategorie].map((hulp, i) => (
+                    <HulpbronCard key={i} hulp={hulp} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>Geen hulpbronnen gevonden voor deze categorie</p>
+                  <p className="text-sm mt-2">Zoek op Zorgkaart Nederland voor meer opties</p>
+                </div>
+              )}
             </div>
           )}
 
