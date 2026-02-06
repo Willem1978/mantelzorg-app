@@ -14,22 +14,50 @@ const TAAK_NAAR_ONDERDEEL: Record<string, string> = {
   t8: 'Persoonlijke verzorging', // Medische zorg
 }
 
-// Haal hulpbronnen op voor zware taken - combineert lokale en landelijke bronnen
+// Hulpbron interface voor type safety
+interface HulpbronResult {
+  naam: string
+  telefoon: string | null
+  website: string | null
+  beschrijving: string | null
+  gemeente: string | null
+  isLandelijk: boolean
+}
+
+interface AlgemeenHulpbron extends HulpbronResult {
+  soortHulp: string | null
+}
+
+interface LandelijkHulpbron {
+  naam: string
+  telefoon: string | null
+  website: string | null
+  beschrijving: string | null
+  soortHulp: string | null
+}
+
+// Haal hulpbronnen op - gescheiden voor mantelzorger en zorgvrager locaties
 async function getHulpbronnenVoorTaken(
   latestTest: any,
-  gemeente: string | null
+  mantelzorgerGemeente: string | null,
+  zorgvragerGemeente: string | null
 ): Promise<{
-  perTaak: Record<string, { naam: string; telefoon: string | null; website: string | null; beschrijving: string | null; gemeente: string | null; isLandelijk: boolean }[]>
-  algemeen: { naam: string; telefoon: string | null; website: string | null; beschrijving: string | null; soortHulp: string | null; gemeente: string | null; isLandelijk: boolean }[]
-  landelijk: { naam: string; telefoon: string | null; website: string | null; beschrijving: string | null; soortHulp: string | null }[]
-  gebruikersGemeente: string | null
+  // Hulp voor zorgvrager (per taak, gebaseerd op locatie zorgvrager)
+  perTaak: Record<string, HulpbronResult[]>
+  // Hulp voor mantelzorger (gebaseerd op locatie mantelzorger)
+  voorMantelzorger: AlgemeenHulpbron[]
+  // Landelijke hulplijnen (altijd beschikbaar)
+  landelijk: LandelijkHulpbron[]
+  // Context info
+  mantelzorgerGemeente: string | null
+  zorgvragerGemeente: string | null
 }> {
   if (!latestTest) {
     // Toon altijd landelijke bronnen, ook zonder test
     const landelijk = await prisma.zorgorganisatie.findMany({
       where: {
         isActief: true,
-        gemeente: null, // Landelijk = geen gemeente
+        gemeente: null,
         soortHulp: { in: ['Emotionele steun', 'Respijtzorg', 'Lotgenotencontact'] },
       },
       take: 5,
@@ -42,7 +70,13 @@ async function getHulpbronnenVoorTaken(
         soortHulp: true,
       },
     })
-    return { perTaak: {}, algemeen: [], landelijk, gebruikersGemeente: gemeente }
+    return {
+      perTaak: {},
+      voorMantelzorger: [],
+      landelijk,
+      mantelzorgerGemeente,
+      zorgvragerGemeente
+    }
   }
 
   // Vind zware taken (JA of SOMS)
@@ -50,21 +84,20 @@ async function getHulpbronnenVoorTaken(
     (t: any) => t.isGeselecteerd && (t.moeilijkheid === 'JA' || t.moeilijkheid === 'SOMS')
   ) || []
 
-  const perTaak: Record<string, any[]> = {}
+  const perTaak: Record<string, HulpbronResult[]> = {}
 
-  // Haal hulpbronnen op per zware taak
+  // Hulpbronnen per zware taak - gebaseerd op LOCATIE ZORGVRAGER
   for (const taak of zwareTaken) {
     const onderdeel = TAAK_NAAR_ONDERDEEL[taak.taakId]
     if (!onderdeel) continue
 
-    // Haal zowel lokale als landelijke hulpbronnen op
     const [lokaleHulp, landelijkeHulp] = await Promise.all([
-      // Lokale hulpbronnen (als gemeente bekend)
-      gemeente ? prisma.zorgorganisatie.findMany({
+      // Lokale hulpbronnen bij zorgvrager
+      zorgvragerGemeente ? prisma.zorgorganisatie.findMany({
         where: {
           isActief: true,
           onderdeelTest: onderdeel,
-          gemeente: gemeente,
+          gemeente: zorgvragerGemeente,
         },
         take: 2,
         orderBy: { naam: 'asc' },
@@ -81,7 +114,7 @@ async function getHulpbronnenVoorTaken(
         where: {
           isActief: true,
           onderdeelTest: onderdeel,
-          gemeente: null, // Landelijk
+          gemeente: null,
         },
         take: 2,
         orderBy: { naam: 'asc' },
@@ -95,8 +128,7 @@ async function getHulpbronnenVoorTaken(
       }),
     ])
 
-    // Combineer en markeer als lokaal/landelijk
-    const gecombineerd = [
+    const gecombineerd: HulpbronResult[] = [
       ...lokaleHulp.map(h => ({ ...h, isLandelijk: false })),
       ...landelijkeHulp.map(h => ({ ...h, isLandelijk: true })),
     ]
@@ -106,18 +138,17 @@ async function getHulpbronnenVoorTaken(
     }
   }
 
-  // Haal algemene hulpbronnen op gebaseerd op belastingsniveau
+  // Hulpbronnen voor mantelzorger - gebaseerd op LOCATIE MANTELZORGER
   const isHoog = latestTest.belastingNiveau === 'HOOG'
 
-  // Haal zowel lokale als landelijke algemene hulpbronnen
-  const [lokaalAlgemeen, landelijkAlgemeen] = await Promise.all([
-    // Lokale algemene hulpbronnen
-    gemeente ? prisma.zorgorganisatie.findMany({
+  const [lokaalMantelzorger, landelijkMantelzorger] = await Promise.all([
+    // Lokale hulp voor mantelzorger
+    mantelzorgerGemeente ? prisma.zorgorganisatie.findMany({
       where: {
         isActief: true,
         ...(isHoog ? { zichtbaarBijHoog: true } : {}),
         soortHulp: { in: ['Emotionele steun', 'Respijtzorg', 'Lotgenotencontact'] },
-        gemeente: gemeente,
+        gemeente: mantelzorgerGemeente,
       },
       take: 3,
       orderBy: { naam: 'asc' },
@@ -130,13 +161,13 @@ async function getHulpbronnenVoorTaken(
         gemeente: true,
       },
     }) : Promise.resolve([]),
-    // Landelijke algemene hulpbronnen
+    // Landelijke hulp voor mantelzorger
     prisma.zorgorganisatie.findMany({
       where: {
         isActief: true,
         ...(isHoog ? { zichtbaarBijHoog: true } : {}),
         soortHulp: { in: ['Emotionele steun', 'Respijtzorg', 'Lotgenotencontact'] },
-        gemeente: null, // Landelijk
+        gemeente: null,
       },
       take: 5,
       orderBy: { naam: 'asc' },
@@ -151,13 +182,12 @@ async function getHulpbronnenVoorTaken(
     }),
   ])
 
-  // Combineer lokaal en landelijk
-  const algemeen = [
-    ...lokaalAlgemeen.map(h => ({ ...h, isLandelijk: false })),
-    ...landelijkAlgemeen.map(h => ({ ...h, isLandelijk: true })),
+  const voorMantelzorger: AlgemeenHulpbron[] = [
+    ...lokaalMantelzorger.map(h => ({ ...h, isLandelijk: false })),
+    ...landelijkMantelzorger.map(h => ({ ...h, isLandelijk: true })),
   ]
 
-  // Landelijke hulpbronnen apart (voor "Landelijke ondersteuning" sectie)
+  // Landelijke hulplijnen (altijd zichtbaar)
   const landelijk = await prisma.zorgorganisatie.findMany({
     where: {
       isActief: true,
@@ -175,7 +205,13 @@ async function getHulpbronnenVoorTaken(
     },
   })
 
-  return { perTaak, algemeen, landelijk, gebruikersGemeente: gemeente }
+  return {
+    perTaak,
+    voorMantelzorger,
+    landelijk,
+    mantelzorgerGemeente,
+    zorgvragerGemeente
+  }
 }
 
 // GET: Dashboard data ophalen
@@ -432,7 +468,13 @@ export async function GET() {
       },
 
       // Hulpbronnen uit de Sociale Kaart
-      hulpbronnen: await getHulpbronnenVoorTaken(latestTest, caregiver.municipality),
+      // - perTaak: hulp bij zorgtaken, gebaseerd op locatie ZORGVRAGER
+      // - voorMantelzorger: hulp voor mantelzorger, gebaseerd op locatie MANTELZORGER
+      hulpbronnen: await getHulpbronnenVoorTaken(
+        latestTest,
+        caregiver.municipality,           // Locatie mantelzorger
+        caregiver.careRecipientMunicipality // Locatie zorgvrager
+      ),
     })
   } catch (error) {
     console.error("Dashboard GET error:", error)

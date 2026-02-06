@@ -43,10 +43,11 @@ interface DashboardData {
     zorgtaken?: { id: string; naam: string; uren: number | null; moeilijkheid: string | null }[]
   }
   hulpbronnen?: {
-    perTaak: Record<string, Hulpbron[]>
-    algemeen: Hulpbron[]
-    landelijk: LandelijkeHulpbron[]
-    gebruikersGemeente?: string | null
+    perTaak: Record<string, Hulpbron[]>           // Hulp bij zorgtaken (locatie zorgvrager)
+    voorMantelzorger: Hulpbron[]                  // Hulp voor mantelzorger (locatie mantelzorger)
+    landelijk: LandelijkeHulpbron[]               // Landelijke hulplijnen
+    mantelzorgerGemeente?: string | null
+    zorgvragerGemeente?: string | null
   }
   checkIns: {
     weeklyDone: boolean
@@ -520,70 +521,35 @@ export default function DashboardPage() {
       </section>
 
       {/* SECTIE: Hulpbronnen uit Sociale Kaart */}
-      {data?.hulpbronnen && (Object.keys(data.hulpbronnen.perTaak).length > 0 || data.hulpbronnen.algemeen.length > 0 || data.hulpbronnen.landelijk.length > 0) && (
+      {data?.hulpbronnen && (Object.keys(data.hulpbronnen.perTaak).length > 0 || data.hulpbronnen.voorMantelzorger.length > 0 || data.hulpbronnen.landelijk.length > 0) && (
         <section className="mb-8">
           <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
             <span className="text-2xl">💡</span> Hulp voor jou
           </h2>
 
-          {/* Info over gemeente */}
-          {data.hulpbronnen.gebruikersGemeente && (
-            <p className="text-xs text-muted-foreground mb-3">
-              📍 Lokale hulp in {data.hulpbronnen.gebruikersGemeente} + landelijke ondersteuning
-            </p>
-          )}
+          {/* Info over beide locaties */}
+          <div className="text-xs text-muted-foreground mb-4 space-y-1">
+            {data.hulpbronnen.mantelzorgerGemeente && (
+              <p>👤 Jouw locatie: {data.hulpbronnen.mantelzorgerGemeente}</p>
+            )}
+            {data.hulpbronnen.zorgvragerGemeente && data.hulpbronnen.zorgvragerGemeente !== data.hulpbronnen.mantelzorgerGemeente && (
+              <p>💝 Locatie naaste: {data.hulpbronnen.zorgvragerGemeente}</p>
+            )}
+          </div>
 
-          {/* Hulp per zware taak */}
-          {Object.entries(data.hulpbronnen.perTaak).map(([taakNaam, hulpbronnen]) => (
-            <div key={taakNaam} className="mb-4">
-              <p className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
-                <span className="text-[var(--accent-red)]">●</span>
-                Hulp bij {taakNaam.toLowerCase()}:
+          {/* SECTIE: Hulp voor mantelzorger */}
+          {data.hulpbronnen.voorMantelzorger.length > 0 && (
+            <div className="mb-6">
+              <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                👤 Ondersteuning voor jou
+                {data.hulpbronnen.mantelzorgerGemeente && (
+                  <span className="text-xs font-normal text-muted-foreground">
+                    in {data.hulpbronnen.mantelzorgerGemeente}
+                  </span>
+                )}
               </p>
               <div className="space-y-2">
-                {hulpbronnen.map((hulp, i) => (
-                  <div key={i} className="ker-card py-3">
-                    <div className="flex items-start justify-between">
-                      <p className="font-medium text-sm">{hulp.naam}</p>
-                      {hulp.isLandelijk ? (
-                        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                          🌍 Landelijk
-                        </span>
-                      ) : hulp.gemeente && (
-                        <span className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
-                          📍 {hulp.gemeente}
-                        </span>
-                      )}
-                    </div>
-                    {hulp.beschrijving && (
-                      <p className="text-xs text-muted-foreground mt-1">{hulp.beschrijving}</p>
-                    )}
-                    <div className="flex gap-4 mt-2">
-                      {hulp.telefoon && (
-                        <a href={`tel:${hulp.telefoon}`} className="text-xs text-primary hover:underline flex items-center gap-1">
-                          📞 {hulp.telefoon}
-                        </a>
-                      )}
-                      {hulp.website && (
-                        <a href={hulp.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1">
-                          🌐 Website
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-
-          {/* Algemene hulpbronnen (lokaal + landelijk gecombineerd) */}
-          {data.hulpbronnen.algemeen.length > 0 && (
-            <div className="mt-4">
-              <p className="text-sm font-medium text-foreground mb-2">
-                Ondersteuning voor jou:
-              </p>
-              <div className="space-y-2">
-                {data.hulpbronnen.algemeen.map((hulp, i) => (
+                {data.hulpbronnen.voorMantelzorger.map((hulp, i) => (
                   <div key={i} className="ker-card py-3">
                     <div className="flex items-start justify-between">
                       <div>
@@ -620,6 +586,61 @@ export default function DashboardPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* SECTIE: Hulp bij zorgtaken (voor zorgvrager) */}
+          {Object.keys(data.hulpbronnen.perTaak).length > 0 && (
+            <div className="mb-6">
+              <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                💝 Hulp bij zorgtaken
+                {data.hulpbronnen.zorgvragerGemeente && (
+                  <span className="text-xs font-normal text-muted-foreground">
+                    in {data.hulpbronnen.zorgvragerGemeente}
+                  </span>
+                )}
+              </p>
+              {Object.entries(data.hulpbronnen.perTaak).map(([taakNaam, hulpbronnen]) => (
+                <div key={taakNaam} className="mb-4">
+                  <p className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                    <span className="text-[var(--accent-red)]">●</span>
+                    {taakNaam}:
+                  </p>
+                  <div className="space-y-2">
+                    {hulpbronnen.map((hulp, i) => (
+                      <div key={i} className="ker-card py-3">
+                        <div className="flex items-start justify-between">
+                          <p className="font-medium text-sm">{hulp.naam}</p>
+                          {hulp.isLandelijk ? (
+                            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                              🌍 Landelijk
+                            </span>
+                          ) : hulp.gemeente && (
+                            <span className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
+                              📍 {hulp.gemeente}
+                            </span>
+                          )}
+                        </div>
+                        {hulp.beschrijving && (
+                          <p className="text-xs text-muted-foreground mt-1">{hulp.beschrijving}</p>
+                        )}
+                        <div className="flex gap-4 mt-2">
+                          {hulp.telefoon && (
+                            <a href={`tel:${hulp.telefoon}`} className="text-xs text-primary hover:underline flex items-center gap-1">
+                              📞 {hulp.telefoon}
+                            </a>
+                          )}
+                          {hulp.website && (
+                            <a href={hulp.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1">
+                              🌐 Website
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 

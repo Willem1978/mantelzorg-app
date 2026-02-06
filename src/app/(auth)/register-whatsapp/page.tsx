@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { signIn } from "next-auth/react"
+import { signIn, signOut, useSession } from "next-auth/react"
 import Link from "next/link"
 import { GerAvatar } from "@/components/GerAvatar"
 
@@ -28,11 +28,14 @@ const RELATIE_OPTIES = [
 function RegisterWhatsAppForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { data: session } = useSession()
   const phoneNumber = searchParams.get("phone") || ""
   const userName = searchParams.get("name") || ""
 
   const [isLoading, setIsLoading] = useState(false)
   const [isLookingUp, setIsLookingUp] = useState(false)
+  const [isCheckingPhone, setIsCheckingPhone] = useState(true)
+  const [existingAccount, setExistingAccount] = useState(false)
   const [error, setError] = useState("")
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
@@ -61,8 +64,31 @@ function RegisterWhatsAppForm() {
   useEffect(() => {
     if (!phoneNumber) {
       router.push("/register")
+      return
     }
+
+    // Check of dit telefoonnummer al aan een account is gekoppeld
+    const checkExistingAccount = async () => {
+      try {
+        const res = await fetch(`/api/auth/check-phone?phone=${encodeURIComponent(phoneNumber)}`)
+        const data = await res.json()
+        setExistingAccount(data.exists)
+      } catch (error) {
+        console.error("Failed to check phone:", error)
+      } finally {
+        setIsCheckingPhone(false)
+      }
+    }
+
+    checkExistingAccount()
   }, [phoneNumber, router])
+
+  // Uitloggen als al ingelogd (voor schone registratie)
+  const handleLogoutAndRegister = async () => {
+    await signOut({ redirect: false })
+    setIsCheckingPhone(false)
+    setExistingAccount(false)
+  }
 
   // PDOK adres lookup
   const lookupAddress = async (postcode: string, huisnummer: string): Promise<AddressInfo | null> => {
@@ -257,6 +283,122 @@ function RegisterWhatsAppForm() {
   }
 
   const totalSteps = 3
+
+  // Loading state
+  if (isCheckingPhone) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Even checken...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Als dit telefoonnummer al gekoppeld is aan een account
+  if (existingAccount) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="px-4 pt-8 pb-4">
+          <div className="max-w-md mx-auto flex items-start gap-4">
+            <GerAvatar size="lg" />
+            <div className="pt-2">
+              <h1 className="text-2xl font-bold text-foreground">Al een account!</h1>
+              <p className="text-muted-foreground mt-1">
+                Dit telefoonnummer is al gekoppeld aan een account.
+              </p>
+            </div>
+          </div>
+        </div>
+        <main className="px-4 pb-8">
+          <div className="max-w-md mx-auto">
+            <div className="ker-card">
+              <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4 mb-6">
+                <p className="text-green-800 font-medium">📱 {formatPhone(phoneNumber)}</p>
+                <p className="text-green-700 text-sm mt-1">Is al gekoppeld aan je account</p>
+              </div>
+
+              <p className="text-muted-foreground mb-6">
+                Je hebt al een account met dit WhatsApp nummer. Log in om verder te gaan.
+              </p>
+
+              <Link
+                href={`/login?phone=${encodeURIComponent(phoneNumber)}`}
+                className="ker-btn ker-btn-primary w-full block text-center"
+              >
+                Inloggen
+              </Link>
+
+              <div className="mt-4 pt-4 border-t border-border">
+                <p className="text-sm text-muted-foreground text-center mb-3">
+                  Wil je toch een nieuw account maken?
+                </p>
+                <button
+                  onClick={() => {
+                    setExistingAccount(false)
+                    setIsCheckingPhone(false)
+                  }}
+                  className="ker-btn ker-btn-secondary w-full"
+                >
+                  Nieuw account maken
+                </button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  // Als er een sessie is (al ingelogd met ander account)
+  if (session) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="px-4 pt-8 pb-4">
+          <div className="max-w-md mx-auto flex items-start gap-4">
+            <GerAvatar size="lg" />
+            <div className="pt-2">
+              <h1 className="text-2xl font-bold text-foreground">Al ingelogd</h1>
+              <p className="text-muted-foreground mt-1">
+                Je bent al ingelogd met een ander account.
+              </p>
+            </div>
+          </div>
+        </div>
+        <main className="px-4 pb-8">
+          <div className="max-w-md mx-auto">
+            <div className="ker-card">
+              <div className="bg-primary/10 rounded-xl p-4 mb-6">
+                <p className="font-medium">Ingelogd als:</p>
+                <p className="text-primary">{session.user?.email}</p>
+              </div>
+
+              <p className="text-muted-foreground mb-6">
+                Wil je dit WhatsApp nummer ({formatPhone(phoneNumber)}) koppelen aan je huidige account, of een nieuw account maken?
+              </p>
+
+              <div className="space-y-3">
+                <Link
+                  href="/dashboard"
+                  className="ker-btn ker-btn-primary w-full block text-center"
+                >
+                  Naar mijn dashboard
+                </Link>
+
+                <button
+                  onClick={handleLogoutAndRegister}
+                  className="ker-btn ker-btn-secondary w-full"
+                >
+                  Uitloggen en nieuw account maken
+                </button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">

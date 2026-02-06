@@ -6,8 +6,8 @@ import { auth } from "@/lib/auth"
 const protectedRoutes = ["/dashboard", "/intake", "/rapport", "/agenda", "/profiel", "/organisatie"]
 
 // Routes die alleen voor niet-ingelogde gebruikers zijn
-// Let op: /register-whatsapp moet ook toegankelijk zijn voor niet-ingelogde gebruikers
-const authRoutes = ["/login", "/register", "/register-whatsapp"]
+// Let op: /register-whatsapp is NIET in deze lijst - die moet altijd toegankelijk zijn
+const authRoutes = ["/login", "/register"]
 
 export default auth((request) => {
   const { pathname } = request.nextUrl
