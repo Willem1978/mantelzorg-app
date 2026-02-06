@@ -414,29 +414,27 @@ async function handleOnboardingSession(
 
     if (num === 1) {
       // Inloggen
+      const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
       clearOnboardingSession(phoneNumber)
       return {
         response: `🔑 *Inloggen*
 
 Je testresultaten worden opgeslagen na inloggen.
 
-👉 Ga naar *mantelzorg-app.vercel.app*
-👉 Klik op "Inloggen"
-👉 Vul je telefoonnummer in om WhatsApp te koppelen`,
+${baseUrl}/login-whatsapp`,
       }
     }
 
     if (num === 2) {
       // Registreren
+      const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
       clearOnboardingSession(phoneNumber)
       return {
         response: `✨ *Account aanmaken*
 
 Je testresultaten worden opgeslagen na registratie.
 
-👉 Ga naar *mantelzorg-app.vercel.app*
-👉 Klik op "Account aanmaken"
-👉 Vul je telefoonnummer in om WhatsApp te koppelen`,
+${baseUrl}/register-whatsapp`,
       }
     }
 
@@ -995,24 +993,22 @@ function handleGuestMenu(phoneNumber: string, input: string): string {
 
   // 2. Account aanmaken
   if (command === '2' || command === 'account' || command === 'nieuw') {
+    const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
     return `✨ *Account aanmaken*
 
 Met een account bewaar ik je resultaten en geef ik persoonlijke tips.
 
-👉 Ga naar *mantelzorg-app.vercel.app*
-👉 Klik op "Account aanmaken"
-👉 Vul je telefoonnummer in om WhatsApp te koppelen`
+${baseUrl}/register-whatsapp`
   }
 
   // 3. Inloggen
   if (command === '3' || command === 'inloggen' || command === 'login') {
+    const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
     return `🔑 *Inloggen*
 
 Na inloggen wordt je WhatsApp gekoppeld.
 
-👉 Ga naar *mantelzorg-app.vercel.app*
-👉 Klik op "Inloggen"
-👉 Vul je telefoonnummer in om WhatsApp te koppelen`
+${baseUrl}/login-whatsapp`
   }
 
   // 4. Direct spreken
