@@ -367,6 +367,15 @@ export function getScoreImageUrl(score: number, level: string, name?: string): s
 }
 
 /**
+ * Genereer magic link URL voor directe dashboard login vanuit WhatsApp
+ * Token is 15 minuten geldig en kan maar 1x gebruikt worden
+ */
+export function getMagicLinkUrl(token: string): string {
+  const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
+  return `${baseUrl}/api/auth/magic-link?token=${token}`
+}
+
+/**
  * Template berichten voor de mantelzorg app
  */
 export const WhatsAppTemplates = {

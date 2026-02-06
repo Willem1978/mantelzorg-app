@@ -4,9 +4,11 @@ import {
   sendContentTemplateMessage,
   sendWhatsAppMessageWithImage,
   getScoreImageUrl,
+  getMagicLinkUrl,
   CONTENT_SIDS,
   twilioClient,
 } from '@/lib/twilio'
+import { randomBytes } from 'crypto'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import {
@@ -1020,7 +1022,18 @@ async function handleLoggedInUser(
       }
     }
 
-    response += `\n🔗 ${process.env.NEXTAUTH_URL}/dashboard\n\n_Typ 0 voor menu_`
+    // Genereer magic link voor directe login
+    const token = randomBytes(32).toString('hex')
+    await prisma.magicLinkToken.create({
+      data: {
+        token,
+        userId: caregiver.userId,
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 minuten geldig
+      },
+    })
+
+    const magicLink = getMagicLinkUrl(token)
+    response += `\n🔗 *Open dashboard:*\n${magicLink}\n\n⏰ _Link 15 min geldig_\n\n_Typ 0 voor menu_`
 
     return { response }
   }

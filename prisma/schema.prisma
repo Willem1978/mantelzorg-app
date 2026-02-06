@@ -31,6 +31,7 @@ model User {
   sessions      Session[]
   caregiver     Caregiver?
   orgMember     OrganisationMember?
+  magicLinks    MagicLinkToken[]
 }
 
 model Account {
@@ -66,6 +67,17 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// Magic link voor WhatsApp -> Dashboard login
+model MagicLinkToken {
+  id          String   @id @default(cuid())
+  token       String   @unique
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime @default(now())
 }
 
 enum UserRole {
