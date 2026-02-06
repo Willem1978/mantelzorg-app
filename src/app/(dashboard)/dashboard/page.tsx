@@ -43,10 +43,10 @@ interface DashboardData {
     zorgtaken?: { id: string; naam: string; uren: number | null; moeilijkheid: string | null }[]
   }
   hulpbronnen?: {
-    perTaak: Record<string, Hulpbron[]>           // Hulp bij zorgtaken (locatie zorgvrager)
-    voorMantelzorger: Hulpbron[]                  // Hulp voor mantelzorger (locatie mantelzorger)
-    landelijk: LandelijkeHulpbron[]               // Landelijke hulplijnen
-    perCategorie: Record<string, Hulpbron[]>      // Alle hulpbronnen per categorie
+    perTaak: Record<string, Hulpbron[]>
+    voorMantelzorger: Hulpbron[]
+    landelijk: LandelijkeHulpbron[]
+    perCategorie: Record<string, Hulpbron[]>
     mantelzorgerGemeente?: string | null
     zorgvragerGemeente?: string | null
   }
@@ -85,6 +85,28 @@ interface DashboardData {
     completed: number
     upcoming: { id: string; title: string; dueDate: string | null }[]
   }
+}
+
+// Mapping van taak namen naar categorieën voor hulpbronnen
+const TAAK_NAAR_CATEGORIE: Record<string, string> = {
+  'Wassen/aankleden': 'Persoonlijke verzorging',
+  'Persoonlijke verzorging': 'Persoonlijke verzorging',
+  'Toiletgang': 'Persoonlijke verzorging',
+  'Medicijnen': 'Persoonlijke verzorging',
+  'Toezicht': 'Persoonlijke verzorging',
+  'Medische zorg': 'Persoonlijke verzorging',
+  'Huishouden': 'Huishoudelijke taken',
+  'Huishoudelijke taken': 'Huishoudelijke taken',
+  'Vervoer': 'Vervoer',
+  'Vervoer/begeleiding': 'Vervoer',
+  'Administratie': 'Administratie en aanvragen',
+  'Administratie en aanvragen': 'Administratie en aanvragen',
+  'Sociaal contact': 'Sociaal contact en activiteiten',
+  'Sociaal contact en activiteiten': 'Sociaal contact en activiteiten',
+  'Activiteiten': 'Sociaal contact en activiteiten',
+  'Maaltijden': 'Bereiden en/of nuttigen van maaltijden',
+  'Boodschappen': 'Boodschappen',
+  'Klusjes': 'Klusjes in en om het huis',
 }
 
 export default function DashboardPage() {
@@ -126,6 +148,86 @@ export default function DashboardPage() {
     )
   }
 
+  // Bereken zware taken
+  const zwareTaken = data?.test?.zorgtaken?.filter(t => t.moeilijkheid === 'JA') || []
+  const matigTaken = data?.test?.zorgtaken?.filter(t => t.moeilijkheid === 'SOMS') || []
+  const lichtTaken = data?.test?.zorgtaken?.filter(t => !t.moeilijkheid || t.moeilijkheid === 'NEE') || []
+
+  // Genereer aanbevolen acties
+  const getAanbevolenActies = () => {
+    const acties: { icon: string; titel: string; beschrijving: string; href: string; prioriteit: number }[] = []
+
+    // Actie 1: Bij hoge belasting - bel mantelzorglijn
+    if (data?.test?.niveau === "HOOG") {
+      acties.push({
+        icon: "📞",
+        titel: "Bel de Mantelzorglijn",
+        beschrijving: "Praat met iemand over je situatie",
+        href: "tel:0302059059",
+        prioriteit: 1
+      })
+    }
+
+    // Actie 2: Hulp zoeken bij zware taken
+    if (zwareTaken.length > 0) {
+      acties.push({
+        icon: "🤝",
+        titel: "Zoek hulp bij zware taken",
+        beschrijving: `${zwareTaken.length} ${zwareTaken.length === 1 ? 'taak' : 'taken'} waar je hulp bij kunt krijgen`,
+        href: "/hulpvragen",
+        prioriteit: 2
+      })
+    }
+
+    // Actie 3: Check-in doen
+    if (!data?.checkIns?.weeklyDone) {
+      acties.push({
+        icon: "📝",
+        titel: "Doe je wekelijkse check-in",
+        beschrijving: "Even kijken hoe het met je gaat",
+        href: "/check-in",
+        prioriteit: 3
+      })
+    }
+
+    // Actie 4: Tijd voor jezelf plannen
+    if ((data?.selfCare?.completed || 0) < (data?.selfCare?.weeklyGoal || 3)) {
+      acties.push({
+        icon: "🌱",
+        titel: "Plan tijd voor jezelf",
+        beschrijving: "Zelfzorg is geen luxe, maar noodzaak",
+        href: "/taken?category=SELF_CARE",
+        prioriteit: 4
+      })
+    }
+
+    // Actie 5: Verlopen taken
+    if ((data?.tasks?.overdue || 0) > 0) {
+      acties.push({
+        icon: "⏰",
+        titel: "Bekijk verlopen taken",
+        beschrijving: `${data?.tasks?.overdue} ${data?.tasks?.overdue === 1 ? 'taak' : 'taken'} nog open`,
+        href: "/taken",
+        prioriteit: 5
+      })
+    }
+
+    // Actie 6: Kwartaal test
+    if (data?.test?.needsNewTest) {
+      acties.push({
+        icon: "📊",
+        titel: "Doe je kwartaal check",
+        beschrijving: "Vergelijk met je vorige resultaat",
+        href: "/belastbaarheidstest",
+        prioriteit: 6
+      })
+    }
+
+    return acties.sort((a, b) => a.prioriteit - b.prioriteit).slice(0, 3)
+  }
+
+  const aanbevolenActies = getAanbevolenActies()
+
   return (
     <div className="ker-page-content">
       {/* Header met Ger */}
@@ -141,159 +243,77 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Urgentie Banner */}
-      {data?.urgency && data.urgency.messages.length > 0 && (
-        <div
-          className={cn(
-            "rounded-xl p-4 mb-6",
-            data.urgency.level === "critical" && "bg-red-100 border-2 border-red-500",
-            data.urgency.level === "high" && "bg-[var(--accent-red-bg)] border-l-4 border-l-[var(--accent-red)]",
-            data.urgency.level === "medium" && "bg-[var(--accent-amber-bg)] border-l-4 border-l-[var(--accent-amber)]",
-            data.urgency.level === "low" && "bg-[var(--accent-green-bg)] border-l-4 border-l-[var(--accent-green)]"
-          )}
-        >
-          <div className="flex items-start gap-3">
-            <span className="text-2xl">
-              {data.urgency.level === "critical" && "🚨"}
-              {data.urgency.level === "high" && "⚠️"}
-              {data.urgency.level === "medium" && "📋"}
-              {data.urgency.level === "low" && "✨"}
-            </span>
-            <div>
-              <p className="font-semibold text-foreground">
-                {data.urgency.level === "high" || data.urgency.level === "critical"
-                  ? "Let op jezelf!"
-                  : "Aandachtspunten"}
-              </p>
-              <ul className="text-sm text-muted-foreground mt-1 space-y-0.5">
-                {data.urgency.messages.map((msg, i) => (
-                  <li key={i}>• {msg}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* SECTIE: Zelfzorg (Jouw welzijn centraal) */}
-      <section className="mb-8">
-        <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-          <span className="text-2xl">💜</span> Jouw Welzijn
-        </h2>
-
-        {/* Balanstest Resultaat of CTA */}
-        {data?.test?.hasTest ? (
-          <div className="space-y-4">
-            {/* Huidige Score Card */}
-            <div
-              className={cn(
-                "ker-card",
-                data.test.niveau === "LAAG" && "bg-[var(--accent-green-bg)]",
-                data.test.niveau === "GEMIDDELD" && "bg-[var(--accent-amber-bg)]",
-                data.test.niveau === "HOOG" && "bg-[var(--accent-red-bg)]"
-              )}
-            >
-              <div className="flex items-center gap-4">
-                <div
+      {/* SECTIE 1: Jouw Score Overzicht */}
+      {data?.test?.hasTest ? (
+        <section className="mb-8">
+          <div
+            className={cn(
+              "ker-card",
+              data.test.niveau === "LAAG" && "bg-[var(--accent-green-bg)] border-[var(--accent-green)]",
+              data.test.niveau === "GEMIDDELD" && "bg-[var(--accent-amber-bg)] border-[var(--accent-amber)]",
+              data.test.niveau === "HOOG" && "bg-[var(--accent-red-bg)] border-[var(--accent-red)]"
+            )}
+          >
+            {/* Score Header */}
+            <div className="flex items-center gap-4 mb-4">
+              <div
+                className={cn(
+                  "w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold text-white flex-shrink-0",
+                  data.test.niveau === "LAAG" && "bg-[var(--emoticon-green)]",
+                  data.test.niveau === "GEMIDDELD" && "bg-[var(--emoticon-yellow)]",
+                  data.test.niveau === "HOOG" && "bg-[var(--emoticon-red)]"
+                )}
+              >
+                {data.test.score}
+              </div>
+              <div className="flex-1">
+                <h2
                   className={cn(
-                    "w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white flex-shrink-0",
-                    data.test.niveau === "LAAG" && "bg-[var(--emoticon-green)]",
-                    data.test.niveau === "GEMIDDELD" && "bg-[var(--emoticon-yellow)]",
-                    data.test.niveau === "HOOG" && "bg-[var(--emoticon-red)]"
+                    "font-bold text-xl",
+                    data.test.niveau === "LAAG" && "text-[var(--accent-green)]",
+                    data.test.niveau === "GEMIDDELD" && "text-[var(--accent-amber)]",
+                    data.test.niveau === "HOOG" && "text-[var(--accent-red)]"
                   )}
                 >
-                  {data.test.score}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <h3
-                      className={cn(
-                        "font-bold text-lg",
-                        data.test.niveau === "LAAG" && "text-[var(--accent-green)]",
-                        data.test.niveau === "GEMIDDELD" && "text-[var(--accent-amber)]",
-                        data.test.niveau === "HOOG" && "text-[var(--accent-red)]"
-                      )}
-                    >
-                      {data.test.niveau === "LAAG" && "Lage belasting"}
-                      {data.test.niveau === "GEMIDDELD" && "Gemiddelde belasting"}
-                      {data.test.niveau === "HOOG" && "Hoge belasting"}
-                    </h3>
-                    {data.test.trend && (
-                      <span className="text-sm">
-                        {data.test.trend === "improved" && "📈 Verbeterd!"}
-                        {data.test.trend === "worse" && "📉 Aandacht nodig"}
-                        {data.test.trend === "same" && "➡️ Stabiel"}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {data.test.daysSinceTest} dagen geleden •{" "}
-                    <Link href="/rapport" className="text-primary hover:underline">
-                      Bekijk rapport →
-                    </Link>
-                  </p>
-                </div>
+                  {data.test.niveau === "LAAG" && "Lage belasting"}
+                  {data.test.niveau === "GEMIDDELD" && "Gemiddelde belasting"}
+                  {data.test.niveau === "HOOG" && "Hoge belasting"}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {data.test.daysSinceTest} dagen geleden
+                  {data.test.trend && (
+                    <span className="ml-2">
+                      {data.test.trend === "improved" && "📈 Verbeterd"}
+                      {data.test.trend === "worse" && "📉 Aandacht nodig"}
+                      {data.test.trend === "same" && "➡️ Stabiel"}
+                    </span>
+                  )}
+                </p>
+                <Link href="/rapport" className="text-sm text-primary hover:underline mt-1 inline-block">
+                  Bekijk volledig rapport →
+                </Link>
               </div>
-
-              {/* Aandachtspunten */}
-              {data.test.highScoreAreas && data.test.highScoreAreas.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-black/10">
-                  <p className="text-sm font-medium text-foreground mb-2">Aandachtspunten:</p>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    {data.test.highScoreAreas.slice(0, 3).map((area, i) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <span className="text-[var(--accent-red)]">•</span>
-                        <span>{area.vraag}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
             </div>
 
-            {/* Kwartaal Test Reminder */}
-            {data.test.needsNewTest && (
-              <Link href="/belastbaarheidstest" className="block">
-                <div className="ker-card bg-primary text-primary-foreground hover:opacity-95 transition-opacity">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-bold">Tijd voor je kwartaal check</h3>
-                      <p className="text-primary-foreground/80 text-sm mt-1">
-                        Vergelijk met je vorige resultaat
-                      </p>
-                    </div>
-                    <span className="text-3xl">📊</span>
-                  </div>
-                </div>
-              </Link>
-            )}
-
-            {/* Score Geschiedenis */}
-            {data.test.history && data.test.history.length > 1 && (
-              <div className="ker-card">
-                <h4 className="font-medium text-foreground mb-3">Voortgang</h4>
-                <div className="flex items-end gap-2 h-20">
-                  {data.test.history.slice().reverse().map((h, i) => (
-                    <div key={i} className="flex-1 flex flex-col items-center">
-                      <div
-                        className={cn(
-                          "w-full rounded-t transition-all",
-                          h.niveau === "LAAG" && "bg-[var(--emoticon-green)]",
-                          h.niveau === "GEMIDDELD" && "bg-[var(--emoticon-yellow)]",
-                          h.niveau === "HOOG" && "bg-[var(--emoticon-red)]"
-                        )}
-                        style={{ height: `${(h.score / 24) * 100}%`, minHeight: "8px" }}
-                      />
-                      <span className="text-xs text-muted-foreground mt-1">
-                        {new Date(h.date).toLocaleDateString("nl-NL", { month: "short" })}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+            {/* Score Verdeling */}
+            <div className="grid grid-cols-3 gap-2 text-center mb-4">
+              <div className="bg-white/50 rounded-lg p-2">
+                <p className="text-xl font-bold text-[var(--accent-green)]">{lichtTaken.length}</p>
+                <p className="text-xs text-muted-foreground">Gaat goed</p>
               </div>
-            )}
+              <div className="bg-white/50 rounded-lg p-2">
+                <p className="text-xl font-bold text-[var(--accent-amber)]">{matigTaken.length}</p>
+                <p className="text-xs text-muted-foreground">Matig zwaar</p>
+              </div>
+              <div className="bg-white/50 rounded-lg p-2">
+                <p className="text-xl font-bold text-[var(--accent-red)]">{zwareTaken.length}</p>
+                <p className="text-xs text-muted-foreground">Zwaar</p>
+              </div>
+            </div>
           </div>
-        ) : (
+        </section>
+      ) : (
+        <section className="mb-8">
           <Link href="/belastbaarheidstest" className="block">
             <div className="ker-card bg-primary text-primary-foreground hover:opacity-95 transition-opacity">
               <div className="flex items-center justify-between">
@@ -309,10 +329,133 @@ export default function DashboardPage() {
               </div>
             </div>
           </Link>
-        )}
+        </section>
+      )}
 
-        {/* Wekelijkse Check-in */}
-        <div className="mt-4 grid grid-cols-2 gap-3">
+      {/* SECTIE 2: Je Zorgtaken met Hulp */}
+      {data?.test?.zorgtaken && data.test.zorgtaken.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+            <span className="text-2xl">📋</span> Je Zorgtaken
+          </h2>
+
+          <div className="space-y-3">
+            {/* Zware taken eerst */}
+            {zwareTaken.map((taak, i) => {
+              const categorie = TAAK_NAAR_CATEGORIE[taak.naam]
+              const hulpbronnen = categorie ? (data?.hulpbronnen?.perCategorie?.[categorie] || []) : []
+              const aantalHulp = hulpbronnen.length
+
+              return (
+                <div key={`zwaar-${i}`} className="ker-card border-l-4 border-l-[var(--accent-red)]">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">🔴</span>
+                      <span className="font-semibold">{taak.naam}</span>
+                      {taak.uren && <span className="text-xs text-muted-foreground">({taak.uren}u/week)</span>}
+                    </div>
+                    <span className="text-xs bg-[var(--accent-red-bg)] text-[var(--accent-red)] px-2 py-1 rounded-full font-medium">
+                      Zwaar
+                    </span>
+                  </div>
+                  {aantalHulp > 0 && (
+                    <Link href="/hulpvragen" className="flex items-center gap-2 text-sm text-primary hover:underline">
+                      <span>🤝</span>
+                      <span>{aantalHulp} hulpbron{aantalHulp > 1 ? 'nen' : ''} beschikbaar</span>
+                      <span>→</span>
+                    </Link>
+                  )}
+                </div>
+              )
+            })}
+
+            {/* Matig zware taken */}
+            {matigTaken.map((taak, i) => {
+              const categorie = TAAK_NAAR_CATEGORIE[taak.naam]
+              const hulpbronnen = categorie ? (data?.hulpbronnen?.perCategorie?.[categorie] || []) : []
+              const aantalHulp = hulpbronnen.length
+
+              return (
+                <div key={`matig-${i}`} className="ker-card border-l-4 border-l-[var(--accent-amber)]">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">🟡</span>
+                      <span className="font-semibold">{taak.naam}</span>
+                      {taak.uren && <span className="text-xs text-muted-foreground">({taak.uren}u/week)</span>}
+                    </div>
+                    <span className="text-xs bg-[var(--accent-amber-bg)] text-[var(--accent-amber)] px-2 py-1 rounded-full font-medium">
+                      Matig
+                    </span>
+                  </div>
+                  {aantalHulp > 0 && (
+                    <Link href="/hulpvragen" className="flex items-center gap-2 text-sm text-primary hover:underline">
+                      <span>🤝</span>
+                      <span>{aantalHulp} hulpbron{aantalHulp > 1 ? 'nen' : ''} beschikbaar</span>
+                      <span>→</span>
+                    </Link>
+                  )}
+                </div>
+              )
+            })}
+
+            {/* Lichte taken - compact */}
+            {lichtTaken.length > 0 && (
+              <div className="ker-card bg-[var(--accent-green-bg)]/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg">🟢</span>
+                  <span className="font-medium text-muted-foreground">Taken die goed gaan ({lichtTaken.length})</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {lichtTaken.map((taak, i) => (
+                    <span key={i} className="text-xs bg-white/50 px-2 py-1 rounded-full">
+                      {taak.naam}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* SECTIE 3: Jouw Eerste 3 Acties */}
+      {aanbevolenActies.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+            <span className="text-2xl">🎯</span> Jouw Eerste Stappen
+          </h2>
+
+          <div className="space-y-3">
+            {aanbevolenActies.map((actie, i) => (
+              <Link key={i} href={actie.href} className="block">
+                <div className="ker-card hover:border-primary/50 transition-all">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-2xl">{actie.icon}</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center">
+                          {i + 1}
+                        </span>
+                        <h3 className="font-semibold">{actie.titel}</h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">{actie.beschrijving}</p>
+                    </div>
+                    <svg className="w-5 h-5 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* SECTIE 4: Check-in Status */}
+      <section className="mb-8">
+        <div className="grid grid-cols-2 gap-3">
           <Link href="/check-in" className="block">
             <div
               className={cn(
@@ -326,224 +469,17 @@ export default function DashboardPage() {
               <p className="font-medium text-sm mt-2">
                 {data?.checkIns?.weeklyDone ? "Check-in gedaan" : "Wekelijkse check-in"}
               </p>
-              {data?.checkIns?.recentScores?.[0] && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Welzijn: {data.checkIns.recentScores[0]}/10
-                </p>
-              )}
             </div>
           </Link>
 
-          <div
-            className={cn(
-              "ker-card text-center py-4",
-              data?.checkIns?.monthlyDone
-                ? "bg-[var(--accent-green-bg)]"
-                : "bg-muted"
-            )}
-          >
-            <span className="text-2xl">{data?.checkIns?.monthlyDone ? "✅" : "📅"}</span>
-            <p className="font-medium text-sm mt-2">Maand check-in</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {data?.checkIns?.monthlyDone ? "Voltooid" : "Eind van de maand"}
-            </p>
-          </div>
+          <Link href="/rapport" className="block">
+            <div className="ker-card text-center py-4 bg-muted hover:bg-muted/80 transition-colors">
+              <span className="text-2xl">📊</span>
+              <p className="font-medium text-sm mt-2">Bekijk rapport</p>
+            </div>
+          </Link>
         </div>
       </section>
-
-      {/* SECTIE: Zelfzorg Taken */}
-      <section className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-            <span className="text-2xl">🌱</span> Zelfzorg Doelen
-          </h2>
-          <Link href="/taken?category=SELF_CARE" className="text-sm text-primary hover:underline">
-            Alle doelen →
-          </Link>
-        </div>
-
-        {/* Progress */}
-        <div className="ker-card mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">Deze week</span>
-            <span className="text-sm text-muted-foreground">
-              {data?.selfCare?.completed || 0}/{data?.selfCare?.weeklyGoal || 3} activiteiten
-            </span>
-          </div>
-          <div className="h-3 bg-muted rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[var(--emoticon-green)] rounded-full transition-all"
-              style={{
-                width: `${Math.min(
-                  ((data?.selfCare?.completed || 0) / (data?.selfCare?.weeklyGoal || 3)) * 100,
-                  100
-                )}%`,
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Zelfzorg suggesties */}
-        <div className="space-y-2">
-          {data?.selfCare?.upcoming && data.selfCare.upcoming.length > 0 ? (
-            data.selfCare.upcoming.map((task) => (
-              <div key={task.id} className="ker-card flex items-center gap-3 py-3">
-                <div className="w-8 h-8 rounded-full bg-[var(--accent-green-bg)] flex items-center justify-center">
-                  <span>🎯</span>
-                </div>
-                <span className="flex-1 text-sm">{task.title}</span>
-                <button className="text-primary text-sm hover:underline">✓ Gedaan</button>
-              </div>
-            ))
-          ) : (
-            <div className="ker-card text-center py-6 bg-muted">
-              <p className="text-muted-foreground">Geen zelfzorg doelen gepland</p>
-              <Link href="/taken/nieuw?category=SELF_CARE" className="text-primary text-sm hover:underline mt-2 inline-block">
-                + Voeg toe
-              </Link>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* SECTIE: Zorgtaken Overzicht */}
-      <section className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-            <span className="text-2xl">📋</span> Zorgtaken
-          </h2>
-          <Link href="/taken" className="text-sm text-primary hover:underline">
-            Alle taken →
-          </Link>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-3 mb-4">
-          <div className="ker-card text-center py-3">
-            <p className="text-2xl font-bold text-foreground">{data?.tasks?.open || 0}</p>
-            <p className="text-xs text-muted-foreground">Open</p>
-          </div>
-          <div className="ker-card text-center py-3">
-            <p className={cn(
-              "text-2xl font-bold",
-              (data?.tasks?.overdue || 0) > 0 ? "text-[var(--accent-red)]" : "text-foreground"
-            )}>
-              {data?.tasks?.overdue || 0}
-            </p>
-            <p className="text-xs text-muted-foreground">Verlopen</p>
-          </div>
-          <div className="ker-card text-center py-3">
-            <p className="text-2xl font-bold text-[var(--accent-green)]">
-              {data?.tasks?.completedThisWeek || 0}
-            </p>
-            <p className="text-xs text-muted-foreground">Afgerond</p>
-          </div>
-        </div>
-
-        {/* Upcoming Tasks */}
-        {data?.tasks?.upcoming && data.tasks.upcoming.length > 0 && (
-          <div className="space-y-2">
-            {data.tasks.upcoming.map((task) => (
-              <Link key={task.id} href={`/taken/${task.id}`} className="block">
-                <div
-                  className={cn(
-                    "ker-card flex items-center gap-3 py-3 hover:border-primary/50 transition-colors",
-                    task.isOverdue && "border-l-4 border-l-[var(--accent-red)]"
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center",
-                      task.priority === "HIGH" && "bg-[var(--accent-red-bg)]",
-                      task.priority === "MEDIUM" && "bg-[var(--accent-amber-bg)]",
-                      task.priority === "LOW" && "bg-muted"
-                    )}
-                  >
-                    {getCategoryIcon(task.category)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{task.title}</p>
-                    {task.dueDate && (
-                      <p
-                        className={cn(
-                          "text-xs",
-                          task.isOverdue ? "text-[var(--accent-red)]" : "text-muted-foreground"
-                        )}
-                      >
-                        {task.isOverdue ? "Verlopen: " : ""}
-                        {new Date(task.dueDate).toLocaleDateString("nl-NL", {
-                          day: "numeric",
-                          month: "short",
-                        })}
-                      </p>
-                    )}
-                  </div>
-                  <svg
-                    className="w-4 h-4 text-muted-foreground"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-
-        {/* Zorgtaken uit test */}
-        {data?.test?.zorgtaken && data.test.zorgtaken.length > 0 && (
-          <div className="mt-4">
-            <p className="text-sm font-medium text-muted-foreground mb-2">
-              Jouw zorgtaken ({data.test.zorgtaken.length}):
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {data.test.zorgtaken.map((taak, i) => (
-                <span
-                  key={i}
-                  className={cn(
-                    "text-xs px-2 py-1 rounded-full",
-                    taak.moeilijkheid === "JA" && "bg-[var(--accent-red-bg)] text-[var(--accent-red)]",
-                    taak.moeilijkheid === "SOMS" && "bg-[var(--accent-amber-bg)] text-[var(--accent-amber)]",
-                    (!taak.moeilijkheid || taak.moeilijkheid === "NEE") && "bg-muted text-muted-foreground"
-                  )}
-                >
-                  {taak.moeilijkheid === "JA" && "🔴 "}
-                  {taak.moeilijkheid === "SOMS" && "🟡 "}
-                  {(!taak.moeilijkheid || taak.moeilijkheid === "NEE") && "🟢 "}
-                  {taak.naam}
-                  {taak.uren && ` (${taak.uren}u/w)`}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-      </section>
-
-      {/* SECTIE: Hulp nodig? - Link naar hulp pagina */}
-      {data?.test?.zorgtaken && data.test.zorgtaken.some(t => t.moeilijkheid === 'JA' || t.moeilijkheid === 'SOMS') && (
-        <section className="mb-8">
-          <Link href="/hulpvragen" className="block">
-            <div className="ker-card bg-gradient-to-r from-primary/5 to-primary/10 hover:from-primary/10 hover:to-primary/15 transition-all">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                  <span className="text-2xl">💜</span>
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-foreground">Hulp zoeken</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {data.test.zorgtaken.filter(t => t.moeilijkheid === 'JA' || t.moeilijkheid === 'SOMS').length} zware taken - bekijk hulpbronnen
-                  </p>
-                </div>
-                <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-            </div>
-          </Link>
-        </section>
-      )}
 
       {/* Snelle acties */}
       <section className="mb-8">
@@ -554,7 +490,7 @@ export default function DashboardPage() {
           <Link href="/check-in" className="block">
             <div className="ker-card flex flex-col items-center gap-1 py-3 hover:border-primary/50 transition-colors">
               <span className="text-xl">😊</span>
-              <span className="text-xs text-center">Check-in</span>
+              <span className="text-xs text-center">Gevoel</span>
             </div>
           </Link>
           <Link href="/hulpvragen" className="block">
@@ -597,21 +533,3 @@ function getGreeting(): string {
   if (hour < 18) return "Goedemiddag! Hoe gaat het met je?"
   return "Goedenavond! Hoe was je dag?"
 }
-
-function getCategoryIcon(category: string): string {
-  switch (category) {
-    case "SELF_CARE":
-      return "🌱"
-    case "ADMINISTRATION":
-      return "📄"
-    case "APPOINTMENTS":
-      return "📅"
-    case "SOCIAL":
-      return "👥"
-    case "HEALTH":
-      return "💊"
-    default:
-      return "📋"
-  }
-}
-
