@@ -423,7 +423,9 @@ Je testresultaten worden opgeslagen na inloggen.
 
 📱 Vul je telefoonnummer in als: +316... (met +31)
 
-${baseUrl}`,
+${baseUrl}
+
+_Typ 0 voor menu_`,
       }
     }
 
@@ -438,13 +440,15 @@ Je testresultaten worden opgeslagen na registratie.
 
 📱 Vul je telefoonnummer in als: +316... (met +31)
 
-${baseUrl}`,
+${baseUrl}
+
+_Typ 0 voor menu_`,
       }
     }
 
     // Ongeldige keuze
     return {
-      response: `💾 *Wil je dit resultaat bewaren?*\n\n1️⃣ Inloggen (ik heb al een account)\n2️⃣ Account aanmaken\n\n_Typ 1 of 2_`,
+      response: `💾 *Wil je dit resultaat bewaren?*\n\n1️⃣ Inloggen (ik heb al een account)\n2️⃣ Account aanmaken\n\n_Typ 1 of 2, of 0 voor menu_`,
     }
   }
 
@@ -1004,7 +1008,9 @@ Met een account bewaar ik je resultaten en geef ik persoonlijke tips.
 
 📱 Vul je telefoonnummer in als: +316... (met +31)
 
-${baseUrl}`
+${baseUrl}
+
+_Typ 0 voor menu_`
   }
 
   // 3. Inloggen
@@ -1016,7 +1022,9 @@ Na inloggen wordt je WhatsApp gekoppeld.
 
 📱 Vul je telefoonnummer in als: +316... (met +31)
 
-${baseUrl}`
+${baseUrl}
+
+_Typ 0 voor menu_`
   }
 
   // 4. Direct spreken

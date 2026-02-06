@@ -21,7 +21,6 @@ interface AddressSearchProps {
 interface Suggestion {
   weergavenaam: string
   straat: string
-  huisnummer: string
   woonplaats: string
   gemeente: string
 }

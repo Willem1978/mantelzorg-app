@@ -43,7 +43,6 @@ export default function RapportPage() {
     if (localResult) {
       try {
         const parsed = JSON.parse(localResult)
-        // Converteer lokale format naar API format
         setResult({
           voornaam: parsed.gegevens?.naam?.split(" ")[0] || "Jij",
           totaleBelastingScore: parsed.score || 0,
@@ -75,8 +74,6 @@ export default function RapportPage() {
         // Negeer parse errors
       }
     }
-
-    // Anders van API laden
     fetchResult()
   }, [])
 
@@ -141,9 +138,11 @@ export default function RapportPage() {
 
   if (!result) return null
 
-  const niveau = getNiveauInfo(result.belastingNiveau)
+  const niveau = result.belastingNiveau
   const geselecteerdeTaken = result.taakSelecties.filter((t) => t.isGeselecteerd)
-  const zwareTaken = geselecteerdeTaken.filter((t) => t.moeilijkheid === "ja" || t.moeilijkheid === "soms")
+  const zwareTaken = geselecteerdeTaken.filter((t) => t.moeilijkheid === "ja" || t.moeilijkheid === "JA")
+  const gemiddeldeTaken = geselecteerdeTaken.filter((t) => t.moeilijkheid === "soms" || t.moeilijkheid === "SOMS")
+  const takenMetAandacht = [...zwareTaken, ...gemiddeldeTaken]
 
   return (
     <div className="ker-page-content">
@@ -152,7 +151,7 @@ export default function RapportPage() {
         <GerAvatar size="md" />
         <div className="pt-1">
           <h1 className="text-xl font-bold text-foreground">
-            Hoi {result.voornaam}!
+            Hoi {result.voornaam}
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
             Rapport van {new Date(result.completedAt).toLocaleDateString("nl-NL", { day: "numeric", month: "long" })}
@@ -160,214 +159,312 @@ export default function RapportPage() {
         </div>
       </div>
 
-      {/* Score card */}
-      <div className={cn(
-        "ker-card mb-4 text-center",
-        niveau.kleur === "green" && "bg-[var(--accent-green-bg)]",
-        niveau.kleur === "amber" && "bg-[var(--accent-amber-bg)]",
-        niveau.kleur === "red" && "bg-[var(--accent-red-bg)]"
-      )}>
-        <div className={cn(
-          "w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center text-3xl font-bold text-white",
-          niveau.kleur === "green" && "bg-[var(--emoticon-green)]",
-          niveau.kleur === "amber" && "bg-[var(--emoticon-yellow)]",
-          niveau.kleur === "red" && "bg-[var(--emoticon-red)]"
-        )}>
-          {result.totaleBelastingScore}
-        </div>
-        <h2 className={cn(
-          "text-xl font-bold mb-2",
-          niveau.kleur === "green" && "text-[var(--accent-green)]",
-          niveau.kleur === "amber" && "text-[var(--accent-amber)]",
-          niveau.kleur === "red" && "text-[var(--accent-red)]"
-        )}>
-          {niveau.label}
-        </h2>
-        <p className="text-foreground">{niveau.beschrijving}</p>
-      </div>
-
-      {/* Alarmen */}
-      {result.alarmLogs.length > 0 && (
-        <div className="ker-card mb-4 bg-[var(--accent-red-bg)] border-2 border-[var(--accent-red)]">
-          <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-[var(--emoticon-red)] flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-bold">!</span>
-            </div>
-            <div>
-              <p className="font-bold text-[var(--accent-red)] mb-1">Let op!</p>
-              {result.alarmLogs.map((alarm, index) => (
-                <p key={index} className="text-sm text-[var(--accent-red)]">
-                  {alarm.beschrijving}
-                </p>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Zorgtijd */}
-      <div className="ker-card mb-4">
-        <div className="flex items-center justify-between">
-          <span className="text-muted-foreground">Zorgtijd per week</span>
-          <span className="text-2xl font-bold text-foreground">{result.totaleZorguren} uur</span>
-        </div>
-        {result.totaleZorguren > 40 && (
-          <div className="mt-3 p-3 bg-[var(--accent-red-bg)] rounded-xl">
-            <p className="text-[var(--accent-red)] text-sm">
-              Meer dan 40 uur per week is erg veel. Zoek hulp.
-            </p>
-          </div>
-        )}
-        {result.totaleZorguren > 20 && result.totaleZorguren <= 40 && (
-          <div className="mt-3 p-3 bg-[var(--accent-amber-bg)] rounded-xl">
-            <p className="text-[var(--accent-amber)] text-sm">
-              Dit is veel. Kijk of je wat taken kunt delen.
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Taken overzicht */}
-      {geselecteerdeTaken.length > 0 && (
-        <div className="ker-card mb-4">
-          <h3 className="font-bold text-foreground mb-3">Jouw zorgtaken</h3>
-          <div className="space-y-2">
-            {geselecteerdeTaken.map((taak) => (
-              <div key={taak.taakId} className="flex items-center justify-between p-3 bg-muted rounded-xl">
-                <div className="flex items-center gap-3">
-                  <div className={cn(
-                    "w-3 h-3 rounded-full",
-                    taak.moeilijkheid === "ja" ? "bg-[var(--emoticon-red)]" :
-                    taak.moeilijkheid === "soms" ? "bg-[var(--emoticon-yellow)]" : "bg-[var(--emoticon-green)]"
-                  )} />
-                  <span className="text-foreground text-sm">{taak.taakNaam}</span>
-                </div>
-                {taak.urenPerWeek && (
-                  <span className="text-muted-foreground text-sm">{taak.urenPerWeek} uur</span>
-                )}
+      {/* ============================================ */}
+      {/* HOOG NIVEAU - KRITIEKE ESCALATIE */}
+      {/* ============================================ */}
+      {niveau === "HOOG" && (
+        <>
+          {/* Urgente waarschuwing */}
+          <div className="ker-card mb-4 bg-[var(--accent-red-bg)] border-2 border-[var(--accent-red)]">
+            <div className="text-center mb-4">
+              <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center text-3xl font-bold text-white bg-[var(--emoticon-red)]">
+                {result.totaleBelastingScore}
               </div>
-            ))}
+              <h2 className="text-xl font-bold text-[var(--accent-red)] mb-2">
+                Je bent overbelast
+              </h2>
+              <p className="text-foreground">
+                Dit is niet vol te houden. Je hebt nu hulp nodig.
+              </p>
+            </div>
           </div>
-        </div>
-      )}
 
-      {/* Hulp bij zware taken */}
-      {zwareTaken.length > 0 && (
-        <div className="ker-card mb-4">
-          <h3 className="font-bold text-foreground mb-3">Hier kun je hulp bij krijgen</h3>
-          <div className="space-y-3">
-            {zwareTaken.map((taak) => (
-              <div key={taak.taakId} className="p-4 bg-[var(--primary-light)] rounded-xl">
-                <p className="font-medium text-foreground mb-1">{taak.taakNaam}</p>
-                <p className="text-sm text-muted-foreground">
-                  {getHulpTip(taak.taakId)}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Hulp vinden */}
-      <div className="ker-card mb-4">
-        <h3 className="font-bold text-foreground mb-3">
-          Hulp in {result.gemeente || "je buurt"}
-        </h3>
-        <div className="space-y-2">
-          <a
-            href="https://www.regelhulp.nl/thema/mantelzorg"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 p-3 border-2 border-border rounded-xl hover:border-primary/50 transition-colors"
-          >
-            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-primary-foreground">📋</span>
-            </div>
-            <div className="flex-1">
-              <p className="font-medium text-foreground text-sm">Regelhulp.nl</p>
-              <p className="text-xs text-muted-foreground">Hulp van de overheid</p>
-            </div>
-            <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </a>
-
-          <a
-            href="https://mantelzorg.nl/steunpunten"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 p-3 border-2 border-border rounded-xl hover:border-primary/50 transition-colors"
-          >
-            <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-primary-foreground">🤝</span>
-            </div>
-            <div className="flex-1">
-              <p className="font-medium text-foreground text-sm">Steunpunt Mantelzorg</p>
-              <p className="text-xs text-muted-foreground">Praat met iemand die het begrijpt</p>
-            </div>
-            <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </a>
-
-          {result.gemeente && (
-            <a
-              href={`https://www.google.com/search?q=WMO+loket+${encodeURIComponent(result.gemeente)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 p-3 border-2 border-border rounded-xl hover:border-primary/50 transition-colors"
-            >
-              <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-primary-foreground">🏛️</span>
-              </div>
-              <div className="flex-1">
-                <p className="font-medium text-foreground text-sm">WMO loket {result.gemeente}</p>
-                <p className="text-xs text-muted-foreground">Vraag ondersteuning aan</p>
-              </div>
-              <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </a>
-          )}
-        </div>
-      </div>
-
-      {/* Tips */}
-      <div className="ker-card mb-4 bg-muted">
-        <h3 className="font-bold text-foreground mb-3">Tips voor jou</h3>
-        <div className="space-y-3">
-          {result.belastingNiveau === "HOOG" && (
-            <div className="flex items-start gap-3">
+          {/* DIRECTE ACTIE - Prominent */}
+          <div className="ker-card mb-4 bg-white border-2 border-[var(--accent-red)]">
+            <h3 className="font-bold text-[var(--accent-red)] mb-4 flex items-center gap-2">
               <span className="text-xl">🚨</span>
-              <p className="text-sm text-foreground">
-                Neem contact op met je huisarts. Je hebt ondersteuning nodig.
-              </p>
-            </div>
-          )}
-          {result.belastingNiveau === "GEMIDDELD" && (
-            <div className="flex items-start gap-3">
-              <span className="text-xl">⏰</span>
-              <p className="text-sm text-foreground">
-                Plan elke dag iets leuks voor jezelf, al is het maar 15 minuten.
-              </p>
-            </div>
-          )}
-          <div className="flex items-start gap-3">
-            <span className="text-xl">💡</span>
-            <p className="text-sm text-foreground">
-              Vraag familie of vrienden om een taak over te nemen.
-            </p>
-          </div>
-          <div className="flex items-start gap-3">
-            <span className="text-xl">💜</span>
-            <p className="text-sm text-foreground">
-              Je doet het goed. Vergeet niet om ook voor jezelf te zorgen.
-            </p>
-          </div>
-        </div>
-      </div>
+              Dit moet je nu doen
+            </h3>
 
-      {/* Opnieuw doen */}
+            <div className="space-y-3">
+              {/* Huisarts */}
+              <a
+                href="tel:"
+                className="flex items-center gap-4 p-4 bg-[var(--accent-red-bg)] rounded-xl hover:bg-red-100 transition-colors"
+              >
+                <div className="w-12 h-12 bg-[var(--emoticon-red)] rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-white text-xl">🏥</span>
+                </div>
+                <div className="flex-1">
+                  <p className="font-bold text-foreground">Bel je huisarts</p>
+                  <p className="text-sm text-muted-foreground">
+                    Maak een afspraak om je situatie te bespreken
+                  </p>
+                </div>
+              </a>
+
+              {/* Gemeente mantelzorgondersteuner */}
+              <a
+                href={result.gemeente ? `https://www.google.com/search?q=mantelzorgondersteuning+${encodeURIComponent(result.gemeente)}` : "https://mantelzorg.nl/steunpunten"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-4 p-4 bg-[var(--accent-red-bg)] rounded-xl hover:bg-red-100 transition-colors"
+              >
+                <div className="w-12 h-12 bg-[var(--emoticon-red)] rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-white text-xl">🏛️</span>
+                </div>
+                <div className="flex-1">
+                  <p className="font-bold text-foreground">
+                    Mantelzorgondersteuner {result.gemeente || "gemeente"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Gratis hulp vanuit je gemeente
+                  </p>
+                </div>
+              </a>
+
+              {/* Mantelzorglijn */}
+              <a
+                href="tel:0307606055"
+                className="flex items-center gap-4 p-4 bg-[var(--accent-red-bg)] rounded-xl hover:bg-red-100 transition-colors"
+              >
+                <div className="w-12 h-12 bg-[var(--emoticon-red)] rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-white text-xl">📞</span>
+                </div>
+                <div className="flex-1">
+                  <p className="font-bold text-foreground">Mantelzorglijn</p>
+                  <p className="text-sm text-muted-foreground">
+                    030 - 760 60 55 (ma-vr 9-17u)
+                  </p>
+                </div>
+              </a>
+            </div>
+          </div>
+
+          {/* Taken waar hulp bij nodig is */}
+          {takenMetAandacht.length > 0 && (
+            <div className="ker-card mb-4">
+              <h3 className="font-bold text-foreground mb-3">
+                Deze taken moet je loslaten
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Je besteedt {result.totaleZorguren} uur per week aan zorgtaken. Dat is te veel.
+              </p>
+              <div className="space-y-2">
+                {takenMetAandacht.map((taak) => (
+                  <div key={taak.taakId} className="flex items-center justify-between p-3 bg-[var(--accent-red-bg)] rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "w-3 h-3 rounded-full",
+                        (taak.moeilijkheid === "ja" || taak.moeilijkheid === "JA") ? "bg-[var(--emoticon-red)]" : "bg-[var(--emoticon-yellow)]"
+                      )} />
+                      <span className="text-foreground text-sm">{taak.taakNaam}</span>
+                    </div>
+                    {taak.urenPerWeek && (
+                      <span className="text-muted-foreground text-sm">{taak.urenPerWeek} uur</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <p className="text-sm text-[var(--accent-red)] mt-4 font-medium">
+                Bespreek met de huisarts of mantelzorgondersteuner hoe je deze taken kunt overdragen.
+              </p>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ============================================ */}
+      {/* GEMIDDELD NIVEAU - FOCUS OP TAKEN */}
+      {/* ============================================ */}
+      {niveau === "GEMIDDELD" && (
+        <>
+          {/* Score card */}
+          <div className="ker-card mb-4 bg-[var(--accent-amber-bg)] text-center">
+            <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center text-3xl font-bold text-white bg-[var(--emoticon-yellow)]">
+              {result.totaleBelastingScore}
+            </div>
+            <h2 className="text-xl font-bold text-[var(--accent-amber)] mb-2">
+              Je balans staat onder druk
+            </h2>
+            <p className="text-foreground">
+              Zo doorgaan is niet houdbaar. Kijk welke taken je kunt overdragen.
+            </p>
+          </div>
+
+          {/* Zorgtijd waarschuwing */}
+          {result.totaleZorguren > 20 && (
+            <div className="ker-card mb-4 bg-[var(--accent-amber-bg)] border-l-4 border-[var(--accent-amber)]">
+              <p className="text-foreground">
+                <strong>{result.totaleZorguren} uur per week</strong> is veel.
+                Probeer taken te delen met anderen.
+              </p>
+            </div>
+          )}
+
+          {/* Taken die aandacht nodig hebben */}
+          {takenMetAandacht.length > 0 && (
+            <div className="ker-card mb-4">
+              <h3 className="font-bold text-foreground mb-3">
+                Hier kun je hulp bij krijgen
+              </h3>
+              <div className="space-y-3">
+                {takenMetAandacht.map((taak) => (
+                  <div key={taak.taakId} className="p-4 bg-muted rounded-xl">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className={cn(
+                        "w-3 h-3 rounded-full",
+                        (taak.moeilijkheid === "ja" || taak.moeilijkheid === "JA") ? "bg-[var(--emoticon-red)]" : "bg-[var(--emoticon-yellow)]"
+                      )} />
+                      <span className="font-medium text-foreground">{taak.taakNaam}</span>
+                      {taak.urenPerWeek && (
+                        <span className="text-muted-foreground text-sm ml-auto">{taak.urenPerWeek} uur/week</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground pl-6">
+                      {getHulpTip(taak.taakId)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Hulp zoeken */}
+          <div className="ker-card mb-4">
+            <h3 className="font-bold text-foreground mb-3">Vind hulp</h3>
+            <div className="space-y-2">
+              <a
+                href={result.gemeente ? `https://www.google.com/search?q=mantelzorgondersteuning+${encodeURIComponent(result.gemeente)}` : "https://mantelzorg.nl/steunpunten"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 p-3 border-2 border-border rounded-xl hover:border-primary/50 transition-colors"
+              >
+                <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="text-primary-foreground">🤝</span>
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-foreground text-sm">Steunpunt Mantelzorg</p>
+                  <p className="text-xs text-muted-foreground">Gratis advies en ondersteuning</p>
+                </div>
+              </a>
+
+              {result.gemeente && (
+                <a
+                  href={`https://www.google.com/search?q=WMO+loket+${encodeURIComponent(result.gemeente)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 border-2 border-border rounded-xl hover:border-primary/50 transition-colors"
+                >
+                  <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-primary-foreground">🏛️</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-foreground text-sm">WMO loket {result.gemeente}</p>
+                    <p className="text-xs text-muted-foreground">Vraag hulp aan bij de gemeente</p>
+                  </div>
+                </a>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ============================================ */}
+      {/* LAAG NIVEAU - POSITIEF, PREVENTIEF */}
+      {/* ============================================ */}
+      {niveau === "LAAG" && (
+        <>
+          {/* Score card - positief */}
+          <div className="ker-card mb-4 bg-[var(--accent-green-bg)] text-center">
+            <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center text-3xl font-bold text-white bg-[var(--emoticon-green)]">
+              {result.totaleBelastingScore}
+            </div>
+            <h2 className="text-xl font-bold text-[var(--accent-green)] mb-2">
+              Goed bezig!
+            </h2>
+            <p className="text-foreground">
+              Je hebt een goede balans. Blijf goed voor jezelf zorgen.
+            </p>
+          </div>
+
+          {/* Alleen zware taken tonen als die er zijn */}
+          {zwareTaken.length > 0 && (
+            <div className="ker-card mb-4 border-l-4 border-[var(--accent-amber)]">
+              <h3 className="font-bold text-foreground mb-3">
+                Let op deze {zwareTaken.length === 1 ? "taak" : "taken"}
+              </h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Je ervaart {zwareTaken.length === 1 ? "deze taak" : "deze taken"} als zwaar. Hier kun je hulp bij krijgen:
+              </p>
+              <div className="space-y-3">
+                {zwareTaken.map((taak) => (
+                  <div key={taak.taakId} className="p-4 bg-muted rounded-xl">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-3 h-3 rounded-full bg-[var(--emoticon-red)]" />
+                      <span className="font-medium text-foreground">{taak.taakNaam}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground pl-6">
+                      {getHulpTip(taak.taakId)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Overzicht taken (compact) */}
+          {geselecteerdeTaken.length > 0 && (
+            <div className="ker-card mb-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-bold text-foreground">Jouw zorgtaken</h3>
+                <span className="text-sm text-muted-foreground">{result.totaleZorguren} uur/week</span>
+              </div>
+              <div className="space-y-2">
+                {geselecteerdeTaken.map((taak) => (
+                  <div key={taak.taakId} className="flex items-center justify-between p-2 bg-muted rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <div className={cn(
+                        "w-2 h-2 rounded-full",
+                        (taak.moeilijkheid === "ja" || taak.moeilijkheid === "JA") ? "bg-[var(--emoticon-red)]" :
+                        (taak.moeilijkheid === "soms" || taak.moeilijkheid === "SOMS") ? "bg-[var(--emoticon-yellow)]" : "bg-[var(--emoticon-green)]"
+                      )} />
+                      <span className="text-foreground text-sm">{taak.taakNaam}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tips om balans te houden */}
+          <div className="ker-card mb-4 bg-muted">
+            <h3 className="font-bold text-foreground mb-3">Houd je balans vast</h3>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <span className="text-xl">💚</span>
+                <p className="text-sm text-foreground">
+                  Plan elke dag iets leuks voor jezelf
+                </p>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-xl">🔄</span>
+                <p className="text-sm text-foreground">
+                  Doe deze test elke 3 maanden om je balans te checken
+                </p>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-xl">🤝</span>
+                <p className="text-sm text-foreground">
+                  Vraag hulp voordat je het nodig hebt
+                </p>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Opnieuw doen - altijd tonen */}
       <Link
         href="/belastbaarheidstest"
         className="ker-btn ker-btn-secondary w-full flex items-center justify-center gap-2"
@@ -389,19 +486,6 @@ function getBelastingNiveau(score: number): "LAAG" | "GEMIDDELD" | "HOOG" {
   return "HOOG"
 }
 
-function getNiveauInfo(niveau: string) {
-  switch (niveau) {
-    case "LAAG":
-      return { label: "Lage belasting", kleur: "green", beschrijving: "Je bent goed in balans" }
-    case "GEMIDDELD":
-      return { label: "Gemiddelde belasting", kleur: "amber", beschrijving: "Let op jezelf" }
-    case "HOOG":
-      return { label: "Hoge belasting", kleur: "red", beschrijving: "Je hebt hulp nodig" }
-    default:
-      return { label: "Onbekend", kleur: "gray", beschrijving: "" }
-  }
-}
-
 function getVraagTekst(vraagId: string): string {
   const vragen: Record<string, string> = {
     q1: "Slaap je minder goed door de zorg?",
@@ -421,15 +505,15 @@ function getVraagTekst(vraagId: string): string {
 
 function getTaakNaam(taakId: string): string {
   const taken: Record<string, string> = {
-    t1: "Administratie en geldzaken",
-    t2: "Regelen en afspraken maken",
-    t3: "Boodschappen doen",
-    t4: "Bezoek en gezelschap",
-    t5: "Vervoer naar afspraken",
-    t6: "Persoonlijke verzorging",
-    t7: "Eten en drinken",
-    t8: "Huishouden",
-    t9: "Klusjes in en om huis",
+    t1: "Persoonlijke verzorging",
+    t2: "Huishoudelijke taken",
+    t3: "Medicijnen",
+    t4: "Vervoer",
+    t5: "Administratie",
+    t6: "Gezelschap",
+    t7: "Toezicht",
+    t8: "Medische zorg",
+    t9: "Klusjes",
   }
   return taken[taakId] || taakId
 }
@@ -454,15 +538,15 @@ function getUrenGetal(uren: string): number | null {
 
 function getHulpTip(taakId: string): string {
   const tips: Record<string, string> = {
-    t1: "Vraag bij je gemeente naar ondersteuning bij administratie.",
-    t2: "Een casemanager kan helpen met het regelen van zorg.",
-    t3: "Er zijn vrijwilligers die boodschappen kunnen doen.",
-    t4: "Vraag naar dagbesteding of vrijwilligers voor bezoek.",
-    t5: "De gemeente kan vervoer regelen naar afspraken.",
-    t6: "Thuiszorg kan helpen met persoonlijke verzorging.",
-    t7: "Maaltijdservice kan helpen met eten maken.",
-    t8: "Huishoudelijke hulp kun je aanvragen via de gemeente.",
-    t9: "Vrijwilligers kunnen helpen met klusjes.",
+    t1: "Thuiszorg kan helpen met wassen, aankleden en andere persoonlijke verzorging.",
+    t2: "Huishoudelijke hulp kun je aanvragen via de WMO van je gemeente.",
+    t3: "Een apotheek kan medicijnen in weekdozen klaarzetten. Thuiszorg kan toezien op inname.",
+    t4: "De gemeente kan aangepast vervoer regelen (Regiotaxi, WMO-vervoer).",
+    t5: "Vraag bij je gemeente naar vrijwillige hulp bij administratie en formulieren.",
+    t6: "Dagbesteding of vrijwilligers kunnen voor gezelschap zorgen.",
+    t7: "Respijtzorg of dagopvang kan toezicht overnemen zodat jij even rust hebt.",
+    t8: "Thuiszorg of wijkverpleging kan medische handelingen overnemen.",
+    t9: "Vrijwilligers of een klussenbus kunnen helpen met klussen in huis.",
   }
   return tips[taakId] || "Vraag bij je gemeente naar hulpmogelijkheden."
 }
