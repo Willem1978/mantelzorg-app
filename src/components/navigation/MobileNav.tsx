@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { cn } from "@/lib/utils"
 
 // B1 taalgebruik - simpele, duidelijke woorden
@@ -58,26 +58,28 @@ const navItems = [
 export function MobileNav() {
   const pathname = usePathname()
   const [zwareTakenCount, setZwareTakenCount] = useState(0)
+  const hasFetched = useRef(false)
 
   useEffect(() => {
-    // Haal aantal zware taken op voor badge
-    const fetchZwareTaken = async () => {
+    // Alleen ophalen bij eerste mount, niet bij elke route change
+    if (hasFetched.current) return
+    hasFetched.current = true
+
+    const fetchBadgeCount = async () => {
       try {
-        const res = await fetch("/api/dashboard")
+        // Gebruik lichtgewicht endpoint
+        const res = await fetch("/api/nav-badge")
         if (res.ok) {
           const data = await res.json()
-          const zwareTaken = data.test?.zorgtaken?.filter(
-            (t: any) => t.moeilijkheid === 'JA' || t.moeilijkheid === 'SOMS'
-          ) || []
-          setZwareTakenCount(zwareTaken.length)
+          setZwareTakenCount(data.count || 0)
         }
       } catch (error) {
         // Silently fail
       }
     }
 
-    fetchZwareTaken()
-  }, [pathname]) // Re-fetch when route changes
+    fetchBadgeCount()
+  }, [])
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden safe-area-inset-bottom">
