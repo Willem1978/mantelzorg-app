@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
@@ -109,16 +110,38 @@ const TAAK_NAAR_CATEGORIE: Record<string, string> = {
   'Klusjes': 'Klusjes in en om het huis',
 }
 
+// Wrapper component voor Suspense boundary
 export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="ker-page-content flex items-center justify-center min-h-[50vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
+  )
+}
+
+function DashboardContent() {
   const { data: session } = useSession()
+  const searchParams = useSearchParams()
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [userName, setUserName] = useState("daar")
 
+  // Check of we van de test komen (dan forceren we refresh)
+  const fromTest = searchParams.get("from") === "test"
+
   useEffect(() => {
     const loadDashboard = async () => {
       try {
-        const res = await fetch("/api/dashboard")
+        // Cache busting wanneer we van test komen
+        const url = fromTest ? `/api/dashboard?t=${Date.now()}` : "/api/dashboard"
+        const res = await fetch(url, {
+          // Forceer vers ophalen wanneer van test
+          cache: fromTest ? "no-store" : "default"
+        })
         if (res.ok) {
           const dashboardData = await res.json()
           setData(dashboardData)
@@ -138,7 +161,7 @@ export default function DashboardPage() {
     } else {
       setLoading(false)
     }
-  }, [session])
+  }, [session, fromTest])
 
   if (loading) {
     return (
