@@ -49,15 +49,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         // Koppel WhatsApp telefoonnummer aan Caregiver profiel als meegegeven
+        console.log("Login attempt - phoneNumber:", credentials.phoneNumber, "caregiver:", user.caregiver?.id)
         if (credentials.phoneNumber && user.caregiver) {
           try {
+            console.log("Linking phone number:", credentials.phoneNumber, "to caregiver:", user.caregiver.id)
             await prisma.caregiver.update({
               where: { id: user.caregiver.id },
               data: { phoneNumber: credentials.phoneNumber as string },
             })
+            console.log("Phone number linked successfully")
           } catch (error) {
             console.error("Failed to link phone number:", error)
           }
+        } else {
+          console.log("Not linking - phoneNumber:", !!credentials.phoneNumber, "caregiver:", !!user.caregiver)
         }
 
         return {
