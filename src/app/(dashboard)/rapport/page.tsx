@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -47,12 +48,19 @@ interface TestResult {
 }
 
 export default function RapportPage() {
+  const { data: session } = useSession()
   const [result, setResult] = useState<TestResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
   useEffect(() => {
-    // Probeer eerst van localStorage te laden
+    // Voor ingelogde gebruikers: altijd van database laden
+    if (session?.user) {
+      fetchResult()
+      return
+    }
+
+    // Voor niet-ingelogde gebruikers: probeer localStorage
     const localResult = localStorage.getItem("belastbaarheidstest_result")
     if (localResult) {
       try {
@@ -88,12 +96,19 @@ export default function RapportPage() {
         // Negeer parse errors
       }
     }
+
+    // Fallback: probeer toch van API
     fetchResult()
-  }, [])
+  }, [session])
 
   const fetchResult = async () => {
     try {
-      const response = await fetch("/api/belastbaarheidstest")
+      // Cache busting om altijd verse data te krijgen
+      const timestamp = Date.now()
+      const response = await fetch(`/api/belastbaarheidstest?t=${timestamp}`, {
+        cache: "no-store",
+        headers: { 'Cache-Control': 'no-cache' }
+      })
       if (!response.ok) {
         if (response.status === 404) {
           setError("Je hebt nog geen test gedaan.")
