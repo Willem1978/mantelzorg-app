@@ -404,6 +404,8 @@ export default function BelastbaarheidstestPage() {
           registratie: {
             voornaam: session?.user?.name || "",
             email: session?.user?.email || "",
+            postcode: "",
+            huisnummer: "",
             woonplaats: "",
             gemeente: "",
             woonplaatsNaaste: "",
@@ -462,6 +464,8 @@ export default function BelastbaarheidstestPage() {
           registratie: {
             voornaam: gegevens.naam,
             email: gegevens.email,
+            postcode: "",
+            huisnummer: "",
             woonplaats: gegevens.mantelzorgerStraat?.woonplaats || "",
             gemeente: gegevens.mantelzorgerStraat?.gemeente || "",
             woonplaatsNaaste: gegevens.zorgvragerStraat?.woonplaats || "",

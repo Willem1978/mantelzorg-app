@@ -299,8 +299,8 @@ model BelastbaarheidTest {
   caregiverId          String?
   voornaam             String
   email                String
-  postcode             String
-  huisnummer           String
+  postcode             String?
+  huisnummer           String?
   straat               String?
   woonplaats           String?
   gemeente             String?

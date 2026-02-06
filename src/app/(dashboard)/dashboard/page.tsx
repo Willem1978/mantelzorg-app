@@ -124,7 +124,7 @@ export default function DashboardPage() {
 }
 
 function DashboardContent() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const searchParams = useSearchParams()
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -134,6 +134,11 @@ function DashboardContent() {
   const fromTest = searchParams.get("from") === "test"
 
   useEffect(() => {
+    // Wacht tot sessie geladen is
+    if (status === "loading") {
+      return
+    }
+
     const loadDashboard = async () => {
       try {
         // Altijd cache busting - verse data ophalen
@@ -161,12 +166,12 @@ function DashboardContent() {
       }
     }
 
-    if (session?.user) {
+    if (status === "authenticated" && session?.user) {
       loadDashboard()
     } else {
       setLoading(false)
     }
-  }, [session, fromTest])
+  }, [session, status, fromTest])
 
   if (loading) {
     return (
@@ -188,6 +193,17 @@ function DashboardContent() {
   // Genereer aanbevolen acties
   const getAanbevolenActies = () => {
     const acties: { icon: string; titel: string; beschrijving: string; href: string; prioriteit: number }[] = []
+
+    // Actie 0: Nog geen test gedaan - ALTIJD EERSTE
+    if (!data?.test?.hasTest) {
+      acties.push({
+        icon: "📊",
+        titel: "Doe de Balanstest",
+        beschrijving: "Ontdek hoe het met je gaat",
+        href: "/belastbaarheidstest",
+        prioriteit: 0
+      })
+    }
 
     // Actie 1: Bij hoge belasting - bel mantelzorglijn
     if (data?.test?.niveau === "HOOG") {
@@ -254,8 +270,8 @@ function DashboardContent() {
       })
     }
 
-    // Actie 7: Kwartaal test
-    if (data?.test?.needsNewTest) {
+    // Actie 7: Kwartaal test (alleen als er al een test is)
+    if (data?.test?.hasTest && data?.test?.needsNewTest) {
       acties.push({
         icon: "📊",
         titel: "Doe je kwartaal check",
@@ -389,7 +405,42 @@ function DashboardContent() {
         </section>
       )}
 
-      {/* SECTIE 2: Je Zorgtaken met Hulp */}
+      {/* SECTIE 2: Jouw Eerste 3 Acties */}
+      {aanbevolenActies.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+            <span className="text-2xl">🎯</span> Jouw Eerste Stappen
+          </h2>
+
+          <div className="space-y-3">
+            {aanbevolenActies.map((actie, i) => (
+              <Link key={i} href={actie.href} className="block">
+                <div className="ker-card hover:border-primary/50 transition-all">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-2xl">{actie.icon}</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center">
+                          {i + 1}
+                        </span>
+                        <h3 className="font-semibold">{actie.titel}</h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">{actie.beschrijving}</p>
+                    </div>
+                    <svg className="w-5 h-5 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* SECTIE 3: Je Zorgtaken met Hulp */}
       {data?.test?.zorgtaken && data.test.zorgtaken.length > 0 && (
         <section className="mb-8">
           <div className="flex items-center justify-between mb-4">
@@ -476,41 +527,6 @@ function DashboardContent() {
                 </div>
               </div>
             )}
-          </div>
-        </section>
-      )}
-
-      {/* SECTIE 3: Jouw Eerste 3 Acties */}
-      {aanbevolenActies.length > 0 && (
-        <section className="mb-8">
-          <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-            <span className="text-2xl">🎯</span> Jouw Eerste Stappen
-          </h2>
-
-          <div className="space-y-3">
-            {aanbevolenActies.map((actie, i) => (
-              <Link key={i} href={actie.href} className="block">
-                <div className="ker-card hover:border-primary/50 transition-all">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-2xl">{actie.icon}</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center">
-                          {i + 1}
-                        </span>
-                        <h3 className="font-semibold">{actie.titel}</h3>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">{actie.beschrijving}</p>
-                    </div>
-                    <svg className="w-5 h-5 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </div>
-              </Link>
-            ))}
           </div>
         </section>
       )}

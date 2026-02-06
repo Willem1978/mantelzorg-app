@@ -36,8 +36,8 @@ export async function POST(request: Request) {
         // Registratie gegevens
         voornaam: registratie.voornaam,
         email: registratie.email,
-        postcode: registratie.postcode,
-        huisnummer: registratie.huisnummer,
+        postcode: registratie.postcode || null,
+        huisnummer: registratie.huisnummer || null,
         straat: registratie.straat || null,
         woonplaats: registratie.woonplaats || null,
         gemeente: registratie.gemeente || null,

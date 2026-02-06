@@ -48,19 +48,24 @@ interface TestResult {
 }
 
 export default function RapportPage() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const [result, setResult] = useState<TestResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
   useEffect(() => {
+    // Wacht tot sessie geladen is
+    if (status === "loading") {
+      return
+    }
+
     // Voor ingelogde gebruikers: altijd van database laden
-    if (session?.user) {
+    if (status === "authenticated" && session?.user) {
       fetchResult()
       return
     }
 
-    // Voor niet-ingelogde gebruikers: probeer localStorage
+    // Voor niet-ingelogde gebruikers (status === "unauthenticated"): probeer localStorage
     const localResult = localStorage.getItem("belastbaarheidstest_result")
     if (localResult) {
       try {
@@ -97,9 +102,9 @@ export default function RapportPage() {
       }
     }
 
-    // Fallback: probeer toch van API
+    // Fallback: probeer toch van API (voor niet-ingelogde gebruikers zonder localStorage)
     fetchResult()
-  }, [session])
+  }, [session, status])
 
   const fetchResult = async () => {
     try {
