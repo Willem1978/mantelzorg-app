@@ -324,7 +324,7 @@ function RegisterWhatsAppForm() {
               </p>
 
               <Link
-                href={`/login?phone=${encodeURIComponent(phoneNumber)}`}
+                href={`/login-whatsapp?phone=${encodeURIComponent(phoneNumber)}`}
                 className="ker-btn ker-btn-primary w-full block text-center"
               >
                 Inloggen
@@ -736,7 +736,7 @@ function RegisterWhatsAppForm() {
             <div className="mt-6 pt-6 border-t border-border text-center">
               <p className="text-muted-foreground">
                 Heb je al een account?{" "}
-                <Link href={`/login?phone=${encodeURIComponent(phoneNumber)}`} className="text-primary font-medium hover:underline">
+                <Link href={`/login-whatsapp?phone=${encodeURIComponent(phoneNumber)}`} className="text-primary font-medium hover:underline">
                   Log in
                 </Link>
               </p>

@@ -400,8 +400,8 @@ async function handleOnboardingSession(
     const num = parseInt(command)
 
     if (num === 1) {
-      // Inloggen - stuur naar login pagina met telefoonnummer
-      const loginUrl = `${process.env.NEXTAUTH_URL}/login?phone=${encodeURIComponent(stripWhatsAppPrefix(phoneNumber))}`
+      // Inloggen - stuur naar WhatsApp login pagina
+      const loginUrl = `${process.env.NEXTAUTH_URL}/login-whatsapp?phone=${encodeURIComponent(stripWhatsAppPrefix(phoneNumber))}`
       clearOnboardingSession(phoneNumber)
       return {
         response: `🔑 *Inloggen*\n\nOpen de link hieronder om in te loggen:\n\n🔗 ${loginUrl}\n\n_Na het inloggen wordt je WhatsApp automatisch gekoppeld en worden je testresultaten opgeslagen._`,
@@ -976,9 +976,9 @@ function handleGuestMenu(phoneNumber: string, input: string): string {
     return `✨ *Account aanmaken*\n\nMet een account kan ik je beter helpen:\n• Je testresultaten worden bewaard\n• Je krijgt persoonlijke tips\n• Hulp afgestemd op jouw situatie\n\n🔗 *Maak je account aan:*\n${registerUrl}\n\n_Klik op de link hierboven_`
   }
 
-  // 3. Inloggen - link naar browser
+  // 3. Inloggen - link naar WhatsApp login pagina
   if (command === '3' || command === 'inloggen' || command === 'login') {
-    const loginUrl = `${process.env.NEXTAUTH_URL}/login?phone=${encodeURIComponent(stripWhatsAppPrefix(phoneNumber))}`
+    const loginUrl = `${process.env.NEXTAUTH_URL}/login-whatsapp?phone=${encodeURIComponent(stripWhatsAppPrefix(phoneNumber))}`
     return `🔑 *Inloggen*\n\nFijn om je weer te zien!\n\n🔗 *Log in op je account:*\n${loginUrl}\n\n_Klik op de link hierboven_\n\nNa het inloggen wordt je WhatsApp automatisch gekoppeld.`
   }
 
