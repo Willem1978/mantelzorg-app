@@ -140,30 +140,35 @@ const hulpSessions = new Map<string, HulpSession>()
 // CONSTANTEN
 // ===========================================
 
-// Zorgtaken die mantelzorgers kunnen uitvoeren
+// Zorgtaken die mantelzorgers kunnen uitvoeren - uit Excel "Onderdeel mantelzorgtest"
 export const ZORGTAKEN = [
-  { id: 't1', naam: 'Persoonlijke verzorging', beschrijving: 'Wassen, aankleden, naar toilet' },
-  { id: 't2', naam: 'Huishouden', beschrijving: 'Schoonmaken, koken, boodschappen' },
-  { id: 't3', naam: 'Medicijnen', beschrijving: 'Medicijnen klaarzetten of toedienen' },
-  { id: 't4', naam: 'Vervoer', beschrijving: 'Naar afspraken brengen' },
-  { id: 't5', naam: 'Administratie', beschrijving: 'Post, rekeningen, formulieren' },
-  { id: 't6', naam: 'Emotionele steun', beschrijving: 'Luisteren, gezelschap, troosten' },
-  { id: 't7', naam: 'Toezicht', beschrijving: 'In de gaten houden, aanwezig zijn' },
-  { id: 't8', naam: 'Medische zorg', beschrijving: 'Wondverzorging, sonde, katheter' },
+  { id: 't1', naam: 'Persoonlijke verzorging', beschrijving: 'Wassen, aankleden, naar toilet', dbValue: 'Persoonlijke verzorging' },
+  { id: 't2', naam: 'Huishoudelijke taken', beschrijving: 'Schoonmaken, opruimen', dbValue: 'Huishoudelijke taken' },
+  { id: 't3', naam: 'Maaltijden', beschrijving: 'Koken, eten bereiden', dbValue: 'Bereiden en/of nuttigen van maaltijden' },
+  { id: 't4', naam: 'Boodschappen', beschrijving: 'Boodschappen doen', dbValue: 'Boodschappen' },
+  { id: 't5', naam: 'Administratie', beschrijving: 'Post, rekeningen, formulieren', dbValue: 'Administratie en aanvragen' },
+  { id: 't6', naam: 'Vervoer', beschrijving: 'Brengen, halen, begeleiden', dbValue: 'Vervoer' },
+  { id: 't7', naam: 'Sociaal contact', beschrijving: 'Gezelschap, uitjes, activiteiten', dbValue: 'Sociaal contact en activiteiten' },
+  { id: 't8', naam: 'Klusjes', beschrijving: 'Klusjes in en om het huis', dbValue: 'Klusjes in en om het huis' },
+  { id: 't9', naam: 'Plannen & organiseren', beschrijving: 'Afspraken, planning', dbValue: 'Plannen en organiseren' },
+  { id: 't10', naam: 'Huisdieren', beschrijving: 'Verzorging huisdieren', dbValue: 'Huisdieren' },
 ]
 
+// Uren opties per week - zoals in screenshot
 export const UREN_OPTIES = [
-  { id: 'u1', label: '< 8 uur', waarde: 4 },
-  { id: 'u2', label: '8-20 uur', waarde: 14 },
-  { id: 'u3', label: '20-40 uur', waarde: 30 },
-  { id: 'u4', label: '> 40 uur', waarde: 50 },
+  { id: 'u1', label: 'Tot 2 uur per week', waarde: 1 },
+  { id: 'u2', label: '2 tot 4 uur per week', waarde: 3 },
+  { id: 'u3', label: '4 tot 8 uur per week', waarde: 6 },
+  { id: 'u4', label: '8 tot 12 uur per week', waarde: 10 },
+  { id: 'u5', label: '12 tot 24 uur per week', waarde: 18 },
+  { id: 'u6', label: 'Meer dan 24 uur per week', waarde: 30 },
 ]
 
+// Moeilijkheid opties - NEE/SOMS/JA zoals in screenshot
 export const MOEILIJKHEID_OPTIES = [
-  { id: 'm1', label: 'Makkelijk', emoji: '🟢', waarde: 'MAKKELIJK' },
-  { id: 'm2', label: 'Gaat wel', emoji: '🟡', waarde: 'GEMIDDELD' },
-  { id: 'm3', label: 'Moeilijk', emoji: '🟠', waarde: 'MOEILIJK' },
-  { id: 'm4', label: 'Zeer zwaar', emoji: '🔴', waarde: 'ZEER_MOEILIJK' },
+  { id: 'm1', label: 'Nee', emoji: '🟢', waarde: 'NEE' },
+  { id: 'm2', label: 'Soms', emoji: '🟡', waarde: 'SOMS' },
+  { id: 'm3', label: 'Ja', emoji: '🔴', waarde: 'JA' },
 ]
 
 export const RELATIE_OPTIES = [

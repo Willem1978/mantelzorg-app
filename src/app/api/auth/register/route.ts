@@ -6,8 +6,10 @@ import { prisma } from "@/lib/prisma"
 export const dynamic = 'force-dynamic'
 
 interface RegisterBody {
+  name?: string
   email: string
   password: string
+  phoneNumber?: string  // Voor WhatsApp koppeling
   municipality: {
     code: string
     name: string
@@ -72,18 +74,20 @@ export async function POST(request: NextRequest) {
       const user = await tx.user.create({
         data: {
           email: body.email,
+          name: body.name || null,
           password: passwordHash,
           role: "CAREGIVER",
         }
       })
 
-      // Create caregiver profile with municipality info
+      // Create caregiver profile with municipality info and optional phone
       // Note: We only store municipality, not exact address (AVG-compliant)
       const caregiver = await tx.caregiver.create({
         data: {
           userId: user.id,
+          phoneNumber: body.phoneNumber || null,  // WhatsApp koppeling
           city: body.municipality.name,
-          // We could add a separate field for municipality code if needed
+          municipality: body.municipality.name,  // Store municipality name
           intakeCompleted: false,
         }
       })

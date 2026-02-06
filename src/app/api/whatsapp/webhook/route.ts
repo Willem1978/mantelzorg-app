@@ -245,7 +245,8 @@ async function handleTestSession(
         const taskId = updatedSession.selectedTasks[taskIndex]
         const taak = ZORGTAKEN.find((t) => t.id === taskId)
 
-        let response = `📋 *${taak?.naam}*\n\nHoe zwaar vind je deze taak?\n\n`
+        // Vraag zoals in screenshot: "Vind je X een zware taak?"
+        let response = `📋 *Vind je ${taak?.beschrijving?.toLowerCase() || taak?.naam?.toLowerCase()} een zware taak?*\n\n`
         MOEILIJKHEID_OPTIES.forEach((optie, i) => {
           response += `${optie.emoji} ${i + 1}. ${optie.label}\n`
         })
@@ -1097,16 +1098,16 @@ function handleGuestMenu(phoneNumber: string, input: string): string {
     return `📊 *Mantelzorg Balanstest*\n\nSuper dat je even stilstaat bij hoe het met jou gaat! 💚\n\nIk stel je 12 korte vragen. Beantwoord ze eerlijk - er zijn geen goede of foute antwoorden.\n\n*Vraag 1/12*\n\n${firstQuestion?.vraag}\n\n🔴 Ja\n🟠 Soms\n🟢 Nee\n\n_Typ je antwoord_`
   }
 
-  // 2. Account aanmaken
+  // 2. Account aanmaken - link naar browser
   if (command === '2' || command === 'account' || command === 'nieuw') {
-    startOnboardingSession(phoneNumber, 'register_name')
-    return `✨ *Welkom! Leuk dat je een account wilt maken.*\n\nMet een account kan ik je beter helpen:\n• Je testresultaten worden bewaard\n• Je krijgt persoonlijke tips\n• Hulp afgestemd op jouw situatie\n\n👤 Wat is je naam?`
+    const registerUrl = `${process.env.NEXTAUTH_URL}/register-whatsapp?phone=${encodeURIComponent(phoneNumber)}`
+    return `✨ *Account aanmaken*\n\nMet een account kan ik je beter helpen:\n• Je testresultaten worden bewaard\n• Je krijgt persoonlijke tips\n• Hulp afgestemd op jouw situatie\n\n🔗 *Maak je account aan:*\n${registerUrl}\n\n_Klik op de link hierboven_`
   }
 
-  // 3. Inloggen
+  // 3. Inloggen - link naar browser
   if (command === '3' || command === 'inloggen' || command === 'login') {
-    startOnboardingSession(phoneNumber, 'login_email')
-    return `🔑 *Welkom terug!*\n\nFijn om je weer te zien. Laten we je account koppelen.\n\n📧 Wat is je email adres?`
+    const loginUrl = `${process.env.NEXTAUTH_URL}/login?phone=${encodeURIComponent(phoneNumber)}`
+    return `🔑 *Inloggen*\n\nFijn om je weer te zien!\n\n🔗 *Log in op je account:*\n${loginUrl}\n\n_Klik op de link hierboven_\n\nNa het inloggen wordt je WhatsApp automatisch gekoppeld.`
   }
 
   // 4. Direct spreken

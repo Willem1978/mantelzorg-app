@@ -1,0 +1,362 @@
+"use client"
+
+import { useState, useEffect, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { signIn } from "next-auth/react"
+import Link from "next/link"
+import { LocationSearch } from "@/components/ui/LocationSearch"
+import { GerAvatar } from "@/components/GerAvatar"
+
+interface MunicipalityInfo {
+  code: string
+  name: string
+  provinceCode: string
+  provinceName: string
+}
+
+function RegisterWhatsAppForm() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const phoneNumber = searchParams.get("phone") || ""
+  const userName = searchParams.get("name") || ""
+
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [step, setStep] = useState(1)
+  const [formData, setFormData] = useState({
+    name: userName,
+    email: "",
+    password: "",
+    passwordConfirm: "",
+    phoneNumber: phoneNumber,
+    municipality: null as MunicipalityInfo | null,
+    privacyConsent: false,
+    dataProcessingConsent: false,
+  })
+
+  // Als er geen telefoonnummer is, redirect naar normale register
+  useEffect(() => {
+    if (!phoneNumber) {
+      router.push("/register")
+    }
+  }, [phoneNumber, router])
+
+  const handleStep1Submit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+
+    if (!formData.name.trim()) {
+      setError("Vul je naam in")
+      return
+    }
+
+    if (formData.password !== formData.passwordConfirm) {
+      setError("De wachtwoorden zijn niet hetzelfde")
+      return
+    }
+
+    if (formData.password.length < 8) {
+      setError("Je wachtwoord moet 8 tekens of meer zijn")
+      return
+    }
+
+    setStep(2)
+  }
+
+  const handleStep2Submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+
+    if (!formData.municipality) {
+      setError("Kies je gemeente")
+      return
+    }
+
+    if (!formData.privacyConsent || !formData.dataProcessingConsent) {
+      setError("Je moet akkoord gaan")
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          phoneNumber: formData.phoneNumber,
+          municipality: formData.municipality,
+          privacyConsent: formData.privacyConsent,
+          dataProcessingConsent: formData.dataProcessingConsent,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Het is niet gelukt")
+      }
+
+      // Automatisch inloggen na registratie
+      const signInResult = await signIn("credentials", {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
+      })
+
+      if (signInResult?.error) {
+        // Registratie gelukt maar inloggen niet - stuur naar success pagina
+        router.push("/register-whatsapp/success")
+        return
+      }
+
+      // Redirect naar success pagina
+      router.push("/register-whatsapp/success")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Er ging iets mis")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Format telefoonnummer voor weergave
+  const formatPhone = (phone: string) => {
+    if (phone.startsWith("+31")) {
+      return "0" + phone.slice(3)
+    }
+    return phone
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header met Ger */}
+      <div className="px-4 pt-8 pb-4">
+        <div className="max-w-md mx-auto flex items-start gap-4">
+          <GerAvatar size="lg" />
+          <div className="pt-2">
+            <h1 className="text-2xl font-bold text-foreground">
+              {step === 1 ? "Maak je account" : "Nog even dit"}
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              {step === 1
+                ? "Verbind je WhatsApp met je account"
+                : "Waar woon je?"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* WhatsApp nummer indicator */}
+      <div className="px-4 pb-4">
+        <div className="max-w-md mx-auto">
+          <div className="bg-green-50 border-2 border-green-200 rounded-xl p-3 flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+              <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm text-green-800 font-medium">Je WhatsApp nummer</p>
+              <p className="text-green-700 font-bold">{formatPhone(phoneNumber)}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stappen indicator */}
+      <div className="px-4 pb-4">
+        <div className="max-w-md mx-auto">
+          <div className="flex justify-center">
+            <div className="ker-pill">
+              stap <span className="font-bold mx-1">{step}</span> van 2
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <main className="px-4 pb-8">
+        <div className="max-w-md mx-auto">
+          <div className="ker-card">
+            {error && (
+              <div className="bg-[#FFEBEE] border-2 border-[#F44336] text-[#C62828] px-4 py-3 rounded-xl mb-6 text-sm">
+                {error}
+              </div>
+            )}
+
+            {step === 1 ? (
+              <form onSubmit={handleStep1Submit} className="space-y-4">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
+                    Je naam
+                  </label>
+                  <input
+                    id="name"
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="ker-input"
+                    placeholder="Hoe mag ik je noemen?"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
+                    Je e-mail
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="ker-input"
+                    placeholder="jouw@email.nl"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
+                    Kies een wachtwoord
+                  </label>
+                  <input
+                    id="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="ker-input"
+                    placeholder="Minstens 8 tekens"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="passwordConfirm" className="block text-sm font-medium text-foreground mb-2">
+                    Herhaal je wachtwoord
+                  </label>
+                  <input
+                    id="passwordConfirm"
+                    type="password"
+                    value={formData.passwordConfirm}
+                    onChange={(e) => setFormData({ ...formData, passwordConfirm: e.target.value })}
+                    className="ker-input"
+                    placeholder="Typ het nog een keer"
+                    required
+                  />
+                </div>
+
+                <button type="submit" className="ker-btn ker-btn-primary w-full">
+                  Volgende stap
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleStep2Submit} className="space-y-4">
+                <LocationSearch
+                  label="Je gemeente"
+                  value={formData.municipality}
+                  onChange={(municipality) => setFormData({ ...formData, municipality })}
+                  placeholder="Typ je postcode of gemeente"
+                />
+
+                {/* Privacy uitleg */}
+                <div className="bg-muted rounded-xl p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                      <span className="text-primary-foreground text-sm font-bold">i</span>
+                    </div>
+                    <div>
+                      <p className="font-medium text-foreground mb-1">Je gegevens zijn veilig</p>
+                      <p className="text-sm text-muted-foreground">
+                        We slaan je adres niet op. We bewaren alleen je gemeente.
+                        Zo kunnen we hulp in de buurt laten zien.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Toestemming */}
+                <div className="space-y-3">
+                  <label className="flex items-start gap-3 cursor-pointer p-4 rounded-xl border-2 border-border hover:border-primary/30 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={formData.privacyConsent}
+                      onChange={(e) => setFormData({ ...formData, privacyConsent: e.target.checked })}
+                      className="mt-0.5 h-5 w-5 text-primary rounded border-border focus:ring-primary"
+                    />
+                    <span className="text-sm text-foreground">
+                      Ik ga akkoord met de{" "}
+                      <Link href="/privacy" className="text-primary hover:underline">
+                        regels over privacy
+                      </Link>
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer p-4 rounded-xl border-2 border-border hover:border-primary/30 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={formData.dataProcessingConsent}
+                      onChange={(e) => setFormData({ ...formData, dataProcessingConsent: e.target.checked })}
+                      className="mt-0.5 h-5 w-5 text-primary rounded border-border focus:ring-primary"
+                    />
+                    <span className="text-sm text-foreground">
+                      Jullie mogen mijn gegevens gebruiken om mij te helpen
+                    </span>
+                  </label>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="ker-btn ker-btn-secondary flex-1"
+                  >
+                    Terug
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="ker-btn ker-btn-primary flex-1"
+                  >
+                    {isLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                        Bezig...
+                      </span>
+                    ) : (
+                      "Klaar"
+                    )}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            <div className="mt-6 pt-6 border-t border-border text-center">
+              <p className="text-muted-foreground">
+                Heb je al een account?{" "}
+                <Link href={`/login?phone=${encodeURIComponent(phoneNumber)}`} className="text-primary font-medium hover:underline">
+                  Log in
+                </Link>
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}
+
+export default function RegisterWhatsAppPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <RegisterWhatsAppForm />
+    </Suspense>
+  )
+}
