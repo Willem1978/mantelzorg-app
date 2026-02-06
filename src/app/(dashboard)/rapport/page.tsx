@@ -2,8 +2,22 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
+
+// Mapping van taak naar categorie voor hulpvragen pagina
+const TAAK_NAAR_HULP_TAB: Record<string, { tab: 'voor-jou' | 'voor-naaste', categorie: string }> = {
+  't1': { tab: 'voor-naaste', categorie: 'Administratie en aanvragen' },
+  't2': { tab: 'voor-naaste', categorie: 'Administratie en aanvragen' },
+  't3': { tab: 'voor-naaste', categorie: 'Boodschappen' },
+  't4': { tab: 'voor-naaste', categorie: 'Sociaal contact en activiteiten' },
+  't5': { tab: 'voor-naaste', categorie: 'Vervoer' },
+  't6': { tab: 'voor-naaste', categorie: 'Persoonlijke verzorging' },
+  't7': { tab: 'voor-naaste', categorie: 'Bereiden en/of nuttigen van maaltijden' },
+  't8': { tab: 'voor-naaste', categorie: 'Huishoudelijke taken' },
+  't9': { tab: 'voor-naaste', categorie: 'Klusjes in en om het huis' },
+}
 
 interface TestResult {
   voornaam: string
@@ -244,7 +258,7 @@ export default function RapportPage() {
             </div>
           </div>
 
-          {/* Taken waar hulp bij nodig is */}
+          {/* Taken waar hulp bij nodig is - KLIKBAAR */}
           {takenMetAandacht.length > 0 && (
             <div className="ker-card mb-4">
               <h3 className="font-bold text-foreground mb-3">
@@ -254,23 +268,35 @@ export default function RapportPage() {
                 Je besteedt {result.totaleZorguren} uur per week aan zorgtaken. Dat is te veel.
               </p>
               <div className="space-y-2">
-                {takenMetAandacht.map((taak) => (
-                  <div key={taak.taakId} className="flex items-center justify-between p-3 bg-[var(--accent-red-bg)] rounded-xl">
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "w-3 h-3 rounded-full",
-                        isZwaar(taak.moeilijkheid) ? "bg-[var(--emoticon-red)]" : "bg-[var(--emoticon-yellow)]"
-                      )} />
-                      <span className="text-foreground text-sm">{taak.taakNaam}</span>
-                    </div>
-                    {taak.urenPerWeek && (
-                      <span className="text-muted-foreground text-sm">{taak.urenPerWeek} uur</span>
-                    )}
-                  </div>
-                ))}
+                {takenMetAandacht.map((taak) => {
+                  const hulpInfo = TAAK_NAAR_HULP_TAB[taak.taakId]
+                  return (
+                    <Link
+                      key={taak.taakId}
+                      href={`/hulpvragen?tab=${hulpInfo?.tab || 'voor-naaste'}&categorie=${encodeURIComponent(hulpInfo?.categorie || taak.taakNaam)}`}
+                      className="flex items-center justify-between p-3 bg-[var(--accent-red-bg)] rounded-xl hover:bg-[var(--accent-red-bg)]/80 transition-colors cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "w-3 h-3 rounded-full",
+                          isZwaar(taak.moeilijkheid) ? "bg-[var(--emoticon-red)]" : "bg-[var(--emoticon-yellow)]"
+                        )} />
+                        <span className="text-foreground text-sm">{taak.taakNaam}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {taak.urenPerWeek && (
+                          <span className="text-muted-foreground text-sm">{taak.urenPerWeek} uur</span>
+                        )}
+                        <svg className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </Link>
+                  )
+                })}
               </div>
               <p className="text-sm text-[var(--accent-red)] mt-4 font-medium">
-                Bespreek met de huisarts of mantelzorgondersteuner hoe je deze taken kunt overdragen.
+                Klik op een taak om hulpbronnen te bekijken
               </p>
             </div>
           )}
@@ -305,31 +331,44 @@ export default function RapportPage() {
             </div>
           )}
 
-          {/* Taken die aandacht nodig hebben */}
+          {/* Taken die aandacht nodig hebben - KLIKBAAR */}
           {takenMetAandacht.length > 0 && (
             <div className="ker-card mb-4">
               <h3 className="font-bold text-foreground mb-3">
                 Hier kun je hulp bij krijgen
               </h3>
               <div className="space-y-3">
-                {takenMetAandacht.map((taak) => (
-                  <div key={taak.taakId} className="p-4 bg-muted rounded-xl">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className={cn(
-                        "w-3 h-3 rounded-full",
-                        isZwaar(taak.moeilijkheid) ? "bg-[var(--emoticon-red)]" : "bg-[var(--emoticon-yellow)]"
-                      )} />
-                      <span className="font-medium text-foreground">{taak.taakNaam}</span>
-                      {taak.urenPerWeek && (
-                        <span className="text-muted-foreground text-sm ml-auto">{taak.urenPerWeek} uur/week</span>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground pl-6">
-                      {getHulpTip(taak.taakId)}
-                    </p>
-                  </div>
-                ))}
+                {takenMetAandacht.map((taak) => {
+                  const hulpInfo = TAAK_NAAR_HULP_TAB[taak.taakId]
+                  return (
+                    <Link
+                      key={taak.taakId}
+                      href={`/hulpvragen?tab=${hulpInfo?.tab || 'voor-naaste'}&categorie=${encodeURIComponent(hulpInfo?.categorie || taak.taakNaam)}`}
+                      className="block p-4 bg-muted rounded-xl hover:bg-muted/80 transition-colors cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className={cn(
+                          "w-3 h-3 rounded-full",
+                          isZwaar(taak.moeilijkheid) ? "bg-[var(--emoticon-red)]" : "bg-[var(--emoticon-yellow)]"
+                        )} />
+                        <span className="font-medium text-foreground">{taak.taakNaam}</span>
+                        {taak.urenPerWeek && (
+                          <span className="text-muted-foreground text-sm ml-auto">{taak.urenPerWeek} uur/week</span>
+                        )}
+                        <svg className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                      <p className="text-sm text-muted-foreground pl-6">
+                        {getHulpTip(taak.taakId)}
+                      </p>
+                    </Link>
+                  )
+                })}
               </div>
+              <p className="text-sm text-primary mt-4 font-medium">
+                Klik op een taak om hulpbronnen te bekijken →
+              </p>
             </div>
           )}
 

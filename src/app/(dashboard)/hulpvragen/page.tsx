@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 
@@ -112,7 +113,21 @@ const hulpvraagCategories = [
 
 type TabType = 'voor-jou' | 'voor-naaste' | 'algemeen'
 
+// Wrapper component voor Suspense boundary (nodig voor useSearchParams)
 export default function HulpPage() {
+  return (
+    <Suspense fallback={
+      <div className="ker-page-content flex items-center justify-center min-h-[50vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    }>
+      <HulpPageContent />
+    </Suspense>
+  )
+}
+
+function HulpPageContent() {
+  const searchParams = useSearchParams()
   const [hulpData, setHulpData] = useState<HulpData | null>(null)
   const [helpRequests, setHelpRequests] = useState<HelpRequest[]>([])
   const [loading, setLoading] = useState(true)
@@ -120,6 +135,7 @@ export default function HulpPage() {
   const [selectedCategorie, setSelectedCategorie] = useState<string | null>(null)
   const [showHulpvraagForm, setShowHulpvraagForm] = useState(false)
   const [showVragenTab, setShowVragenTab] = useState(false)
+  const [initializedFromUrl, setInitializedFromUrl] = useState(false)
 
   // Hulpvraag form state
   const [formTitle, setFormTitle] = useState("")
@@ -127,6 +143,22 @@ export default function HulpPage() {
   const [formCategory, setFormCategory] = useState("")
   const [formUrgency, setFormUrgency] = useState("NORMAL")
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // URL parameters verwerken (van rapport pagina)
+  useEffect(() => {
+    if (initializedFromUrl) return
+
+    const tabParam = searchParams.get('tab') as TabType | null
+    const categorieParam = searchParams.get('categorie')
+
+    if (tabParam && ['voor-jou', 'voor-naaste', 'algemeen'].includes(tabParam)) {
+      setActiveTab(tabParam)
+      if (categorieParam) {
+        setSelectedCategorie(decodeURIComponent(categorieParam))
+      }
+      setInitializedFromUrl(true)
+    }
+  }, [searchParams, initializedFromUrl])
 
   useEffect(() => {
     loadData()

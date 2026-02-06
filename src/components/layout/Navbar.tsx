@@ -37,11 +37,12 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
   }, [])
 
   // B1 taalgebruik - simpele menu woorden
-  // Volgorde: Home, Hulp, Agenda, Hoe gaat het?
+  // Volgorde: Home, Hulp, Hoe gaat het?
+  // NOTE: Agenda is tijdelijk verborgen maar code blijft behouden voor later
   const caregiverLinks = [
     { href: "/dashboard", label: "Home", hasBadge: false },
     { href: "/hulpvragen", label: "Hulp", hasBadge: true },
-    { href: "/agenda", label: "Agenda", hasBadge: false },
+    // { href: "/agenda", label: "Agenda", hasBadge: false }, // Tijdelijk verborgen
     { href: "/check-in", label: "Hoe gaat het?", hasBadge: false },
   ]
 

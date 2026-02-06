@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,27 +8,21 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// ============================================
-// AUTHENTICATIE & GEBRUIKERS
-// ============================================
-
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
+  id            String              @id @default(cuid())
+  email         String              @unique
   name          String?
   password      String?
   emailVerified DateTime?
   image         String?
-  role          UserRole  @default(CAREGIVER)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // Relaties
+  role          UserRole            @default(CAREGIVER)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
   accounts      Account[]
-  sessions      Session[]
   caregiver     Caregiver?
-  orgMember     OrganisationMember?
   magicLinks    MagicLinkToken[]
+  orgMember     OrganisationMember?
+  sessions      Session[]
 }
 
 model Account {
@@ -40,15 +31,14 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -69,188 +59,369 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// Magic link voor WhatsApp -> Dashboard login
 model MagicLinkToken {
-  id          String   @id @default(cuid())
-  token       String   @unique
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt   DateTime
-  usedAt      DateTime?
-  createdAt   DateTime @default(now())
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
-
-enum UserRole {
-  CAREGIVER      // Mantelzorger
-  ORG_MEMBER     // Organisatie medewerker
-  ORG_ADMIN      // Organisatie beheerder
-  ADMIN          // Systeem beheerder
-}
-
-// ============================================
-// MANTELZORGER PROFIEL
-// ============================================
 
 model Caregiver {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Persoonlijke gegevens
-  dateOfBirth     DateTime?
-  phoneNumber     String?
-  postalCode      String?
-  city            String?
-
-  // Locatie (PDOK)
-  street          String?  // Straatnaam
-  municipality    String?  // Gemeente
-  neighborhood    String?  // Wijk
-
-  // Zorgsituatie
-  careRecipient       String?  // Wie verzorg je? (partner, ouder, kind, etc.)
-  careRecipientName   String?  // Naam van de naaste
-  careHoursPerWeek    Int?
-  careSince           DateTime?
-
-  // Locatie naaste (PDOK)
-  careRecipientStreet       String?
+  id                        String                  @id @default(cuid())
+  userId                    String                  @unique
+  dateOfBirth               DateTime?
+  phoneNumber               String?
+  postalCode                String?
+  city                      String?
+  careRecipient             String?
+  careHoursPerWeek          Int?
+  careSince                 DateTime?
+  intakeCompleted           Boolean                 @default(false)
+  onboardedAt               DateTime?
+  createdAt                 DateTime                @default(now())
+  updatedAt                 DateTime                @updatedAt
   careRecipientCity         String?
   careRecipientMunicipality String?
+  careRecipientName         String?
   careRecipientNeighborhood String?
-
-  // Status
-  intakeCompleted Boolean  @default(false)
-  profileCompleted Boolean @default(false)  // Locatiegegevens ingevuld
-  onboardedAt     DateTime?
-
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // Relaties
-  intakeResponses   IntakeResponse[]
-  monthlyCheckIns   MonthlyCheckIn[]
-  tasks             Task[]
-  organisationLinks CaregiverOrganisation[]
-  helpRequests      HelpRequest[]
-  calendarEvents    CalendarEvent[]
-  belastbaarheidTests BelastbaarheidTest[]
+  careRecipientStreet       String?
+  municipality              String?
+  neighborhood              String?
+  profileCompleted          Boolean                 @default(false)
+  street                    String?
+  belastbaarheidTests       BelastbaarheidTest[]
+  calendarEvents            CalendarEvent[]
+  user                      User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organisationLinks         CaregiverOrganisation[]
+  helpRequests              HelpRequest[]
+  intakeResponses           IntakeResponse[]
+  monthlyCheckIns           MonthlyCheckIn[]
+  tasks                     Task[]
 }
 
-// ============================================
-// INTAKE / TEST MODULE
-// ============================================
-
 model IntakeCategory {
-  id          String   @id @default(cuid())
-  name        String   // bijv. "Fysieke belasting", "Emotioneel welzijn"
+  id          String           @id @default(cuid())
+  name        String
   description String?
-  order       Int      @default(0)
-
+  order       Int              @default(0)
   questions   IntakeQuestion[]
 }
 
 model IntakeQuestion {
-  id          String   @id @default(cuid())
+  id          String           @id @default(cuid())
   categoryId  String
-  category    IntakeCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-
   question    String
-  description String?  // Extra uitleg bij de vraag
-  type        QuestionType @default(SCALE)
-  options     Json?    // Voor MULTIPLE_CHOICE vragen
-  order       Int      @default(0)
-  isRequired  Boolean  @default(true)
-
+  description String?
+  type        QuestionType     @default(SCALE)
+  options     Json?
+  order       Int              @default(0)
+  isRequired  Boolean          @default(true)
+  category    IntakeCategory   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   responses   IntakeResponse[]
 }
 
-enum QuestionType {
-  SCALE           // 1-10 schaal
-  MULTIPLE_CHOICE // Meerkeuze
-  YES_NO          // Ja/Nee
-  TEXT            // Open vraag
-}
-
 model IntakeResponse {
-  id          String   @id @default(cuid())
+  id          String         @id @default(cuid())
   caregiverId String
-  caregiver   Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
   questionId  String
+  value       String
+  score       Int?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  caregiver   Caregiver      @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
   question    IntakeQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
-
-  value       String   // De gegeven antwoord waarde
-  score       Int?     // Berekende score (indien van toepassing)
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 
   @@unique([caregiverId, questionId])
 }
 
-// ============================================
-// MAANDELIJKSE MONITORING
-// ============================================
-
 model MonthlyCheckIn {
-  id          String   @id @default(cuid())
-  caregiverId String
-  caregiver   Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
-
-  month       DateTime // Eerste dag van de maand
-
-  // Scores (1-10)
+  id                  String    @id @default(cuid())
+  caregiverId         String
+  month               DateTime
   overallWellbeing    Int?
   physicalHealth      Int?
   emotionalHealth     Int?
   workLifeBalance     Int?
   supportSatisfaction Int?
-
-  // Open vragen
-  highlights    String?  // Wat ging goed?
-  challenges    String?  // Wat was lastig?
-  needsHelp     String?  // Waar heb je hulp bij nodig?
-
-  completedAt   DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  highlights          String?
+  challenges          String?
+  needsHelp           String?
+  completedAt         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  caregiver           Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
 
   @@unique([caregiverId, month])
 }
 
-// ============================================
-// TAKEN & VOORTGANG
-// ============================================
-
 model Task {
-  id          String   @id @default(cuid())
-  caregiverId String
-  caregiver   Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
-
-  title       String
-  description String?
-  category    TaskCategory @default(OTHER)
-  priority    TaskPriority @default(MEDIUM)
-  status      TaskStatus   @default(TODO)
-
-  dueDate     DateTime?
-  completedAt DateTime?
-
-  // Suggestie vanuit systeem of zelf aangemaakt
-  isSuggested Boolean  @default(false)
+  id              String       @id @default(cuid())
+  caregiverId     String
+  title           String
+  description     String?
+  category        TaskCategory @default(OTHER)
+  priority        TaskPriority @default(MEDIUM)
+  status          TaskStatus   @default(TODO)
+  dueDate         DateTime?
+  completedAt     DateTime?
+  isSuggested     Boolean      @default(false)
   suggestedReason String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  caregiver       Caregiver    @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+}
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model Resource {
+  id          String       @id @default(cuid())
+  title       String
+  description String
+  content     String?
+  url         String?
+  type        ResourceType
+  category    String
+  isNational  Boolean      @default(true)
+  postalCodes String[]
+  city        String?
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Organisation {
+  id           String                  @id @default(cuid())
+  name         String
+  description  String?
+  logo         String?
+  email        String?
+  phone        String?
+  website      String?
+  address      String?
+  postalCode   String?
+  city         String?
+  isActive     Boolean                 @default(true)
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+  caregivers   CaregiverOrganisation[]
+  helpRequests HelpRequest[]
+  members      OrganisationMember[]
+}
+
+model OrganisationMember {
+  id             String        @id @default(cuid())
+  userId         String        @unique
+  organisationId String
+  role           OrgMemberRole @default(MEMBER)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  organisation   Organisation  @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CaregiverOrganisation {
+  id             String       @id @default(cuid())
+  caregiverId    String
+  organisationId String
+  shareWellbeing Boolean      @default(true)
+  shareNeeds     Boolean      @default(true)
+  shareProgress  Boolean      @default(false)
+  joinedAt       DateTime     @default(now())
+  caregiver      Caregiver    @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  @@unique([caregiverId, organisationId])
+}
+
+model Notification {
+  id           String           @id @default(cuid())
+  userId       String
+  type         NotificationType
+  title        String
+  message      String
+  link         String?
+  isRead       Boolean          @default(false)
+  readAt       DateTime?
+  scheduledFor DateTime?
+  sentAt       DateTime?
+  createdAt    DateTime         @default(now())
+}
+
+model HelpRequest {
+  id             String        @id @default(cuid())
+  caregiverId    String
+  title          String
+  description    String
+  category       HelpCategory
+  urgency        HelpUrgency   @default(NORMAL)
+  status         HelpStatus    @default(OPEN)
+  organisationId String?
+  response       String?
+  respondedBy    String?
+  respondedAt    DateTime?
+  resolvedAt     DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  caregiver      Caregiver     @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+  organisation   Organisation? @relation(fields: [organisationId], references: [id])
+}
+
+model CalendarEvent {
+  id              String    @id @default(cuid())
+  caregiverId     String
+  title           String
+  description     String?
+  location        String?
+  startTime       DateTime
+  endTime         DateTime?
+  isAllDay        Boolean   @default(false)
+  isRecurring     Boolean   @default(false)
+  recurrenceRule  String?
+  eventType       EventType @default(OTHER)
+  reminderMinutes Int?
+  color           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  caregiver       Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+}
+
+model BelastbaarheidTest {
+  id                   String                   @id @default(cuid())
+  caregiverId          String?
+  voornaam             String
+  email                String
+  postcode             String
+  huisnummer           String
+  straat               String?
+  woonplaats           String?
+  gemeente             String?
+  totaleBelastingScore Int                      @default(0)
+  belastingNiveau      BelastingNiveau          @default(LAAG)
+  totaleZorguren       Int                      @default(0)
+  isCompleted          Boolean                  @default(false)
+  completedAt          DateTime?
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+  alarmLogs            AlarmLog[]
+  antwoorden           BelastbaarheidAntwoord[]
+  rapporten            BelastbaarheidRapport[]
+  caregiver            Caregiver?               @relation(fields: [caregiverId], references: [id])
+  taakSelecties        ZorgtaakSelectie[]
+}
+
+model BelastbaarheidAntwoord {
+  id         String             @id @default(cuid())
+  testId     String
+  vraagId    String
+  vraagTekst String
+  antwoord   String
+  score      Int
+  gewicht    Float              @default(1.0)
+  createdAt  DateTime           @default(now())
+  test       BelastbaarheidTest @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  @@unique([testId, vraagId])
+}
+
+model ZorgtaakSelectie {
+  id             String             @id @default(cuid())
+  testId         String
+  taakId         String
+  taakNaam       String
+  isGeselecteerd Boolean            @default(false)
+  urenPerWeek    Int?
+  moeilijkheid   Moeilijkheid?
+  createdAt      DateTime           @default(now())
+  test           BelastbaarheidTest @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  @@unique([testId, taakId])
+}
+
+model Zorgorganisatie {
+  id                    String              @id @default(cuid())
+  naam                  String
+  beschrijving          String?
+  type                  ZorgorganisatieType
+  telefoon              String?
+  email                 String?
+  website               String?
+  adres                 String?
+  postcode              String?
+  woonplaats            String?
+  gemeente              String?
+  isActief              Boolean             @default(true)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  openingstijden        String?
+  zichtbaarBijGemiddeld Boolean             @default(false)
+  zichtbaarBijHoog      Boolean             @default(true)
+  zichtbaarBijLaag      Boolean             @default(false)
+  aanmeldprocedure      String?
+  dienst                String?
+  doelgroep             String?
+  kosten                String?
+  locatieOmschrijving   String?
+  onderdeelTest         String?
+  soortHulp             String?
+  voorwaarden           String?
+}
+
+model BelastbaarheidRapport {
+  id              String             @id @default(cuid())
+  testId          String
+  samenvatting    String
+  aandachtspunten Json
+  aanbevelingen   Json
+  lokaleHulp      Json
+  pdfUrl          String?
+  createdAt       DateTime           @default(now())
+  test            BelastbaarheidTest @relation(fields: [testId], references: [id], onDelete: Cascade)
+}
+
+model AlarmLog {
+  id              String             @id @default(cuid())
+  testId          String
+  type            AlarmType
+  beschrijving    String
+  urgentie        AlarmUrgentie      @default(MEDIUM)
+  isAfgehandeld   Boolean            @default(false)
+  afgehandeldOp   DateTime?
+  afgehandeldDoor String?
+  notitie         String?
+  createdAt       DateTime           @default(now())
+  test            BelastbaarheidTest @relation(fields: [testId], references: [id], onDelete: Cascade)
+}
+
+enum UserRole {
+  CAREGIVER
+  ORG_MEMBER
+  ORG_ADMIN
+  ADMIN
+}
+
+enum QuestionType {
+  SCALE
+  MULTIPLE_CHOICE
+  YES_NO
+  TEXT
 }
 
 enum TaskCategory {
-  SELF_CARE       // Zelfzorg
-  ADMINISTRATION  // Administratie
-  APPOINTMENTS    // Afspraken
-  SOCIAL          // Sociaal
-  HEALTH          // Gezondheid
-  OTHER           // Overig
+  SELF_CARE
+  ADMINISTRATION
+  APPOINTMENTS
+  SOCIAL
+  HEALTH
+  OTHER
 }
 
 enum TaskPriority {
@@ -266,425 +437,94 @@ enum TaskStatus {
   CANCELLED
 }
 
-// ============================================
-// HULPBRONNEN & INFORMATIE
-// ============================================
-
-model Resource {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  content     String?  @db.Text
-  url         String?
-  type        ResourceType
-  category    String   // bijv. "Financieel", "Respijtzorg", "Emotionele steun"
-
-  // Locatie (voor lokale hulp)
-  isNational  Boolean  @default(true)
-  postalCodes String[] // Postcodes waar dit beschikbaar is
-  city        String?
-
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
 enum ResourceType {
-  ARTICLE         // Informatief artikel
-  LOCAL_SERVICE   // Lokale dienst
-  NATIONAL_SERVICE // Landelijke dienst
-  TIP             // Praktische tip
-  VIDEO           // Video content
-  TOOL            // Hulpmiddel/tool
-}
-
-// ============================================
-// ORGANISATIES
-// ============================================
-
-model Organisation {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  logo        String?
-
-  // Contact
-  email       String?
-  phone       String?
-  website     String?
-
-  // Locatie
-  address     String?
-  postalCode  String?
-  city        String?
-
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relaties
-  members      OrganisationMember[]
-  caregivers   CaregiverOrganisation[]
-  helpRequests HelpRequest[]
-}
-
-model OrganisationMember {
-  id             String   @id @default(cuid())
-  userId         String   @unique
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organisationId String
-  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
-
-  role           OrgMemberRole @default(MEMBER)
-
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  ARTICLE
+  LOCAL_SERVICE
+  NATIONAL_SERVICE
+  TIP
+  VIDEO
+  TOOL
 }
 
 enum OrgMemberRole {
-  MEMBER  // Kan mantelzorgers bekijken
-  ADMIN   // Kan ook leden beheren
-}
-
-// Koppeling tussen mantelzorger en organisatie
-model CaregiverOrganisation {
-  id             String   @id @default(cuid())
-  caregiverId    String
-  caregiver      Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
-  organisationId String
-  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
-
-  // Toestemming voor data delen
-  shareWellbeing Boolean @default(true)  // Welzijnsscores delen
-  shareNeeds     Boolean @default(true)  // Behoeften delen
-  shareProgress  Boolean @default(false) // Taakvoortgang delen
-
-  joinedAt       DateTime @default(now())
-
-  @@unique([caregiverId, organisationId])
-}
-
-// ============================================
-// NOTIFICATIES
-// ============================================
-
-model Notification {
-  id          String   @id @default(cuid())
-  userId      String
-
-  type        NotificationType
-  title       String
-  message     String
-  link        String?  // Optionele link naar actie
-
-  isRead      Boolean  @default(false)
-  readAt      DateTime?
-
-  // Scheduling
-  scheduledFor DateTime?  // Voor geplande herinneringen
-  sentAt       DateTime?
-
-  createdAt   DateTime @default(now())
+  MEMBER
+  ADMIN
 }
 
 enum NotificationType {
-  CHECK_IN_REMINDER    // Herinnering voor maandelijkse check-in
-  TASK_REMINDER        // Herinnering voor taak
-  HELP_REQUEST_UPDATE  // Update op hulpvraag
-  TIP                  // Persoonlijke tip
-  SYSTEM               // Systeembericht
-}
-
-// ============================================
-// HULPVRAGEN
-// ============================================
-
-model HelpRequest {
-  id          String   @id @default(cuid())
-  caregiverId String
-  caregiver   Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
-
-  title       String
-  description String   @db.Text
-  category    HelpCategory
-  urgency     HelpUrgency @default(NORMAL)
-  status      HelpStatus  @default(OPEN)
-
-  // Optionele organisatie koppeling
-  organisationId String?
-  organisation   Organisation? @relation(fields: [organisationId], references: [id])
-
-  // Reactie van organisatie
-  response    String?  @db.Text
-  respondedBy String?
-  respondedAt DateTime?
-
-  resolvedAt  DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  CHECK_IN_REMINDER
+  TASK_REMINDER
+  HELP_REQUEST_UPDATE
+  TIP
+  SYSTEM
 }
 
 enum HelpCategory {
-  RESPITE_CARE      // Respijtzorg
-  EMOTIONAL_SUPPORT // Emotionele steun
-  PRACTICAL_HELP    // Praktische hulp
-  FINANCIAL_ADVICE  // Financieel advies
-  INFORMATION       // Informatie
-  OTHER             // Overig
+  RESPITE_CARE
+  EMOTIONAL_SUPPORT
+  PRACTICAL_HELP
+  FINANCIAL_ADVICE
+  INFORMATION
+  OTHER
 }
 
 enum HelpUrgency {
-  LOW       // Kan wachten
-  NORMAL    // Binnen een week
-  HIGH      // Zo snel mogelijk
-  URGENT    // Acuut
+  LOW
+  NORMAL
+  HIGH
+  URGENT
 }
 
 enum HelpStatus {
-  OPEN        // Nieuw
-  IN_PROGRESS // In behandeling
-  RESPONDED   // Beantwoord
-  RESOLVED    // Opgelost
-  CLOSED      // Gesloten
-}
-
-// ============================================
-// AGENDA / PLANNING
-// ============================================
-
-model CalendarEvent {
-  id          String   @id @default(cuid())
-  caregiverId String
-  caregiver   Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
-
-  title       String
-  description String?
-  location    String?
-
-  startTime   DateTime
-  endTime     DateTime?
-  isAllDay    Boolean  @default(false)
-
-  // Herhaling
-  isRecurring Boolean  @default(false)
-  recurrenceRule String?  // iCal RRULE format
-
-  // Type event
-  eventType   EventType @default(OTHER)
-
-  // Herinneringen
-  reminderMinutes Int?  // Hoeveel minuten van tevoren herinnering
-
-  color       String?  // Kleurcode voor weergave
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  OPEN
+  IN_PROGRESS
+  RESPONDED
+  RESOLVED
+  CLOSED
 }
 
 enum EventType {
-  CARE_TASK       // Zorgtaak
-  APPOINTMENT     // Afspraak (arts, specialist)
-  SELF_CARE       // Eigen tijd / zelfzorg
-  SOCIAL          // Sociaal
-  WORK            // Werk
-  OTHER           // Overig
-}
-
-// ============================================
-// WACHTWOORD RESET
-// ============================================
-
-model PasswordResetToken {
-  id        String   @id @default(cuid())
-  email     String
-  token     String   @unique
-  expires   DateTime
-  createdAt DateTime @default(now())
-}
-
-// ============================================
-// BELASTBAARHEIDSTEST
-// ============================================
-
-model BelastbaarheidTest {
-  id          String   @id @default(cuid())
-
-  // Sessie kan anoniem zijn (caregiverId is dan null)
-  caregiverId String?
-  caregiver   Caregiver? @relation(fields: [caregiverId], references: [id], onDelete: SetNull)
-
-  // Registratie gegevens (Stap 0)
-  voornaam    String
-  email       String
-  postcode    String
-  huisnummer  String
-  straat      String?  // Van PDOK API
-  woonplaats  String?  // Van PDOK API
-  gemeente    String?  // Van PDOK API
-
-  // Scores
-  totaleBelastingScore Int     @default(0)  // 0-24 (max)
-  belastingNiveau      BelastingNiveau @default(LAAG)
-  totaleZorguren       Int     @default(0)
-
-  // Status
-  isCompleted Boolean  @default(false)
-  completedAt DateTime?
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relaties
-  antwoorden  BelastbaarheidAntwoord[]
-  taakSelecties ZorgtaakSelectie[]
-  rapporten   BelastbaarheidRapport[]
-  alarmLogs   AlarmLog[]
+  CARE_TASK
+  APPOINTMENT
+  SELF_CARE
+  SOCIAL
+  WORK
+  OTHER
 }
 
 enum BelastingNiveau {
-  LAAG      // 0-6 punten (groen)
-  GEMIDDELD // 7-12 punten (oranje)
-  HOOG      // 13+ punten (rood)
-}
-
-model BelastbaarheidAntwoord {
-  id          String   @id @default(cuid())
-  testId      String
-  test        BelastbaarheidTest @relation(fields: [testId], references: [id], onDelete: Cascade)
-
-  vraagId     String   // q1, q2, etc.
-  vraagTekst  String   // De vraag zelf
-  antwoord    String   // "ja", "soms", "nee"
-  score       Int      // 0, 1, of 2
-  gewicht     Float    @default(1.0) // Weging van de vraag
-
-  createdAt   DateTime @default(now())
-
-  @@unique([testId, vraagId])
-}
-
-model ZorgtaakSelectie {
-  id          String   @id @default(cuid())
-  testId      String
-  test        BelastbaarheidTest @relation(fields: [testId], references: [id], onDelete: Cascade)
-
-  taakId      String   // t1, t2, etc.
-  taakNaam    String   // "Persoonlijke verzorging", etc.
-  isGeselecteerd Boolean @default(false)
-  urenPerWeek Int?     // 0-7, 8-14, 15-20, 20+
-  moeilijkheid Moeilijkheid?
-
-  createdAt   DateTime @default(now())
-
-  @@unique([testId, taakId])
+  LAAG
+  GEMIDDELD
+  HOOG
 }
 
 enum Moeilijkheid {
-  MAKKELIJK     // 1
-  GEMIDDELD     // 2
-  MOEILIJK      // 3
-  ZEER_MOEILIJK // 4
-}
-
-model Zorgorganisatie {
-  id          String   @id @default(cuid())
-
-  // Basis info
-  naam        String   // "Naam organisatie" uit Excel
-  dienst      String?  // "Dienst" uit Excel
-  beschrijving String?  @db.Text  // "Omschrijving dienst" uit Excel
-  type        ZorgorganisatieType
-
-  // Categorisatie uit Excel
-  soortHulp           String?  // "Soort hulp" - voor mantelzorger zelf (Financieel, Educatie, Praktisch, etc.)
-  onderdeelTest       String?  // "Onderdeel mantelzorgtest" - bij welke taak (Administratie, Huishouden, etc.)
-
-  // Doelgroep en voorwaarden
-  doelgroep           String?  @db.Text  // "Doelgroep" uit Excel
-  voorwaarden         String?  @db.Text  // "Voorwaarden" + "Voorwaarden vervolg" uit Excel
-
-  // Contact
-  telefoon    String?
-  email       String?
-  website     String?
-
-  // Locatie
-  adres       String?
-  postcode    String?
-  woonplaats  String?
-  gemeente    String?   // Null = landelijk/nationaal beschikbaar
-  locatieOmschrijving String?  @db.Text  // "Locatie omschrijving" uit Excel
-
-  // Praktische info
-  aanmeldprocedure    String?  @db.Text  // "Aanmeldprocedure" uit Excel
-  openingstijden      String?  // "Wanneer en/of Openingstijden" uit Excel
-  kosten              String?  // "Kosten" uit Excel
-
-  // Bij welk belastingsniveau tonen?
-  zichtbaarBijLaag     Boolean @default(false)
-  zichtbaarBijGemiddeld Boolean @default(false)
-  zichtbaarBijHoog     Boolean @default(true)
-
-  isActief    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  MAKKELIJK
+  GEMIDDELD
+  MOEILIJK
+  ZEER_MOEILIJK
 }
 
 enum ZorgorganisatieType {
-  GEMEENTE          // Gemeentelijke dienst (WMO loket)
-  THUISZORG         // Thuiszorgorganisatie
-  MANTELZORGSTEUNPUNT // Steunpunt mantelzorg
-  RESPIJTZORG       // Respijtzorg aanbieder
-  DAGBESTEDING      // Dagbesteding
-  HUISARTS          // Huisarts
-  SOCIAAL_WIJKTEAM  // Sociaal wijkteam
-  VRIJWILLIGERS     // Vrijwilligersorganisatie
-  LANDELIJK         // Landelijke/nationale organisatie
-  OVERIG            // Overig
-}
-
-model BelastbaarheidRapport {
-  id          String   @id @default(cuid())
-  testId      String
-  test        BelastbaarheidTest @relation(fields: [testId], references: [id], onDelete: Cascade)
-
-  // Rapport inhoud
-  samenvatting     String @db.Text
-  aandachtspunten  Json   // Array van aandachtspunten
-  aanbevelingen    Json   // Array van aanbevelingen
-  lokaleHulp       Json   // Array van lokale organisaties
-
-  // PDF export
-  pdfUrl      String?
-
-  createdAt   DateTime @default(now())
-}
-
-model AlarmLog {
-  id          String   @id @default(cuid())
-  testId      String
-  test        BelastbaarheidTest @relation(fields: [testId], references: [id], onDelete: Cascade)
-
-  type        AlarmType
-  beschrijving String
-  urgentie    AlarmUrgentie @default(MEDIUM)
-
-  // Is er actie ondernomen?
-  isAfgehandeld Boolean  @default(false)
-  afgehandeldOp DateTime?
-  afgehandeldDoor String?
-  notitie     String?
-
-  createdAt   DateTime @default(now())
+  GEMEENTE
+  THUISZORG
+  MANTELZORGSTEUNPUNT
+  RESPIJTZORG
+  DAGBESTEDING
+  HUISARTS
+  SOCIAAL_WIJKTEAM
+  VRIJWILLIGERS
+  OVERIG
+  LANDELIJK
 }
 
 enum AlarmType {
-  HOGE_BELASTING           // Score >= 13
-  KRITIEKE_COMBINATIE      // Meerdere rode indicatoren
-  VEEL_ZORGUREN            // > 40 uur per week
-  EMOTIONELE_NOOD          // Veel "ja" op emotionele vragen
-  SOCIAAL_ISOLEMENT        // Weinig sociale steun
-  FYSIEKE_KLACHTEN         // Fysieke problemen
+  HOGE_BELASTING
+  KRITIEKE_COMBINATIE
+  VEEL_ZORGUREN
+  EMOTIONELE_NOOD
+  SOCIAAL_ISOLEMENT
+  FYSIEKE_KLACHTEN
 }
 
 enum AlarmUrgentie {
