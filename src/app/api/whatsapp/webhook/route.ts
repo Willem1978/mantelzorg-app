@@ -421,7 +421,9 @@ async function handleOnboardingSession(
 
 Je testresultaten worden opgeslagen na inloggen.
 
-${baseUrl}/r/log`,
+📱 Vul je telefoonnummer in als: +316... (met +31)
+
+${baseUrl}/login`,
       }
     }
 
@@ -434,7 +436,9 @@ ${baseUrl}/r/log`,
 
 Je testresultaten worden opgeslagen na registratie.
 
-${baseUrl}/r/reg`,
+📱 Vul je telefoonnummer in als: +316... (met +31)
+
+${baseUrl}/register`,
       }
     }
 
@@ -998,7 +1002,9 @@ function handleGuestMenu(phoneNumber: string, input: string): string {
 
 Met een account bewaar ik je resultaten en geef ik persoonlijke tips.
 
-${baseUrl}/r/reg`
+📱 Vul je telefoonnummer in als: +316... (met +31)
+
+${baseUrl}/register`
   }
 
   // 3. Inloggen
@@ -1008,7 +1014,9 @@ ${baseUrl}/r/reg`
 
 Na inloggen wordt je WhatsApp gekoppeld.
 
-${baseUrl}/r/log`
+📱 Vul je telefoonnummer in als: +316... (met +31)
+
+${baseUrl}/login`
   }
 
   // 4. Direct spreken
