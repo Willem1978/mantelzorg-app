@@ -4,15 +4,19 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { signIn } from "next-auth/react"
 import Link from "next/link"
-import { LocationSearch } from "@/components/ui/LocationSearch"
+import { AddressSearch, AddressInfo } from "@/components/ui/AddressSearch"
 import { GerAvatar } from "@/components/GerAvatar"
 
-interface MunicipalityInfo {
-  code: string
-  name: string
-  provinceCode: string
-  provinceName: string
-}
+const RELATIE_OPTIES = [
+  "Partner",
+  "Ouder",
+  "Kind",
+  "Broer/zus",
+  "Schoonouder",
+  "Vriend(in)",
+  "Buurman/vrouw",
+  "Anders",
+]
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -20,63 +24,110 @@ export default function RegisterPage() {
   const [error, setError] = useState("")
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
+    // Stap 1: Account
     email: "",
     password: "",
     passwordConfirm: "",
     phoneNumber: "",
-    municipality: null as MunicipalityInfo | null,
+    // Stap 2: Jouw gegevens
+    name: "",
+    address: null as AddressInfo | null,
+    // Stap 3: Naaste
+    careRecipientName: "",
+    careRecipientRelation: "",
+    careRecipientAddress: null as AddressInfo | null,
+    // Privacy
     privacyConsent: false,
     dataProcessingConsent: false,
   })
 
+  // Valideer telefoonnummer: moet beginnen met 06 en 10 cijfers hebben
+  const validatePhoneNumber = (phone: string): boolean => {
+    const cleaned = phone.replace(/[\s-]/g, '')
+    return /^06\d{8}$/.test(cleaned)
+  }
+
+  // Normaliseer telefoonnummer naar +31 formaat
+  const normalizePhoneNumber = (phone: string): string => {
+    const cleaned = phone.replace(/[\s-]/g, '')
+    if (cleaned.startsWith('06')) {
+      return '+31' + cleaned.substring(1)
+    }
+    return cleaned
+  }
+
   const handleStep1Submit = (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+
+    if (!formData.email) {
+      setError("Vul je e-mailadres in")
+      return
+    }
+
+    if (formData.password.length < 8) {
+      setError("Je wachtwoord moet minimaal 8 tekens zijn")
+      return
+    }
 
     if (formData.password !== formData.passwordConfirm) {
       setError("De wachtwoorden zijn niet hetzelfde")
       return
     }
 
-    if (formData.password.length < 8) {
-      setError("Je wachtwoord moet 8 tekens of meer zijn")
+    if (formData.phoneNumber && !validatePhoneNumber(formData.phoneNumber)) {
+      setError("Vul een geldig telefoonnummer in (06 + 8 cijfers)")
       return
     }
 
     setStep(2)
   }
 
-  const handleStep2Submit = async (e: React.FormEvent) => {
+  const handleStep2Submit = (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
 
-    if (!formData.municipality) {
-      setError("Kies je gemeente")
+    if (!formData.name.trim()) {
+      setError("Vul je naam in")
+      return
+    }
+
+    if (!formData.address) {
+      setError("Kies je adres")
+      return
+    }
+
+    setStep(3)
+  }
+
+  const handleStep3Submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+
+    if (!formData.careRecipientName.trim()) {
+      setError("Vul de naam van je naaste in")
+      return
+    }
+
+    if (!formData.careRecipientRelation) {
+      setError("Kies je relatie tot je naaste")
+      return
+    }
+
+    if (!formData.careRecipientAddress) {
+      setError("Kies het adres van je naaste")
       return
     }
 
     if (!formData.privacyConsent || !formData.dataProcessingConsent) {
-      setError("Je moet akkoord gaan")
+      setError("Je moet akkoord gaan met de voorwaarden")
       return
     }
 
     setIsLoading(true)
 
     try {
-      // Normaliseer telefoonnummer naar +31 formaat
-      let phoneNumber = formData.phoneNumber.trim()
-      if (phoneNumber) {
-        // Verwijder spaties en streepjes
-        phoneNumber = phoneNumber.replace(/[\s-]/g, '')
-        // Als het begint met 06, vervang door +316
-        if (phoneNumber.startsWith('06')) {
-          phoneNumber = '+31' + phoneNumber.substring(1)
-        }
-        // Als het begint met 0031, vervang door +31
-        if (phoneNumber.startsWith('0031')) {
-          phoneNumber = '+31' + phoneNumber.substring(4)
-        }
-      }
+      const phoneNumber = formData.phoneNumber ? normalizePhoneNumber(formData.phoneNumber) : undefined
 
       const response = await fetch("/api/auth/register", {
         method: "POST",
@@ -84,8 +135,24 @@ export default function RegisterPage() {
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
-          phoneNumber: phoneNumber || undefined,
-          municipality: formData.municipality,
+          name: formData.name,
+          phoneNumber,
+          // Eigen locatie
+          street: formData.address?.straat,
+          city: formData.address?.woonplaats,
+          municipality: {
+            code: "",
+            name: formData.address?.gemeente || "",
+            provinceCode: "",
+            provinceName: "",
+          },
+          // Naaste info
+          careRecipientName: formData.careRecipientName,
+          careRecipientRelation: formData.careRecipientRelation,
+          careRecipientStreet: formData.careRecipientAddress?.straat,
+          careRecipientCity: formData.careRecipientAddress?.woonplaats,
+          careRecipientMunicipality: formData.careRecipientAddress?.gemeente,
+          // Privacy
           privacyConsent: formData.privacyConsent,
           dataProcessingConsent: formData.dataProcessingConsent,
         }),
@@ -105,17 +172,33 @@ export default function RegisterPage() {
       })
 
       if (signInResult?.error) {
-        // Registratie gelukt maar inloggen niet - stuur naar login pagina
         router.push("/login?registered=true")
         return
       }
 
-      // Redirect naar dashboard
       router.push("/dashboard")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Er ging iets mis")
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const getStepTitle = () => {
+    switch (step) {
+      case 1: return "Maak een account"
+      case 2: return "Over jou"
+      case 3: return "Over je naaste"
+      default: return ""
+    }
+  }
+
+  const getStepSubtitle = () => {
+    switch (step) {
+      case 1: return "E-mail, wachtwoord en telefoonnummer"
+      case 2: return "Je naam en waar je woont"
+      case 3: return "Voor wie zorg je?"
+      default: return ""
     }
   }
 
@@ -127,12 +210,10 @@ export default function RegisterPage() {
           <GerAvatar size="lg" />
           <div className="pt-2">
             <h1 className="text-2xl font-bold text-foreground">
-              {step === 1 ? "Maak een account" : "Nog even dit"}
+              {getStepTitle()}
             </h1>
             <p className="text-muted-foreground mt-1">
-              {step === 1
-                ? "Stap 1: Kies je e-mail en wachtwoord"
-                : "Stap 2: Waar woon je?"}
+              {getStepSubtitle()}
             </p>
           </div>
         </div>
@@ -143,7 +224,7 @@ export default function RegisterPage() {
         <div className="max-w-md mx-auto">
           <div className="flex justify-center">
             <div className="ker-pill">
-              stap <span className="font-bold mx-1">{step}</span> van 2
+              stap <span className="font-bold mx-1">{step}</span> van 3
             </div>
           </div>
         </div>
@@ -159,7 +240,8 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {step === 1 ? (
+            {/* STAP 1: Account gegevens */}
+            {step === 1 && (
               <form onSubmit={handleStep1Submit} className="space-y-4">
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
@@ -186,7 +268,7 @@ export default function RegisterPage() {
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="ker-input"
-                    placeholder="Minstens 8 tekens"
+                    placeholder="Minimaal 8 tekens"
                     required
                   />
                 </div>
@@ -208,7 +290,7 @@ export default function RegisterPage() {
 
                 <div>
                   <label htmlFor="phoneNumber" className="block text-sm font-medium text-foreground mb-2">
-                    Je telefoonnummer <span className="text-muted-foreground font-normal">(optioneel)</span>
+                    Je telefoonnummer <span className="text-muted-foreground font-normal">(voor WhatsApp)</span>
                   </label>
                   <input
                     id="phoneNumber"
@@ -216,44 +298,108 @@ export default function RegisterPage() {
                     value={formData.phoneNumber}
                     onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                     className="ker-input"
-                    placeholder="+31612345678"
+                    placeholder="0612345678"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Voor WhatsApp koppeling. Gebruik +31 formaat.
+                    10 cijfers, beginnend met 06
                   </p>
                 </div>
 
                 <button type="submit" className="ker-btn ker-btn-primary w-full">
-                  Volgende stap
+                  Volgende
                 </button>
               </form>
-            ) : (
+            )}
+
+            {/* STAP 2: Eigen gegevens */}
+            {step === 2 && (
               <form onSubmit={handleStep2Submit} className="space-y-4">
-                <LocationSearch
-                  label="Je gemeente"
-                  value={formData.municipality}
-                  onChange={(municipality) => setFormData({ ...formData, municipality })}
-                  placeholder="Typ je postcode of gemeente"
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
+                    Je naam
+                  </label>
+                  <input
+                    id="name"
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="ker-input"
+                    placeholder="Voornaam en achternaam"
+                    required
+                  />
+                </div>
+
+                <AddressSearch
+                  label="Waar woon je?"
+                  value={formData.address}
+                  onChange={(address) => setFormData({ ...formData, address })}
+                  placeholder="Typ je straat of postcode"
                 />
 
-                {/* Privacy uitleg */}
-                <div className="bg-muted rounded-xl p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                      <span className="text-primary-foreground text-sm font-bold">i</span>
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground mb-1">Je gegevens zijn veilig</p>
-                      <p className="text-sm text-muted-foreground">
-                        We slaan je adres niet op. We bewaren alleen je gemeente.
-                        Zo kunnen we hulp in de buurt laten zien.
-                      </p>
-                    </div>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="ker-btn ker-btn-secondary flex-1"
+                  >
+                    Terug
+                  </button>
+                  <button type="submit" className="ker-btn ker-btn-primary flex-1">
+                    Volgende
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* STAP 3: Naaste gegevens */}
+            {step === 3 && (
+              <form onSubmit={handleStep3Submit} className="space-y-4">
+                <div>
+                  <label htmlFor="careRecipientName" className="block text-sm font-medium text-foreground mb-2">
+                    Naam van je naaste
+                  </label>
+                  <input
+                    id="careRecipientName"
+                    type="text"
+                    value={formData.careRecipientName}
+                    onChange={(e) => setFormData({ ...formData, careRecipientName: e.target.value })}
+                    className="ker-input"
+                    placeholder="Voornaam"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Wat is je relatie?
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {RELATIE_OPTIES.map((relatie) => (
+                      <button
+                        key={relatie}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, careRecipientRelation: relatie })}
+                        className={`px-3 py-2 rounded-xl border-2 text-sm transition-colors ${
+                          formData.careRecipientRelation === relatie
+                            ? "border-primary bg-primary/10 text-primary font-medium"
+                            : "border-border hover:border-primary/30"
+                        }`}
+                      >
+                        {relatie}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                {/* Toestemming */}
-                <div className="space-y-3">
+                <AddressSearch
+                  label="Waar woont je naaste?"
+                  value={formData.careRecipientAddress}
+                  onChange={(address) => setFormData({ ...formData, careRecipientAddress: address })}
+                  placeholder="Typ straat of postcode"
+                />
+
+                {/* Privacy */}
+                <div className="space-y-3 pt-2">
                   <label className="flex items-start gap-3 cursor-pointer p-4 rounded-xl border-2 border-border hover:border-primary/30 transition-colors">
                     <input
                       type="checkbox"
@@ -264,7 +410,7 @@ export default function RegisterPage() {
                     <span className="text-sm text-foreground">
                       Ik ga akkoord met de{" "}
                       <Link href="/privacy" className="text-primary hover:underline">
-                        regels over privacy
+                        privacyregels
                       </Link>
                     </span>
                   </label>
@@ -285,7 +431,7 @@ export default function RegisterPage() {
                 <div className="flex gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => setStep(1)}
+                    onClick={() => setStep(2)}
                     className="ker-btn ker-btn-secondary flex-1"
                   >
                     Terug
@@ -301,7 +447,7 @@ export default function RegisterPage() {
                         Bezig...
                       </span>
                     ) : (
-                      "Klaar"
+                      "Account aanmaken"
                     )}
                   </button>
                 </div>
@@ -316,13 +462,6 @@ export default function RegisterPage() {
                 </Link>
               </p>
             </div>
-          </div>
-
-          {/* Terug naar test link */}
-          <div className="mt-4 text-center">
-            <Link href="/belastbaarheidstest" className="text-sm text-muted-foreground hover:text-foreground">
-              ← Terug naar de Balanstest
-            </Link>
           </div>
         </div>
       </main>
