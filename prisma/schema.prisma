@@ -612,7 +612,7 @@ model Zorgorganisatie {
   adres       String?
   postcode    String?
   woonplaats  String?
-  gemeente    String
+  gemeente    String?   // Null = landelijk/nationaal beschikbaar
   locatieOmschrijving String?  @db.Text  // "Locatie omschrijving" uit Excel
 
   // Praktische info
@@ -639,6 +639,7 @@ enum ZorgorganisatieType {
   HUISARTS          // Huisarts
   SOCIAAL_WIJKTEAM  // Sociaal wijkteam
   VRIJWILLIGERS     // Vrijwilligersorganisatie
+  LANDELIJK         // Landelijke/nationale organisatie
   OVERIG            // Overig
 }
 

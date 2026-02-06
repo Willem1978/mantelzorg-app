@@ -13,6 +13,15 @@ interface Hulpbron {
   beschrijving: string | null
   soortHulp?: string | null
   gemeente?: string | null
+  isLandelijk?: boolean
+}
+
+interface LandelijkeHulpbron {
+  naam: string
+  telefoon: string | null
+  website: string | null
+  beschrijving: string | null
+  soortHulp: string | null
 }
 
 interface DashboardData {
@@ -36,6 +45,7 @@ interface DashboardData {
   hulpbronnen?: {
     perTaak: Record<string, Hulpbron[]>
     algemeen: Hulpbron[]
+    landelijk: LandelijkeHulpbron[]
     gebruikersGemeente?: string | null
   }
   checkIns: {
@@ -510,16 +520,16 @@ export default function DashboardPage() {
       </section>
 
       {/* SECTIE: Hulpbronnen uit Sociale Kaart */}
-      {data?.hulpbronnen && (Object.keys(data.hulpbronnen.perTaak).length > 0 || data.hulpbronnen.algemeen.length > 0) && (
+      {data?.hulpbronnen && (Object.keys(data.hulpbronnen.perTaak).length > 0 || data.hulpbronnen.algemeen.length > 0 || data.hulpbronnen.landelijk.length > 0) && (
         <section className="mb-8">
           <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
             <span className="text-2xl">💡</span> Hulp voor jou
           </h2>
 
-          {/* Info als geen lokale hulpbronnen */}
+          {/* Info over gemeente */}
           {data.hulpbronnen.gebruikersGemeente && (
             <p className="text-xs text-muted-foreground mb-3">
-              📍 Hulpbronnen in jouw regio ({data.hulpbronnen.gebruikersGemeente})
+              📍 Lokale hulp in {data.hulpbronnen.gebruikersGemeente} + landelijke ondersteuning
             </p>
           )}
 
@@ -535,7 +545,11 @@ export default function DashboardPage() {
                   <div key={i} className="ker-card py-3">
                     <div className="flex items-start justify-between">
                       <p className="font-medium text-sm">{hulp.naam}</p>
-                      {hulp.gemeente && hulp.gemeente !== data.hulpbronnen?.gebruikersGemeente && (
+                      {hulp.isLandelijk ? (
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                          🌍 Landelijk
+                        </span>
+                      ) : hulp.gemeente && (
                         <span className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
                           📍 {hulp.gemeente}
                         </span>
@@ -562,11 +576,11 @@ export default function DashboardPage() {
             </div>
           ))}
 
-          {/* Algemene hulpbronnen */}
+          {/* Algemene hulpbronnen (lokaal + landelijk gecombineerd) */}
           {data.hulpbronnen.algemeen.length > 0 && (
             <div className="mt-4">
               <p className="text-sm font-medium text-foreground mb-2">
-                Overige ondersteuning:
+                Ondersteuning voor jou:
               </p>
               <div className="space-y-2">
                 {data.hulpbronnen.algemeen.map((hulp, i) => (
@@ -578,7 +592,11 @@ export default function DashboardPage() {
                           <span className="text-xs bg-muted px-2 py-0.5 rounded-full">{hulp.soortHulp}</span>
                         )}
                       </div>
-                      {hulp.gemeente && hulp.gemeente !== data.hulpbronnen?.gebruikersGemeente && (
+                      {hulp.isLandelijk ? (
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                          🌍 Landelijk
+                        </span>
+                      ) : hulp.gemeente && (
                         <span className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
                           📍 {hulp.gemeente}
                         </span>
@@ -596,6 +614,39 @@ export default function DashboardPage() {
                       {hulp.website && (
                         <a href={hulp.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
                           🌐 Website
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Landelijke hulplijnen (altijd zichtbaar) */}
+          {data.hulpbronnen.landelijk.length > 0 && (
+            <div className="mt-4 p-4 bg-primary/5 rounded-xl">
+              <p className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+                🌍 Landelijke hulplijnen
+              </p>
+              <div className="space-y-2">
+                {data.hulpbronnen.landelijk.map((hulp, i) => (
+                  <div key={i} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                    <div>
+                      <p className="font-medium text-sm">{hulp.naam}</p>
+                      {hulp.soortHulp && (
+                        <span className="text-xs text-muted-foreground">{hulp.soortHulp}</span>
+                      )}
+                    </div>
+                    <div className="flex gap-3">
+                      {hulp.telefoon && (
+                        <a href={`tel:${hulp.telefoon}`} className="text-xs text-primary hover:underline font-medium">
+                          📞 {hulp.telefoon}
+                        </a>
+                      )}
+                      {hulp.website && (
+                        <a href={hulp.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
+                          🌐
                         </a>
                       )}
                     </div>
