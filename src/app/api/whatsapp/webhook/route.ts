@@ -421,7 +421,7 @@ async function handleOnboardingSession(
 
 Je testresultaten worden opgeslagen na inloggen.
 
-${baseUrl}/login-whatsapp`,
+${baseUrl}/r/log`,
       }
     }
 
@@ -434,7 +434,7 @@ ${baseUrl}/login-whatsapp`,
 
 Je testresultaten worden opgeslagen na registratie.
 
-${baseUrl}/register-whatsapp`,
+${baseUrl}/r/reg`,
       }
     }
 
@@ -998,7 +998,7 @@ function handleGuestMenu(phoneNumber: string, input: string): string {
 
 Met een account bewaar ik je resultaten en geef ik persoonlijke tips.
 
-${baseUrl}/register-whatsapp`
+${baseUrl}/r/reg`
   }
 
   // 3. Inloggen
@@ -1008,7 +1008,7 @@ ${baseUrl}/register-whatsapp`
 
 Na inloggen wordt je WhatsApp gekoppeld.
 
-${baseUrl}/login-whatsapp`
+${baseUrl}/r/log`
   }
 
   // 4. Direct spreken
