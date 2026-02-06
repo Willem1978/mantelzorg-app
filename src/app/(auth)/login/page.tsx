@@ -18,6 +18,7 @@ function LoginForm() {
 
   const fromTest = searchParams.get("from") === "test"
   const phoneNumber = searchParams.get("phone") // WhatsApp telefoonnummer
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard" // Redirect na login
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,7 +37,8 @@ function LoginForm() {
         throw new Error("Ongeldige inloggegevens")
       }
 
-      router.push("/dashboard")
+      // Redirect naar callbackUrl of dashboard
+      router.push(callbackUrl)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Er ging iets mis")
     } finally {

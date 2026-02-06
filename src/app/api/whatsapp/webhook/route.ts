@@ -353,8 +353,8 @@ async function handleTestSession(
           const questionNum = updatedSession.currentQuestion + 1
           const questionText = `📊 *Vraag ${questionNum}/${BELASTBAARHEID_QUESTIONS.length}*\n\n${nextQuestion.vraag}`
 
-          // Consistente numerieke opties voor alle vragen
-          return { response: questionText + `\n\n1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee\n\n_Typ 1, 2 of 3_` }
+          // Consistente numerieke opties met gekleurde bolletjes
+          return { response: questionText + `\n\n1️⃣ 🔴 Ja\n2️⃣ 🟡 Soms\n3️⃣ 🟢 Nee\n\n_Typ 1, 2 of 3_` }
         }
       }
     } else if (command === 'stop' || command === 'stoppen') {
@@ -367,15 +367,8 @@ async function handleTestSession(
     const questionNum = session.currentQuestion + 1
     const questionText = `❌ Kies een antwoord:\n\n📊 *Vraag ${questionNum}/${BELASTBAARHEID_QUESTIONS.length}*\n\n${currentQuestion?.vraag}`
 
-    if (CONTENT_SIDS.testAnswer) {
-      return {
-        response: '',
-        useInteractiveButtons: true,
-        interactiveContentSid: CONTENT_SIDS.testAnswer,
-        interactiveBodyText: questionText,
-      }
-    }
-    return { response: questionText + `\n\n1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee\n\n_Typ 1, 2 of 3_` }
+    // Altijd consistente tekst met gekleurde bolletjes (geen knoppen)
+    return { response: questionText + `\n\n1️⃣ 🔴 Ja\n2️⃣ 🟡 Soms\n3️⃣ 🟢 Nee\n\n_Typ 1, 2 of 3_` }
   }
 
   return { response: '' }
@@ -770,15 +763,8 @@ async function handleLoggedInUser(
 
       session.currentStep = 'questions'
 
-      if (CONTENT_SIDS.testAnswer) {
-        return {
-          response: '',
-          useInteractiveButtons: true,
-          interactiveContentSid: CONTENT_SIDS.testAnswer,
-          interactiveBodyText: questionText,
-        }
-      }
-      return { response: questionText + `\n\n1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee\n\n_Typ 1, 2 of 3_` }
+      // Altijd consistente tekst met gekleurde bolletjes (geen knoppen)
+      return { response: questionText + `\n\n1️⃣ 🔴 Ja\n2️⃣ 🟡 Soms\n3️⃣ 🟢 Nee\n\n_Typ 1, 2 of 3_` }
     }
 
     // Als wel test gedaan: toon score met optie om opnieuw te doen
@@ -817,15 +803,8 @@ async function handleLoggedInUser(
 
     session.currentStep = 'questions'
 
-    if (CONTENT_SIDS.testAnswer) {
-      return {
-        response: '',
-        useInteractiveButtons: true,
-        interactiveContentSid: CONTENT_SIDS.testAnswer,
-        interactiveBodyText: questionText,
-      }
-    }
-    return { response: questionText + `\n\n1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee\n\n_Typ 1, 2 of 3_` }
+    // Altijd consistente tekst met gekleurde bolletjes (geen knoppen)
+    return { response: questionText + `\n\n1️⃣ 🔴 Ja\n2️⃣ 🟡 Soms\n3️⃣ 🟢 Nee\n\n_Typ 1, 2 of 3_` }
   }
 
   // 2. Hulp in de buurt
@@ -987,8 +966,8 @@ function handleGuestMenu(phoneNumber: string, input: string): string {
     const firstQuestion = getCurrentQuestion(session)
     session.currentStep = 'questions'
 
-    // Consistente numerieke opties
-    return `📊 *Mantelzorg Balanstest*\n\nSuper dat je even stilstaat bij hoe het met jou gaat! 💚\n\nIk stel je 12 korte vragen. Beantwoord ze eerlijk.\n\n*Vraag 1/12*\n\n${firstQuestion?.vraag}\n\n1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee\n\n_Typ 1, 2 of 3_`
+    // Consistente numerieke opties met gekleurde bolletjes
+    return `📊 *Mantelzorg Balanstest*\n\nSuper dat je even stilstaat bij hoe het met jou gaat! 💚\n\nIk stel je 12 korte vragen. Beantwoord ze eerlijk.\n\n*Vraag 1/12*\n\n${firstQuestion?.vraag}\n\n1️⃣ 🔴 Ja\n2️⃣ 🟡 Soms\n3️⃣ 🟢 Nee\n\n_Typ 1, 2 of 3_`
   }
 
   // 2. Account aanmaken - link naar browser
@@ -1127,18 +1106,17 @@ async function buildTestCompletionMessage(
 
       if (urenOptie) totaleUren += urenOptie.waarde
 
-      let moeilijkheidEmoji = '🟢'
-      if (details.difficulty === 'ZEER_MOEILIJK') {
-        moeilijkheidEmoji = '🔴'
+      let moeilijkheidEmoji = '🟢' // NEE = niet zwaar
+      if (details.difficulty === 'JA') {
+        moeilijkheidEmoji = '🔴' // JA = wel zwaar
         zwareTaken.push(taak?.naam || '')
         zwareTaakIds.push(taskId)
-      } else if (details.difficulty === 'MOEILIJK') {
-        moeilijkheidEmoji = '🟠'
+      } else if (details.difficulty === 'SOMS') {
+        moeilijkheidEmoji = '🟡' // SOMS = soms zwaar
         zwareTaken.push(taak?.naam || '')
         zwareTaakIds.push(taskId)
-      } else if (details.difficulty === 'GEMIDDELD') {
-        moeilijkheidEmoji = '🟡'
       }
+      // NEE = niet zwaar, blijft 🟢
 
       response += `${moeilijkheidEmoji} ${taak?.naam} (${details.hours || '?'})\n`
     }

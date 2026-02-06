@@ -6,6 +6,14 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
 
+interface Hulpbron {
+  naam: string
+  telefoon: string | null
+  website: string | null
+  beschrijving: string | null
+  soortHulp?: string | null
+}
+
 interface DashboardData {
   user: {
     name: string
@@ -22,7 +30,11 @@ interface DashboardData {
     trend?: "improved" | "same" | "worse"
     history?: { score: number; niveau: string; date: string }[]
     highScoreAreas?: { vraag: string; antwoord: string }[]
-    zorgtaken?: { naam: string; uren: number | null; moeilijkheid: string | null }[]
+    zorgtaken?: { id: string; naam: string; uren: number | null; moeilijkheid: string | null }[]
+  }
+  hulpbronnen?: {
+    perTaak: Record<string, Hulpbron[]>
+    algemeen: Hulpbron[]
   }
   checkIns: {
     weeklyDone: boolean
@@ -478,11 +490,14 @@ export default function DashboardPage() {
                   key={i}
                   className={cn(
                     "text-xs px-2 py-1 rounded-full",
-                    taak.moeilijkheid === "ZEER_MOEILIJK" && "bg-[var(--accent-red-bg)] text-[var(--accent-red)]",
-                    taak.moeilijkheid === "MOEILIJK" && "bg-[var(--accent-amber-bg)] text-[var(--accent-amber)]",
-                    (!taak.moeilijkheid || taak.moeilijkheid === "GEMIDDELD" || taak.moeilijkheid === "MAKKELIJK") && "bg-muted text-muted-foreground"
+                    taak.moeilijkheid === "JA" && "bg-[var(--accent-red-bg)] text-[var(--accent-red)]",
+                    taak.moeilijkheid === "SOMS" && "bg-[var(--accent-amber-bg)] text-[var(--accent-amber)]",
+                    (!taak.moeilijkheid || taak.moeilijkheid === "NEE") && "bg-muted text-muted-foreground"
                   )}
                 >
+                  {taak.moeilijkheid === "JA" && "🔴 "}
+                  {taak.moeilijkheid === "SOMS" && "🟡 "}
+                  {(!taak.moeilijkheid || taak.moeilijkheid === "NEE") && "🟢 "}
                   {taak.naam}
                   {taak.uren && ` (${taak.uren}u/w)`}
                 </span>
@@ -491,6 +506,85 @@ export default function DashboardPage() {
           </div>
         )}
       </section>
+
+      {/* SECTIE: Hulpbronnen uit Sociale Kaart */}
+      {data?.hulpbronnen && (Object.keys(data.hulpbronnen.perTaak).length > 0 || data.hulpbronnen.algemeen.length > 0) && (
+        <section className="mb-8">
+          <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+            <span className="text-2xl">💡</span> Hulp voor jou
+          </h2>
+
+          {/* Hulp per zware taak */}
+          {Object.entries(data.hulpbronnen.perTaak).map(([taakNaam, hulpbronnen]) => (
+            <div key={taakNaam} className="mb-4">
+              <p className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                <span className="text-[var(--accent-red)]">●</span>
+                Hulp bij {taakNaam.toLowerCase()}:
+              </p>
+              <div className="space-y-2">
+                {hulpbronnen.map((hulp, i) => (
+                  <div key={i} className="ker-card py-3">
+                    <p className="font-medium text-sm">{hulp.naam}</p>
+                    {hulp.beschrijving && (
+                      <p className="text-xs text-muted-foreground mt-1">{hulp.beschrijving}</p>
+                    )}
+                    <div className="flex gap-4 mt-2">
+                      {hulp.telefoon && (
+                        <a href={`tel:${hulp.telefoon}`} className="text-xs text-primary hover:underline flex items-center gap-1">
+                          📞 {hulp.telefoon}
+                        </a>
+                      )}
+                      {hulp.website && (
+                        <a href={hulp.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1">
+                          🌐 Website
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {/* Algemene hulpbronnen */}
+          {data.hulpbronnen.algemeen.length > 0 && (
+            <div className="mt-4">
+              <p className="text-sm font-medium text-foreground mb-2">
+                Overige ondersteuning:
+              </p>
+              <div className="space-y-2">
+                {data.hulpbronnen.algemeen.map((hulp, i) => (
+                  <div key={i} className="ker-card py-3">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-medium text-sm">{hulp.naam}</p>
+                        {hulp.soortHulp && (
+                          <span className="text-xs bg-muted px-2 py-0.5 rounded-full">{hulp.soortHulp}</span>
+                        )}
+                      </div>
+                    </div>
+                    {hulp.beschrijving && (
+                      <p className="text-xs text-muted-foreground mt-1">{hulp.beschrijving}</p>
+                    )}
+                    <div className="flex gap-4 mt-2">
+                      {hulp.telefoon && (
+                        <a href={`tel:${hulp.telefoon}`} className="text-xs text-primary hover:underline">
+                          📞 {hulp.telefoon}
+                        </a>
+                      )}
+                      {hulp.website && (
+                        <a href={hulp.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
+                          🌐 Website
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Snelle acties */}
       <section className="mb-8">

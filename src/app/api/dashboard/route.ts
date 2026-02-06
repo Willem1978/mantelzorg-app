@@ -2,6 +2,91 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
+// Mapping van taak IDs naar "Onderdeel mantelzorgtest" waarden in de database
+const TAAK_NAAR_ONDERDEEL: Record<string, string> = {
+  t1: 'Persoonlijke verzorging',
+  t2: 'Huishoudelijke taken',
+  t3: 'Persoonlijke verzorging', // Medicijnen
+  t4: 'Vervoer',
+  t5: 'Administratie en aanvragen',
+  t6: 'Sociaal contact en activiteiten',
+  t7: 'Persoonlijke verzorging', // Toezicht
+  t8: 'Persoonlijke verzorging', // Medische zorg
+}
+
+// Haal hulpbronnen op voor zware taken
+async function getHulpbronnenVoorTaken(
+  latestTest: any,
+  gemeente: string | null
+): Promise<{
+  perTaak: Record<string, { naam: string; telefoon: string | null; website: string | null; beschrijving: string | null }[]>
+  algemeen: { naam: string; telefoon: string | null; website: string | null; beschrijving: string | null; soortHulp: string | null }[]
+}> {
+  if (!latestTest) {
+    return { perTaak: {}, algemeen: [] }
+  }
+
+  // Vind zware taken (JA of SOMS)
+  const zwareTaken = latestTest.taakSelecties?.filter(
+    (t: any) => t.isGeselecteerd && (t.moeilijkheid === 'JA' || t.moeilijkheid === 'SOMS')
+  ) || []
+
+  const perTaak: Record<string, any[]> = {}
+
+  // Haal hulpbronnen op per zware taak
+  for (const taak of zwareTaken) {
+    const onderdeel = TAAK_NAAR_ONDERDEEL[taak.taakId]
+    if (!onderdeel) continue
+
+    const hulpbronnen = await prisma.zorgorganisatie.findMany({
+      where: {
+        isActief: true,
+        onderdeelTest: onderdeel,
+        // Filter op gemeente of landelijk als gemeente niet beschikbaar
+        OR: gemeente
+          ? [{ gemeente: gemeente }, { gemeente: 'Landelijk' }]
+          : [{ gemeente: 'Landelijk' }],
+      },
+      take: 3,
+      orderBy: [
+        { gemeente: 'asc' }, // Lokale hulp eerst
+        { naam: 'asc' },
+      ],
+      select: {
+        naam: true,
+        telefoon: true,
+        website: true,
+        beschrijving: true,
+      },
+    })
+
+    if (hulpbronnen.length > 0) {
+      perTaak[taak.taakNaam] = hulpbronnen
+    }
+  }
+
+  // Haal algemene hulpbronnen op gebaseerd op belastingsniveau
+  const isHoog = latestTest.belastingNiveau === 'HOOG'
+  const algemeen = await prisma.zorgorganisatie.findMany({
+    where: {
+      isActief: true,
+      ...(isHoog ? { zichtbaarBijHoog: true } : {}),
+      soortHulp: { in: ['Emotionele steun', 'Respijtzorg', 'Lotgenotencontact'] },
+    },
+    take: 5,
+    orderBy: { naam: 'asc' },
+    select: {
+      naam: true,
+      telefoon: true,
+      website: true,
+      beschrijving: true,
+      soortHulp: true,
+    },
+  })
+
+  return { perTaak, algemeen }
+}
+
 // GET: Dashboard data ophalen
 export async function GET() {
   try {
@@ -195,6 +280,7 @@ export async function GET() {
             zorgtaken: latestTest.taakSelecties
               .filter((t) => t.isGeselecteerd)
               .map((t) => ({
+                id: t.taakId,
                 naam: t.taakNaam,
                 uren: t.urenPerWeek,
                 moeilijkheid: t.moeilijkheid,
@@ -253,6 +339,9 @@ export async function GET() {
           dueDate: t.dueDate,
         })),
       },
+
+      // Hulpbronnen uit de Sociale Kaart
+      hulpbronnen: await getHulpbronnenVoorTaken(latestTest, caregiver.municipality),
     })
   } catch (error) {
     console.error("Dashboard GET error:", error)
