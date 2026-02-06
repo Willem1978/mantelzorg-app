@@ -320,6 +320,53 @@ export function parseIncomingWhatsAppMessage(body: any) {
 }
 
 /**
+ * Stuur een WhatsApp bericht MET afbeelding (bijv. score infographic)
+ */
+export async function sendWhatsAppMessageWithImage({
+  to,
+  body,
+  imageUrl,
+}: {
+  to: string
+  body: string
+  imageUrl: string
+}) {
+  if (!twilioClient) {
+    throw new Error('Twilio client not configured')
+  }
+
+  const formattedTo = to.startsWith('whatsapp:') ? to : `whatsapp:${to}`
+
+  try {
+    const message = await twilioClient.messages.create({
+      from: whatsappFrom,
+      to: formattedTo,
+      body,
+      mediaUrl: [imageUrl],
+    })
+
+    console.log(`WhatsApp bericht met afbeelding verzonden. SID: ${message.sid}`)
+    return message
+  } catch (error) {
+    console.error('Fout bij versturen afbeelding:', error)
+    throw error
+  }
+}
+
+/**
+ * Genereer URL voor score infographic
+ */
+export function getScoreImageUrl(score: number, level: string, name?: string): string {
+  const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
+  const params = new URLSearchParams({
+    score: score.toString(),
+    level,
+    ...(name && { name }),
+  })
+  return `${baseUrl}/api/score-image?${params.toString()}`
+}
+
+/**
  * Template berichten voor de mantelzorg app
  */
 export const WhatsAppTemplates = {

@@ -595,6 +595,17 @@ model Zorgorganisatie {
   // Wat bieden ze aan?
   diensten    String[] // ["respijtzorg", "dagbesteding", "thuiszorg", etc.]
 
+  // Koppeling aan zorgtaken (t1, t2, etc. uit whatsapp-session.ts)
+  zorgtaakIds String[] // ["t1", "t5"] = persoonlijke verzorging, administratie
+
+  // Bij welk belastingsniveau tonen?
+  zichtbaarBijLaag     Boolean @default(false)
+  zichtbaarBijGemiddeld Boolean @default(false)
+  zichtbaarBijHoog     Boolean @default(true)
+
+  // Openingstijden
+  openingstijden String?
+
   isActief    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
