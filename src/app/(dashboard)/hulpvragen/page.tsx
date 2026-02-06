@@ -253,6 +253,45 @@ export default function HulpPage() {
     return parts.length > 0 ? parts.join(', ') : null
   }
 
+  // Helper functie om relevante landelijke hulpbronnen te vinden voor een categorie (mantelzorger)
+  const getLandelijkeHulpVoorCategorie = (categorieNaam: string): LandelijkeHulpbron[] => {
+    if (!hulpData?.landelijk) return []
+
+    const mapping: Record<string, string[]> = {
+      'Mantelzorgondersteuning': ['ondersteuning', 'mantelzorg'],
+      'Respijtzorg': ['respijt'],
+      'Emotionele steun': ['emotioneel', 'steun'],
+      'Lotgenotencontact': ['lotgenoot', 'lotgenoten'],
+    }
+
+    const keywords = mapping[categorieNaam] || []
+    if (keywords.length === 0) return []
+
+    return hulpData.landelijk.filter(h =>
+      keywords.some(kw => h.soortHulp?.toLowerCase().includes(kw))
+    )
+  }
+
+  // Bereken het totaal aantal relevante landelijke hulpbronnen (die al in andere categorieën getoond worden)
+  const getRelevanteLandelijkeCount = (): number => {
+    if (!hulpData?.landelijk) return 0
+
+    const relevanteKeywords = ['ondersteuning', 'mantelzorg', 'respijt', 'emotioneel', 'steun', 'lotgenoot', 'lotgenoten']
+    return hulpData.landelijk.filter(h =>
+      relevanteKeywords.some(kw => h.soortHulp?.toLowerCase().includes(kw))
+    ).length
+  }
+
+  // Landelijke hulpbronnen die NIET relevant zijn voor de mantelzorger categorieën
+  const getOverigeLandelijke = (): LandelijkeHulpbron[] => {
+    if (!hulpData?.landelijk) return []
+
+    const relevanteKeywords = ['ondersteuning', 'mantelzorg', 'respijt', 'emotioneel', 'steun', 'lotgenoot', 'lotgenoten']
+    return hulpData.landelijk.filter(h =>
+      !relevanteKeywords.some(kw => h.soortHulp?.toLowerCase().includes(kw))
+    )
+  }
+
   const locatieMantelzorger = formatLocatie(hulpData?.locatie?.mantelzorger)
   const locatieZorgvrager = formatLocatie(hulpData?.locatie?.zorgvrager)
 
@@ -456,10 +495,15 @@ export default function HulpPage() {
       {/* DRIE TABS NAAST ELKAAR */}
       {(() => {
         // Bereken totalen voor badges
-        const aantalVoorJou = CATEGORIEEN_MANTELZORGER.reduce((sum, cat) =>
+        // Voor jou: lokale hulpbronnen + relevante landelijke hulpbronnen
+        const aantalLokaalVoorJou = CATEGORIEEN_MANTELZORGER.reduce((sum, cat) =>
           sum + (hulpData?.perCategorie?.[cat.naam]?.length || 0), 0)
+        const aantalLandelijkVoorJou = getRelevanteLandelijkeCount()
+        const aantalVoorJou = aantalLokaalVoorJou + aantalLandelijkVoorJou
+
         const aantalZwareTaken = hulpData?.zwareTaken?.length || 0
-        const aantalLandelijk = hulpData?.landelijk?.length || 0
+        // Algemeen: alleen overige landelijke hulpbronnen die niet in categorieën passen
+        const aantalLandelijk = getOverigeLandelijke().length
 
         return (
           <div className="grid grid-cols-3 gap-2 mb-6">
@@ -552,7 +596,9 @@ export default function HulpPage() {
 
           <div className="grid grid-cols-2 gap-3">
             {CATEGORIEEN_MANTELZORGER.map((cat) => {
-              const aantalHulp = hulpData?.perCategorie?.[cat.naam]?.length || 0
+              const aantalLokaal = hulpData?.perCategorie?.[cat.naam]?.length || 0
+              const aantalLandelijk = getLandelijkeHulpVoorCategorie(cat.naam).length
+              const aantalHulp = aantalLokaal + aantalLandelijk
               const isSelected = selectedCategorie === cat.naam
 
               return (
@@ -596,25 +642,55 @@ export default function HulpPage() {
                 </button>
               </div>
 
-              {hulpData?.perCategorie?.[selectedCategorie] && hulpData.perCategorie[selectedCategorie].length > 0 ? (
-                <div className="space-y-2">
-                  {hulpData.perCategorie[selectedCategorie].map((hulp, i) => (
-                    <HulpbronCard key={i} hulp={hulp} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground ker-card">
-                  <p>Geen hulpbronnen gevonden</p>
-                  <a
-                    href={`https://www.zorgkaartnederland.nl/zoeken?q=${encodeURIComponent(selectedCategorie)}&plaats=${hulpData?.mantelzorgerGemeente || ''}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-primary hover:underline mt-2 inline-block"
-                  >
-                    Zoek op Zorgkaart Nederland →
-                  </a>
-                </div>
-              )}
+              {(() => {
+                const lokaleHulp = hulpData?.perCategorie?.[selectedCategorie] || []
+                const landelijkeHulp = getLandelijkeHulpVoorCategorie(selectedCategorie)
+                const heeftHulp = lokaleHulp.length > 0 || landelijkeHulp.length > 0
+
+                if (!heeftHulp) {
+                  return (
+                    <div className="text-center py-8 text-muted-foreground ker-card">
+                      <p>Geen hulpbronnen gevonden</p>
+                      <a
+                        href={`https://www.zorgkaartnederland.nl/zoeken?q=${encodeURIComponent(selectedCategorie)}&plaats=${hulpData?.mantelzorgerGemeente || ''}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline mt-2 inline-block"
+                      >
+                        Zoek op Zorgkaart Nederland →
+                      </a>
+                    </div>
+                  )
+                }
+
+                return (
+                  <div className="space-y-3">
+                    {/* Lokale hulpbronnen */}
+                    {lokaleHulp.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          📍 In je buurt
+                        </p>
+                        {lokaleHulp.map((hulp, i) => (
+                          <HulpbronCard key={`lokaal-${i}`} hulp={hulp} />
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Landelijke hulpbronnen */}
+                    {landelijkeHulp.length > 0 && (
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          🌍 Landelijk
+                        </p>
+                        {landelijkeHulp.map((hulp, i) => (
+                          <LandelijkeHulpCard key={`landelijk-${i}`} hulp={hulp} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
             </div>
           )}
         </div>
@@ -711,143 +787,84 @@ export default function HulpPage() {
         </div>
       )}
 
-      {/* TAB: ALGEMEEN (Landelijk) */}
+      {/* TAB: ALGEMEEN (Landelijk) - alleen overige hulpbronnen die niet in categorieën passen */}
       {activeTab === 'algemeen' && (
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Landelijke hulplijnen en informatie
-          </p>
+          {(() => {
+            const overigeLandelijke = getOverigeLandelijke()
 
-          {/* Hulplijnen met telefoonnummer */}
-          {hulpData?.landelijk && hulpData.landelijk.filter(h => h.telefoon).length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-2">
-                📞 Hulplijnen
-              </p>
-              <div className="space-y-2">
-                {hulpData.landelijk.filter(h => h.telefoon).map((hulp, i) => (
-                  <LandelijkeHulpCard key={i} hulp={hulp} />
-                ))}
-              </div>
-            </div>
-          )}
+            if (overigeLandelijke.length === 0) {
+              return (
+                <div className="text-center py-8 text-muted-foreground ker-card">
+                  <p>Alle landelijke hulpbronnen zijn te vinden bij de categorieën hierboven</p>
+                  <p className="text-sm mt-2">Klik op "Voor jou" om hulpbronnen te bekijken</p>
+                </div>
+              )
+            }
 
-          {/* Emotionele steun */}
-          {hulpData?.landelijk && hulpData.landelijk.filter(h =>
-            h.soortHulp?.toLowerCase().includes('emotioneel') ||
-            h.soortHulp?.toLowerCase().includes('steun')
-          ).length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-2">
-                💚 Emotionele steun
-              </p>
-              <div className="space-y-2">
-                {hulpData.landelijk.filter(h =>
-                  h.soortHulp?.toLowerCase().includes('emotioneel') ||
-                  h.soortHulp?.toLowerCase().includes('steun')
-                ).map((hulp, i) => (
-                  <LandelijkeHulpCard key={i} hulp={hulp} />
-                ))}
-              </div>
-            </div>
-          )}
+            // Groepeer overige landelijke hulpbronnen
+            const hulplijnen = overigeLandelijke.filter(h => h.telefoon)
+            const informatieAdvies = overigeLandelijke.filter(h =>
+              (h.soortHulp?.toLowerCase().includes('informatie') ||
+               h.soortHulp?.toLowerCase().includes('advies')) &&
+              !h.telefoon
+            )
+            const overig = overigeLandelijke.filter(h =>
+              !h.telefoon &&
+              !h.soortHulp?.toLowerCase().includes('informatie') &&
+              !h.soortHulp?.toLowerCase().includes('advies')
+            )
 
-          {/* Respijtzorg */}
-          {hulpData?.landelijk && hulpData.landelijk.filter(h =>
-            h.soortHulp?.toLowerCase().includes('respijt')
-          ).length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-2">
-                🏠 Respijtzorg
-              </p>
-              <div className="space-y-2">
-                {hulpData.landelijk.filter(h =>
-                  h.soortHulp?.toLowerCase().includes('respijt')
-                ).map((hulp, i) => (
-                  <LandelijkeHulpCard key={i} hulp={hulp} />
-                ))}
-              </div>
-            </div>
-          )}
+            return (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Overige landelijke hulplijnen en informatie
+                </p>
 
-          {/* Lotgenotencontact */}
-          {hulpData?.landelijk && hulpData.landelijk.filter(h =>
-            h.soortHulp?.toLowerCase().includes('lotgenoot') ||
-            h.soortHulp?.toLowerCase().includes('lotgenoten')
-          ).length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-2">
-                👥 Lotgenotencontact
-              </p>
-              <div className="space-y-2">
-                {hulpData.landelijk.filter(h =>
-                  h.soortHulp?.toLowerCase().includes('lotgenoot') ||
-                  h.soortHulp?.toLowerCase().includes('lotgenoten')
-                ).map((hulp, i) => (
-                  <LandelijkeHulpCard key={i} hulp={hulp} />
-                ))}
-              </div>
-            </div>
-          )}
+                {/* Hulplijnen met telefoonnummer */}
+                {hulplijnen.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-2">
+                      📞 Hulplijnen
+                    </p>
+                    <div className="space-y-2">
+                      {hulplijnen.map((hulp, i) => (
+                        <LandelijkeHulpCard key={i} hulp={hulp} />
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-          {/* Informatie & advies */}
-          {hulpData?.landelijk && hulpData.landelijk.filter(h =>
-            h.soortHulp?.toLowerCase().includes('informatie') ||
-            h.soortHulp?.toLowerCase().includes('advies')
-          ).length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-2">
-                ℹ️ Informatie & advies
-              </p>
-              <div className="space-y-2">
-                {hulpData.landelijk.filter(h =>
-                  h.soortHulp?.toLowerCase().includes('informatie') ||
-                  h.soortHulp?.toLowerCase().includes('advies')
-                ).map((hulp, i) => (
-                  <LandelijkeHulpCard key={i} hulp={hulp} />
-                ))}
-              </div>
-            </div>
-          )}
+                {/* Informatie & advies */}
+                {informatieAdvies.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-2">
+                      ℹ️ Informatie & advies
+                    </p>
+                    <div className="space-y-2">
+                      {informatieAdvies.map((hulp, i) => (
+                        <LandelijkeHulpCard key={i} hulp={hulp} />
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-          {/* Overig - alles wat niet in bovenstaande categorieën valt */}
-          {hulpData?.landelijk && hulpData.landelijk.filter(h =>
-            !h.telefoon &&
-            !h.soortHulp?.toLowerCase().includes('emotioneel') &&
-            !h.soortHulp?.toLowerCase().includes('steun') &&
-            !h.soortHulp?.toLowerCase().includes('respijt') &&
-            !h.soortHulp?.toLowerCase().includes('lotgenoot') &&
-            !h.soortHulp?.toLowerCase().includes('lotgenoten') &&
-            !h.soortHulp?.toLowerCase().includes('informatie') &&
-            !h.soortHulp?.toLowerCase().includes('advies')
-          ).length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-2">
-                📋 Overig
-              </p>
-              <div className="space-y-2">
-                {hulpData.landelijk.filter(h =>
-                  !h.telefoon &&
-                  !h.soortHulp?.toLowerCase().includes('emotioneel') &&
-                  !h.soortHulp?.toLowerCase().includes('steun') &&
-                  !h.soortHulp?.toLowerCase().includes('respijt') &&
-                  !h.soortHulp?.toLowerCase().includes('lotgenoot') &&
-                  !h.soortHulp?.toLowerCase().includes('lotgenoten') &&
-                  !h.soortHulp?.toLowerCase().includes('informatie') &&
-                  !h.soortHulp?.toLowerCase().includes('advies')
-                ).map((hulp, i) => (
-                  <LandelijkeHulpCard key={i} hulp={hulp} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Fallback als er geen landelijke hulpbronnen zijn */}
-          {(!hulpData?.landelijk || hulpData.landelijk.length === 0) && (
-            <div className="text-center py-8 text-muted-foreground ker-card">
-              <p>Geen landelijke hulpbronnen beschikbaar</p>
-            </div>
-          )}
+                {/* Overig */}
+                {overig.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-2">
+                      📋 Overig
+                    </p>
+                    <div className="space-y-2">
+                      {overig.map((hulp, i) => (
+                        <LandelijkeHulpCard key={i} hulp={hulp} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )
+          })()}
         </div>
       )}
 
