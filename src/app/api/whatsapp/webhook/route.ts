@@ -22,7 +22,8 @@ import {
   UREN_OPTIES,
   MOEILIJKHEID_OPTIES,
   RELATIE_OPTIES,
-  HULP_CATEGORIEEN,
+  HULP_VOOR_MANTELZORGER,
+  HULP_BIJ_TAAK,
   startTasksFlow,
   setSelectedTasks,
   setTaskHours,
@@ -691,99 +692,149 @@ async function handleHulpSession(
     return { response: `_Hulp zoeken geannuleerd_\n\n_Typ 0 voor menu_` }
   }
 
-  // STAP: Categorie kiezen
-  if (session.currentStep === 'category') {
-    if (num >= 1 && num <= HULP_CATEGORIEEN.length) {
-      const categorie = HULP_CATEGORIEEN[num - 1]
-      updateHulpSession(phoneNumber, 'target', { category: categorie.id })
+  // STAP 1: Hoofdkeuze - hulp voor mij of hulp bij taak
+  if (session.currentStep === 'main_choice') {
+    if (num === 1) {
+      // Hulp voor mantelzorger - toon soort hulp opties
+      updateHulpSession(phoneNumber, 'soort_hulp', { mainChoice: 'mantelzorger' })
 
-      return {
-        response: `${categorie.emoji} *${categorie.naam}*\n\nVoor wie zoek je hulp?\n\n1️⃣ Voor mezelf\n2️⃣ Voor ${caregiver?.careRecipientName || 'mijn naaste'}\n\n_Typ 1 of 2_`,
-      }
+      let response = `💚 *Hulp voor jou als mantelzorger*\n\nWelk type ondersteuning zoek je?\n\n`
+      HULP_VOOR_MANTELZORGER.forEach((opt, i) => {
+        response += `${i + 1}. ${opt.emoji} ${opt.naam}\n`
+      })
+      response += `\n_Typ het nummer of 0 om terug te gaan_`
+      return { response }
     }
 
-    // Toon opnieuw de categorieën
-    let response = `🗺️ *Hulp in de Buurt*\n\nWaar zoek je hulp bij?\n\n`
-    HULP_CATEGORIEEN.forEach((cat, i) => {
-      response += `${i + 1}. ${cat.emoji} ${cat.naam}\n`
+    if (num === 2) {
+      // Hulp bij taak - toon taak opties
+      updateHulpSession(phoneNumber, 'onderdeel_taak', { mainChoice: 'taak' })
+
+      let response = `🔧 *Hulp bij een zorgtaak*\n\nBij welke taak zoek je hulp?\n\n`
+      HULP_BIJ_TAAK.forEach((opt, i) => {
+        response += `${i + 1}. ${opt.emoji} ${opt.naam}\n`
+      })
+      response += `\n_Typ het nummer of 0 om terug te gaan_`
+      return { response }
+    }
+
+    // Toon opnieuw de hoofdkeuze
+    return {
+      response: `🗺️ *Hulp in de Buurt*\n\nWat voor hulp zoek je?\n\n1️⃣ Hulp voor mij als mantelzorger\n2️⃣ Hulp bij een taak die ik uitvoer\n\n_Typ 1 of 2_`,
+    }
+  }
+
+  // STAP 2A: Soort hulp kiezen (voor mantelzorger)
+  if (session.currentStep === 'soort_hulp') {
+    if (num >= 1 && num <= HULP_VOOR_MANTELZORGER.length) {
+      const soortHulp = HULP_VOOR_MANTELZORGER[num - 1]
+      updateHulpSession(phoneNumber, 'results', { soortHulp: soortHulp.dbValue })
+
+      // Haal hulpbronnen op - filter op onderdeel = Mantelzorgondersteuning EN soort hulp
+      const gemeente = caregiver?.municipality
+
+      const hulpbronnen = await prisma.zorgorganisatie.findMany({
+        where: {
+          isActief: true,
+          onderdeelTest: { contains: 'Mantelzorgondersteuning' },
+          soortHulp: soortHulp.dbValue,
+          ...(gemeente && { gemeente }),
+        },
+        take: 5,
+        orderBy: { naam: 'asc' },
+      })
+
+      clearHulpSession(phoneNumber)
+
+      if (hulpbronnen.length === 0) {
+        return {
+          response: `😔 Geen hulpbronnen gevonden voor "${soortHulp.naam}"${gemeente ? ` in ${gemeente}` : ''}.\n\n📞 Bel de Mantelzorglijn: 030-760 60 55\nZij kunnen je verder helpen!\n\n_Typ 0 voor menu_`,
+        }
+      }
+
+      return { response: formatHulpResults(soortHulp.naam, soortHulp.emoji, hulpbronnen, gemeente) }
+    }
+
+    // Toon opnieuw de opties
+    let response = `💚 *Hulp voor jou als mantelzorger*\n\nWelk type ondersteuning zoek je?\n\n`
+    HULP_VOOR_MANTELZORGER.forEach((opt, i) => {
+      response += `${i + 1}. ${opt.emoji} ${opt.naam}\n`
     })
-    response += `\n_Typ het nummer_`
+    response += `\n_Typ het nummer of 0 om terug te gaan_`
     return { response }
   }
 
-  // STAP: Voor wie (zelf of naaste)
-  if (session.currentStep === 'target') {
-    const target = num === 1 ? 'self' : num === 2 ? 'care' : null
+  // STAP 2B: Onderdeel taak kiezen (hulp bij taak)
+  if (session.currentStep === 'onderdeel_taak') {
+    if (num >= 1 && num <= HULP_BIJ_TAAK.length) {
+      const onderdeelTaak = HULP_BIJ_TAAK[num - 1]
+      updateHulpSession(phoneNumber, 'results', { onderdeelTaak: onderdeelTaak.dbValue })
 
-    if (!target) {
-      return { response: `Kies 1 (voor jezelf) of 2 (voor je naaste):` }
+      // Haal hulpbronnen op - filter op onderdeel test
+      const gemeente = caregiver?.careRecipientMunicipality || caregiver?.municipality
+
+      const hulpbronnen = await prisma.zorgorganisatie.findMany({
+        where: {
+          isActief: true,
+          onderdeelTest: onderdeelTaak.dbValue,
+          ...(gemeente && { gemeente }),
+        },
+        take: 5,
+        orderBy: { naam: 'asc' },
+      })
+
+      clearHulpSession(phoneNumber)
+
+      if (hulpbronnen.length === 0) {
+        return {
+          response: `😔 Geen hulpbronnen gevonden voor "${onderdeelTaak.naam}"${gemeente ? ` in ${gemeente}` : ''}.\n\n📞 Bel de Mantelzorglijn: 030-760 60 55\nZij kunnen je verder helpen!\n\n_Typ 0 voor menu_`,
+        }
+      }
+
+      return { response: formatHulpResults(onderdeelTaak.naam, onderdeelTaak.emoji, hulpbronnen, gemeente) }
     }
 
-    updateHulpSession(phoneNumber, 'results', { target })
-
-    // Haal hulpbronnen op
-    const categorie = HULP_CATEGORIEEN.find((c) => c.id === session.category)
-
-    // Bepaal gemeente op basis van target
-    const gemeente =
-      target === 'self'
-        ? caregiver?.municipality
-        : caregiver?.careRecipientMunicipality || caregiver?.municipality
-
-    // Zoek hulpbronnen
-    let whereClause: any = {
-      isActief: true,
-    }
-
-    // Filter op categorie als er zorgtaakIds zijn
-    if (categorie?.zorgtaakIds && categorie.zorgtaakIds.length > 0) {
-      whereClause.zorgtaakIds = { hasSome: categorie.zorgtaakIds }
-    }
-
-    // Filter op respijtzorg
-    if (categorie?.id === 'respijt') {
-      whereClause.type = 'RESPIJTZORG'
-    }
-
-    // Filter op gemeente als bekend
-    if (gemeente) {
-      whereClause.gemeente = gemeente
-    }
-
-    const hulpbronnen = await prisma.zorgorganisatie.findMany({
-      where: whereClause,
-      take: 5,
-      orderBy: { naam: 'asc' },
+    // Toon opnieuw de opties
+    let response = `🔧 *Hulp bij een zorgtaak*\n\nBij welke taak zoek je hulp?\n\n`
+    HULP_BIJ_TAAK.forEach((opt, i) => {
+      response += `${i + 1}. ${opt.emoji} ${opt.naam}\n`
     })
-
-    clearHulpSession(phoneNumber)
-
-    if (hulpbronnen.length === 0) {
-      return {
-        response: `😔 Geen specifieke hulpbronnen gevonden voor ${categorie?.naam || 'deze categorie'}${gemeente ? ` in ${gemeente}` : ''}.\n\n📞 Bel de Mantelzorglijn: 030-760 60 55\nZij kunnen je verder helpen!\n\n_Typ 0 voor menu_`,
-      }
-    }
-
-    let response = `🗺️ *${categorie?.naam}*\n`
-    response += target === 'self' ? `_Hulp voor jou_\n\n` : `_Hulp voor ${caregiver?.careRecipientName || 'je naaste'}_\n\n`
-
-    for (const hulp of hulpbronnen) {
-      // Kort de naam in als nodig
-      const kortNaam = hulp.naam.length > 40 ? hulp.naam.substring(0, 40) + '...' : hulp.naam
-      response += `📍 *${kortNaam}*\n`
-      if (hulp.telefoon) response += `📞 ${hulp.telefoon}\n`
-      if (hulp.website) {
-        const website = hulp.website.replace('https://', '').replace('http://', '')
-        response += `🌐 ${website}\n`
-      }
-      response += `\n`
-    }
-
-    response += `_Typ 0 voor menu_`
+    response += `\n_Typ het nummer of 0 om terug te gaan_`
     return { response }
   }
 
   return { response: '' }
+}
+
+// Helper functie om hulp resultaten te formatteren
+function formatHulpResults(
+  titel: string,
+  emoji: string,
+  hulpbronnen: any[],
+  gemeente?: string | null
+): string {
+  let response = `${emoji} *${titel}*\n`
+  if (gemeente) response += `_In ${gemeente}_\n`
+  response += `\n`
+
+  for (const hulp of hulpbronnen) {
+    // Kort de naam in als nodig
+    const kortNaam = hulp.naam.length > 40 ? hulp.naam.substring(0, 40) + '...' : hulp.naam
+    response += `📍 *${kortNaam}*\n`
+    if (hulp.beschrijving) {
+      const kortBeschr = hulp.beschrijving.length > 80 ? hulp.beschrijving.substring(0, 80) + '...' : hulp.beschrijving
+      response += `${kortBeschr}\n`
+    }
+    if (hulp.telefoon) response += `📞 ${hulp.telefoon}\n`
+    if (hulp.website) {
+      const website = hulp.website.replace('https://', '').replace('http://', '')
+      response += `🌐 ${website}\n`
+    }
+    response += `\n`
+  }
+
+  response += `_Typ 0 voor menu_`
+  return response
 }
 
 // ===========================================
@@ -886,13 +937,9 @@ async function handleLoggedInUser(
   if (command === '2' || command === 'hulp' || command === 'help') {
     startHulpSession(phoneNumber)
 
-    let response = `🗺️ *Hulp in de Buurt*\n\nWaar zoek je hulp bij?\n\n`
-    HULP_CATEGORIEEN.forEach((cat, i) => {
-      response += `${i + 1}. ${cat.emoji} ${cat.naam}\n`
-    })
-    response += `\n_Typ het nummer of 0 om terug te gaan_`
-
-    return { response }
+    return {
+      response: `🗺️ *Hulp in de Buurt*\n\nWat voor hulp zoek je?\n\n1️⃣ Hulp voor mij als mantelzorger\n2️⃣ Hulp bij een taak die ik uitvoer\n\n_Typ 1 of 2_`,
+    }
   }
 
   // 3. Taken
@@ -1197,25 +1244,42 @@ async function buildTestCompletionMessage(
   }
 
   // Haal hulpbronnen op voor zware taken
+  // Map taak IDs naar Excel "Onderdeel mantelzorgtest" waarden
+  const taakIdNaarOnderdeel: Record<string, string> = {
+    t1: 'Persoonlijke verzorging',
+    t2: 'Huishoudelijke taken',
+    t3: 'Persoonlijke verzorging', // Medicijnen valt onder persoonlijke verzorging
+    t4: 'Vervoer',
+    t5: 'Administratie en aanvragen',
+    t6: 'Sociaal contact en activiteiten',
+    t7: 'Persoonlijke verzorging', // Toezicht valt onder persoonlijke verzorging
+    t8: 'Persoonlijke verzorging', // Medische zorg valt onder persoonlijke verzorging
+  }
+
   if (zwareTaakIds.length > 0) {
     try {
-      const hulpbronnen = await prisma.zorgorganisatie.findMany({
-        where: {
-          isActief: true,
-          zorgtaakIds: { hasSome: zwareTaakIds },
-          zichtbaarBijHoog: true,
-        },
-        take: 3,
-        orderBy: { naam: 'asc' },
-      })
+      // Converteer taak IDs naar onderdeel waarden
+      const onderdeelWaarden = [...new Set(zwareTaakIds.map((id) => taakIdNaarOnderdeel[id]).filter(Boolean))]
 
-      if (hulpbronnen.length > 0) {
-        response += `💡 *Hulp bij jouw zware taken:*\n\n`
-        for (const hulp of hulpbronnen) {
-          response += `📍 *${hulp.naam}*\n`
-          if (hulp.telefoon) response += `   📞 ${hulp.telefoon}\n`
-          if (hulp.website) response += `   🌐 ${hulp.website}\n`
-          response += `\n`
+      if (onderdeelWaarden.length > 0) {
+        const hulpbronnen = await prisma.zorgorganisatie.findMany({
+          where: {
+            isActief: true,
+            onderdeelTest: { in: onderdeelWaarden },
+            zichtbaarBijHoog: true,
+          },
+          take: 3,
+          orderBy: { naam: 'asc' },
+        })
+
+        if (hulpbronnen.length > 0) {
+          response += `💡 *Hulp bij jouw zware taken:*\n\n`
+          for (const hulp of hulpbronnen) {
+            response += `📍 *${hulp.naam}*\n`
+            if (hulp.telefoon) response += `   📞 ${hulp.telefoon}\n`
+            if (hulp.website) response += `   🌐 ${hulp.website}\n`
+            response += `\n`
+          }
         }
       }
     } catch (error) {

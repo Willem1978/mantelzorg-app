@@ -89,28 +89,47 @@ interface OnboardingSession {
 // ===========================================
 
 type HulpStep =
-  | 'category' // Keuze: welk type hulp
-  | 'target' // Voor wie: jezelf of naaste
+  | 'main_choice' // Hoofdkeuze: hulp voor mij of hulp bij taak
+  | 'soort_hulp' // Subcategorie: soort hulp voor mantelzorger
+  | 'onderdeel_taak' // Subcategorie: onderdeel test/taak
   | 'results' // Toon resultaten
 
 interface HulpSession {
   phoneNumber: string
   currentStep: HulpStep
-  category?: string // Gekozen categorie
-  target?: 'self' | 'care' // Voor jezelf of naaste
+  mainChoice?: 'mantelzorger' | 'taak' // Hoofd keuze
+  soortHulp?: string // Gekozen "Soort hulp" uit Excel
+  onderdeelTaak?: string // Gekozen "Onderdeel mantelzorgtest" uit Excel
   startedAt: Date
 }
 
-// Hulp categorieën gekoppeld aan zorgtaak IDs
-export const HULP_CATEGORIEEN = [
-  { id: 'verzorging', naam: 'Persoonlijke verzorging', emoji: '🛁', zorgtaakIds: ['t1'] },
-  { id: 'huishouden', naam: 'Huishouden & maaltijden', emoji: '🏠', zorgtaakIds: ['t2'] },
-  { id: 'vervoer', naam: 'Vervoer & begeleiding', emoji: '🚗', zorgtaakIds: ['t4'] },
-  { id: 'administratie', naam: 'Administratie & financieel', emoji: '📋', zorgtaakIds: ['t5'] },
-  { id: 'emotioneel', naam: 'Gezelschap & uitjes', emoji: '💬', zorgtaakIds: ['t6'] },
-  { id: 'respijt', naam: 'Vervangende zorg (respijt)', emoji: '🛏️', zorgtaakIds: [] },
-  { id: 'algemeen', naam: 'Algemene ondersteuning', emoji: '❓', zorgtaakIds: [] },
+// Hulp voor mantelzorger zelf - filter op "Onderdeel mantelzorgtest" = "Mantelzorgondersteuning"
+// Dan subcategoriseren op "Soort hulp"
+export const HULP_VOOR_MANTELZORGER = [
+  { id: 'informatie', naam: 'Informatie en advies', emoji: 'ℹ️', dbValue: 'Informatie en advies' },
+  { id: 'educatie', naam: 'Educatie & cursussen', emoji: '📚', dbValue: 'Educatie' },
+  { id: 'emotioneel', naam: 'Emotionele steun', emoji: '💚', dbValue: 'Emotionele steun' },
+  { id: 'begeleiding', naam: 'Persoonlijke begeleiding', emoji: '🤝', dbValue: 'Persoonlijke begeleiding' },
+  { id: 'praktisch', naam: 'Praktische hulp', emoji: '🔧', dbValue: 'Praktische hulp' },
+  { id: 'respijt', naam: 'Vervangende zorg (respijt)', emoji: '🛏️', dbValue: 'Vervangende mantelzorg' },
 ]
+
+// Hulp bij taken - filter op "Onderdeel mantelzorgtest" (alles behalve Mantelzorgondersteuning)
+export const HULP_BIJ_TAAK = [
+  { id: 'administratie', naam: 'Administratie & aanvragen', emoji: '📋', dbValue: 'Administratie en aanvragen' },
+  { id: 'maaltijden', naam: 'Maaltijden', emoji: '🍽️', dbValue: 'Bereiden en/of nuttigen van maaltijden' },
+  { id: 'boodschappen', naam: 'Boodschappen', emoji: '🛒', dbValue: 'Boodschappen' },
+  { id: 'huishouden', naam: 'Huishoudelijke taken', emoji: '🏠', dbValue: 'Huishoudelijke taken' },
+  { id: 'klusjes', naam: 'Klusjes in/om huis', emoji: '🔨', dbValue: 'Klusjes in en om het huis' },
+  { id: 'verzorging', naam: 'Persoonlijke verzorging', emoji: '🛁', dbValue: 'Persoonlijke verzorging' },
+  { id: 'sociaal', naam: 'Sociaal & activiteiten', emoji: '👥', dbValue: 'Sociaal contact en activiteiten' },
+  { id: 'vervoer', naam: 'Vervoer', emoji: '🚗', dbValue: 'Vervoer' },
+  { id: 'plannen', naam: 'Plannen & organiseren', emoji: '📅', dbValue: 'Plannen en organiseren' },
+  { id: 'huisdieren', naam: 'Huisdieren', emoji: '🐕', dbValue: 'Huisdieren' },
+]
+
+// Legacy voor backwards compatibility
+export const HULP_CATEGORIEEN = HULP_BIJ_TAAK
 
 // In-memory store (in productie zou je Redis of database gebruiken)
 const sessions = new Map<string, TestSession>()
@@ -393,7 +412,7 @@ export function clearOnboardingSession(phoneNumber: string): void {
 export function startHulpSession(phoneNumber: string): HulpSession {
   const session: HulpSession = {
     phoneNumber,
-    currentStep: 'category',
+    currentStep: 'main_choice',
     startedAt: new Date(),
   }
   hulpSessions.set(phoneNumber, session)
@@ -407,14 +426,15 @@ export function getHulpSession(phoneNumber: string): HulpSession | undefined {
 export function updateHulpSession(
   phoneNumber: string,
   step: HulpStep,
-  data?: { category?: string; target?: 'self' | 'care' }
+  data?: { mainChoice?: 'mantelzorger' | 'taak'; soortHulp?: string; onderdeelTaak?: string }
 ): HulpSession | null {
   const session = hulpSessions.get(phoneNumber)
   if (!session) return null
 
   session.currentStep = step
-  if (data?.category) session.category = data.category
-  if (data?.target) session.target = data.target
+  if (data?.mainChoice) session.mainChoice = data.mainChoice
+  if (data?.soortHulp) session.soortHulp = data.soortHulp
+  if (data?.onderdeelTaak) session.onderdeelTaak = data.onderdeelTaak
 
   hulpSessions.set(phoneNumber, session)
   return session
