@@ -10,12 +10,23 @@ interface RegisterBody {
   email: string
   password: string
   phoneNumber?: string  // Voor WhatsApp koppeling
+  // Eigen adres
+  postalCode?: string
+  street?: string
+  city?: string
   municipality: {
     code: string
     name: string
     provinceCode: string
     provinceName: string
   }
+  // Naaste info
+  careRecipientName?: string
+  careRecipientRelation?: string
+  careRecipientStreet?: string
+  careRecipientCity?: string
+  careRecipientMunicipality?: string
+  // Privacy
   privacyConsent: boolean
   dataProcessingConsent: boolean
 }
@@ -80,15 +91,25 @@ export async function POST(request: NextRequest) {
         }
       })
 
-      // Create caregiver profile with municipality info and optional phone
-      // Note: We only store municipality, not exact address (AVG-compliant)
+      // Create caregiver profile with all info
       const caregiver = await tx.caregiver.create({
         data: {
           userId: user.id,
-          phoneNumber: body.phoneNumber || null,  // WhatsApp koppeling
-          city: body.municipality.name,
-          municipality: body.municipality.name,  // Store municipality name
+          phoneNumber: body.phoneNumber || null,
+          // Eigen locatie
+          postalCode: body.postalCode || null,
+          street: body.street || null,
+          city: body.city || null,
+          municipality: body.municipality.name,
+          // Naaste info
+          careRecipientName: body.careRecipientName || null,
+          careRecipient: body.careRecipientRelation || null,
+          careRecipientStreet: body.careRecipientStreet || null,
+          careRecipientCity: body.careRecipientCity || null,
+          careRecipientMunicipality: body.careRecipientMunicipality || null,
+          // Status
           intakeCompleted: false,
+          profileCompleted: !!(body.postalCode && body.careRecipientName), // Profiel compleet als adres en naaste ingevuld
         }
       })
 
@@ -110,13 +131,6 @@ export async function POST(request: NextRequest) {
     // In production, send verification email
     const verifyUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/auth/verify-email?token=${result.verificationToken}`
     console.log("Email verification link:", verifyUrl)
-
-    // TODO: Send verification email
-    // await sendEmail({
-    //   to: body.email,
-    //   subject: "Bevestig je e-mailadres - MantelzorgApp",
-    //   html: `<a href="${verifyUrl}">Klik hier om je e-mail te bevestigen</a>`
-    // })
 
     return NextResponse.json({
       success: true,

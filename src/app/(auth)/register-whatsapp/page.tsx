@@ -4,15 +4,26 @@ import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
 import Link from "next/link"
-import { LocationSearch } from "@/components/ui/LocationSearch"
 import { GerAvatar } from "@/components/GerAvatar"
 
-interface MunicipalityInfo {
-  code: string
-  name: string
-  provinceCode: string
-  provinceName: string
+interface AddressInfo {
+  street?: string
+  city?: string
+  municipality?: string
+  postalCode?: string
+  huisnummer?: string
 }
+
+const RELATIE_OPTIES = [
+  'Partner',
+  'Ouder',
+  'Schoonouder',
+  'Kind',
+  'Broer/zus',
+  'Vriend(in)',
+  'Buur',
+  'Anders',
+]
 
 function RegisterWhatsAppForm() {
   const router = useRouter()
@@ -21,15 +32,27 @@ function RegisterWhatsAppForm() {
   const userName = searchParams.get("name") || ""
 
   const [isLoading, setIsLoading] = useState(false)
+  const [isLookingUp, setIsLookingUp] = useState(false)
   const [error, setError] = useState("")
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
+    // Stap 1: Account
     name: userName,
     email: "",
     password: "",
     passwordConfirm: "",
     phoneNumber: phoneNumber,
-    municipality: null as MunicipalityInfo | null,
+    // Stap 2: Eigen adres
+    ownPostcode: "",
+    ownHuisnummer: "",
+    ownAddress: null as AddressInfo | null,
+    // Stap 3: Naaste
+    careRecipientName: "",
+    careRecipientRelation: "",
+    carePostcode: "",
+    careHuisnummer: "",
+    careAddress: null as AddressInfo | null,
+    // Privacy
     privacyConsent: false,
     dataProcessingConsent: false,
   })
@@ -40,6 +63,34 @@ function RegisterWhatsAppForm() {
       router.push("/register")
     }
   }, [phoneNumber, router])
+
+  // PDOK adres lookup
+  const lookupAddress = async (postcode: string, huisnummer: string): Promise<AddressInfo | null> => {
+    try {
+      const response = await fetch(
+        `/api/location/lookup?postcode=${encodeURIComponent(postcode)}&huisnummer=${encodeURIComponent(huisnummer)}`
+      )
+      if (response.ok) {
+        const data = await response.json()
+        return {
+          street: data.straat,
+          city: data.woonplaats,
+          municipality: data.gemeente,
+          postalCode: postcode.replace(/\s/g, '').toUpperCase(),
+          huisnummer,
+        }
+      }
+    } catch (error) {
+      console.error("Address lookup error:", error)
+    }
+    return null
+  }
+
+  // Valideer postcode formaat
+  const isValidPostcode = (postcode: string): boolean => {
+    const clean = postcode.replace(/\s/g, '').toUpperCase()
+    return /^\d{4}[A-Z]{2}$/.test(clean)
+  }
 
   const handleStep1Submit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -67,17 +118,78 @@ function RegisterWhatsAppForm() {
     e.preventDefault()
     setError("")
 
-    if (!formData.municipality) {
-      setError("Kies je gemeente")
+    if (!isValidPostcode(formData.ownPostcode)) {
+      setError("Vul een geldige postcode in (bijv. 1234 AB)")
+      return
+    }
+
+    if (!formData.ownHuisnummer.trim()) {
+      setError("Vul je huisnummer in")
+      return
+    }
+
+    // Lookup adres
+    setIsLookingUp(true)
+    const address = await lookupAddress(formData.ownPostcode, formData.ownHuisnummer)
+    setIsLookingUp(false)
+
+    if (!address) {
+      setError("Adres niet gevonden. Controleer je postcode en huisnummer.")
+      return
+    }
+
+    setFormData({ ...formData, ownAddress: address })
+    setStep(3)
+  }
+
+  const handleStep3Submit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+
+    if (!formData.careRecipientName.trim()) {
+      setError("Vul de naam van je naaste in")
+      return
+    }
+
+    if (!formData.careRecipientRelation) {
+      setError("Kies je relatie")
+      return
+    }
+
+    if (!isValidPostcode(formData.carePostcode)) {
+      setError("Vul een geldige postcode in voor je naaste")
+      return
+    }
+
+    if (!formData.careHuisnummer.trim()) {
+      setError("Vul het huisnummer van je naaste in")
       return
     }
 
     if (!formData.privacyConsent || !formData.dataProcessingConsent) {
-      setError("Je moet akkoord gaan")
+      setError("Je moet akkoord gaan met de voorwaarden")
       return
     }
 
+    // Lookup care recipient adres
+    setIsLookingUp(true)
+    const careAddress = await lookupAddress(formData.carePostcode, formData.careHuisnummer)
+    setIsLookingUp(false)
+
+    if (!careAddress) {
+      setError("Adres van naaste niet gevonden. Controleer postcode en huisnummer.")
+      return
+    }
+
+    setFormData({ ...formData, careAddress })
+
+    // Nu registreren
+    await submitRegistration(careAddress)
+  }
+
+  const submitRegistration = async (careAddress: AddressInfo) => {
     setIsLoading(true)
+    setError("")
 
     try {
       const response = await fetch("/api/auth/register", {
@@ -88,7 +200,23 @@ function RegisterWhatsAppForm() {
           email: formData.email,
           password: formData.password,
           phoneNumber: formData.phoneNumber,
-          municipality: formData.municipality,
+          // Eigen adres
+          postalCode: formData.ownAddress?.postalCode,
+          street: formData.ownAddress?.street,
+          city: formData.ownAddress?.city,
+          municipality: {
+            code: "",
+            name: formData.ownAddress?.municipality || "",
+            provinceCode: "",
+            provinceName: "",
+          },
+          // Naaste info
+          careRecipientName: formData.careRecipientName,
+          careRecipientRelation: formData.careRecipientRelation,
+          careRecipientStreet: careAddress.street,
+          careRecipientCity: careAddress.city,
+          careRecipientMunicipality: careAddress.municipality,
+          // Privacy
           privacyConsent: formData.privacyConsent,
           dataProcessingConsent: formData.dataProcessingConsent,
         }),
@@ -108,12 +236,10 @@ function RegisterWhatsAppForm() {
       })
 
       if (signInResult?.error) {
-        // Registratie gelukt maar inloggen niet - stuur naar success pagina
         router.push("/register-whatsapp/success")
         return
       }
 
-      // Redirect naar success pagina
       router.push("/register-whatsapp/success")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Er ging iets mis")
@@ -130,6 +256,8 @@ function RegisterWhatsAppForm() {
     return phone
   }
 
+  const totalSteps = 3
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header met Ger */}
@@ -138,12 +266,14 @@ function RegisterWhatsAppForm() {
           <GerAvatar size="lg" />
           <div className="pt-2">
             <h1 className="text-2xl font-bold text-foreground">
-              {step === 1 ? "Maak je account" : "Nog even dit"}
+              {step === 1 && "Maak je account"}
+              {step === 2 && "Waar woon jij?"}
+              {step === 3 && "Voor wie zorg je?"}
             </h1>
             <p className="text-muted-foreground mt-1">
-              {step === 1
-                ? "Verbind je WhatsApp met je account"
-                : "Waar woon je?"}
+              {step === 1 && "Verbind je WhatsApp met je account"}
+              {step === 2 && "Zodat we hulp in de buurt kunnen tonen"}
+              {step === 3 && "Vertel over je naaste"}
             </p>
           </div>
         </div>
@@ -171,7 +301,7 @@ function RegisterWhatsAppForm() {
         <div className="max-w-md mx-auto">
           <div className="flex justify-center">
             <div className="ker-pill">
-              stap <span className="font-bold mx-1">{step}</span> van 2
+              stap <span className="font-bold mx-1">{step}</span> van {totalSteps}
             </div>
           </div>
         </div>
@@ -187,7 +317,8 @@ function RegisterWhatsAppForm() {
               </div>
             )}
 
-            {step === 1 ? (
+            {/* STAP 1: Account gegevens */}
+            {step === 1 && (
               <form onSubmit={handleStep1Submit} className="space-y-4">
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
@@ -250,17 +381,43 @@ function RegisterWhatsAppForm() {
                 </div>
 
                 <button type="submit" className="ker-btn ker-btn-primary w-full">
-                  Volgende stap
+                  Volgende
                 </button>
               </form>
-            ) : (
+            )}
+
+            {/* STAP 2: Eigen adres */}
+            {step === 2 && (
               <form onSubmit={handleStep2Submit} className="space-y-4">
-                <LocationSearch
-                  label="Je gemeente"
-                  value={formData.municipality}
-                  onChange={(municipality) => setFormData({ ...formData, municipality })}
-                  placeholder="Typ je postcode of gemeente"
-                />
+                <div>
+                  <label htmlFor="ownPostcode" className="block text-sm font-medium text-foreground mb-2">
+                    Je postcode
+                  </label>
+                  <input
+                    id="ownPostcode"
+                    type="text"
+                    value={formData.ownPostcode}
+                    onChange={(e) => setFormData({ ...formData, ownPostcode: e.target.value })}
+                    className="ker-input"
+                    placeholder="1234 AB"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="ownHuisnummer" className="block text-sm font-medium text-foreground mb-2">
+                    Je huisnummer
+                  </label>
+                  <input
+                    id="ownHuisnummer"
+                    type="text"
+                    value={formData.ownHuisnummer}
+                    onChange={(e) => setFormData({ ...formData, ownHuisnummer: e.target.value })}
+                    className="ker-input"
+                    placeholder="123"
+                    required
+                  />
+                </div>
 
                 {/* Privacy uitleg */}
                 <div className="bg-muted rounded-xl p-4">
@@ -271,15 +428,113 @@ function RegisterWhatsAppForm() {
                     <div>
                       <p className="font-medium text-foreground mb-1">Je gegevens zijn veilig</p>
                       <p className="text-sm text-muted-foreground">
-                        We slaan je adres niet op. We bewaren alleen je gemeente.
-                        Zo kunnen we hulp in de buurt laten zien.
+                        We gebruiken je adres alleen om hulp in de buurt te tonen.
+                        Je exacte adres wordt niet gedeeld.
                       </p>
                     </div>
                   </div>
                 </div>
 
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="ker-btn ker-btn-secondary flex-1"
+                  >
+                    Terug
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isLookingUp}
+                    className="ker-btn ker-btn-primary flex-1"
+                  >
+                    {isLookingUp ? "Zoeken..." : "Volgende"}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* STAP 3: Naaste info */}
+            {step === 3 && (
+              <form onSubmit={handleStep3Submit} className="space-y-4">
+                {/* Toon eigen adres */}
+                {formData.ownAddress && (
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-4">
+                    <p className="text-sm text-green-800">
+                      <span className="font-medium">Jouw adres:</span> {formData.ownAddress.street} {formData.ownHuisnummer}, {formData.ownAddress.city}
+                    </p>
+                  </div>
+                )}
+
+                <div>
+                  <label htmlFor="careRecipientName" className="block text-sm font-medium text-foreground mb-2">
+                    Naam van je naaste
+                  </label>
+                  <input
+                    id="careRecipientName"
+                    type="text"
+                    value={formData.careRecipientName}
+                    onChange={(e) => setFormData({ ...formData, careRecipientName: e.target.value })}
+                    className="ker-input"
+                    placeholder="Voor wie zorg je?"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Wat is je relatie?
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {RELATIE_OPTIES.map((relatie) => (
+                      <button
+                        key={relatie}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, careRecipientRelation: relatie })}
+                        className={`p-3 rounded-xl border-2 text-sm font-medium transition-colors ${
+                          formData.careRecipientRelation === relatie
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border hover:border-primary/30"
+                        }`}
+                      >
+                        {relatie}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="carePostcode" className="block text-sm font-medium text-foreground mb-2">
+                    Postcode van je naaste
+                  </label>
+                  <input
+                    id="carePostcode"
+                    type="text"
+                    value={formData.carePostcode}
+                    onChange={(e) => setFormData({ ...formData, carePostcode: e.target.value })}
+                    className="ker-input"
+                    placeholder="1234 AB"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="careHuisnummer" className="block text-sm font-medium text-foreground mb-2">
+                    Huisnummer van je naaste
+                  </label>
+                  <input
+                    id="careHuisnummer"
+                    type="text"
+                    value={formData.careHuisnummer}
+                    onChange={(e) => setFormData({ ...formData, careHuisnummer: e.target.value })}
+                    className="ker-input"
+                    placeholder="123"
+                    required
+                  />
+                </div>
+
                 {/* Toestemming */}
-                <div className="space-y-3">
+                <div className="space-y-3 pt-2">
                   <label className="flex items-start gap-3 cursor-pointer p-4 rounded-xl border-2 border-border hover:border-primary/30 transition-colors">
                     <input
                       type="checkbox"
@@ -290,7 +545,7 @@ function RegisterWhatsAppForm() {
                     <span className="text-sm text-foreground">
                       Ik ga akkoord met de{" "}
                       <Link href="/privacy" className="text-primary hover:underline">
-                        regels over privacy
+                        privacyregels
                       </Link>
                     </span>
                   </label>
@@ -311,14 +566,14 @@ function RegisterWhatsAppForm() {
                 <div className="flex gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => setStep(1)}
+                    onClick={() => setStep(2)}
                     className="ker-btn ker-btn-secondary flex-1"
                   >
                     Terug
                   </button>
                   <button
                     type="submit"
-                    disabled={isLoading}
+                    disabled={isLoading || isLookingUp}
                     className="ker-btn ker-btn-primary flex-1"
                   >
                     {isLoading ? (
@@ -326,8 +581,10 @@ function RegisterWhatsAppForm() {
                         <span className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
                         Bezig...
                       </span>
+                    ) : isLookingUp ? (
+                      "Zoeken..."
                     ) : (
-                      "Klaar"
+                      "Account maken"
                     )}
                   </button>
                 </div>
