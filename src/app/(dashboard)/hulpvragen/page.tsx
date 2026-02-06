@@ -1,8 +1,35 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Button, Card, CardContent, CardHeader, CardTitle } from "@/components/ui"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
+
+interface Hulpbron {
+  naam: string
+  telefoon: string | null
+  website: string | null
+  beschrijving: string | null
+  soortHulp?: string | null
+  gemeente?: string | null
+  isLandelijk?: boolean
+}
+
+interface LandelijkeHulpbron {
+  naam: string
+  telefoon: string | null
+  website: string | null
+  beschrijving: string | null
+  soortHulp: string | null
+}
+
+interface HulpData {
+  perCategorie: Record<string, Hulpbron[]>
+  landelijk: LandelijkeHulpbron[]
+  zwareTaken: { naam: string; moeilijkheid: string }[]
+  mantelzorgerGemeente: string | null
+  zorgvragerGemeente: string | null
+  testNiveau: "LAAG" | "GEMIDDELD" | "HOOG" | null
+}
 
 interface HelpRequest {
   id: string
@@ -13,12 +40,36 @@ interface HelpRequest {
   status: string
   createdAt: string
   response?: string
-  respondedAt?: string
-  organisation?: { name: string }
 }
 
-// B1 taalgebruik - korte, duidelijke woorden
-const categories = [
+// Icons voor hulp categorieën
+const CATEGORIE_ICONS: Record<string, string> = {
+  'Persoonlijke verzorging': '🛁',
+  'Huishoudelijke taken': '🧹',
+  'Vervoer': '🚗',
+  'Administratie en aanvragen': '📋',
+  'Sociaal contact en activiteiten': '👥',
+  'Bereiden en/of nuttigen van maaltijden': '🍽️',
+  'Boodschappen': '🛒',
+  'Klusjes in en om het huis': '🔧',
+  'Mantelzorgondersteuning': '💜',
+}
+
+// Korte namen voor de categorieën
+const CATEGORIE_KORTE_NAMEN: Record<string, string> = {
+  'Persoonlijke verzorging': 'Verzorging',
+  'Huishoudelijke taken': 'Huishouden',
+  'Vervoer': 'Vervoer',
+  'Administratie en aanvragen': 'Administratie',
+  'Sociaal contact en activiteiten': 'Sociaal',
+  'Bereiden en/of nuttigen van maaltijden': 'Maaltijden',
+  'Boodschappen': 'Boodschappen',
+  'Klusjes in en om het huis': 'Klusjes',
+  'Mantelzorgondersteuning': 'Voor jou',
+}
+
+// Hulpvraag categorieën
+const hulpvraagCategories = [
   { value: "RESPITE_CARE", label: "Even vrij", icon: "🏠", hint: "Iemand neemt de zorg over" },
   { value: "EMOTIONAL_SUPPORT", label: "Praten", icon: "💚", hint: "Over je gevoel praten" },
   { value: "PRACTICAL_HELP", label: "Hulp thuis", icon: "🔧", hint: "Klussen of taken" },
@@ -27,53 +78,58 @@ const categories = [
   { value: "OTHER", label: "Anders", icon: "📝", hint: "Iets anders" },
 ]
 
-const urgencies = [
-  { value: "LOW", label: "Kan wachten", color: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300" },
-  { value: "NORMAL", label: "Deze week", color: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" },
-  { value: "HIGH", label: "Snel graag", color: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300" },
-  { value: "URGENT", label: "Nu!", color: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300" },
-]
-
-const statuses: Record<string, { label: string; color: string }> = {
-  OPEN: { label: "Nieuw", color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300" },
-  IN_PROGRESS: { label: "Bezig", color: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" },
-  RESPONDED: { label: "Antwoord", color: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" },
-  RESOLVED: { label: "Klaar", color: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300" },
-  CLOSED: { label: "Gesloten", color: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400" },
-}
-
-export default function HulpvragenPage() {
+export default function HulpPage() {
+  const [hulpData, setHulpData] = useState<HulpData | null>(null)
   const [helpRequests, setHelpRequests] = useState<HelpRequest[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [selectedRequest, setSelectedRequest] = useState<HelpRequest | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<'bronnen' | 'vragen'>('bronnen')
+  const [selectedCategorie, setSelectedCategorie] = useState<string | null>(null)
+  const [showHulpvraagForm, setShowHulpvraagForm] = useState(false)
 
-  // Form state
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [category, setCategory] = useState("")
-  const [urgency, setUrgency] = useState("NORMAL")
+  // Hulpvraag form state
+  const [formTitle, setFormTitle] = useState("")
+  const [formDescription, setFormDescription] = useState("")
+  const [formCategory, setFormCategory] = useState("")
+  const [formUrgency, setFormUrgency] = useState("NORMAL")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
-    fetchHelpRequests()
+    loadData()
   }, [])
 
-  const fetchHelpRequests = async () => {
+  const loadData = async () => {
     try {
-      const res = await fetch("/api/help-requests")
-      if (res.ok) {
-        const data = await res.json()
-        setHelpRequests(data.helpRequests || [])
+      const [dashboardRes, requestsRes] = await Promise.all([
+        fetch("/api/dashboard"),
+        fetch("/api/help-requests")
+      ])
+
+      if (dashboardRes.ok) {
+        const dashboardData = await dashboardRes.json()
+        setHulpData({
+          perCategorie: dashboardData.hulpbronnen?.perCategorie || {},
+          landelijk: dashboardData.hulpbronnen?.landelijk || [],
+          zwareTaken: dashboardData.test?.zorgtaken?.filter(
+            (t: any) => t.moeilijkheid === 'JA' || t.moeilijkheid === 'SOMS'
+          ) || [],
+          mantelzorgerGemeente: dashboardData.hulpbronnen?.mantelzorgerGemeente || null,
+          zorgvragerGemeente: dashboardData.hulpbronnen?.zorgvragerGemeente || null,
+          testNiveau: dashboardData.test?.niveau || null,
+        })
+      }
+
+      if (requestsRes.ok) {
+        const requestsData = await requestsRes.json()
+        setHelpRequests(requestsData.helpRequests || [])
       }
     } catch (error) {
-      console.error("Failed to fetch help requests:", error)
+      console.error("Failed to load data:", error)
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmitHulpvraag = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
 
@@ -81,16 +137,21 @@ export default function HulpvragenPage() {
       const res = await fetch("/api/help-requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, description, category, urgency }),
+        body: JSON.stringify({
+          title: formTitle,
+          description: formDescription,
+          category: formCategory,
+          urgency: formUrgency
+        }),
       })
 
       if (res.ok) {
-        setTitle("")
-        setDescription("")
-        setCategory("")
-        setUrgency("NORMAL")
-        setShowForm(false)
-        fetchHelpRequests()
+        setFormTitle("")
+        setFormDescription("")
+        setFormCategory("")
+        setFormUrgency("NORMAL")
+        setShowHulpvraagForm(false)
+        loadData()
       }
     } catch (error) {
       console.error("Failed to create help request:", error)
@@ -99,303 +160,416 @@ export default function HulpvragenPage() {
     }
   }
 
-  const getCategoryInfo = (cat: string) => {
-    return categories.find(c => c.value === cat) || { label: cat, icon: "📝", hint: "" }
+  if (loading) {
+    return (
+      <div className="ker-page-content flex items-center justify-center min-h-[50vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
   }
 
-  const getUrgencyInfo = (urg: string) => {
-    return urgencies.find(u => u.value === urg) || urgencies[1]
-  }
+  const categorien = Object.keys(hulpData?.perCategorie || {})
+  const aantalZwareTaken = hulpData?.zwareTaken?.length || 0
+  const openHulpvragen = helpRequests.filter(r => r.status !== 'RESOLVED' && r.status !== 'CLOSED').length
 
   return (
-    <div className="space-y-4 sm:space-y-6 pb-20">
-      {/* Header - simpel en duidelijk */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Hulp vragen</h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-1">
-            Heb je hulp nodig? Stel hier je vraag.
-          </p>
-        </div>
-        <Button
-          onClick={() => setShowForm(true)}
-          className="w-full sm:w-auto"
-          size="lg"
-        >
-          <span className="text-xl mr-2">+</span>
-          Vraag stellen
-        </Button>
+    <div className="ker-page-content">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+          <span className="text-3xl">💜</span> Hulp
+        </h1>
+        <p className="text-muted-foreground mt-1">
+          Vind hulp bij zorgtaken of stel een vraag
+        </p>
       </div>
 
-      {/* Formulier - grote knoppen, duidelijke stappen */}
-      {showForm && (
-        <Card className="animate-slide-up">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Nieuwe vraag</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Stap 1: Waar gaat het over? */}
-              <div>
-                <label className="block text-base font-medium text-foreground mb-3">
-                  1. Waar gaat je vraag over?
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  {categories.map((cat) => (
-                    <button
-                      key={cat.value}
-                      type="button"
-                      onClick={() => setCategory(cat.value)}
-                      className={cn(
-                        "p-4 rounded-2xl border-2 transition-all text-center",
-                        category === cat.value
-                          ? "border-primary bg-primary/10 shadow-md"
-                          : "border-border hover:border-primary/50 bg-card"
-                      )}
-                    >
-                      <span className="text-3xl block mb-1">{cat.icon}</span>
-                      <p className="font-semibold text-foreground">{cat.label}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{cat.hint}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Stap 2: Wat is je vraag? */}
-              <div>
-                <label className="block text-base font-medium text-foreground mb-2">
-                  2. Wat is je vraag?
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Bijv: Ik zoek iemand die kan helpen"
-                  className="w-full px-4 py-3 rounded-xl border-2 border-input bg-background text-foreground text-base focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
-                  required
-                />
-              </div>
-
-              {/* Stap 3: Vertel meer */}
-              <div>
-                <label className="block text-base font-medium text-foreground mb-2">
-                  3. Vertel meer
-                </label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Vertel wat je nodig hebt. Hoe meer je vertelt, hoe beter we kunnen helpen."
-                  rows={4}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-input bg-background text-foreground text-base focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary resize-none"
-                  required
-                />
-              </div>
-
-              {/* Stap 4: Hoe snel? */}
-              <div>
-                <label className="block text-base font-medium text-foreground mb-3">
-                  4. Hoe snel heb je hulp nodig?
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {urgencies.map((urg) => (
-                    <button
-                      key={urg.value}
-                      type="button"
-                      onClick={() => setUrgency(urg.value)}
-                      className={cn(
-                        "px-3 py-3 rounded-xl text-sm font-medium transition-all",
-                        urgency === urg.value
-                          ? urg.color + " ring-2 ring-primary shadow-md"
-                          : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                      )}
-                    >
-                      {urg.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Knoppen */}
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowForm(false)}
-                  className="w-full sm:flex-1 order-2 sm:order-1"
-                  size="lg"
-                >
-                  Terug
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={!category || !title || !description || isSubmitting}
-                  isLoading={isSubmitting}
-                  className="w-full sm:flex-1 order-1 sm:order-2"
-                  size="lg"
-                >
-                  Verstuur vraag
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+      {/* Urgente melding bij hoge belasting */}
+      {hulpData?.testNiveau === "HOOG" && (
+        <div className="mb-6 p-4 bg-[var(--accent-red-bg)] rounded-xl border-l-4 border-[var(--accent-red)]">
+          <p className="font-semibold text-foreground mb-2">Je belasting is hoog</p>
+          <p className="text-sm text-muted-foreground mb-3">
+            Neem contact op met je huisarts of de mantelzorglijn voor ondersteuning.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <a
+              href="tel:0900-2020496"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-lg text-sm font-medium hover:bg-gray-50"
+            >
+              📞 Mantelzorglijn
+            </a>
+            <Link
+              href="/rapport"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium"
+            >
+              Bekijk rapport
+            </Link>
+          </div>
+        </div>
       )}
 
-      {/* Lijst met vragen */}
-      {isLoading ? (
-        <div className="text-center py-12 text-muted-foreground">
-          Even laden...
+      {/* Zware taken badge */}
+      {aantalZwareTaken > 0 && (
+        <div className="mb-6 p-4 bg-[var(--accent-amber-bg)] rounded-xl">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-[var(--accent-amber)] text-white flex items-center justify-center font-bold">
+              {aantalZwareTaken}
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">
+                {aantalZwareTaken === 1 ? 'Zware zorgtaak' : 'Zware zorgtaken'}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {hulpData?.zwareTaken?.map(t => t.naam).join(', ')}
+              </p>
+            </div>
+          </div>
         </div>
-      ) : helpRequests.length === 0 && !showForm ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <span className="text-6xl mb-4 block">🤝</span>
-            <h3 className="text-xl font-semibold text-foreground mb-2">
-              Nog geen vragen
-            </h3>
-            <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-              Heb je ergens hulp bij nodig? Wij helpen je graag verder.
-            </p>
-            <Button onClick={() => setShowForm(true)} size="lg">
-              Stel je eerste vraag
-            </Button>
-          </CardContent>
-        </Card>
-      ) : !showForm && (
-        <div className="space-y-3">
-          {helpRequests.map((request) => {
-            const catInfo = getCategoryInfo(request.category)
-            const statusInfo = statuses[request.status] || statuses.OPEN
+      )}
 
-            return (
-              <Card
-                key={request.id}
-                className="cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99]"
-                onClick={() => setSelectedRequest(request)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex gap-3 sm:gap-4">
-                    <div className="text-3xl sm:text-4xl flex-shrink-0">{catInfo.icon}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="font-semibold text-foreground text-base sm:text-lg line-clamp-1">
-                          {request.title}
-                        </h3>
-                        <span className={cn(
-                          "px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0",
-                          statusInfo.color
-                        )}>
-                          {statusInfo.label}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                        {request.description}
-                      </p>
-                      <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground flex-wrap">
-                        <span className="bg-secondary px-2 py-0.5 rounded">{catInfo.label}</span>
-                        <span>•</span>
-                        <span>{new Date(request.createdAt).toLocaleDateString("nl-NL")}</span>
-                        {request.response && (
-                          <span className="text-green-600 dark:text-green-400 font-medium">
-                            ✓ Antwoord
+      {/* Tabs */}
+      <div className="flex gap-2 mb-6">
+        <button
+          onClick={() => setActiveTab('bronnen')}
+          className={cn(
+            "flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all",
+            activeTab === 'bronnen'
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-muted-foreground hover:bg-muted/80"
+          )}
+        >
+          Hulpbronnen
+        </button>
+        <button
+          onClick={() => setActiveTab('vragen')}
+          className={cn(
+            "flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all relative",
+            activeTab === 'vragen'
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-muted-foreground hover:bg-muted/80"
+          )}
+        >
+          Mijn vragen
+          {openHulpvragen > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--accent-red)] text-white text-xs rounded-full flex items-center justify-center">
+              {openHulpvragen}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* TAB: Hulpbronnen */}
+      {activeTab === 'bronnen' && (
+        <div className="space-y-6">
+          {/* Locatie info */}
+          {(hulpData?.mantelzorgerGemeente || hulpData?.zorgvragerGemeente) && (
+            <div className="text-xs text-muted-foreground space-y-1">
+              {hulpData.mantelzorgerGemeente && (
+                <p>📍 Jouw regio: <span className="font-medium">{hulpData.mantelzorgerGemeente}</span></p>
+              )}
+              {hulpData.zorgvragerGemeente && hulpData.zorgvragerGemeente !== hulpData.mantelzorgerGemeente && (
+                <p>💝 Regio naaste: <span className="font-medium">{hulpData.zorgvragerGemeente}</span></p>
+              )}
+            </div>
+          )}
+
+          {/* Categorie knoppen */}
+          <div>
+            <p className="text-sm font-medium text-foreground mb-3">Zoek hulp per categorie:</p>
+            <div className="flex flex-wrap gap-2">
+              {categorien.map((categorie) => (
+                <button
+                  key={categorie}
+                  onClick={() => setSelectedCategorie(selectedCategorie === categorie ? null : categorie)}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all",
+                    selectedCategorie === categorie
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted hover:bg-muted/80 text-foreground"
+                  )}
+                >
+                  <span>{CATEGORIE_ICONS[categorie] || '📌'}</span>
+                  <span>{CATEGORIE_KORTE_NAMEN[categorie] || categorie}</span>
+                  <span className="text-xs opacity-70">
+                    ({hulpData?.perCategorie?.[categorie]?.length || 0})
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Geselecteerde categorie */}
+          {selectedCategorie && hulpData?.perCategorie?.[selectedCategorie] && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  {CATEGORIE_ICONS[selectedCategorie]} {selectedCategorie}
+                </p>
+                <button
+                  onClick={() => setSelectedCategorie(null)}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  ✕ Sluiten
+                </button>
+              </div>
+              <div className="space-y-2">
+                {hulpData.perCategorie[selectedCategorie].map((hulp, i) => (
+                  <HulpbronCard key={i} hulp={hulp} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Hulpvraag stellen */}
+          <div className="ker-card bg-gradient-to-r from-primary/5 to-primary/10">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <span className="text-xl">🤝</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-foreground">Vraag hulp</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Stel een vraag aan hulporganisaties of buurtgenoten
+                </p>
+                <button
+                  onClick={() => {
+                    setShowHulpvraagForm(true)
+                    setActiveTab('vragen')
+                  }}
+                  className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90"
+                >
+                  + Nieuwe hulpvraag
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Landelijke hulplijnen */}
+          {hulpData?.landelijk && hulpData.landelijk.length > 0 && (
+            <div className="p-4 bg-muted/50 rounded-xl">
+              <p className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+                🌍 Landelijke hulplijnen
+              </p>
+              <div className="space-y-2">
+                {hulpData.landelijk.map((hulp, i) => (
+                  <div key={i} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                    <div>
+                      <p className="font-medium text-sm">{hulp.naam}</p>
+                      {hulp.soortHulp && (
+                        <span className="text-xs text-muted-foreground">{hulp.soortHulp}</span>
+                      )}
+                    </div>
+                    <div className="flex gap-3">
+                      {hulp.telefoon && (
+                        <a href={`tel:${hulp.telefoon}`} className="text-xs text-primary hover:underline font-medium">
+                          📞 {hulp.telefoon}
+                        </a>
+                      )}
+                      {hulp.website && (
+                        <a href={hulp.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
+                          🌐
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Externe zoekoptie */}
+          <div className="ker-card">
+            <p className="font-medium text-foreground mb-2">Meer hulp zoeken?</p>
+            <p className="text-sm text-muted-foreground mb-3">
+              Zoek ook in de landelijke sociale kaart
+            </p>
+            <a
+              href={`https://www.zorgkaartnederland.nl/zoeken?q=mantelzorg&plaats=${hulpData?.mantelzorgerGemeente || ''}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-muted rounded-lg text-sm hover:bg-muted/80"
+            >
+              🔍 Zoek op Zorgkaart Nederland
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: Mijn vragen */}
+      {activeTab === 'vragen' && (
+        <div className="space-y-4">
+          {/* Nieuwe vraag button */}
+          {!showHulpvraagForm && (
+            <button
+              onClick={() => setShowHulpvraagForm(true)}
+              className="w-full py-4 border-2 border-dashed border-primary/30 rounded-xl text-primary font-medium hover:border-primary hover:bg-primary/5 transition-all"
+            >
+              + Nieuwe vraag stellen
+            </button>
+          )}
+
+          {/* Hulpvraag formulier */}
+          {showHulpvraagForm && (
+            <div className="ker-card">
+              <h3 className="font-semibold text-foreground mb-4">Nieuwe hulpvraag</h3>
+              <form onSubmit={handleSubmitHulpvraag} className="space-y-4">
+                {/* Categorie */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Waar gaat het over?
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {hulpvraagCategories.map((cat) => (
+                      <button
+                        key={cat.value}
+                        type="button"
+                        onClick={() => setFormCategory(cat.value)}
+                        className={cn(
+                          "p-3 rounded-xl border-2 transition-all text-left",
+                          formCategory === cat.value
+                            ? "border-primary bg-primary/10"
+                            : "border-border hover:border-primary/50"
+                        )}
+                      >
+                        <span className="text-xl">{cat.icon}</span>
+                        <p className="font-medium text-sm mt-1">{cat.label}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Titel */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Korte vraag
+                  </label>
+                  <input
+                    type="text"
+                    value={formTitle}
+                    onChange={(e) => setFormTitle(e.target.value)}
+                    placeholder="Bijv: Ik zoek hulp bij boodschappen"
+                    className="ker-input"
+                    required
+                  />
+                </div>
+
+                {/* Beschrijving */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Meer uitleg
+                  </label>
+                  <textarea
+                    value={formDescription}
+                    onChange={(e) => setFormDescription(e.target.value)}
+                    placeholder="Vertel meer over wat je nodig hebt..."
+                    rows={3}
+                    className="ker-input"
+                    required
+                  />
+                </div>
+
+                {/* Buttons */}
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowHulpvraagForm(false)}
+                    className="ker-btn ker-btn-secondary flex-1"
+                  >
+                    Annuleren
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!formCategory || !formTitle || !formDescription || isSubmitting}
+                    className="ker-btn ker-btn-primary flex-1"
+                  >
+                    {isSubmitting ? 'Versturen...' : 'Verstuur'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Bestaande vragen */}
+          {helpRequests.length === 0 && !showHulpvraagForm ? (
+            <div className="text-center py-12">
+              <span className="text-5xl">📝</span>
+              <p className="text-muted-foreground mt-4">Nog geen vragen gesteld</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {helpRequests.map((request) => {
+                const catInfo = hulpvraagCategories.find(c => c.value === request.category)
+                return (
+                  <div key={request.id} className="ker-card">
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">{catInfo?.icon || '📝'}</span>
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className="font-medium text-foreground">{request.title}</h4>
+                          <span className={cn(
+                            "text-xs px-2 py-1 rounded-full",
+                            request.status === 'RESPONDED' && "bg-green-100 text-green-700",
+                            request.status === 'OPEN' && "bg-yellow-100 text-yellow-700",
+                            request.status === 'RESOLVED' && "bg-gray-100 text-gray-600"
+                          )}>
+                            {request.status === 'RESPONDED' && 'Antwoord'}
+                            {request.status === 'OPEN' && 'Nieuw'}
+                            {request.status === 'RESOLVED' && 'Afgerond'}
                           </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                          {request.description}
+                        </p>
+                        {request.response && (
+                          <div className="mt-3 p-3 bg-green-50 rounded-lg">
+                            <p className="text-xs font-medium text-green-700 mb-1">Antwoord:</p>
+                            <p className="text-sm text-green-800">{request.response}</p>
+                          </div>
                         )}
                       </div>
                     </div>
-                    <svg className="w-5 h-5 text-muted-foreground flex-shrink-0 self-center" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
                   </div>
-                </CardContent>
-              </Card>
-            )
-          })}
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
+    </div>
+  )
+}
 
-      {/* Detail popup - fullscreen op mobiel */}
-      {selectedRequest && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50">
-          <Card className="w-full sm:max-w-lg max-h-[90vh] sm:max-h-[80vh] overflow-y-auto animate-slide-up rounded-t-3xl sm:rounded-2xl sm:m-4">
-            <CardHeader className="sticky top-0 bg-card z-10 flex flex-row items-center justify-between border-b pb-4">
-              <div className="flex items-center gap-3">
-                <span className="text-3xl">{getCategoryInfo(selectedRequest.category).icon}</span>
-                <div>
-                  <CardTitle className="text-lg">{selectedRequest.title}</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    {getCategoryInfo(selectedRequest.category).label}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setSelectedRequest(null)}
-                className="p-2 hover:bg-secondary rounded-full -mr-2"
-                aria-label="Sluiten"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-4">
-              <div className="flex gap-2 flex-wrap">
-                <span className={cn(
-                  "px-3 py-1 rounded-full text-sm font-medium",
-                  statuses[selectedRequest.status]?.color
-                )}>
-                  {statuses[selectedRequest.status]?.label}
-                </span>
-                <span className={cn(
-                  "px-3 py-1 rounded-full text-sm font-medium",
-                  getUrgencyInfo(selectedRequest.urgency).color
-                )}>
-                  {getUrgencyInfo(selectedRequest.urgency).label}
-                </span>
-              </div>
-
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground mb-2">Jouw vraag:</h4>
-                <p className="text-foreground whitespace-pre-wrap bg-secondary/50 rounded-xl p-4">
-                  {selectedRequest.description}
-                </p>
-              </div>
-
-              <p className="text-sm text-muted-foreground">
-                Verstuurd op {new Date(selectedRequest.createdAt).toLocaleDateString("nl-NL", {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric"
-                })}
-              </p>
-
-              {selectedRequest.response && (
-                <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border-2 border-green-200 dark:border-green-800">
-                  <h4 className="font-semibold text-green-700 dark:text-green-400 mb-2 flex items-center gap-2">
-                    <span>✓</span> Antwoord ontvangen
-                  </h4>
-                  <p className="text-foreground whitespace-pre-wrap">
-                    {selectedRequest.response}
-                  </p>
-                  {selectedRequest.respondedAt && (
-                    <p className="text-xs text-muted-foreground mt-3">
-                      {new Date(selectedRequest.respondedAt).toLocaleDateString("nl-NL")}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              <Button
-                variant="outline"
-                className="w-full"
-                size="lg"
-                onClick={() => setSelectedRequest(null)}
-              >
-                Sluiten
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+// Hulpbron card component
+function HulpbronCard({ hulp }: { hulp: Hulpbron }) {
+  return (
+    <div className="ker-card py-3">
+      <div className="flex items-start justify-between">
+        <p className="font-medium text-sm">{hulp.naam}</p>
+        {hulp.isLandelijk ? (
+          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+            🌍 Landelijk
+          </span>
+        ) : hulp.gemeente && (
+          <span className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
+            📍 {hulp.gemeente}
+          </span>
+        )}
+      </div>
+      {hulp.beschrijving && (
+        <p className="text-xs text-muted-foreground mt-1">{hulp.beschrijving}</p>
       )}
+      <div className="flex gap-4 mt-2">
+        {hulp.telefoon && (
+          <a href={`tel:${hulp.telefoon}`} className="text-xs text-primary hover:underline flex items-center gap-1">
+            📞 {hulp.telefoon}
+          </a>
+        )}
+        {hulp.website && (
+          <a href={hulp.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1">
+            🌐 Website
+          </a>
+        )}
+      </div>
     </div>
   )
 }
