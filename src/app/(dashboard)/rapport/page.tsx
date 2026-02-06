@@ -140,8 +140,11 @@ export default function RapportPage() {
 
   const niveau = result.belastingNiveau
   const geselecteerdeTaken = result.taakSelecties.filter((t) => t.isGeselecteerd)
-  const zwareTaken = geselecteerdeTaken.filter((t) => t.moeilijkheid === "ja" || t.moeilijkheid === "JA")
-  const gemiddeldeTaken = geselecteerdeTaken.filter((t) => t.moeilijkheid === "soms" || t.moeilijkheid === "SOMS")
+  // Ondersteuning voor zowel localStorage format (ja/soms/nee) als database format (MOEILIJK/GEMIDDELD/MAKKELIJK)
+  const isZwaar = (m: string | null) => m === "ja" || m === "JA" || m === "MOEILIJK" || m === "ZEER_MOEILIJK"
+  const isGemiddeld = (m: string | null) => m === "soms" || m === "SOMS" || m === "GEMIDDELD"
+  const zwareTaken = geselecteerdeTaken.filter((t) => isZwaar(t.moeilijkheid))
+  const gemiddeldeTaken = geselecteerdeTaken.filter((t) => isGemiddeld(t.moeilijkheid))
   const takenMetAandacht = [...zwareTaken, ...gemiddeldeTaken]
 
   return (
@@ -256,7 +259,7 @@ export default function RapportPage() {
                     <div className="flex items-center gap-3">
                       <div className={cn(
                         "w-3 h-3 rounded-full",
-                        (taak.moeilijkheid === "ja" || taak.moeilijkheid === "JA") ? "bg-[var(--emoticon-red)]" : "bg-[var(--emoticon-yellow)]"
+                        isZwaar(taak.moeilijkheid) ? "bg-[var(--emoticon-red)]" : "bg-[var(--emoticon-yellow)]"
                       )} />
                       <span className="text-foreground text-sm">{taak.taakNaam}</span>
                     </div>
@@ -314,7 +317,7 @@ export default function RapportPage() {
                     <div className="flex items-center gap-3 mb-2">
                       <div className={cn(
                         "w-3 h-3 rounded-full",
-                        (taak.moeilijkheid === "ja" || taak.moeilijkheid === "JA") ? "bg-[var(--emoticon-red)]" : "bg-[var(--emoticon-yellow)]"
+                        isZwaar(taak.moeilijkheid) ? "bg-[var(--emoticon-red)]" : "bg-[var(--emoticon-yellow)]"
                       )} />
                       <span className="font-medium text-foreground">{taak.taakNaam}</span>
                       {taak.urenPerWeek && (
@@ -426,8 +429,8 @@ export default function RapportPage() {
                     <div className="flex items-center gap-2">
                       <div className={cn(
                         "w-2 h-2 rounded-full",
-                        (taak.moeilijkheid === "ja" || taak.moeilijkheid === "JA") ? "bg-[var(--emoticon-red)]" :
-                        (taak.moeilijkheid === "soms" || taak.moeilijkheid === "SOMS") ? "bg-[var(--emoticon-yellow)]" : "bg-[var(--emoticon-green)]"
+                        isZwaar(taak.moeilijkheid) ? "bg-[var(--emoticon-red)]" :
+                        isGemiddeld(taak.moeilijkheid) ? "bg-[var(--emoticon-yellow)]" : "bg-[var(--emoticon-green)]"
                       )} />
                       <span className="text-foreground text-sm">{taak.taakNaam}</span>
                     </div>

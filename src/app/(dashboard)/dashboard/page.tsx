@@ -303,8 +303,14 @@ export default function DashboardPage() {
                     </span>
                   )}
                 </p>
-                <Link href="/rapport" className="text-sm text-primary hover:underline mt-1 inline-block">
-                  Bekijk volledig rapport →
+                <Link
+                  href="/rapport"
+                  className="inline-flex items-center gap-1 mt-2 px-3 py-1.5 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-opacity"
+                >
+                  Bekijk rapport
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </Link>
               </div>
             </div>
@@ -328,21 +334,30 @@ export default function DashboardPage() {
         </section>
       ) : (
         <section className="mb-8">
-          <Link href="/belastbaarheidstest" className="block">
-            <div className="ker-card bg-primary text-primary-foreground hover:opacity-95 transition-opacity">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-xl">Doe de Balanstest</h3>
-                  <p className="text-primary-foreground/80 mt-1">
-                    Ontdek hoe het met je gaat (5 min)
-                  </p>
-                </div>
-                <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-3xl">📊</span>
-                </div>
+          <div className="ker-card">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                <span className="text-3xl">📊</span>
+              </div>
+              <div className="flex-1">
+                <h2 className="font-bold text-xl text-foreground">
+                  Nog geen test gedaan
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Doe de test om inzicht te krijgen in je belasting
+                </p>
               </div>
             </div>
-          </Link>
+            <Link
+              href="/belastbaarheidstest"
+              className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:opacity-90 transition-opacity"
+            >
+              Doe de test
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          </div>
         </section>
       )}
 
@@ -437,6 +452,41 @@ export default function DashboardPage() {
         </section>
       )}
 
+      {/* SECTIE 3: Jouw Eerste 3 Acties */}
+      {aanbevolenActies.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+            <span className="text-2xl">🎯</span> Jouw Eerste Stappen
+          </h2>
+
+          <div className="space-y-3">
+            {aanbevolenActies.map((actie, i) => (
+              <Link key={i} href={actie.href} className="block">
+                <div className="ker-card hover:border-primary/50 transition-all">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <span className="text-2xl">{actie.icon}</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center">
+                          {i + 1}
+                        </span>
+                        <h3 className="font-semibold">{actie.titel}</h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">{actie.beschrijving}</p>
+                    </div>
+                    <svg className="w-5 h-5 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* SECTIE: Educatie & Tips */}
       <section className="mb-8">
         <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
@@ -486,100 +536,23 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* SECTIE 3: Jouw Eerste 3 Acties */}
-      {aanbevolenActies.length > 0 && (
-        <section className="mb-8">
-          <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-            <span className="text-2xl">🎯</span> Jouw Eerste Stappen
-          </h2>
-
-          <div className="space-y-3">
-            {aanbevolenActies.map((actie, i) => (
-              <Link key={i} href={actie.href} className="block">
-                <div className="ker-card hover:border-primary/50 transition-all">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-2xl">{actie.icon}</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center">
-                          {i + 1}
-                        </span>
-                        <h3 className="font-semibold">{actie.titel}</h3>
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">{actie.beschrijving}</p>
-                    </div>
-                    <svg className="w-5 h-5 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
       {/* SECTIE 4: Check-in Status */}
       <section className="mb-8">
-        <div className="grid grid-cols-2 gap-3">
-          <Link href="/check-in" className="block">
-            <div
-              className={cn(
-                "ker-card text-center py-4",
-                data?.checkIns?.weeklyDone
-                  ? "bg-[var(--accent-green-bg)]"
-                  : "border-2 border-dashed border-primary/30 hover:border-primary"
-              )}
-            >
-              <span className="text-2xl">{data?.checkIns?.weeklyDone ? "✅" : "📝"}</span>
-              <p className="font-medium text-sm mt-2">
-                {data?.checkIns?.weeklyDone ? "Check-in gedaan" : "Wekelijkse check-in"}
-              </p>
-            </div>
-          </Link>
-
-          <Link href="/rapport" className="block">
-            <div className="ker-card text-center py-4 bg-muted hover:bg-muted/80 transition-colors">
-              <span className="text-2xl">📊</span>
-              <p className="font-medium text-sm mt-2">Bekijk rapport</p>
-            </div>
-          </Link>
-        </div>
-      </section>
-
-      {/* Snelle acties */}
-      <section className="mb-8">
-        <h2 className="text-sm font-bold text-foreground uppercase tracking-wide mb-3">
-          Snel naar
-        </h2>
-        <div className="grid grid-cols-4 gap-2">
-          <Link href="/check-in" className="block">
-            <div className="ker-card flex flex-col items-center gap-1 py-3 hover:border-primary/50 transition-colors">
-              <span className="text-xl">😊</span>
-              <span className="text-xs text-center">Gevoel</span>
-            </div>
-          </Link>
-          <Link href="/hulpvragen" className="block">
-            <div className="ker-card flex flex-col items-center gap-1 py-3 hover:border-primary/50 transition-colors">
-              <span className="text-xl">🤝</span>
-              <span className="text-xs text-center">Hulp</span>
-            </div>
-          </Link>
-          <Link href="/agenda" className="block">
-            <div className="ker-card flex flex-col items-center gap-1 py-3 hover:border-primary/50 transition-colors">
-              <span className="text-xl">📅</span>
-              <span className="text-xs text-center">Agenda</span>
-            </div>
-          </Link>
-          <Link href="/profiel" className="block">
-            <div className="ker-card flex flex-col items-center gap-1 py-3 hover:border-primary/50 transition-colors">
-              <span className="text-xl">👤</span>
-              <span className="text-xs text-center">Profiel</span>
-            </div>
-          </Link>
-        </div>
+        <Link href="/check-in" className="block">
+          <div
+            className={cn(
+              "ker-card text-center py-4",
+              data?.checkIns?.weeklyDone
+                ? "bg-[var(--accent-green-bg)]"
+                : "border-2 border-dashed border-primary/30 hover:border-primary"
+            )}
+          >
+            <span className="text-2xl">{data?.checkIns?.weeklyDone ? "✅" : "📝"}</span>
+            <p className="font-medium text-sm mt-2">
+              {data?.checkIns?.weeklyDone ? "Check-in gedaan" : "Wekelijkse check-in"}
+            </p>
+          </div>
+        </Link>
       </section>
 
       {/* Bemoediging */}

@@ -85,9 +85,9 @@ async function getHulpbronnenVoorTaken(
     }
   }
 
-  // Vind zware taken (JA of SOMS)
+  // Vind zware taken (MOEILIJK, ZEER_MOEILIJK of GEMIDDELD)
   const zwareTaken = latestTest.taakSelecties?.filter(
-    (t: any) => t.isGeselecteerd && (t.moeilijkheid === 'JA' || t.moeilijkheid === 'SOMS')
+    (t: any) => t.isGeselecteerd && (t.moeilijkheid === 'MOEILIJK' || t.moeilijkheid === 'ZEER_MOEILIJK' || t.moeilijkheid === 'GEMIDDELD')
   ) || []
 
   const perTaak: Record<string, HulpbronResult[]> = {}

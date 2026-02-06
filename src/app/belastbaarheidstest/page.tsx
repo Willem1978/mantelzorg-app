@@ -390,6 +390,11 @@ export default function BelastbaarheidstestPage() {
     const niveau = getBelastingNiveau(score)
     const totaleUren = berekenTotaleUren()
 
+    // Debug: log taken data
+    console.log("=== Frontend: Opslaan test ===")
+    console.log("Taken state:", taken)
+    console.log("Geselecteerde taken:", Object.entries(taken).filter(([, d]) => d.isGeselecteerd))
+
     try {
       await fetch("/api/belastbaarheidstest", {
         method: "POST",

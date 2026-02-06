@@ -18,6 +18,10 @@ export async function POST(request: Request) {
       totaleUren,
     } = data
 
+    // Debug logging
+    console.log("=== Belastbaarheidstest POST ===")
+    console.log("Taken ontvangen:", JSON.stringify(taken, null, 2))
+
     // Bepaal belasting niveau voor database
     let belastingNiveau: "LAAG" | "GEMIDDELD" | "HOOG" = "LAAG"
     if (score >= 7 && score <= 12) belastingNiveau = "GEMIDDELD"
@@ -65,32 +69,38 @@ export async function POST(request: Request) {
         },
 
         // Taak selecties opslaan
-        taakSelecties: {
+        taakSelecties: taken && Object.keys(taken).length > 0 ? {
           create: Object.entries(taken).map(([taakId, taakData]) => {
             const taak = taakData as {
               isGeselecteerd: boolean
               uren: string
-              moeilijkheid: string
+              belasting: string  // Frontend gebruikt 'belasting' als veldnaam
             }
             const taakConfig = getTaakConfig(taakId)
+
+            console.log(`Taak ${taakId}:`, taak)
 
             // Converteer uren string naar getal
             let urenPerWeek: number | null = null
             if (taak.uren) {
               const urenMap: Record<string, number> = {
-                "0-7": 4,
-                "8-14": 11,
-                "15-20": 17,
-                "20+": 25,
+                "0-2": 1,
+                "2-4": 3,
+                "4-8": 6,
+                "8-12": 10,
+                "12-24": 18,
+                "24+": 30,
               }
               urenPerWeek = urenMap[taak.uren] || null
             }
 
-            // Converteer moeilijkheid
+            // Converteer belasting naar moeilijkheid enum
             let moeilijkheid: "MAKKELIJK" | "GEMIDDELD" | "MOEILIJK" | "ZEER_MOEILIJK" | null = null
-            if (taak.moeilijkheid === "nee") moeilijkheid = "MAKKELIJK"
-            if (taak.moeilijkheid === "soms") moeilijkheid = "GEMIDDELD"
-            if (taak.moeilijkheid === "ja") moeilijkheid = "MOEILIJK"
+            if (taak.belasting === "nee") moeilijkheid = "MAKKELIJK"
+            if (taak.belasting === "soms") moeilijkheid = "GEMIDDELD"
+            if (taak.belasting === "ja") moeilijkheid = "MOEILIJK"
+
+            console.log(`  -> moeilijkheid: ${moeilijkheid}, urenPerWeek: ${urenPerWeek}`)
 
             return {
               taakId,
@@ -100,7 +110,7 @@ export async function POST(request: Request) {
               moeilijkheid,
             }
           }),
-        },
+        } : undefined,
       },
     })
 

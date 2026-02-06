@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useEffect, useState, useRef } from "react"
 import { cn } from "@/lib/utils"
 import { NotificationBell } from "@/components/navigation/NotificationBell"
 import { ThemeToggle } from "@/components/navigation/ThemeToggle"
@@ -13,19 +14,41 @@ interface NavbarProps {
 
 export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
   const pathname = usePathname()
+  const [zwareTakenCount, setZwareTakenCount] = useState(0)
+  const hasFetched = useRef(false)
+
+  useEffect(() => {
+    if (hasFetched.current) return
+    hasFetched.current = true
+
+    const fetchBadgeCount = async () => {
+      try {
+        const res = await fetch("/api/nav-badge")
+        if (res.ok) {
+          const data = await res.json()
+          setZwareTakenCount(data.count || 0)
+        }
+      } catch (error) {
+        // Silently fail
+      }
+    }
+
+    fetchBadgeCount()
+  }, [])
 
   // B1 taalgebruik - simpele menu woorden
+  // Volgorde: Home, Hulp, Agenda, Hoe gaat het?
   const caregiverLinks = [
-    { href: "/dashboard", label: "Home" },
-    { href: "/agenda", label: "Agenda" },
-    { href: "/hulpvragen", label: "Hulp" },
-    { href: "/check-in", label: "Hoe gaat het?" },
+    { href: "/dashboard", label: "Home", hasBadge: false },
+    { href: "/hulpvragen", label: "Hulp", hasBadge: true },
+    { href: "/agenda", label: "Agenda", hasBadge: false },
+    { href: "/check-in", label: "Hoe gaat het?", hasBadge: false },
   ]
 
   const orgLinks = [
-    { href: "/organisatie", label: "Home" },
-    { href: "/organisatie/mantelzorgers", label: "Mensen" },
-    { href: "/organisatie/rapportage", label: "Cijfers" },
+    { href: "/organisatie", label: "Home", hasBadge: false },
+    { href: "/organisatie/mantelzorgers", label: "Mensen", hasBadge: false },
+    { href: "/organisatie/rapportage", label: "Cijfers", hasBadge: false },
   ]
 
   const links = userRole === "CAREGIVER" ? caregiverLinks : orgLinks
@@ -46,20 +69,28 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
 
             {/* Desktop navigatie */}
             <div className="hidden md:flex ml-8 lg:ml-10 space-x-1">
-              {links.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    "px-3 lg:px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                    pathname === link.href
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                  )}
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {links.map((link) => {
+                const showBadge = link.hasBadge && zwareTakenCount > 0
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      "px-3 lg:px-4 py-2 rounded-lg text-sm font-medium transition-colors relative",
+                      pathname === link.href
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    )}
+                  >
+                    {link.label}
+                    {showBadge && (
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--accent-amber)] text-white text-xs font-bold rounded-full flex items-center justify-center">
+                        {zwareTakenCount}
+                      </span>
+                    )}
+                  </Link>
+                )
+              })}
             </div>
           </div>
 

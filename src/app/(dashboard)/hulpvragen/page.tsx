@@ -28,10 +28,16 @@ interface LocatieInfo {
   woonplaats: string | null
 }
 
+interface ZwareTaak {
+  naam: string
+  moeilijkheid: string
+  categorie?: string
+}
+
 interface HulpData {
   perCategorie: Record<string, Hulpbron[]>
   landelijk: LandelijkeHulpbron[]
-  zwareTaken: { naam: string; moeilijkheid: string; categorie?: string }[]
+  zwareTaken: ZwareTaak[]
   mantelzorgerGemeente: string | null
   zorgvragerGemeente: string | null
   testNiveau: "LAAG" | "GEMIDDELD" | "HOOG" | null
@@ -52,17 +58,24 @@ interface HelpRequest {
   response?: string
 }
 
-// Alle categorieën met icons
-const ALLE_CATEGORIEEN = [
-  { naam: 'Persoonlijke verzorging', icon: '🛁', kort: 'Verzorging', voorWie: 'zorgvrager' },
-  { naam: 'Huishoudelijke taken', icon: '🧹', kort: 'Huishouden', voorWie: 'zorgvrager' },
-  { naam: 'Vervoer', icon: '🚗', kort: 'Vervoer', voorWie: 'zorgvrager' },
-  { naam: 'Administratie en aanvragen', icon: '📋', kort: 'Administratie', voorWie: 'zorgvrager' },
-  { naam: 'Sociaal contact en activiteiten', icon: '👥', kort: 'Sociaal', voorWie: 'zorgvrager' },
-  { naam: 'Bereiden en/of nuttigen van maaltijden', icon: '🍽️', kort: 'Maaltijden', voorWie: 'zorgvrager' },
-  { naam: 'Boodschappen', icon: '🛒', kort: 'Boodschappen', voorWie: 'zorgvrager' },
-  { naam: 'Klusjes in en om het huis', icon: '🔧', kort: 'Klusjes', voorWie: 'zorgvrager' },
-  { naam: 'Mantelzorgondersteuning', icon: '💜', kort: 'Voor jou', voorWie: 'mantelzorger' },
+// Categorieën voor zorgvrager (hulp voor wie je zorgt)
+const CATEGORIEEN_ZORGVRAGER = [
+  { naam: 'Persoonlijke verzorging', icon: '🛁', kort: 'Verzorging' },
+  { naam: 'Huishoudelijke taken', icon: '🧹', kort: 'Huishouden' },
+  { naam: 'Vervoer', icon: '🚗', kort: 'Vervoer' },
+  { naam: 'Administratie en aanvragen', icon: '📋', kort: 'Administratie' },
+  { naam: 'Sociaal contact en activiteiten', icon: '👥', kort: 'Sociaal' },
+  { naam: 'Bereiden en/of nuttigen van maaltijden', icon: '🍽️', kort: 'Maaltijden' },
+  { naam: 'Boodschappen', icon: '🛒', kort: 'Boodschappen' },
+  { naam: 'Klusjes in en om het huis', icon: '🔧', kort: 'Klusjes' },
+]
+
+// Categorieën voor mantelzorger (hulp voor jou)
+const CATEGORIEEN_MANTELZORGER = [
+  { naam: 'Mantelzorgondersteuning', icon: '💜', kort: 'Ondersteuning' },
+  { naam: 'Respijtzorg', icon: '🏠', kort: 'Respijtzorg' },
+  { naam: 'Emotionele steun', icon: '💚', kort: 'Praten' },
+  { naam: 'Lotgenotencontact', icon: '👥', kort: 'Lotgenoten' },
 ]
 
 // Mapping van taak namen naar categorieën
@@ -97,13 +110,16 @@ const hulpvraagCategories = [
   { value: "OTHER", label: "Anders", icon: "📝", hint: "Iets anders" },
 ]
 
+type TabType = 'voor-jou' | 'voor-naaste' | 'algemeen'
+
 export default function HulpPage() {
   const [hulpData, setHulpData] = useState<HulpData | null>(null)
   const [helpRequests, setHelpRequests] = useState<HelpRequest[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'bronnen' | 'vragen'>('bronnen')
+  const [activeTab, setActiveTab] = useState<TabType | null>(null)
   const [selectedCategorie, setSelectedCategorie] = useState<string | null>(null)
   const [showHulpvraagForm, setShowHulpvraagForm] = useState(false)
+  const [showVragenTab, setShowVragenTab] = useState(false)
 
   // Hulpvraag form state
   const [formTitle, setFormTitle] = useState("")
@@ -126,9 +142,9 @@ export default function HulpPage() {
       if (dashboardRes.ok) {
         const dashboardData = await dashboardRes.json()
 
-        // Voeg categorie toe aan zware taken
+        // Voeg categorie toe aan zware taken (check op database enum waarden)
         const zwareTaken = (dashboardData.test?.zorgtaken || [])
-          .filter((t: any) => t.moeilijkheid === 'JA' || t.moeilijkheid === 'SOMS')
+          .filter((t: any) => t.moeilijkheid === 'MOEILIJK' || t.moeilijkheid === 'ZEER_MOEILIJK' || t.moeilijkheid === 'GEMIDDELD')
           .map((t: any) => ({
             ...t,
             categorie: TAAK_NAAR_CATEGORIE[t.naam] || null
@@ -190,6 +206,24 @@ export default function HulpPage() {
     }
   }
 
+  const handleSelectCategorie = (categorie: string) => {
+    if (selectedCategorie === categorie) {
+      setSelectedCategorie(null)
+    } else {
+      setSelectedCategorie(categorie)
+    }
+  }
+
+  const handleTabClick = (tab: TabType) => {
+    if (activeTab === tab) {
+      setActiveTab(null)
+      setSelectedCategorie(null)
+    } else {
+      setActiveTab(tab)
+      setSelectedCategorie(null)
+    }
+  }
+
   if (loading) {
     return (
       <div className="ker-page-content flex items-center justify-center min-h-[50vh]">
@@ -198,310 +232,50 @@ export default function HulpPage() {
     )
   }
 
-  const aantalZwareTaken = hulpData?.zwareTaken?.length || 0
   const openHulpvragen = helpRequests.filter(r => r.status !== 'RESOLVED' && r.status !== 'CLOSED').length
 
-  // Bepaal welke categorieën zware taken hebben
-  const zwareTaakCategorieen = new Set(
-    hulpData?.zwareTaken?.map(t => t.categorie).filter(Boolean) || []
-  )
-
-  // Sorteer categorieën: eerst met zware taken, dan de rest
-  const gesorteerdeCategorieen = [...ALLE_CATEGORIEEN].sort((a, b) => {
-    const aHeeftZwaar = zwareTaakCategorieen.has(a.naam)
-    const bHeeftZwaar = zwareTaakCategorieen.has(b.naam)
-    if (aHeeftZwaar && !bHeeftZwaar) return -1
-    if (!aHeeftZwaar && bHeeftZwaar) return 1
-    return 0
-  })
-
-  // Split categorieën in voor zorgvrager en voor mantelzorger
-  const categorieenZorgvrager = gesorteerdeCategorieen.filter(c => c.voorWie === 'zorgvrager')
-  const categorieenMantelzorger = gesorteerdeCategorieen.filter(c => c.voorWie === 'mantelzorger')
+  // Bepaal welke categorieën zware taken hebben en hun niveau
+  const getTaakStatus = (categorieNaam: string): 'zwaar' | 'gemiddeld' | null => {
+    const taken = hulpData?.zwareTaken?.filter(t => t.categorie === categorieNaam) || []
+    if (taken.some(t => t.moeilijkheid === 'MOEILIJK' || t.moeilijkheid === 'ZEER_MOEILIJK')) {
+      return 'zwaar'
+    }
+    if (taken.some(t => t.moeilijkheid === 'GEMIDDELD')) {
+      return 'gemiddeld'
+    }
+    return null
+  }
 
   // Helper functie voor locatie string
   const formatLocatie = (loc: LocatieInfo | undefined) => {
     if (!loc) return null
-    const parts = [loc.straat, loc.woonplaats || loc.gemeente].filter(Boolean)
+    const parts = [loc.woonplaats || loc.gemeente].filter(Boolean)
     return parts.length > 0 ? parts.join(', ') : null
   }
 
   const locatieMantelzorger = formatLocatie(hulpData?.locatie?.mantelzorger)
   const locatieZorgvrager = formatLocatie(hulpData?.locatie?.zorgvrager)
 
-  return (
-    <div className="ker-page-content">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          <span className="text-3xl">💜</span> Hulp
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Vind hulp bij zorgtaken of stel een vraag
-        </p>
-      </div>
-
-      {/* Urgente melding bij hoge belasting */}
-      {hulpData?.testNiveau === "HOOG" && (
-        <div className="mb-6 p-4 bg-[var(--accent-red-bg)] rounded-xl border-l-4 border-[var(--accent-red)]">
-          <p className="font-semibold text-foreground mb-2">Je belasting is hoog</p>
-          <p className="text-sm text-muted-foreground mb-3">
-            Neem contact op met je huisarts of de mantelzorglijn voor ondersteuning.
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <a
-              href="tel:0900-2020496"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-lg text-sm font-medium hover:bg-gray-50"
-            >
-              📞 Mantelzorglijn
-            </a>
-            <Link
-              href="/rapport"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium"
-            >
-              Bekijk rapport
-            </Link>
-          </div>
+  // Als "Mijn vragen" actief is
+  if (showVragenTab) {
+    return (
+      <div className="ker-page-content">
+        {/* Header */}
+        <div className="mb-6">
+          <button
+            onClick={() => setShowVragenTab(false)}
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Terug
+          </button>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <span className="text-3xl">📝</span> Mijn vragen
+          </h1>
         </div>
-      )}
 
-      {/* Zware taken badge */}
-      {aantalZwareTaken > 0 && (
-        <div className="mb-6 p-4 bg-[var(--accent-amber-bg)] rounded-xl">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[var(--accent-amber)] text-white flex items-center justify-center font-bold">
-              {aantalZwareTaken}
-            </div>
-            <div>
-              <p className="font-semibold text-foreground">
-                {aantalZwareTaken === 1 ? 'Zware zorgtaak' : 'Zware zorgtaken'}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {hulpData?.zwareTaken?.map(t => t.naam).join(', ')}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6">
-        <button
-          onClick={() => setActiveTab('bronnen')}
-          className={cn(
-            "flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all",
-            activeTab === 'bronnen'
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground hover:bg-muted/80"
-          )}
-        >
-          Hulpbronnen
-        </button>
-        <button
-          onClick={() => setActiveTab('vragen')}
-          className={cn(
-            "flex-1 py-3 px-4 rounded-xl font-medium text-sm transition-all relative",
-            activeTab === 'vragen'
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground hover:bg-muted/80"
-          )}
-        >
-          Mijn vragen
-          {openHulpvragen > 0 && (
-            <span className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--accent-red)] text-white text-xs rounded-full flex items-center justify-center">
-              {openHulpvragen}
-            </span>
-          )}
-        </button>
-      </div>
-
-      {/* TAB: Hulpbronnen */}
-      {activeTab === 'bronnen' && (
-        <div className="space-y-6">
-          {/* SECTIE: Hulp voor de zorgvrager */}
-          <div className="ker-card">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-xl">💝</span>
-              <div>
-                <h2 className="font-semibold text-foreground">Hulp voor je naaste</h2>
-                {locatieZorgvrager && (
-                  <p className="text-xs text-muted-foreground">📍 {locatieZorgvrager}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {categorieenZorgvrager.map((categorie) => {
-                const heeftZwareTaak = zwareTaakCategorieen.has(categorie.naam)
-                const aantalHulpbronnen = hulpData?.perCategorie?.[categorie.naam]?.length || 0
-                const isSelected = selectedCategorie === categorie.naam
-
-                return (
-                  <button
-                    key={categorie.naam}
-                    onClick={() => setSelectedCategorie(isSelected ? null : categorie.naam)}
-                    className={cn(
-                      "flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all border-2",
-                      isSelected
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : heeftZwareTaak
-                          ? "bg-[var(--accent-amber-bg)] border-[var(--accent-amber)] text-foreground"
-                          : "bg-muted border-transparent hover:bg-muted/80 text-foreground"
-                    )}
-                  >
-                    <span>{categorie.icon}</span>
-                    <span>{categorie.kort}</span>
-                    <span className="text-xs opacity-70">({aantalHulpbronnen})</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* SECTIE: Hulp voor de mantelzorger */}
-          <div className="ker-card">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-xl">💜</span>
-              <div>
-                <h2 className="font-semibold text-foreground">Hulp voor jou</h2>
-                {locatieMantelzorger && (
-                  <p className="text-xs text-muted-foreground">📍 {locatieMantelzorger}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {categorieenMantelzorger.map((categorie) => {
-                const aantalHulpbronnen = hulpData?.perCategorie?.[categorie.naam]?.length || 0
-                const isSelected = selectedCategorie === categorie.naam
-
-                return (
-                  <button
-                    key={categorie.naam}
-                    onClick={() => setSelectedCategorie(isSelected ? null : categorie.naam)}
-                    className={cn(
-                      "flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm transition-all border-2",
-                      isSelected
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-primary/10 border-primary/30 hover:bg-primary/20 text-foreground"
-                    )}
-                  >
-                    <span>{categorie.icon}</span>
-                    <span>{categorie.kort}</span>
-                    <span className="text-xs opacity-70">({aantalHulpbronnen})</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Geselecteerde categorie */}
-          {selectedCategorie && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  {ALLE_CATEGORIEEN.find(c => c.naam === selectedCategorie)?.icon} {selectedCategorie}
-                </p>
-                <button
-                  onClick={() => setSelectedCategorie(null)}
-                  className="text-xs text-muted-foreground hover:text-foreground"
-                >
-                  ✕ Sluiten
-                </button>
-              </div>
-
-              {hulpData?.perCategorie?.[selectedCategorie] && hulpData.perCategorie[selectedCategorie].length > 0 ? (
-                <div className="space-y-2">
-                  {hulpData.perCategorie[selectedCategorie].map((hulp, i) => (
-                    <HulpbronCard key={i} hulp={hulp} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>Geen hulpbronnen gevonden voor deze categorie</p>
-                  <p className="text-sm mt-2">Zoek op Zorgkaart Nederland voor meer opties</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Hulpvraag stellen */}
-          <div className="ker-card bg-gradient-to-r from-primary/5 to-primary/10">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                <span className="text-xl">🤝</span>
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-foreground">Vraag hulp</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Stel een vraag aan hulporganisaties of buurtgenoten
-                </p>
-                <button
-                  onClick={() => {
-                    setShowHulpvraagForm(true)
-                    setActiveTab('vragen')
-                  }}
-                  className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90"
-                >
-                  + Nieuwe hulpvraag
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Landelijke hulplijnen */}
-          {hulpData?.landelijk && hulpData.landelijk.length > 0 && (
-            <div className="p-4 bg-muted/50 rounded-xl">
-              <p className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-                🌍 Landelijke hulplijnen
-              </p>
-              <div className="space-y-2">
-                {hulpData.landelijk.map((hulp, i) => (
-                  <div key={i} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                    <div>
-                      <p className="font-medium text-sm">{hulp.naam}</p>
-                      {hulp.soortHulp && (
-                        <span className="text-xs text-muted-foreground">{hulp.soortHulp}</span>
-                      )}
-                    </div>
-                    <div className="flex gap-3">
-                      {hulp.telefoon && (
-                        <a href={`tel:${hulp.telefoon}`} className="text-xs text-primary hover:underline font-medium">
-                          📞 {hulp.telefoon}
-                        </a>
-                      )}
-                      {hulp.website && (
-                        <a href={hulp.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline">
-                          🌐
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Externe zoekoptie */}
-          <div className="ker-card">
-            <p className="font-medium text-foreground mb-2">Meer hulp zoeken?</p>
-            <p className="text-sm text-muted-foreground mb-3">
-              Zoek ook in de landelijke sociale kaart
-            </p>
-            <a
-              href={`https://www.zorgkaartnederland.nl/zoeken?q=mantelzorg&plaats=${hulpData?.mantelzorgerGemeente || ''}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-muted rounded-lg text-sm hover:bg-muted/80"
-            >
-              🔍 Zoek op Zorgkaart Nederland
-            </a>
-          </div>
-        </div>
-      )}
-
-      {/* TAB: Mijn vragen */}
-      {activeTab === 'vragen' && (
         <div className="space-y-4">
           {/* Nieuwe vraag button */}
           {!showHulpvraagForm && (
@@ -639,7 +413,444 @@ export default function HulpPage() {
             </div>
           )}
         </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="ker-page-content">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+          <span className="text-3xl">💜</span> Hulp
+        </h1>
+        <p className="text-muted-foreground mt-1">
+          Kies waar je hulp bij zoekt
+        </p>
+      </div>
+
+      {/* Urgente melding bij hoge belasting */}
+      {hulpData?.testNiveau === "HOOG" && (
+        <div className="mb-6 p-4 bg-[var(--accent-red-bg)] rounded-xl border-l-4 border-[var(--accent-red)]">
+          <p className="font-semibold text-foreground mb-2">Je belasting is hoog</p>
+          <p className="text-sm text-muted-foreground mb-3">
+            Neem contact op met je huisarts of de mantelzorglijn voor ondersteuning.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <a
+              href="tel:0900-2020496"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-lg text-sm font-medium hover:bg-gray-50"
+            >
+              📞 Mantelzorglijn
+            </a>
+            <Link
+              href="/rapport"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium"
+            >
+              Bekijk rapport
+            </Link>
+          </div>
+        </div>
       )}
+
+      {/* DRIE TABS NAAST ELKAAR */}
+      <div className="grid grid-cols-3 gap-2 mb-6">
+        <button
+          onClick={() => handleTabClick('voor-jou')}
+          className={cn(
+            "py-3 px-2 rounded-xl font-medium text-sm transition-all text-center",
+            activeTab === 'voor-jou'
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-muted-foreground hover:bg-muted/80"
+          )}
+        >
+          <span className="text-lg block mb-1">💜</span>
+          Voor jou
+        </button>
+        <button
+          onClick={() => handleTabClick('voor-naaste')}
+          className={cn(
+            "py-3 px-2 rounded-xl font-medium text-sm transition-all text-center",
+            activeTab === 'voor-naaste'
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-muted-foreground hover:bg-muted/80"
+          )}
+        >
+          <span className="text-lg block mb-1">💝</span>
+          Voor naaste
+        </button>
+        <button
+          onClick={() => handleTabClick('algemeen')}
+          className={cn(
+            "py-3 px-2 rounded-xl font-medium text-sm transition-all text-center",
+            activeTab === 'algemeen'
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-muted-foreground hover:bg-muted/80"
+          )}
+        >
+          <span className="text-lg block mb-1">🌍</span>
+          Algemeen
+        </button>
+      </div>
+
+      {/* CONTENT OP BASIS VAN GESELECTEERDE TAB */}
+      {!activeTab && (
+        <div className="text-center py-8 text-muted-foreground">
+          <p className="text-lg">👆</p>
+          <p className="mt-2">Kies hierboven waar je hulp bij zoekt</p>
+        </div>
+      )}
+
+      {/* TAB: VOOR JOU (Mantelzorger) */}
+      {activeTab === 'voor-jou' && (
+        <div className="space-y-4">
+          {locatieMantelzorger && (
+            <p className="text-sm text-muted-foreground flex items-center gap-1">
+              📍 {locatieMantelzorger}
+            </p>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            {CATEGORIEEN_MANTELZORGER.map((cat) => {
+              const aantalHulp = hulpData?.perCategorie?.[cat.naam]?.length || 0
+              const isSelected = selectedCategorie === cat.naam
+
+              return (
+                <button
+                  key={cat.naam}
+                  onClick={() => handleSelectCategorie(cat.naam)}
+                  className={cn(
+                    "flex items-center gap-3 p-4 rounded-xl text-sm transition-all text-left",
+                    isSelected
+                      ? "bg-primary text-primary-foreground ring-2 ring-primary"
+                      : "bg-primary/10 hover:bg-primary/20 border border-primary/20"
+                  )}
+                >
+                  <span className="text-2xl">{cat.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold">{cat.kort}</p>
+                    <p className={cn(
+                      "text-xs mt-0.5",
+                      isSelected ? "text-primary-foreground/70" : "text-muted-foreground"
+                    )}>
+                      ({aantalHulp})
+                    </p>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Hulpbronnen voor geselecteerde categorie */}
+          {selectedCategorie && (
+            <div className="space-y-2 mt-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-foreground">
+                  {selectedCategorie}
+                </p>
+                <button
+                  onClick={() => setSelectedCategorie(null)}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  ✕ Sluiten
+                </button>
+              </div>
+
+              {hulpData?.perCategorie?.[selectedCategorie] && hulpData.perCategorie[selectedCategorie].length > 0 ? (
+                <div className="space-y-2">
+                  {hulpData.perCategorie[selectedCategorie].map((hulp, i) => (
+                    <HulpbronCard key={i} hulp={hulp} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground ker-card">
+                  <p>Geen hulpbronnen gevonden</p>
+                  <a
+                    href={`https://www.zorgkaartnederland.nl/zoeken?q=${encodeURIComponent(selectedCategorie)}&plaats=${hulpData?.mantelzorgerGemeente || ''}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary hover:underline mt-2 inline-block"
+                  >
+                    Zoek op Zorgkaart Nederland →
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB: VOOR NAASTE (Zorgvrager) */}
+      {activeTab === 'voor-naaste' && (
+        <div className="space-y-4">
+          {locatieZorgvrager && (
+            <p className="text-sm text-muted-foreground flex items-center gap-1">
+              📍 {locatieZorgvrager}
+            </p>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            {CATEGORIEEN_ZORGVRAGER.map((cat) => {
+              const taakStatus = getTaakStatus(cat.naam)
+              const aantalHulp = hulpData?.perCategorie?.[cat.naam]?.length || 0
+              const isSelected = selectedCategorie === cat.naam
+
+              return (
+                <button
+                  key={cat.naam}
+                  onClick={() => handleSelectCategorie(cat.naam)}
+                  className={cn(
+                    "flex items-center gap-3 p-4 rounded-xl text-sm transition-all text-left relative",
+                    isSelected
+                      ? "bg-primary text-primary-foreground ring-2 ring-primary"
+                      : taakStatus === 'zwaar'
+                        ? "bg-[var(--accent-red-bg)] border-2 border-[var(--accent-red)] hover:border-[var(--accent-red)]"
+                        : taakStatus === 'gemiddeld'
+                          ? "bg-[var(--accent-amber-bg)] border-2 border-[var(--accent-amber)] hover:border-[var(--accent-amber)]"
+                          : "bg-muted hover:bg-muted/80 border border-border"
+                  )}
+                >
+                  <span className="text-2xl">{cat.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold">{cat.kort}</p>
+                    <p className={cn(
+                      "text-xs mt-0.5",
+                      isSelected ? "text-primary-foreground/70" : "text-muted-foreground"
+                    )}>
+                      ({aantalHulp})
+                    </p>
+                  </div>
+                  {/* Status indicator */}
+                  {!isSelected && taakStatus && (
+                    <div className={cn(
+                      "absolute top-2 right-2 w-3 h-3 rounded-full",
+                      taakStatus === 'zwaar' ? "bg-[var(--accent-red)]" : "bg-[var(--accent-amber)]"
+                    )} />
+                  )}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Hulpbronnen voor geselecteerde categorie */}
+          {selectedCategorie && (
+            <div className="space-y-2 mt-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-foreground">
+                  {selectedCategorie}
+                </p>
+                <button
+                  onClick={() => setSelectedCategorie(null)}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  ✕ Sluiten
+                </button>
+              </div>
+
+              {hulpData?.perCategorie?.[selectedCategorie] && hulpData.perCategorie[selectedCategorie].length > 0 ? (
+                <div className="space-y-2">
+                  {hulpData.perCategorie[selectedCategorie].map((hulp, i) => (
+                    <HulpbronCard key={i} hulp={hulp} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground ker-card">
+                  <p>Geen hulpbronnen gevonden</p>
+                  <a
+                    href={`https://www.zorgkaartnederland.nl/zoeken?q=${encodeURIComponent(selectedCategorie)}&plaats=${hulpData?.zorgvragerGemeente || ''}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary hover:underline mt-2 inline-block"
+                  >
+                    Zoek op Zorgkaart Nederland →
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB: ALGEMEEN (Landelijk) */}
+      {activeTab === 'algemeen' && (
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Landelijke hulplijnen en informatie
+          </p>
+
+          {/* Hulplijnen met telefoonnummer */}
+          {hulpData?.landelijk && hulpData.landelijk.filter(h => h.telefoon).length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-2">
+                📞 Hulplijnen
+              </p>
+              <div className="space-y-2">
+                {hulpData.landelijk.filter(h => h.telefoon).map((hulp, i) => (
+                  <LandelijkeHulpCard key={i} hulp={hulp} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Emotionele steun */}
+          {hulpData?.landelijk && hulpData.landelijk.filter(h =>
+            h.soortHulp?.toLowerCase().includes('emotioneel') ||
+            h.soortHulp?.toLowerCase().includes('steun')
+          ).length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-2">
+                💚 Emotionele steun
+              </p>
+              <div className="space-y-2">
+                {hulpData.landelijk.filter(h =>
+                  h.soortHulp?.toLowerCase().includes('emotioneel') ||
+                  h.soortHulp?.toLowerCase().includes('steun')
+                ).map((hulp, i) => (
+                  <LandelijkeHulpCard key={i} hulp={hulp} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Respijtzorg */}
+          {hulpData?.landelijk && hulpData.landelijk.filter(h =>
+            h.soortHulp?.toLowerCase().includes('respijt')
+          ).length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-2">
+                🏠 Respijtzorg
+              </p>
+              <div className="space-y-2">
+                {hulpData.landelijk.filter(h =>
+                  h.soortHulp?.toLowerCase().includes('respijt')
+                ).map((hulp, i) => (
+                  <LandelijkeHulpCard key={i} hulp={hulp} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Lotgenotencontact */}
+          {hulpData?.landelijk && hulpData.landelijk.filter(h =>
+            h.soortHulp?.toLowerCase().includes('lotgenoot') ||
+            h.soortHulp?.toLowerCase().includes('lotgenoten')
+          ).length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-2">
+                👥 Lotgenotencontact
+              </p>
+              <div className="space-y-2">
+                {hulpData.landelijk.filter(h =>
+                  h.soortHulp?.toLowerCase().includes('lotgenoot') ||
+                  h.soortHulp?.toLowerCase().includes('lotgenoten')
+                ).map((hulp, i) => (
+                  <LandelijkeHulpCard key={i} hulp={hulp} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Informatie & advies */}
+          {hulpData?.landelijk && hulpData.landelijk.filter(h =>
+            h.soortHulp?.toLowerCase().includes('informatie') ||
+            h.soortHulp?.toLowerCase().includes('advies')
+          ).length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-2">
+                ℹ️ Informatie & advies
+              </p>
+              <div className="space-y-2">
+                {hulpData.landelijk.filter(h =>
+                  h.soortHulp?.toLowerCase().includes('informatie') ||
+                  h.soortHulp?.toLowerCase().includes('advies')
+                ).map((hulp, i) => (
+                  <LandelijkeHulpCard key={i} hulp={hulp} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Overig - alles wat niet in bovenstaande categorieën valt */}
+          {hulpData?.landelijk && hulpData.landelijk.filter(h =>
+            !h.telefoon &&
+            !h.soortHulp?.toLowerCase().includes('emotioneel') &&
+            !h.soortHulp?.toLowerCase().includes('steun') &&
+            !h.soortHulp?.toLowerCase().includes('respijt') &&
+            !h.soortHulp?.toLowerCase().includes('lotgenoot') &&
+            !h.soortHulp?.toLowerCase().includes('lotgenoten') &&
+            !h.soortHulp?.toLowerCase().includes('informatie') &&
+            !h.soortHulp?.toLowerCase().includes('advies')
+          ).length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-2">
+                📋 Overig
+              </p>
+              <div className="space-y-2">
+                {hulpData.landelijk.filter(h =>
+                  !h.telefoon &&
+                  !h.soortHulp?.toLowerCase().includes('emotioneel') &&
+                  !h.soortHulp?.toLowerCase().includes('steun') &&
+                  !h.soortHulp?.toLowerCase().includes('respijt') &&
+                  !h.soortHulp?.toLowerCase().includes('lotgenoot') &&
+                  !h.soortHulp?.toLowerCase().includes('lotgenoten') &&
+                  !h.soortHulp?.toLowerCase().includes('informatie') &&
+                  !h.soortHulp?.toLowerCase().includes('advies')
+                ).map((hulp, i) => (
+                  <LandelijkeHulpCard key={i} hulp={hulp} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Fallback als er geen landelijke hulpbronnen zijn */}
+          {(!hulpData?.landelijk || hulpData.landelijk.length === 0) && (
+            <div className="text-center py-8 text-muted-foreground ker-card">
+              <p>Geen landelijke hulpbronnen beschikbaar</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* HULPVRAAG STELLEN - altijd zichtbaar onderaan */}
+      <div className="mt-8 space-y-4">
+        <div className="ker-card bg-gradient-to-r from-primary/5 to-primary/10">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+              <span className="text-xl">🤝</span>
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-foreground">Stel een vraag</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Vraag hulp aan organisaties of buurtgenoten
+              </p>
+              <button
+                onClick={() => setShowVragenTab(true)}
+                className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90"
+              >
+                Mijn vragen
+                {openHulpvragen > 0 && (
+                  <span className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs">
+                    {openHulpvragen}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Externe zoekoptie */}
+        <div className="ker-card">
+          <p className="font-medium text-foreground mb-2">Meer hulp zoeken?</p>
+          <a
+            href={`https://www.zorgkaartnederland.nl/zoeken?q=mantelzorg&plaats=${hulpData?.mantelzorgerGemeente || ''}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-muted rounded-lg text-sm hover:bg-muted/80"
+          >
+            🔍 Zoek op Zorgkaart Nederland
+          </a>
+        </div>
+      </div>
     </div>
   )
 }
@@ -672,6 +883,40 @@ function HulpbronCard({ hulp }: { hulp: Hulpbron }) {
         {hulp.website && (
           <a href={hulp.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1">
             🌐 Website
+          </a>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Landelijke hulpbron card component
+function LandelijkeHulpCard({ hulp }: { hulp: LandelijkeHulpbron }) {
+  return (
+    <div className="flex items-center justify-between py-3 px-3 bg-white rounded-lg border border-border">
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-sm">{hulp.naam}</p>
+        {hulp.beschrijving && (
+          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{hulp.beschrijving}</p>
+        )}
+      </div>
+      <div className="flex gap-2 flex-shrink-0 ml-2">
+        {hulp.telefoon && (
+          <a
+            href={`tel:${hulp.telefoon}`}
+            className="text-xs text-primary hover:underline font-medium flex items-center gap-1 whitespace-nowrap"
+          >
+            📞 {hulp.telefoon}
+          </a>
+        )}
+        {hulp.website && (
+          <a
+            href={hulp.website}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:text-primary/80"
+          >
+            🌐
           </a>
         )}
       </div>
