@@ -218,10 +218,7 @@ async function handleTestSession(
         if (updatedSession && updatedSession.currentStep === 'tasks_hours') {
           const currentTask = getCurrentTask(updatedSession)
           let response = `📋 *${currentTask?.naam}*\n\nHoeveel uur per week besteed je hieraan?\n\n`
-          UREN_OPTIES.forEach((optie, i) => {
-            response += `${i + 1}. ${optie.label}\n`
-          })
-          response += `\n_Typ het nummer_`
+          response += `1️⃣ Tot 2 uur\n2️⃣ 2-4 uur\n3️⃣ 4-8 uur\n4️⃣ 8-12 uur\n5️⃣ 12-24 uur\n6️⃣ Meer dan 24 uur\n\n_Typ 1 t/m 6_`
           return { response }
         }
       }
@@ -247,10 +244,7 @@ async function handleTestSession(
 
         // Vraag zoals in screenshot: "Vind je X een zware taak?"
         let response = `📋 *Vind je ${taak?.beschrijving?.toLowerCase() || taak?.naam?.toLowerCase()} een zware taak?*\n\n`
-        MOEILIJKHEID_OPTIES.forEach((optie, i) => {
-          response += `${optie.emoji} ${i + 1}. ${optie.label}\n`
-        })
-        response += `\n_Typ het nummer_`
+        response += `1️⃣ Nee\n2️⃣ Soms\n3️⃣ Ja\n\n_Typ 1, 2 of 3_`
         return { response }
       }
     }
@@ -271,15 +265,12 @@ async function handleTestSession(
       } else if (updatedSession && updatedSession.currentStep === 'tasks_hours') {
         const currentTask = getCurrentTask(updatedSession)
         let response = `📋 *${currentTask?.naam}*\n\nHoeveel uur per week besteed je hieraan?\n\n`
-        UREN_OPTIES.forEach((optie, i) => {
-          response += `${i + 1}. ${optie.label}\n`
-        })
-        response += `\n_Typ het nummer_`
+        response += `1️⃣ Tot 2 uur\n2️⃣ 2-4 uur\n3️⃣ 4-8 uur\n4️⃣ 8-12 uur\n5️⃣ 12-24 uur\n6️⃣ Meer dan 24 uur\n\n_Typ 1 t/m 6_`
         return { response }
       }
     }
 
-    return { response: `❌ Typ een nummer van 1 tot ${MOEILIJKHEID_OPTIES.length}` }
+    return { response: `❌ Typ een nummer van 1 tot 3` }
   }
 
   // STAP: Test vragen
@@ -331,8 +322,9 @@ async function handleTestSession(
         let response = `✅ *12 vragen beantwoord!*\n\n📊 Voorlopige score: *${score}/24*\n${levelEmoji} Niveau: *${levelText}*\n\n`
         response += `📋 *Nog een paar vragen...*\n\nWelke zorgtaken voer je uit?\n\n`
 
+        const numEmojisTaken = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟']
         ZORGTAKEN.forEach((taak, i) => {
-          response += `${i + 1}. ${taak.naam}\n`
+          response += `${numEmojisTaken[i]} ${taak.naam}\n`
         })
 
         response += `\n_Typ de nummers gescheiden door komma's_\n_Bijv: 1,2,5 of typ "geen"_`
@@ -346,15 +338,8 @@ async function handleTestSession(
           const questionNum = updatedSession.currentQuestion + 1
           const questionText = `📊 *Vraag ${questionNum}/${BELASTBAARHEID_QUESTIONS.length}*\n\n${nextQuestion.vraag}`
 
-          if (CONTENT_SIDS.testAnswer) {
-            return {
-              response: '',
-              useInteractiveButtons: true,
-              interactiveContentSid: CONTENT_SIDS.testAnswer,
-              interactiveBodyText: questionText,
-            }
-          }
-          return { response: questionText + `\n\n🔴 Ja\n🟠 Soms\n🟢 Nee` }
+          // Consistente numerieke opties voor alle vragen
+          return { response: questionText + `\n\n1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee\n\n_Typ 1, 2 of 3_` }
         }
       }
     } else if (command === 'stop' || command === 'stoppen') {
@@ -375,7 +360,7 @@ async function handleTestSession(
         interactiveBodyText: questionText,
       }
     }
-    return { response: questionText + `\n\n🔴 Ja\n🟠 Soms\n🟢 Nee` }
+    return { response: questionText + `\n\n1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee\n\n_Typ 1, 2 of 3_` }
   }
 
   return { response: '' }
@@ -383,6 +368,8 @@ async function handleTestSession(
 
 // ===========================================
 // HANDLER: ONBOARDING SESSIE
+// Alleen voor locatie vragen NA registratie via browser
+// Account aanmaken en inloggen gaat nu via magic link naar browser
 // ===========================================
 async function handleOnboardingSession(
   phoneNumber: string,
@@ -394,152 +381,37 @@ async function handleOnboardingSession(
   const command = input.trim()
   const commandLower = command.toLowerCase()
 
-  // STAP: Keuze inloggen of registreren
+  // Stop/annuleer
+  if (commandLower === 'stop' || commandLower === '0') {
+    clearOnboardingSession(phoneNumber)
+    return { response: `_Geannuleerd_\n\n_Typ 0 voor menu_` }
+  }
+
+  // STAP: Keuze na test (inloggen of registreren)
   if (session.currentStep === 'choice') {
-    if (commandLower === '1' || commandLower === 'inloggen') {
-      updateOnboardingSession(phoneNumber, 'login_email')
-      return { response: `🔑 *Inloggen*\n\n📧 Wat is je email adres?` }
-    } else if (commandLower === '2' || commandLower === 'nieuw' || commandLower === 'account') {
-      updateOnboardingSession(phoneNumber, 'register_name')
-      return { response: `✨ *Account Aanmaken*\n\n👤 Wat is je naam?` }
+    const num = parseInt(command)
+
+    if (num === 1) {
+      // Inloggen - stuur naar login pagina met telefoonnummer
+      const loginUrl = `${process.env.NEXTAUTH_URL}/login?phone=${encodeURIComponent(phoneNumber)}`
+      clearOnboardingSession(phoneNumber)
+      return {
+        response: `🔑 *Inloggen*\n\nOpen de link hieronder om in te loggen:\n\n🔗 ${loginUrl}\n\n_Na het inloggen wordt je WhatsApp automatisch gekoppeld en worden je testresultaten opgeslagen._`,
+      }
     }
+
+    if (num === 2) {
+      // Registreren - stuur naar registratie pagina met telefoonnummer
+      const registerUrl = `${process.env.NEXTAUTH_URL}/register-whatsapp?phone=${encodeURIComponent(phoneNumber)}`
+      clearOnboardingSession(phoneNumber)
+      return {
+        response: `✨ *Account aanmaken*\n\nOpen de link hieronder om je account aan te maken:\n\n🔗 ${registerUrl}\n\n_Na registratie wordt je WhatsApp automatisch gekoppeld en worden je testresultaten opgeslagen._`,
+      }
+    }
+
+    // Ongeldige keuze
     return {
-      response: `Kies een optie:\n\n1️⃣ Inloggen (ik heb al een account)\n2️⃣ Account aanmaken\n\n_Typ 1 of 2_`,
-    }
-  }
-
-  // STAP: Login - Email
-  if (session.currentStep === 'login_email') {
-    updateOnboardingSession(phoneNumber, 'login_password', { email: command })
-    return { response: `🔒 Wat is je wachtwoord?` }
-  }
-
-  // STAP: Login - Wachtwoord
-  if (session.currentStep === 'login_password') {
-    try {
-      const user = await prisma.user.findUnique({
-        where: { email: session.data.email },
-        include: { caregiver: true },
-      })
-
-      if (!user || !user.password) {
-        clearOnboardingSession(phoneNumber)
-        return { response: `❌ Email niet gevonden of geen wachtwoord.\n\n_Typ iets om opnieuw te beginnen_` }
-      }
-
-      const passwordMatch = await bcrypt.compare(command, user.password)
-      if (!passwordMatch) {
-        clearOnboardingSession(phoneNumber)
-        return { response: `❌ Onjuist wachtwoord.\n\n_Typ iets om opnieuw te beginnen_` }
-      }
-
-      // Koppel telefoonnummer aan caregiver
-      if (user.caregiver) {
-        await prisma.caregiver.update({
-          where: { id: user.caregiver.id },
-          data: { phoneNumber: phoneNumber },
-        })
-
-        // Check of locatie al is ingevuld
-        if (!user.caregiver.postalCode || !user.caregiver.careRecipientName) {
-          // Start locatie vragen
-          updateOnboardingSession(phoneNumber, 'location_own_postcode', {
-            name: user.name || undefined,
-          })
-          return {
-            response: `✅ Welkom terug ${user.name}!\n\n📍 *Even je gegevens aanvullen*\n\nWat is jouw postcode?\n\n_Bijv: 1234 AB_`,
-          }
-        }
-
-        // Sla pending test resultaten op als die er zijn
-        if (session.pendingTestResults) {
-          await savePendingTestResults(user.caregiver.id, session.pendingTestResults)
-        }
-      }
-
-      clearOnboardingSession(phoneNumber)
-
-      // Haal laatste test op voor menu
-      const lastTest = user.caregiver
-        ? await prisma.belastbaarheidTest.findFirst({
-            where: { caregiverId: user.caregiver.id },
-            orderBy: { completedAt: 'desc' },
-          })
-        : null
-
-      return {
-        response: `✅ Welkom terug ${user.name}!\n\n${await getLoggedInMenu(user.caregiver, lastTest)}`,
-      }
-    } catch (error) {
-      console.error('Login error:', error)
-      clearOnboardingSession(phoneNumber)
-      return { response: `❌ Er ging iets mis.\n\n_Typ iets om opnieuw te beginnen_` }
-    }
-  }
-
-  // STAP: Registratie - Naam
-  if (session.currentStep === 'register_name') {
-    updateOnboardingSession(phoneNumber, 'register_email', { name: command })
-    return { response: `📧 Wat is je email adres?` }
-  }
-
-  // STAP: Registratie - Email
-  if (session.currentStep === 'register_email') {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(command)) {
-      return { response: `❌ Dat is geen geldig email adres.\n\n📧 Probeer opnieuw:` }
-    }
-
-    const existingUser = await prisma.user.findUnique({ where: { email: command } })
-    if (existingUser) {
-      clearOnboardingSession(phoneNumber)
-      return {
-        response: `❌ Dit email adres is al in gebruik.\n\nHeb je al een account? Typ "inloggen"`,
-      }
-    }
-
-    updateOnboardingSession(phoneNumber, 'register_password', { email: command })
-    return { response: `🔒 Kies een wachtwoord (minimaal 6 tekens):` }
-  }
-
-  // STAP: Registratie - Wachtwoord
-  if (session.currentStep === 'register_password') {
-    if (command.length < 6) {
-      return { response: `❌ Wachtwoord moet minimaal 6 tekens zijn.\n\n🔒 Probeer opnieuw:` }
-    }
-
-    try {
-      const hashedPassword = await bcrypt.hash(command, 10)
-
-      // Maak gebruiker aan
-      const user = await prisma.user.create({
-        data: {
-          email: session.data.email!,
-          name: session.data.name!,
-          password: hashedPassword,
-          role: 'CAREGIVER',
-          emailVerified: new Date(),
-        },
-      })
-
-      // Maak caregiver profiel aan met telefoonnummer
-      await prisma.caregiver.create({
-        data: {
-          userId: user.id,
-          phoneNumber: phoneNumber,
-          intakeCompleted: false,
-        },
-      })
-
-      // Ga naar locatie vragen
-      updateOnboardingSession(phoneNumber, 'location_own_postcode')
-      return {
-        response: `🎉 *Account aangemaakt!*\n\nWelkom ${session.data.name}!\n\n📍 *Nu je locatie*\n\nWat is jouw postcode?\n\n_Bijv: 1234 AB_`,
-      }
-    } catch (error) {
-      console.error('Registration error:', error)
-      clearOnboardingSession(phoneNumber)
-      return { response: `❌ Er ging iets mis.\n\n_Typ iets om opnieuw te beginnen_` }
+      response: `💾 *Wil je dit resultaat bewaren?*\n\n1️⃣ Inloggen (ik heb al een account)\n2️⃣ Account aanmaken\n\n_Typ 1 of 2_`,
     }
   }
 
@@ -581,10 +453,11 @@ async function handleOnboardingSession(
     updateOnboardingSession(phoneNumber, 'location_care_relation', { careName: command })
 
     let response = `💑 Wat is je relatie tot ${command}?\n\n`
+    const numEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣']
     RELATIE_OPTIES.forEach((rel, i) => {
-      response += `${i + 1}. ${rel}\n`
+      response += `${numEmojis[i]} ${rel}\n`
     })
-    response += `\n_Typ het nummer_`
+    response += `\n_Typ 1 t/m ${RELATIE_OPTIES.length}_`
 
     return { response }
   }
@@ -701,11 +574,12 @@ async function handleHulpSession(
       // Hulp voor mantelzorger - toon soort hulp opties
       updateHulpSession(phoneNumber, 'soort_hulp', { mainChoice: 'mantelzorger' })
 
+      const numEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣']
       let response = `💚 *Hulp voor jou als mantelzorger*\n\nWelk type ondersteuning zoek je?\n\n`
       HULP_VOOR_MANTELZORGER.forEach((opt, i) => {
-        response += `${i + 1}. ${opt.emoji} ${opt.naam}\n`
+        response += `${numEmojis[i]} ${opt.naam}\n`
       })
-      response += `\n_Typ het nummer of 0 om terug te gaan_`
+      response += `\n_Typ 1 t/m ${HULP_VOOR_MANTELZORGER.length}, of 0 voor terug_`
       return { response }
     }
 
@@ -713,11 +587,12 @@ async function handleHulpSession(
       // Hulp bij taak - toon taak opties
       updateHulpSession(phoneNumber, 'onderdeel_taak', { mainChoice: 'taak' })
 
+      const numEmojis2 = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟']
       let response = `🔧 *Hulp bij een zorgtaak*\n\nBij welke taak zoek je hulp?\n\n`
       HULP_BIJ_TAAK.forEach((opt, i) => {
-        response += `${i + 1}. ${opt.emoji} ${opt.naam}\n`
+        response += `${numEmojis2[i]} ${opt.naam}\n`
       })
-      response += `\n_Typ het nummer of 0 om terug te gaan_`
+      response += `\n_Typ 1 t/m ${HULP_BIJ_TAAK.length}, of 0 voor terug_`
       return { response }
     }
 
@@ -759,11 +634,12 @@ async function handleHulpSession(
     }
 
     // Toon opnieuw de opties
+    const numEmojisRetry = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣']
     let response = `💚 *Hulp voor jou als mantelzorger*\n\nWelk type ondersteuning zoek je?\n\n`
     HULP_VOOR_MANTELZORGER.forEach((opt, i) => {
-      response += `${i + 1}. ${opt.emoji} ${opt.naam}\n`
+      response += `${numEmojisRetry[i]} ${opt.naam}\n`
     })
-    response += `\n_Typ het nummer of 0 om terug te gaan_`
+    response += `\n_Typ 1 t/m ${HULP_VOOR_MANTELZORGER.length}, of 0 voor terug_`
     return { response }
   }
 
@@ -798,11 +674,12 @@ async function handleHulpSession(
     }
 
     // Toon opnieuw de opties
+    const numEmojisTaak = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟']
     let response = `🔧 *Hulp bij een zorgtaak*\n\nBij welke taak zoek je hulp?\n\n`
     HULP_BIJ_TAAK.forEach((opt, i) => {
-      response += `${i + 1}. ${opt.emoji} ${opt.naam}\n`
+      response += `${numEmojisTaak[i]} ${opt.naam}\n`
     })
-    response += `\n_Typ het nummer of 0 om terug te gaan_`
+    response += `\n_Typ 1 t/m ${HULP_BIJ_TAAK.length}, of 0 voor terug_`
     return { response }
   }
 
@@ -886,7 +763,7 @@ async function handleLoggedInUser(
           interactiveBodyText: questionText,
         }
       }
-      return { response: questionText + `\n\n🔴 Ja\n🟠 Soms\n🟢 Nee` }
+      return { response: questionText + `\n\n1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee\n\n_Typ 1, 2 of 3_` }
     }
 
     // Als wel test gedaan: toon score met optie om opnieuw te doen
@@ -933,7 +810,7 @@ async function handleLoggedInUser(
         interactiveBodyText: questionText,
       }
     }
-    return { response: questionText + `\n\n🔴 Ja\n🟠 Soms\n🟢 Nee` }
+    return { response: questionText + `\n\n1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee\n\n_Typ 1, 2 of 3_` }
   }
 
   // 2. Hulp in de buurt
@@ -1095,7 +972,8 @@ function handleGuestMenu(phoneNumber: string, input: string): string {
     const firstQuestion = getCurrentQuestion(session)
     session.currentStep = 'questions'
 
-    return `📊 *Mantelzorg Balanstest*\n\nSuper dat je even stilstaat bij hoe het met jou gaat! 💚\n\nIk stel je 12 korte vragen. Beantwoord ze eerlijk - er zijn geen goede of foute antwoorden.\n\n*Vraag 1/12*\n\n${firstQuestion?.vraag}\n\n🔴 Ja\n🟠 Soms\n🟢 Nee\n\n_Typ je antwoord_`
+    // Consistente numerieke opties
+    return `📊 *Mantelzorg Balanstest*\n\nSuper dat je even stilstaat bij hoe het met jou gaat! 💚\n\nIk stel je 12 korte vragen. Beantwoord ze eerlijk.\n\n*Vraag 1/12*\n\n${firstQuestion?.vraag}\n\n1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee\n\n_Typ 1, 2 of 3_`
   }
 
   // 2. Account aanmaken - link naar browser
@@ -1469,7 +1347,7 @@ async function sendResponse(
       })
     } catch (error) {
       console.error('Error sending interactive message:', error)
-      return sendTwiML((interactiveBodyText || response) + `\n\n🔴 Ja\n🟠 Soms\n🟢 Nee`)
+      return sendTwiML((interactiveBodyText || response) + `\n\n1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee\n\n_Typ 1, 2 of 3_`)
     }
   }
 
