@@ -12,6 +12,7 @@ interface Hulpbron {
   website: string | null
   beschrijving: string | null
   soortHulp?: string | null
+  gemeente?: string | null
 }
 
 interface DashboardData {
@@ -35,6 +36,7 @@ interface DashboardData {
   hulpbronnen?: {
     perTaak: Record<string, Hulpbron[]>
     algemeen: Hulpbron[]
+    gebruikersGemeente?: string | null
   }
   checkIns: {
     weeklyDone: boolean
@@ -514,6 +516,13 @@ export default function DashboardPage() {
             <span className="text-2xl">💡</span> Hulp voor jou
           </h2>
 
+          {/* Info als geen lokale hulpbronnen */}
+          {data.hulpbronnen.gebruikersGemeente && (
+            <p className="text-xs text-muted-foreground mb-3">
+              📍 Hulpbronnen in jouw regio ({data.hulpbronnen.gebruikersGemeente})
+            </p>
+          )}
+
           {/* Hulp per zware taak */}
           {Object.entries(data.hulpbronnen.perTaak).map(([taakNaam, hulpbronnen]) => (
             <div key={taakNaam} className="mb-4">
@@ -524,7 +533,14 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 {hulpbronnen.map((hulp, i) => (
                   <div key={i} className="ker-card py-3">
-                    <p className="font-medium text-sm">{hulp.naam}</p>
+                    <div className="flex items-start justify-between">
+                      <p className="font-medium text-sm">{hulp.naam}</p>
+                      {hulp.gemeente && hulp.gemeente !== data.hulpbronnen?.gebruikersGemeente && (
+                        <span className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
+                          📍 {hulp.gemeente}
+                        </span>
+                      )}
+                    </div>
                     {hulp.beschrijving && (
                       <p className="text-xs text-muted-foreground mt-1">{hulp.beschrijving}</p>
                     )}
@@ -562,6 +578,11 @@ export default function DashboardPage() {
                           <span className="text-xs bg-muted px-2 py-0.5 rounded-full">{hulp.soortHulp}</span>
                         )}
                       </div>
+                      {hulp.gemeente && hulp.gemeente !== data.hulpbronnen?.gebruikersGemeente && (
+                        <span className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
+                          📍 {hulp.gemeente}
+                        </span>
+                      )}
                     </div>
                     {hulp.beschrijving && (
                       <p className="text-xs text-muted-foreground mt-1">{hulp.beschrijving}</p>
