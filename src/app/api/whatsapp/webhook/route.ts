@@ -58,20 +58,16 @@ function stripWhatsAppPrefix(phoneNumber: string): string {
 }
 
 /**
- * Verkort een URL via TinyURL API (gratis, geen API key nodig)
+ * Genereer korte WhatsApp-vriendelijke URLs via onze eigen redirect routes
  */
-async function shortenUrl(longUrl: string): Promise<string> {
-  try {
-    const response = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`)
-    if (response.ok) {
-      const shortUrl = await response.text()
-      return shortUrl
-    }
-  } catch (error) {
-    console.error('URL shortening failed:', error)
-  }
-  // Fallback naar originele URL als shortening faalt
-  return longUrl
+function getShortRegisterUrl(phone: string): string {
+  const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
+  return `${baseUrl}/r/reg?p=${encodeURIComponent(phone)}`
+}
+
+function getShortLoginUrl(phone: string): string {
+  const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
+  return `${baseUrl}/r/log?p=${encodeURIComponent(phone)}`
 }
 
 /**
@@ -194,7 +190,7 @@ export async function POST(request: NextRequest) {
     // PRIORITEIT 5: GAST MENU (geen account)
     // ===========================================
     if (!response && !caregiver) {
-      response = await handleGuestMenu(message.from, userInput)
+      response = handleGuestMenu(message.from, userInput)
     }
 
     // ===========================================
@@ -417,10 +413,9 @@ async function handleOnboardingSession(
     const num = parseInt(command)
 
     if (num === 1) {
-      // Inloggen - verkort URL voor WhatsApp
+      // Inloggen - korte URL
       const phone = stripWhatsAppPrefix(phoneNumber)
-      const longUrl = `${process.env.NEXTAUTH_URL}/login-whatsapp?phone=${encodeURIComponent(phone)}`
-      const loginUrl = await shortenUrl(longUrl)
+      const loginUrl = getShortLoginUrl(phone)
       clearOnboardingSession(phoneNumber)
       return {
         response: `🔑 *Inloggen*
@@ -432,10 +427,9 @@ ${loginUrl}`,
     }
 
     if (num === 2) {
-      // Registreren - verkort URL voor WhatsApp
+      // Registreren - korte URL
       const phone = stripWhatsAppPrefix(phoneNumber)
-      const longUrl = `${process.env.NEXTAUTH_URL}/register-whatsapp?phone=${encodeURIComponent(phone)}`
-      const registerUrl = await shortenUrl(longUrl)
+      const registerUrl = getShortRegisterUrl(phone)
       clearOnboardingSession(phoneNumber)
       return {
         response: `✨ *Account aanmaken*
@@ -986,7 +980,7 @@ async function getWelcomeBackMessage(caregiver: any, lastTest: any): Promise<str
 // ===========================================
 // HANDLER: GAST MENU
 // ===========================================
-async function handleGuestMenu(phoneNumber: string, input: string): Promise<string> {
+function handleGuestMenu(phoneNumber: string, input: string): string {
   const command = input.toLowerCase().trim()
 
   // 1. Balanstest
@@ -999,11 +993,10 @@ async function handleGuestMenu(phoneNumber: string, input: string): Promise<stri
     return `📊 *Mantelzorg Balanstest*\n\nSuper dat je even stilstaat bij hoe het met jou gaat! 💚\n\nIk stel je 12 korte vragen. Beantwoord ze eerlijk.\n\n*Vraag 1/12*\n\n${firstQuestion?.vraag}\n\n1️⃣ 🔴 Ja\n2️⃣ 🟡 Soms\n3️⃣ 🟢 Nee\n\n_Typ 1, 2 of 3_`
   }
 
-  // 2. Account aanmaken - verkort URL voor WhatsApp
+  // 2. Account aanmaken - korte URL
   if (command === '2' || command === 'account' || command === 'nieuw') {
     const phone = stripWhatsAppPrefix(phoneNumber)
-    const longUrl = `${process.env.NEXTAUTH_URL}/register-whatsapp?phone=${encodeURIComponent(phone)}`
-    const registerUrl = await shortenUrl(longUrl)
+    const registerUrl = getShortRegisterUrl(phone)
     return `✨ *Account aanmaken*
 
 Met een account bewaar ik je resultaten en geef ik persoonlijke tips.
@@ -1011,11 +1004,10 @@ Met een account bewaar ik je resultaten en geef ik persoonlijke tips.
 ${registerUrl}`
   }
 
-  // 3. Inloggen - verkort URL voor WhatsApp
+  // 3. Inloggen - korte URL
   if (command === '3' || command === 'inloggen' || command === 'login') {
     const phone = stripWhatsAppPrefix(phoneNumber)
-    const longUrl = `${process.env.NEXTAUTH_URL}/login-whatsapp?phone=${encodeURIComponent(phone)}`
-    const loginUrl = await shortenUrl(longUrl)
+    const loginUrl = getShortLoginUrl(phone)
     return `🔑 *Inloggen*
 
 Na inloggen wordt je WhatsApp gekoppeld.
