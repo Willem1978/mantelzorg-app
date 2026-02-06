@@ -413,30 +413,30 @@ async function handleOnboardingSession(
     const num = parseInt(command)
 
     if (num === 1) {
-      // Inloggen - korte URL
-      const phone = stripWhatsAppPrefix(phoneNumber)
-      const loginUrl = getShortLoginUrl(phone)
+      // Inloggen
       clearOnboardingSession(phoneNumber)
       return {
         response: `🔑 *Inloggen*
 
 Je testresultaten worden opgeslagen na inloggen.
 
-${loginUrl}`,
+👉 Ga naar *mantelzorg-app.vercel.app*
+👉 Klik op "Inloggen"
+👉 Vul je telefoonnummer in om WhatsApp te koppelen`,
       }
     }
 
     if (num === 2) {
-      // Registreren - korte URL
-      const phone = stripWhatsAppPrefix(phoneNumber)
-      const registerUrl = getShortRegisterUrl(phone)
+      // Registreren
       clearOnboardingSession(phoneNumber)
       return {
         response: `✨ *Account aanmaken*
 
 Je testresultaten worden opgeslagen na registratie.
 
-${registerUrl}`,
+👉 Ga naar *mantelzorg-app.vercel.app*
+👉 Klik op "Account aanmaken"
+👉 Vul je telefoonnummer in om WhatsApp te koppelen`,
       }
     }
 
@@ -993,26 +993,26 @@ function handleGuestMenu(phoneNumber: string, input: string): string {
     return `📊 *Mantelzorg Balanstest*\n\nSuper dat je even stilstaat bij hoe het met jou gaat! 💚\n\nIk stel je 12 korte vragen. Beantwoord ze eerlijk.\n\n*Vraag 1/12*\n\n${firstQuestion?.vraag}\n\n1️⃣ 🔴 Ja\n2️⃣ 🟡 Soms\n3️⃣ 🟢 Nee\n\n_Typ 1, 2 of 3_`
   }
 
-  // 2. Account aanmaken - korte URL
+  // 2. Account aanmaken
   if (command === '2' || command === 'account' || command === 'nieuw') {
-    const phone = stripWhatsAppPrefix(phoneNumber)
-    const registerUrl = getShortRegisterUrl(phone)
     return `✨ *Account aanmaken*
 
 Met een account bewaar ik je resultaten en geef ik persoonlijke tips.
 
-${registerUrl}`
+👉 Ga naar *mantelzorg-app.vercel.app*
+👉 Klik op "Account aanmaken"
+👉 Vul je telefoonnummer in om WhatsApp te koppelen`
   }
 
-  // 3. Inloggen - korte URL
+  // 3. Inloggen
   if (command === '3' || command === 'inloggen' || command === 'login') {
-    const phone = stripWhatsAppPrefix(phoneNumber)
-    const loginUrl = getShortLoginUrl(phone)
     return `🔑 *Inloggen*
 
 Na inloggen wordt je WhatsApp gekoppeld.
 
-${loginUrl}`
+👉 Ga naar *mantelzorg-app.vercel.app*
+👉 Klik op "Inloggen"
+👉 Vul je telefoonnummer in om WhatsApp te koppelen`
   }
 
   // 4. Direct spreken

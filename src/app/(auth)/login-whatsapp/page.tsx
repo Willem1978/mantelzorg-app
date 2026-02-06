@@ -10,13 +10,15 @@ function LoginWhatsAppForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
+  const [isCheckingPhone, setIsCheckingPhone] = useState(false)
   const [error, setError] = useState("")
+  const [step, setStep] = useState(searchParams.get("phone") ? 1 : 0) // 0 = phone input, 1 = login
+  const [manualPhone, setManualPhone] = useState("")
+  const [currentPhone, setCurrentPhone] = useState(searchParams.get("phone") || "")
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   })
-
-  const phoneNumber = searchParams.get("phone") || ""
 
   // Format telefoonnummer voor weergave
   const formatPhone = (phone: string) => {
@@ -24,6 +26,28 @@ function LoginWhatsAppForm() {
       return "0" + phone.slice(3)
     }
     return phone
+  }
+
+  // Telefoonnummer handmatig invoeren en doorgaan
+  const handlePhoneSubmit = async () => {
+    if (!manualPhone.trim()) {
+      setError("Vul je telefoonnummer in")
+      return
+    }
+
+    // Normaliseer telefoonnummer naar +31 formaat
+    let normalizedPhone = manualPhone.trim()
+    if (normalizedPhone.startsWith("06")) {
+      normalizedPhone = "+31" + normalizedPhone.slice(1)
+    } else if (normalizedPhone.startsWith("0031")) {
+      normalizedPhone = "+" + normalizedPhone.slice(2)
+    } else if (!normalizedPhone.startsWith("+")) {
+      normalizedPhone = "+31" + normalizedPhone.replace(/^0/, "")
+    }
+
+    setCurrentPhone(normalizedPhone)
+    setStep(1)
+    setError("")
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,7 +59,7 @@ function LoginWhatsAppForm() {
       const result = await signIn("credentials", {
         email: formData.email,
         password: formData.password,
-        phoneNumber: phoneNumber || undefined,
+        phoneNumber: currentPhone || undefined,
         redirect: false,
       })
 
@@ -52,6 +76,88 @@ function LoginWhatsAppForm() {
     }
   }
 
+  // Stap 0: Telefoonnummer invoeren
+  if (step === 0) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="px-4 pt-8 pb-4">
+          <div className="max-w-md mx-auto flex items-start gap-4">
+            <GerAvatar size="lg" />
+            <div className="pt-2">
+              <h1 className="text-2xl font-bold text-foreground">Inloggen</h1>
+              <p className="text-muted-foreground mt-1">
+                Koppel je WhatsApp aan je account.
+              </p>
+            </div>
+          </div>
+        </div>
+        <main className="px-4 pb-8">
+          <div className="max-w-md mx-auto">
+            <div className="ker-card">
+              <div className="bg-primary/10 border-2 border-primary/30 rounded-xl p-4 mb-6">
+                <p className="text-foreground font-medium">📱 WhatsApp koppelen</p>
+                <p className="text-muted-foreground text-sm mt-1">
+                  Vul je telefoonnummer in om je WhatsApp te koppelen aan je account.
+                </p>
+              </div>
+
+              {error && (
+                <div className="bg-[#FFEBEE] border-2 border-[#F44336] text-[#C62828] px-4 py-3 rounded-xl mb-6 text-sm">
+                  {error}
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-foreground mb-2">
+                    Telefoonnummer
+                  </label>
+                  <input
+                    id="phone"
+                    type="tel"
+                    value={manualPhone}
+                    onChange={(e) => setManualPhone(e.target.value)}
+                    className="ker-input"
+                    placeholder="06 12345678"
+                    autoFocus
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Hetzelfde nummer als je WhatsApp
+                  </p>
+                </div>
+
+                <button
+                  onClick={handlePhoneSubmit}
+                  disabled={isCheckingPhone}
+                  className="ker-btn ker-btn-primary w-full"
+                >
+                  {isCheckingPhone ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                      Controleren...
+                    </span>
+                  ) : (
+                    "Doorgaan"
+                  )}
+                </button>
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-border text-center">
+                <p className="text-muted-foreground">
+                  Nog geen account?{" "}
+                  <Link href="/register-whatsapp" className="text-primary font-medium hover:underline">
+                    Maak een account aan
+                  </Link>
+                </p>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  // Stap 1: Login formulier
   return (
     <div className="min-h-screen bg-background">
       {/* Header met Ger */}
@@ -68,7 +174,7 @@ function LoginWhatsAppForm() {
       </div>
 
       {/* WhatsApp nummer indicator */}
-      {phoneNumber && (
+      {currentPhone && (
         <div className="px-4 pb-4">
           <div className="max-w-md mx-auto">
             <div className="bg-green-50 border-2 border-green-200 rounded-xl p-3 flex items-center gap-3">
@@ -79,7 +185,7 @@ function LoginWhatsAppForm() {
               </div>
               <div>
                 <p className="text-sm text-green-800 font-medium">Je WhatsApp nummer</p>
-                <p className="text-green-700 font-bold">{formatPhone(phoneNumber)}</p>
+                <p className="text-green-700 font-bold">{formatPhone(currentPhone)}</p>
               </div>
             </div>
           </div>
@@ -158,7 +264,7 @@ function LoginWhatsAppForm() {
               <p className="text-muted-foreground">
                 Nog geen account?{" "}
                 <Link
-                  href={`/register-whatsapp?phone=${encodeURIComponent(phoneNumber)}`}
+                  href={currentPhone ? `/register-whatsapp?phone=${encodeURIComponent(currentPhone)}` : "/register-whatsapp"}
                   className="text-primary font-medium hover:underline"
                 >
                   Maak een account aan
