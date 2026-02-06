@@ -454,44 +454,84 @@ export default function HulpPage() {
       )}
 
       {/* DRIE TABS NAAST ELKAAR */}
-      <div className="grid grid-cols-3 gap-2 mb-6">
-        <button
-          onClick={() => handleTabClick('voor-jou')}
-          className={cn(
-            "py-3 px-2 rounded-xl font-medium text-sm transition-all text-center",
-            activeTab === 'voor-jou'
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground hover:bg-muted/80"
-          )}
-        >
-          <span className="text-lg block mb-1">💜</span>
-          Voor jou
-        </button>
-        <button
-          onClick={() => handleTabClick('voor-naaste')}
-          className={cn(
-            "py-3 px-2 rounded-xl font-medium text-sm transition-all text-center",
-            activeTab === 'voor-naaste'
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground hover:bg-muted/80"
-          )}
-        >
-          <span className="text-lg block mb-1">💝</span>
-          Voor naaste
-        </button>
-        <button
-          onClick={() => handleTabClick('algemeen')}
-          className={cn(
-            "py-3 px-2 rounded-xl font-medium text-sm transition-all text-center",
-            activeTab === 'algemeen'
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground hover:bg-muted/80"
-          )}
-        >
-          <span className="text-lg block mb-1">🌍</span>
-          Algemeen
-        </button>
-      </div>
+      {(() => {
+        // Bereken totalen voor badges
+        const aantalVoorJou = CATEGORIEEN_MANTELZORGER.reduce((sum, cat) =>
+          sum + (hulpData?.perCategorie?.[cat.naam]?.length || 0), 0)
+        const aantalZwareTaken = hulpData?.zwareTaken?.length || 0
+        const aantalLandelijk = hulpData?.landelijk?.length || 0
+
+        return (
+          <div className="grid grid-cols-3 gap-2 mb-6">
+            <button
+              onClick={() => handleTabClick('voor-jou')}
+              className={cn(
+                "py-3 px-2 rounded-xl font-medium text-sm transition-all text-center relative",
+                activeTab === 'voor-jou'
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              )}
+            >
+              <span className="text-lg block mb-1">💜</span>
+              Voor jou
+              {aantalVoorJou > 0 && (
+                <span className={cn(
+                  "absolute -top-1 -right-1 w-5 h-5 text-xs font-bold rounded-full flex items-center justify-center",
+                  activeTab === 'voor-jou'
+                    ? "bg-white text-primary"
+                    : "bg-primary text-white"
+                )}>
+                  {aantalVoorJou}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => handleTabClick('voor-naaste')}
+              className={cn(
+                "py-3 px-2 rounded-xl font-medium text-sm transition-all text-center relative",
+                activeTab === 'voor-naaste'
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              )}
+            >
+              <span className="text-lg block mb-1">💝</span>
+              Voor naaste
+              {aantalZwareTaken > 0 && (
+                <span className={cn(
+                  "absolute -top-1 -right-1 w-5 h-5 text-xs font-bold rounded-full flex items-center justify-center",
+                  activeTab === 'voor-naaste'
+                    ? "bg-white text-primary"
+                    : "bg-[var(--accent-amber)] text-white"
+                )}>
+                  {aantalZwareTaken}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => handleTabClick('algemeen')}
+              className={cn(
+                "py-3 px-2 rounded-xl font-medium text-sm transition-all text-center relative",
+                activeTab === 'algemeen'
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              )}
+            >
+              <span className="text-lg block mb-1">🌍</span>
+              Algemeen
+              {aantalLandelijk > 0 && (
+                <span className={cn(
+                  "absolute -top-1 -right-1 w-5 h-5 text-xs font-bold rounded-full flex items-center justify-center",
+                  activeTab === 'algemeen'
+                    ? "bg-white text-primary"
+                    : "bg-primary text-white"
+                )}>
+                  {aantalLandelijk}
+                </span>
+              )}
+            </button>
+          </div>
+        )
+      })()}
 
       {/* CONTENT OP BASIS VAN GESELECTEERDE TAB */}
       {!activeTab && (
