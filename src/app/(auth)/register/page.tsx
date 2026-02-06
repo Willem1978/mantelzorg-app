@@ -23,6 +23,7 @@ export default function RegisterPage() {
     email: "",
     password: "",
     passwordConfirm: "",
+    phoneNumber: "",
     municipality: null as MunicipalityInfo | null,
     privacyConsent: false,
     dataProcessingConsent: false,
@@ -62,12 +63,28 @@ export default function RegisterPage() {
     setIsLoading(true)
 
     try {
+      // Normaliseer telefoonnummer naar +31 formaat
+      let phoneNumber = formData.phoneNumber.trim()
+      if (phoneNumber) {
+        // Verwijder spaties en streepjes
+        phoneNumber = phoneNumber.replace(/[\s-]/g, '')
+        // Als het begint met 06, vervang door +316
+        if (phoneNumber.startsWith('06')) {
+          phoneNumber = '+31' + phoneNumber.substring(1)
+        }
+        // Als het begint met 0031, vervang door +31
+        if (phoneNumber.startsWith('0031')) {
+          phoneNumber = '+31' + phoneNumber.substring(4)
+        }
+      }
+
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
+          phoneNumber: phoneNumber || undefined,
           municipality: formData.municipality,
           privacyConsent: formData.privacyConsent,
           dataProcessingConsent: formData.dataProcessingConsent,
@@ -187,6 +204,23 @@ export default function RegisterPage() {
                     placeholder="Typ het nog een keer"
                     required
                   />
+                </div>
+
+                <div>
+                  <label htmlFor="phoneNumber" className="block text-sm font-medium text-foreground mb-2">
+                    Je telefoonnummer <span className="text-muted-foreground font-normal">(optioneel)</span>
+                  </label>
+                  <input
+                    id="phoneNumber"
+                    type="tel"
+                    value={formData.phoneNumber}
+                    onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                    className="ker-input"
+                    placeholder="+31612345678"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Voor WhatsApp koppeling. Gebruik +31 formaat.
+                  </p>
                 </div>
 
                 <button type="submit" className="ker-btn ker-btn-primary w-full">
