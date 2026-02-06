@@ -148,10 +148,14 @@ export default function DashboardPage() {
     )
   }
 
-  // Bereken zware taken
-  const zwareTaken = data?.test?.zorgtaken?.filter(t => t.moeilijkheid === 'JA') || []
-  const matigTaken = data?.test?.zorgtaken?.filter(t => t.moeilijkheid === 'SOMS') || []
-  const lichtTaken = data?.test?.zorgtaken?.filter(t => !t.moeilijkheid || t.moeilijkheid === 'NEE') || []
+  // Bereken zware taken (database gebruikt MOEILIJK/ZEER_MOEILIJK/GEMIDDELD/MAKKELIJK)
+  const zwareTaken = data?.test?.zorgtaken?.filter(t =>
+    t.moeilijkheid === 'MOEILIJK' || t.moeilijkheid === 'ZEER_MOEILIJK'
+  ) || []
+  const matigTaken = data?.test?.zorgtaken?.filter(t => t.moeilijkheid === 'GEMIDDELD') || []
+  const lichtTaken = data?.test?.zorgtaken?.filter(t =>
+    !t.moeilijkheid || t.moeilijkheid === 'MAKKELIJK'
+  ) || []
 
   // Genereer aanbevolen acties
   const getAanbevolenActies = () => {
@@ -169,11 +173,12 @@ export default function DashboardPage() {
     }
 
     // Actie 2: Hulp zoeken bij zware taken
-    if (zwareTaken.length > 0) {
+    if (zwareTaken.length > 0 || matigTaken.length > 0) {
+      const totaal = zwareTaken.length + matigTaken.length
       acties.push({
         icon: "🤝",
-        titel: "Zoek hulp bij zware taken",
-        beschrijving: `${zwareTaken.length} ${zwareTaken.length === 1 ? 'taak' : 'taken'} waar je hulp bij kunt krijgen`,
+        titel: "Zoek hulp bij je taken",
+        beschrijving: `${totaal} ${totaal === 1 ? 'taak' : 'taken'} waar je hulp bij kunt krijgen`,
         href: "/hulpvragen",
         prioriteit: 2
       })
@@ -190,36 +195,45 @@ export default function DashboardPage() {
       })
     }
 
-    // Actie 4: Tijd voor jezelf plannen
+    // Actie 4: Leer over mantelzorg (educatie)
+    acties.push({
+      icon: "📚",
+      titel: "Tips voor mantelzorgers",
+      beschrijving: "Ontdek praktische tips en informatie",
+      href: "https://www.mantelzorg.nl/tips",
+      prioriteit: 4
+    })
+
+    // Actie 5: Tijd voor jezelf plannen
     if ((data?.selfCare?.completed || 0) < (data?.selfCare?.weeklyGoal || 3)) {
       acties.push({
         icon: "🌱",
         titel: "Plan tijd voor jezelf",
         beschrijving: "Zelfzorg is geen luxe, maar noodzaak",
         href: "/taken?category=SELF_CARE",
-        prioriteit: 4
+        prioriteit: 5
       })
     }
 
-    // Actie 5: Verlopen taken
+    // Actie 6: Verlopen taken
     if ((data?.tasks?.overdue || 0) > 0) {
       acties.push({
         icon: "⏰",
         titel: "Bekijk verlopen taken",
         beschrijving: `${data?.tasks?.overdue} ${data?.tasks?.overdue === 1 ? 'taak' : 'taken'} nog open`,
         href: "/taken",
-        prioriteit: 5
+        prioriteit: 6
       })
     }
 
-    // Actie 6: Kwartaal test
+    // Actie 7: Kwartaal test
     if (data?.test?.needsNewTest) {
       acties.push({
         icon: "📊",
         titel: "Doe je kwartaal check",
         beschrijving: "Vergelijk met je vorige resultaat",
         href: "/belastbaarheidstest",
-        prioriteit: 6
+        prioriteit: 7
       })
     }
 
@@ -335,9 +349,14 @@ export default function DashboardPage() {
       {/* SECTIE 2: Je Zorgtaken met Hulp */}
       {data?.test?.zorgtaken && data.test.zorgtaken.length > 0 && (
         <section className="mb-8">
-          <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-            <span className="text-2xl">📋</span> Je Zorgtaken
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+              <span className="text-2xl">📋</span> Je Zorgtaken
+            </h2>
+            <Link href="/hulpvragen" className="text-sm text-primary hover:underline">
+              Alle hulp →
+            </Link>
+          </div>
 
           <div className="space-y-3">
             {/* Zware taken eerst */}
@@ -347,25 +366,25 @@ export default function DashboardPage() {
               const aantalHulp = hulpbronnen.length
 
               return (
-                <div key={`zwaar-${i}`} className="ker-card border-l-4 border-l-[var(--accent-red)]">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">🔴</span>
-                      <span className="font-semibold">{taak.naam}</span>
-                      {taak.uren && <span className="text-xs text-muted-foreground">({taak.uren}u/week)</span>}
+                <Link key={`zwaar-${i}`} href="/hulpvragen" className="block">
+                  <div className="ker-card border-l-4 border-l-[var(--accent-red)] hover:border-primary/50 transition-colors">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">🔴</span>
+                        <span className="font-semibold">{taak.naam}</span>
+                        {taak.uren && <span className="text-xs text-muted-foreground">({taak.uren}u/week)</span>}
+                      </div>
+                      <span className="text-xs bg-[var(--accent-red-bg)] text-[var(--accent-red)] px-2 py-1 rounded-full font-medium">
+                        Zwaar
+                      </span>
                     </div>
-                    <span className="text-xs bg-[var(--accent-red-bg)] text-[var(--accent-red)] px-2 py-1 rounded-full font-medium">
-                      Zwaar
-                    </span>
-                  </div>
-                  {aantalHulp > 0 && (
-                    <Link href="/hulpvragen" className="flex items-center gap-2 text-sm text-primary hover:underline">
+                    <div className="flex items-center gap-2 text-sm text-primary">
                       <span>🤝</span>
-                      <span>{aantalHulp} hulpbron{aantalHulp > 1 ? 'nen' : ''} beschikbaar</span>
+                      <span>{aantalHulp > 0 ? `${aantalHulp} hulpbron${aantalHulp > 1 ? 'nen' : ''} beschikbaar` : 'Zoek hulp'}</span>
                       <span>→</span>
-                    </Link>
-                  )}
-                </div>
+                    </div>
+                  </div>
+                </Link>
               )
             })}
 
@@ -376,25 +395,25 @@ export default function DashboardPage() {
               const aantalHulp = hulpbronnen.length
 
               return (
-                <div key={`matig-${i}`} className="ker-card border-l-4 border-l-[var(--accent-amber)]">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">🟡</span>
-                      <span className="font-semibold">{taak.naam}</span>
-                      {taak.uren && <span className="text-xs text-muted-foreground">({taak.uren}u/week)</span>}
+                <Link key={`matig-${i}`} href="/hulpvragen" className="block">
+                  <div className="ker-card border-l-4 border-l-[var(--accent-amber)] hover:border-primary/50 transition-colors">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">🟡</span>
+                        <span className="font-semibold">{taak.naam}</span>
+                        {taak.uren && <span className="text-xs text-muted-foreground">({taak.uren}u/week)</span>}
+                      </div>
+                      <span className="text-xs bg-[var(--accent-amber-bg)] text-[var(--accent-amber)] px-2 py-1 rounded-full font-medium">
+                        Matig
+                      </span>
                     </div>
-                    <span className="text-xs bg-[var(--accent-amber-bg)] text-[var(--accent-amber)] px-2 py-1 rounded-full font-medium">
-                      Matig
-                    </span>
-                  </div>
-                  {aantalHulp > 0 && (
-                    <Link href="/hulpvragen" className="flex items-center gap-2 text-sm text-primary hover:underline">
+                    <div className="flex items-center gap-2 text-sm text-primary">
                       <span>🤝</span>
-                      <span>{aantalHulp} hulpbron{aantalHulp > 1 ? 'nen' : ''} beschikbaar</span>
+                      <span>{aantalHulp > 0 ? `${aantalHulp} hulpbron${aantalHulp > 1 ? 'nen' : ''} beschikbaar` : 'Zoek hulp'}</span>
                       <span>→</span>
-                    </Link>
-                  )}
-                </div>
+                    </div>
+                  </div>
+                </Link>
               )
             })}
 
@@ -417,6 +436,55 @@ export default function DashboardPage() {
           </div>
         </section>
       )}
+
+      {/* SECTIE: Educatie & Tips */}
+      <section className="mb-8">
+        <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+          <span className="text-2xl">📚</span> Leren & Tips
+        </h2>
+        <div className="grid grid-cols-2 gap-3">
+          <a
+            href="https://www.mantelzorg.nl/tips"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ker-card hover:border-primary/50 transition-colors"
+          >
+            <span className="text-2xl block mb-2">💡</span>
+            <p className="font-medium text-sm">Praktische tips</p>
+            <p className="text-xs text-muted-foreground mt-1">Voor het dagelijks leven</p>
+          </a>
+          <a
+            href="https://www.mantelzorg.nl/zelfzorg"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ker-card hover:border-primary/50 transition-colors"
+          >
+            <span className="text-2xl block mb-2">🧘</span>
+            <p className="font-medium text-sm">Zelfzorg tips</p>
+            <p className="text-xs text-muted-foreground mt-1">Zorg ook voor jezelf</p>
+          </a>
+          <a
+            href="https://www.mantelzorg.nl/rechten"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ker-card hover:border-primary/50 transition-colors"
+          >
+            <span className="text-2xl block mb-2">⚖️</span>
+            <p className="font-medium text-sm">Je rechten</p>
+            <p className="text-xs text-muted-foreground mt-1">Waar heb je recht op?</p>
+          </a>
+          <a
+            href="https://www.mantelzorg.nl/financieel"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ker-card hover:border-primary/50 transition-colors"
+          >
+            <span className="text-2xl block mb-2">💰</span>
+            <p className="font-medium text-sm">Financieel</p>
+            <p className="text-xs text-muted-foreground mt-1">Vergoedingen & regelingen</p>
+          </a>
+        </div>
+      </section>
 
       {/* SECTIE 3: Jouw Eerste 3 Acties */}
       {aanbevolenActies.length > 0 && (
