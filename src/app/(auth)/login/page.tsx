@@ -17,6 +17,7 @@ function LoginForm() {
   })
 
   const fromTest = searchParams.get("from") === "test"
+  const phoneNumber = searchParams.get("phone") // WhatsApp telefoonnummer
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,6 +28,7 @@ function LoginForm() {
       const result = await signIn("credentials", {
         email: formData.email,
         password: formData.password,
+        phoneNumber: phoneNumber || undefined, // Geef telefoonnummer door
         redirect: false,
       })
 

@@ -92,9 +92,17 @@ export async function POST(request: NextRequest) {
       buttonText,
     })
 
-    // Zoek gekoppelde gebruiker
+    // Zoek gekoppelde gebruiker - check zowel met als zonder whatsapp: prefix
+    const phoneWithPrefix = message.from // whatsapp:+31...
+    const phoneWithoutPrefix = stripWhatsAppPrefix(message.from) // +31...
+
     const caregiver = await prisma.caregiver.findFirst({
-      where: { phoneNumber: message.from },
+      where: {
+        OR: [
+          { phoneNumber: phoneWithPrefix },
+          { phoneNumber: phoneWithoutPrefix },
+        ]
+      },
       include: { user: true },
     })
 

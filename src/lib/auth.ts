@@ -19,6 +19,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        phoneNumber: { label: "Phone", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
@@ -45,6 +46,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!isPasswordValid) {
           return null
+        }
+
+        // Koppel WhatsApp telefoonnummer aan Caregiver profiel als meegegeven
+        if (credentials.phoneNumber && user.caregiver) {
+          try {
+            await prisma.caregiver.update({
+              where: { id: user.caregiver.id },
+              data: { phoneNumber: credentials.phoneNumber as string },
+            })
+          } catch (error) {
+            console.error("Failed to link phone number:", error)
+          }
         }
 
         return {
