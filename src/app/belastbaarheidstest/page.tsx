@@ -396,7 +396,7 @@ export default function BelastbaarheidstestPage() {
     console.log("Geselecteerde taken:", Object.entries(taken).filter(([, d]) => d.isGeselecteerd))
 
     try {
-      await fetch("/api/belastbaarheidstest", {
+      const response = await fetch("/api/belastbaarheidstest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -416,9 +416,21 @@ export default function BelastbaarheidstestPage() {
           totaleUren,
         }),
       })
+
+      // Wacht op response en check of opslaan gelukt is
+      if (response.ok) {
+        const result = await response.json()
+        console.log("Test opgeslagen:", result)
+        // Kleine vertraging om database tijd te geven
+        await new Promise(resolve => setTimeout(resolve, 100))
+      } else {
+        console.error("Fout bij opslaan test:", response.status)
+      }
+
       // Redirect naar dashboard na opslaan
       router.push("/dashboard?from=test")
-    } catch {
+    } catch (error) {
+      console.error("Error saving test:", error)
       // Bij error toch naar dashboard
       router.push("/dashboard")
     }

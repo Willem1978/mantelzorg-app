@@ -136,11 +136,16 @@ function DashboardContent() {
   useEffect(() => {
     const loadDashboard = async () => {
       try {
-        // Cache busting wanneer we van test komen
-        const url = fromTest ? `/api/dashboard?t=${Date.now()}` : "/api/dashboard"
+        // Altijd cache busting - verse data ophalen
+        const timestamp = Date.now()
+        const url = `/api/dashboard?t=${timestamp}`
+
         const res = await fetch(url, {
-          // Forceer vers ophalen wanneer van test
-          cache: fromTest ? "no-store" : "default"
+          // Forceer verse data
+          cache: "no-store",
+          headers: {
+            'Cache-Control': 'no-cache'
+          }
         })
         if (res.ok) {
           const dashboardData = await res.json()
