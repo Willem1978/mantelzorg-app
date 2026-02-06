@@ -400,8 +400,9 @@ async function handleOnboardingSession(
     const num = parseInt(command)
 
     if (num === 1) {
-      // Inloggen - stuur naar WhatsApp login pagina
-      const loginUrl = `${process.env.NEXTAUTH_URL}/login-whatsapp?phone=${encodeURIComponent(stripWhatsAppPrefix(phoneNumber))}`
+      // Inloggen - korte URL voor WhatsApp
+      const phone = stripWhatsAppPrefix(phoneNumber)
+      const loginUrl = `${process.env.NEXTAUTH_URL}/r/log?p=${encodeURIComponent(phone)}`
       clearOnboardingSession(phoneNumber)
       return {
         response: `🔑 *Inloggen*
@@ -413,8 +414,9 @@ ${loginUrl}`,
     }
 
     if (num === 2) {
-      // Registreren - stuur naar registratie pagina met telefoonnummer
-      const registerUrl = `${process.env.NEXTAUTH_URL}/register-whatsapp?phone=${encodeURIComponent(stripWhatsAppPrefix(phoneNumber))}`
+      // Registreren - korte URL voor WhatsApp
+      const phone = stripWhatsAppPrefix(phoneNumber)
+      const registerUrl = `${process.env.NEXTAUTH_URL}/r/reg?p=${encodeURIComponent(phone)}`
       clearOnboardingSession(phoneNumber)
       return {
         response: `✨ *Account aanmaken*
@@ -978,9 +980,10 @@ function handleGuestMenu(phoneNumber: string, input: string): string {
     return `📊 *Mantelzorg Balanstest*\n\nSuper dat je even stilstaat bij hoe het met jou gaat! 💚\n\nIk stel je 12 korte vragen. Beantwoord ze eerlijk.\n\n*Vraag 1/12*\n\n${firstQuestion?.vraag}\n\n1️⃣ 🔴 Ja\n2️⃣ 🟡 Soms\n3️⃣ 🟢 Nee\n\n_Typ 1, 2 of 3_`
   }
 
-  // 2. Account aanmaken - link naar browser
+  // 2. Account aanmaken - korte URL voor WhatsApp
   if (command === '2' || command === 'account' || command === 'nieuw') {
-    const registerUrl = `${process.env.NEXTAUTH_URL}/register-whatsapp?phone=${encodeURIComponent(stripWhatsAppPrefix(phoneNumber))}`
+    const phone = stripWhatsAppPrefix(phoneNumber)
+    const registerUrl = `${process.env.NEXTAUTH_URL}/r/reg?p=${encodeURIComponent(phone)}`
     return `✨ *Account aanmaken*
 
 Met een account bewaar ik je resultaten en geef ik persoonlijke tips.
@@ -988,9 +991,10 @@ Met een account bewaar ik je resultaten en geef ik persoonlijke tips.
 ${registerUrl}`
   }
 
-  // 3. Inloggen - link naar WhatsApp login pagina
+  // 3. Inloggen - korte URL voor WhatsApp
   if (command === '3' || command === 'inloggen' || command === 'login') {
-    const loginUrl = `${process.env.NEXTAUTH_URL}/login-whatsapp?phone=${encodeURIComponent(stripWhatsAppPrefix(phoneNumber))}`
+    const phone = stripWhatsAppPrefix(phoneNumber)
+    const loginUrl = `${process.env.NEXTAUTH_URL}/r/log?p=${encodeURIComponent(phone)}`
     return `🔑 *Inloggen*
 
 Na inloggen wordt je WhatsApp gekoppeld.
