@@ -19,6 +19,7 @@ function LoginForm() {
   const fromTest = searchParams.get("from") === "test"
   const phoneNumber = searchParams.get("phone") // WhatsApp telefoonnummer
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard" // Redirect na login
+  const sessionInvalidated = searchParams.get("reason") === "session_invalidated"
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -65,6 +66,13 @@ function LoginForm() {
       <main className="px-4 pb-8">
         <div className="max-w-md mx-auto">
           <div className="ker-card">
+            {sessionInvalidated && (
+              <div className="bg-amber-50 border-2 border-amber-300 text-amber-800 px-4 py-3 rounded-xl mb-6 text-sm">
+                <p className="font-medium">Je bent uitgelogd</p>
+                <p className="text-amber-700">Je bent op een ander apparaat ingelogd. Log opnieuw in om door te gaan.</p>
+              </div>
+            )}
+
             {fromTest && (
               <div className="bg-primary/10 border-2 border-primary/30 text-foreground px-4 py-3 rounded-xl mb-6 text-sm">
                 <p className="font-medium">Je hebt de test afgerond!</p>

@@ -9,21 +9,22 @@ datasource db {
 }
 
 model User {
-  id            String              @id @default(cuid())
-  email         String              @unique
-  name          String?
-  password      String?
-  emailVerified DateTime?
-  image         String?
-  role          UserRole            @default(CAREGIVER)
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
-  accounts      Account[]
-  caregiver     Caregiver?
-  mantelBuddy   MantelBuddy?
-  magicLinks    MagicLinkToken[]
-  orgMember     OrganisationMember?
-  sessions      Session[]
+  id             String              @id @default(cuid())
+  email          String              @unique
+  name           String?
+  password       String?
+  emailVerified  DateTime?
+  image          String?
+  role           UserRole            @default(CAREGIVER)
+  sessionVersion Int                 @default(1) // Incrementeert bij elke login om oude sessies te invalideren
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  accounts       Account[]
+  caregiver      Caregiver?
+  mantelBuddy    MantelBuddy?
+  magicLinks     MagicLinkToken[]
+  orgMember      OrganisationMember?
+  sessions       Session[]
 }
 
 model Account {

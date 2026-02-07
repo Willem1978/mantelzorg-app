@@ -187,9 +187,12 @@ export default function ProfielPage() {
   })
   const [isEditing, setIsEditing] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [isChangingPhone, setIsChangingPhone] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [saveMessage, setSaveMessage] = useState("")
+  const [phoneInput, setPhoneInput] = useState("")
+  const [phoneError, setPhoneError] = useState("")
   const [passwordData, setPasswordData] = useState({
     current: "",
     new: "",
@@ -360,6 +363,93 @@ export default function ProfielPage() {
     }
   }
 
+  // Telefoonnummer normaliseren naar +31 formaat
+  const normalizePhoneNumber = (phone: string): string => {
+    // Verwijder alle niet-cijfers behalve +
+    let cleaned = phone.replace(/[^\d+]/g, "")
+
+    // Als het begint met 06, vervang door +316
+    if (cleaned.startsWith("06")) {
+      cleaned = "+31" + cleaned.slice(1)
+    }
+    // Als het begint met 316, voeg + toe
+    else if (cleaned.startsWith("316")) {
+      cleaned = "+" + cleaned
+    }
+    // Als het begint met 0031, vervang door +31
+    else if (cleaned.startsWith("0031")) {
+      cleaned = "+31" + cleaned.slice(4)
+    }
+
+    return cleaned
+  }
+
+  // Telefoonnummer valideren
+  const isValidPhoneNumber = (phone: string): boolean => {
+    const normalized = normalizePhoneNumber(phone)
+    // Nederlandse mobiel: +316XXXXXXXX (12 tekens)
+    return /^\+316\d{8}$/.test(normalized)
+  }
+
+  const handlePhoneChange = async () => {
+    setPhoneError("")
+
+    if (!phoneInput.trim()) {
+      // Leeg = ontkoppelen
+      setIsSaving(true)
+      try {
+        const res = await fetch("/api/profile", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ telefoon: null }),
+        })
+
+        if (!res.ok) throw new Error("API error")
+
+        setProfile({ ...profile, telefoon: "" })
+        setSaveMessage("Telefoonnummer ontkoppeld!")
+        setIsChangingPhone(false)
+        setPhoneInput("")
+
+        setTimeout(() => setSaveMessage(""), 3000)
+      } catch {
+        setPhoneError("Er ging iets mis")
+      } finally {
+        setIsSaving(false)
+      }
+      return
+    }
+
+    if (!isValidPhoneNumber(phoneInput)) {
+      setPhoneError("Voer een geldig 06-nummer in (bijv. 06 12345678)")
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      const normalized = normalizePhoneNumber(phoneInput)
+
+      const res = await fetch("/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ telefoon: normalized }),
+      })
+
+      if (!res.ok) throw new Error("API error")
+
+      setProfile({ ...profile, telefoon: normalized })
+      setSaveMessage("Telefoonnummer opgeslagen!")
+      setIsChangingPhone(false)
+      setPhoneInput("")
+
+      setTimeout(() => setSaveMessage(""), 3000)
+    } catch {
+      setPhoneError("Er ging iets mis")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   const getNiveauInfo = (niveau: string | undefined) => {
     switch (niveau?.toLowerCase()) {
       case "laag":
@@ -374,6 +464,96 @@ export default function ProfielPage() {
   }
 
   const niveau = profile.testNiveau ? getNiveauInfo(profile.testNiveau) : null
+
+  // ============================================
+  // TELEFOONNUMMER WIJZIGEN SCHERM
+  // ============================================
+
+  if (isChangingPhone) {
+    return (
+      <div className="ker-page-content">
+        <div className="flex items-center gap-4 mb-6">
+          <button
+            onClick={() => {
+              setIsChangingPhone(false)
+              setPhoneInput("")
+              setPhoneError("")
+            }}
+            className="p-2 hover:bg-muted rounded-lg transition-colors"
+          >
+            <svg className="w-6 h-6 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h1 className="text-xl font-bold text-foreground">Telefoonnummer wijzigen</h1>
+        </div>
+
+        <div className="ker-card">
+          <div className="space-y-4">
+            {profile.telefoon && (
+              <div className="p-3 bg-muted rounded-xl">
+                <p className="text-sm text-muted-foreground">Huidig nummer</p>
+                <p className="font-bold text-foreground">{formatPhoneNumber(profile.telefoon)}</p>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Nieuw telefoonnummer
+              </label>
+              <input
+                type="tel"
+                value={phoneInput}
+                onChange={(e) => setPhoneInput(e.target.value)}
+                className="ker-input"
+                placeholder="06 12345678"
+                autoComplete="tel"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Dit nummer wordt gekoppeld aan je WhatsApp account
+              </p>
+            </div>
+
+            {phoneError && (
+              <div className="p-3 bg-[var(--accent-red-bg)] text-[var(--accent-red)] rounded-xl text-sm">
+                {phoneError}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <button
+                onClick={handlePhoneChange}
+                disabled={isSaving}
+                className="ker-btn ker-btn-primary w-full"
+              >
+                {isSaving ? "Opslaan..." : phoneInput.trim() ? "Nummer opslaan" : "Nummer ontkoppelen"}
+              </button>
+
+              {profile.telefoon && (
+                <button
+                  onClick={() => {
+                    setPhoneInput("")
+                    handlePhoneChange()
+                  }}
+                  disabled={isSaving}
+                  className="ker-btn w-full bg-[var(--accent-red-bg)] text-[var(--accent-red)] hover:bg-[var(--accent-red)] hover:text-white transition-colors"
+                >
+                  Nummer ontkoppelen
+                </button>
+              )}
+            </div>
+
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
+              <p className="text-sm text-amber-800">
+                <strong>Let op:</strong> Als je een nieuw nummer koppelt, wordt het oude nummer ontkoppeld.
+                Berichten via WhatsApp worden dan aan het nieuwe nummer gekoppeld.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // ============================================
   // WACHTWOORD WIJZIGEN SCHERM
@@ -625,9 +805,23 @@ export default function ProfielPage() {
 
             <div className="flex justify-between items-center py-2 border-b border-border">
               <span className="text-muted-foreground">Telefoon</span>
-              <span className="font-medium text-foreground">
-                {profile.telefoon ? formatPhoneNumber(profile.telefoon) : "-"}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-foreground">
+                  {profile.telefoon ? formatPhoneNumber(profile.telefoon) : "-"}
+                </span>
+                <button
+                  onClick={() => {
+                    setPhoneInput(profile.telefoon || "")
+                    setIsChangingPhone(true)
+                  }}
+                  className="p-1 text-primary hover:bg-primary/10 rounded transition-colors"
+                  title="Telefoonnummer wijzigen"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             <div className="py-2 border-b border-border">
