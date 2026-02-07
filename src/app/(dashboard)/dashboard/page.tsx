@@ -531,9 +531,13 @@ function DashboardContent() {
               const categorie = TAAK_NAAR_CATEGORIE[taak.naam]
               const hulpbronnen = categorie ? (data?.hulpbronnen?.perCategorie?.[categorie] || []) : []
               const aantalHulp = hulpbronnen.length
+              // Link naar hulpvragen met tab en categorie pre-geselecteerd
+              const hulpLink = categorie
+                ? `/hulpvragen?tab=voor-naaste&categorie=${encodeURIComponent(categorie)}`
+                : '/hulpvragen?tab=voor-naaste'
 
               return (
-                <Link key={`zwaar-${i}`} href="/hulpvragen" className="block">
+                <Link key={`zwaar-${i}`} href={hulpLink} className="block">
                   <div className="ker-card border-l-4 border-l-[var(--accent-red)] hover:border-primary/50 transition-colors">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
@@ -560,9 +564,13 @@ function DashboardContent() {
               const categorie = TAAK_NAAR_CATEGORIE[taak.naam]
               const hulpbronnen = categorie ? (data?.hulpbronnen?.perCategorie?.[categorie] || []) : []
               const aantalHulp = hulpbronnen.length
+              // Link naar hulpvragen met tab en categorie pre-geselecteerd
+              const hulpLink = categorie
+                ? `/hulpvragen?tab=voor-naaste&categorie=${encodeURIComponent(categorie)}`
+                : '/hulpvragen?tab=voor-naaste'
 
               return (
-                <Link key={`matig-${i}`} href="/hulpvragen" className="block">
+                <Link key={`matig-${i}`} href={hulpLink} className="block">
                   <div className="ker-card border-l-4 border-l-[var(--accent-amber)] hover:border-primary/50 transition-colors">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
