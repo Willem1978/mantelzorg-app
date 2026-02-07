@@ -799,9 +799,9 @@ export default function BelastbaarheidstestPage() {
           </div>
         </main>
 
-        {/* Footer - alleen terug knop */}
+        {/* Footer met terug en verder knoppen */}
         <footer className="fixed bottom-0 left-0 right-0 bg-background p-4">
-          <div className="max-w-md mx-auto flex items-center justify-center">
+          <div className="max-w-md mx-auto flex items-center justify-between gap-4">
             <button
               onClick={() => currentTaakDetailIndex > 0 ? setCurrentTaakDetailIndex(prev => prev - 1) : setCurrentStep("taken-selectie")}
               className="ker-btn ker-btn-secondary flex items-center gap-2"
@@ -810,6 +810,20 @@ export default function BelastbaarheidstestPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
               terug
+            </button>
+
+            <button
+              onClick={handleTaakDetailVolgende}
+              disabled={!taakData.uren || !taakData.belasting}
+              className={cn(
+                "ker-btn flex items-center gap-2",
+                taakData.uren && taakData.belasting ? "ker-btn-primary" : "ker-btn-secondary opacity-50"
+              )}
+            >
+              {currentTaakDetailIndex < geselecteerdeTakenIds.length - 1 ? "volgende" : "bekijk rapport"}
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </button>
           </div>
         </footer>
