@@ -23,11 +23,11 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 dark:bg-red-700 dark:hover:bg-red-800",
     }
 
-    // Grotere touch targets voor mobiel (min 44px)
+    // Grotere touch targets voor mobiel (min 48px voor ouderen)
     const sizes = {
-      sm: "px-4 py-2 text-sm min-h-[36px]",
-      md: "px-5 py-2.5 text-base min-h-[44px]",
-      lg: "px-6 py-3 text-lg min-h-[52px]",
+      sm: "px-4 py-2 text-sm min-h-[40px]",
+      md: "px-5 py-3 text-base min-h-[48px]",
+      lg: "px-6 py-3.5 text-lg min-h-[56px]",
     }
 
     return (
@@ -60,7 +60,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
               />
             </svg>
-            <span>Even wachten...</span>
+            <span>Even geduld...</span>
           </>
         ) : (
           children

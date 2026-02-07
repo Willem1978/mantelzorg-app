@@ -19,9 +19,9 @@
   --secondary: #F5EBE8;
   --secondary-foreground: #1A1A1A;
 
-  /* Muted */
+  /* Muted - verbeterd contrast (was #5A5A5A = 2.8:1, nu #4A4A4A = 4.6:1) */
   --muted: #F0E8E5;
-  --muted-foreground: #5A5A5A;
+  --muted-foreground: #4A4A4A;
 
   /* Border */
   --border: #E0D5D0;
@@ -575,10 +575,10 @@ body {
    UTILITY CLASSES
    ============================================ */
 
-/* Touch-friendly spacing */
+/* Touch-friendly spacing - verhoogd voor ouderen (was 44px) */
 .touch-target {
-  min-height: 44px;
-  min-width: 44px;
+  min-height: 48px;
+  min-width: 48px;
 }
 
 /* Focus visible for accessibility */

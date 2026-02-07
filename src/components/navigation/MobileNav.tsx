@@ -94,7 +94,8 @@ export function MobileNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden safe-area-inset-bottom">
-      <div className="flex justify-around items-center h-16 px-1">
+      {/* Verhoogd naar h-20 (80px) voor betere touch targets */}
+      <div className="flex justify-around items-center h-20 px-1">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
           const showBadge = item.hasBadge && zwareTakenCount > 0
@@ -104,7 +105,8 @@ export function MobileNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all min-w-[60px] relative",
+                // Vergroot touch area: min 48x48px, nu 64px breed
+                "flex flex-col items-center justify-center py-3 px-4 rounded-xl transition-all min-w-[64px] min-h-[56px] relative",
                 isActive
                   ? "text-primary bg-primary/10"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
@@ -116,13 +118,14 @@ export function MobileNav() {
               )}>
                 {item.icon}
                 {showBadge && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-[var(--accent-amber)] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--accent-amber)] text-white text-[11px] font-bold rounded-full flex items-center justify-center">
                     {zwareTakenCount}
                   </span>
                 )}
               </span>
+              {/* Vergroot label van 10px naar 11px voor leesbaarheid */}
               <span className={cn(
-                "text-[10px] mt-1 font-medium",
+                "text-[11px] mt-1 font-medium",
                 isActive && "font-semibold"
               )}>
                 {item.label}

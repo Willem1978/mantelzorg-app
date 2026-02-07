@@ -80,7 +80,7 @@ export default function CheckInPage() {
           setIsCompleted(true)
         }
         setIsTransitioning(false)
-      }, 1200) // Langere delay voor betere UX
+      }, 2000) // 2 seconden - beter voor ouderen
     }
   }
 

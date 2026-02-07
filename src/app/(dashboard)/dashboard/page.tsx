@@ -393,22 +393,28 @@ function DashboardContent() {
                   <div className="flex-1" /> {/* 17-24 rood */}
                 </div>
               </div>
+              {/* Zone labels voor kleurblindheid ondersteuning */}
+              <div className="flex text-[10px] text-muted-foreground mt-1">
+                <div className="flex-1 text-center">✓ Laag</div>
+                <div className="flex-1 text-center">● Midden</div>
+                <div className="flex-1 text-center">⚠ Hoog</div>
+              </div>
 
             </div>
 
-            {/* Zorgtaken verdeling */}
+            {/* Zorgtaken verdeling - met emoji's voor kleurblindheid */}
             {(data.test.zorgtaken?.length || 0) > 0 && (
               <div className="grid grid-cols-3 gap-2 text-center mt-4 pt-4 border-t border-border/50">
                 <div>
-                  <p className="text-lg font-bold text-[var(--accent-green)]">{lichtTaken.length}</p>
+                  <p className="text-lg font-bold text-[var(--accent-green)]">✓ {lichtTaken.length}</p>
                   <p className="text-xs text-muted-foreground">Gaat goed</p>
                 </div>
                 <div>
-                  <p className="text-lg font-bold text-[var(--accent-amber)]">{matigTaken.length}</p>
+                  <p className="text-lg font-bold text-[var(--accent-amber)]">● {matigTaken.length}</p>
                   <p className="text-xs text-muted-foreground">Matig</p>
                 </div>
                 <div>
-                  <p className="text-lg font-bold text-[var(--accent-red)]">{zwareTaken.length}</p>
+                  <p className="text-lg font-bold text-[var(--accent-red)]">⚠ {zwareTaken.length}</p>
                   <p className="text-xs text-muted-foreground">Zwaar</p>
                 </div>
               </div>

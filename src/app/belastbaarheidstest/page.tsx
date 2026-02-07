@@ -328,7 +328,7 @@ export default function BelastbaarheidstestPage() {
         setCurrentStep("taken-selectie")
       }
       setIsTransitioning(false)
-    }, 1500) // Langere timer zodat gebruiker keuze ziet
+    }, 2000) // 2 seconden - beter voor ouderen
   }
 
   const handleTaakToggle = (taakId: string) => {
