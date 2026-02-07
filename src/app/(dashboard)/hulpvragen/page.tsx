@@ -696,14 +696,6 @@ function HulpPageContent() {
                   return (
                     <div className="text-center py-8 text-muted-foreground ker-card">
                       <p>Geen hulpbronnen gevonden</p>
-                      <a
-                        href={`https://www.zorgkaartnederland.nl/zoeken?q=${encodeURIComponent(selectedCategorie)}&plaats=${hulpData?.mantelzorgerGemeente || ''}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-primary hover:underline mt-2 inline-block"
-                      >
-                        Zoek op Zorgkaart Nederland →
-                      </a>
                     </div>
                   )
                 }
@@ -817,14 +809,6 @@ function HulpPageContent() {
               ) : (
                 <div className="text-center py-8 text-muted-foreground ker-card">
                   <p>Geen hulpbronnen gevonden</p>
-                  <a
-                    href={`https://www.zorgkaartnederland.nl/zoeken?q=${encodeURIComponent(selectedCategorie)}&plaats=${hulpData?.zorgvragerGemeente || ''}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-primary hover:underline mt-2 inline-block"
-                  >
-                    Zoek op Zorgkaart Nederland →
-                  </a>
                 </div>
               )}
             </div>
