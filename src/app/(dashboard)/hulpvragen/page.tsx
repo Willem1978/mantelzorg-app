@@ -189,16 +189,11 @@ function HulpPageContent() {
       if (dashboardRes.ok) {
         const dashboardData = await dashboardRes.json()
 
-        // Voeg categorie toe aan zware taken
+        // Voeg categorie toe aan ALLE zorgtaken (niet alleen zware)
         // Database kan twee formats hebben:
         // 1. Web test: MOEILIJK/ZEER_MOEILIJK/GEMIDDELD/MAKKELIJK
         // 2. WhatsApp test: JA/SOMS/NEE
-        const isZwaarOfMatig = (m: string | null) =>
-          m === 'MOEILIJK' || m === 'ZEER_MOEILIJK' || m === 'GEMIDDELD' ||
-          m === 'JA' || m === 'ja' || m === 'SOMS' || m === 'soms'
-
-        const zwareTaken = (dashboardData.test?.zorgtaken || [])
-          .filter((t: any) => isZwaarOfMatig(t.moeilijkheid))
+        const alleTaken = (dashboardData.test?.zorgtaken || [])
           .map((t: any) => ({
             ...t,
             categorie: TAAK_NAAR_CATEGORIE[t.naam] || null
@@ -207,7 +202,7 @@ function HulpPageContent() {
         setHulpData({
           perCategorie: dashboardData.hulpbronnen?.perCategorie || {},
           landelijk: dashboardData.hulpbronnen?.landelijk || [],
-          zwareTaken,
+          zwareTaken: alleTaken, // Nu alle taken, naam blijft voor backwards compatibility
           mantelzorgerGemeente: dashboardData.hulpbronnen?.mantelzorgerGemeente || null,
           zorgvragerGemeente: dashboardData.hulpbronnen?.zorgvragerGemeente || null,
           testNiveau: dashboardData.test?.niveau || null,
@@ -290,18 +285,35 @@ function HulpPageContent() {
 
   // Bepaal welke categorieën zware taken hebben en hun niveau
   // Ondersteunt zowel web format (MOEILIJK/GEMIDDELD) als WhatsApp format (JA/SOMS)
-  const getTaakStatus = (categorieNaam: string): 'zwaar' | 'gemiddeld' | null => {
+  const getTaakStatus = (categorieNaam: string): 'zwaar' | 'gemiddeld' | 'licht' | null => {
+    // Filter taken die bij deze categorie horen
     const taken = hulpData?.zwareTaken?.filter(t => t.categorie === categorieNaam) || []
+
+    // Check ook taken zonder categorie maar met naam die matcht
+    const alleTaken = hulpData?.zwareTaken || []
+    const takenVoorCategorie = alleTaken.filter(t => {
+      // Direct categorie match
+      if (t.categorie === categorieNaam) return true
+      // Naam-naar-categorie mapping check
+      const mappedCategorie = TAAK_NAAR_CATEGORIE[t.naam]
+      return mappedCategorie === categorieNaam
+    })
+
     const isZwaar = (m: string | null) =>
       m === 'MOEILIJK' || m === 'ZEER_MOEILIJK' || m === 'JA' || m === 'ja'
     const isMatig = (m: string | null) =>
       m === 'GEMIDDELD' || m === 'SOMS' || m === 'soms'
+    const isLicht = (m: string | null) =>
+      m === 'MAKKELIJK' || m === 'NEE' || m === 'nee' || !m
 
-    if (taken.some(t => isZwaar(t.moeilijkheid))) {
+    if (takenVoorCategorie.some(t => isZwaar(t.moeilijkheid))) {
       return 'zwaar'
     }
-    if (taken.some(t => isMatig(t.moeilijkheid))) {
+    if (takenVoorCategorie.some(t => isMatig(t.moeilijkheid))) {
       return 'gemiddeld'
+    }
+    if (takenVoorCategorie.some(t => isLicht(t.moeilijkheid))) {
+      return 'licht'
     }
     return null
   }
@@ -787,7 +799,9 @@ function HulpPageContent() {
                         ? "bg-[var(--accent-red-bg)] border-2 border-[var(--accent-red)] hover:border-[var(--accent-red)]"
                         : taakStatus === 'gemiddeld'
                           ? "bg-[var(--accent-amber-bg)] border-2 border-[var(--accent-amber)] hover:border-[var(--accent-amber)]"
-                          : "bg-muted hover:bg-muted/80 border border-border"
+                          : taakStatus === 'licht'
+                            ? "bg-[var(--accent-green-bg)] border-2 border-[var(--accent-green)] hover:border-[var(--accent-green)]"
+                            : "bg-muted hover:bg-muted/80 border border-border"
                   )}
                 >
                   <span className="text-2xl">{cat.icon}</span>
@@ -800,12 +814,15 @@ function HulpPageContent() {
                       ({aantalHulp})
                     </p>
                   </div>
-                  {/* Status indicator */}
+                  {/* Status indicator met emoji voor kleurblindheid */}
                   {!isSelected && taakStatus && (
-                    <div className={cn(
-                      "absolute top-2 right-2 w-3 h-3 rounded-full",
-                      taakStatus === 'zwaar' ? "bg-[var(--accent-red)]" : "bg-[var(--accent-amber)]"
-                    )} />
+                    <div className="absolute top-2 right-2 flex items-center gap-1">
+                      <span className="text-sm">
+                        {taakStatus === 'zwaar' && '⚠'}
+                        {taakStatus === 'gemiddeld' && '●'}
+                        {taakStatus === 'licht' && '✓'}
+                      </span>
+                    </div>
                   )}
                 </button>
               )
