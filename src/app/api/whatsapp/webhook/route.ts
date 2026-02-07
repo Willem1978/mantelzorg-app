@@ -983,6 +983,29 @@ async function handleLoggedInUser(
     return { response, quickReplyButtons: menuButton }
   }
 
+  // Rapport bekijken (vanuit test voltooiing buttons)
+  if (command === 'rapport') {
+    const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
+
+    // Genereer magic link voor directe toegang
+    const token = generateShortToken()
+    await prisma.magicLinkToken.create({
+      data: {
+        token,
+        userId: caregiver.user.id,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 uur
+        redirectTo: '/rapport',
+      },
+    })
+
+    const rapportUrl = `${baseUrl}/m/${token}`
+
+    const response = `📄 *Jouw Rapport*\n\nKlik op de link om je volledige rapport te bekijken:\n\n👉 ${rapportUrl}\n\n_Link is 24 uur geldig_`
+
+    const menuButton = [{ id: 'menu', title: '📋 Menu' }]
+    return { response, quickReplyButtons: menuButton }
+  }
+
   // 4. Dashboard
   if (command === '4' || command === 'dashboard') {
     const openTasks = await prisma.task.count({
@@ -1235,7 +1258,14 @@ async function finishTestAndRespond(
     clearTestSession(phoneNumber)
 
     const response = await buildTestCompletionMessage(session, score, level, true)
-    return { response }
+
+    // Buttons voor vervolgacties na test voltooiing
+    const completionButtons = [
+      { id: 'rapport', title: '📄 Bekijk rapport' },
+      { id: 'menu', title: '📋 Menu' },
+    ]
+
+    return { response, quickReplyButtons: completionButtons }
   }
 
   // Niet ingelogd: vraag om account aan te maken
@@ -1369,7 +1399,7 @@ async function buildTestCompletionMessage(
   }
 
   if (isLoggedIn) {
-    response += `📄 Bekijk je volledige rapport:\n${process.env.NEXTAUTH_URL}/rapport\n\n_Typ 0 voor menu_`
+    response += `📄 Klik op "Bekijk rapport" hieronder voor je volledige overzicht.`
   }
 
   return response
