@@ -5,10 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { signIn } from "next-auth/react"
 import Link from "next/link"
 import { GerAvatar } from "@/components/GerAvatar"
+import { useToast } from "@/components/ui/Toast"
 
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { showSuccess, showError } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [formData, setFormData] = useState({
@@ -39,9 +41,12 @@ function LoginForm() {
       }
 
       // Redirect naar callbackUrl of dashboard
+      showSuccess("Je bent ingelogd!")
       router.push(callbackUrl)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Er ging iets mis")
+      const errorMessage = err instanceof Error ? err.message : "Er ging iets mis"
+      setError(errorMessage)
+      showError(errorMessage)
     } finally {
       setIsLoading(false)
     }

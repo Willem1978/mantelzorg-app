@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
 import { SmileyGroup, ResultSmiley } from "@/components/ui"
+import { useToast } from "@/components/ui/Toast"
 
 // Korte maandelijkse check-in vragen (NEE/SOMS/JA stijl)
 // B1 taalgebruik - korte, eenvoudige zinnen
@@ -51,6 +52,7 @@ const checkInQuestions = [
 
 export default function CheckInPage() {
   const router = useRouter()
+  const { showSuccess, showError } = useToast()
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [selectedOptions, setSelectedOptions] = useState<string[]>([])
@@ -125,15 +127,21 @@ export default function CheckInPage() {
   const handleComplete = async () => {
     setIsSaving(true)
     try {
-      await fetch("/api/check-in", {
+      const response = await fetch("/api/check-in", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answers }),
       })
+
+      if (!response.ok) {
+        throw new Error("Opslaan mislukt")
+      }
+
+      showSuccess("Check-in opgeslagen!")
       router.push("/dashboard")
     } catch (error) {
       console.error("Error saving check-in:", error)
-      router.push("/dashboard")
+      showError("Er ging iets mis. Probeer het opnieuw.")
     } finally {
       setIsSaving(false)
     }

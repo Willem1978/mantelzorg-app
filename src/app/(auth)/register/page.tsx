@@ -6,6 +6,7 @@ import { signIn } from "next-auth/react"
 import Link from "next/link"
 import { AddressSearch, AddressInfo } from "@/components/ui/AddressSearch"
 import { GerAvatar } from "@/components/GerAvatar"
+import { useToast } from "@/components/ui/Toast"
 
 const RELATIE_OPTIES = [
   "Partner",
@@ -20,6 +21,7 @@ const RELATIE_OPTIES = [
 
 export default function RegisterPage() {
   const router = useRouter()
+  const { showSuccess, showError } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [step, setStep] = useState(1)
@@ -172,13 +174,17 @@ export default function RegisterPage() {
       })
 
       if (signInResult?.error) {
+        showSuccess("Account aangemaakt! Log nu in.")
         router.push("/login?registered=true")
         return
       }
 
+      showSuccess("Welkom! Je account is klaar.")
       router.push("/dashboard")
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Er ging iets mis")
+      const errorMessage = err instanceof Error ? err.message : "Er ging iets mis"
+      setError(errorMessage)
+      showError(errorMessage)
     } finally {
       setIsLoading(false)
     }
