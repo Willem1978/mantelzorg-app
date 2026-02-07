@@ -325,58 +325,81 @@ function DashboardContent() {
       {/* SECTIE 1: Jouw Score Overzicht */}
       {data?.test?.hasTest ? (
         <section className="mb-8">
-          {/* Score Card - Clean Design */}
-          <div
-            className={cn(
-              "ker-card overflow-hidden",
-              data.test.niveau === "LAAG" && "border-[var(--accent-green)]",
-              data.test.niveau === "GEMIDDELD" && "border-[var(--accent-amber)]",
-              data.test.niveau === "HOOG" && "border-[var(--accent-red)]"
-            )}
-          >
-            {/* Compact Header met Score */}
-            <div className="flex items-center gap-4">
-              {/* Score cirkel - prominent */}
-              <div
+          {/* Score Card met Thermometer */}
+          <div className="ker-card overflow-hidden">
+            {/* Header: Titel en datum */}
+            <div className="flex items-center justify-between mb-4">
+              <h2
                 className={cn(
-                  "w-16 h-16 rounded-full flex flex-col items-center justify-center flex-shrink-0",
-                  data.test.niveau === "LAAG" && "bg-[var(--accent-green)] text-white",
-                  data.test.niveau === "GEMIDDELD" && "bg-[var(--accent-amber)] text-white",
-                  data.test.niveau === "HOOG" && "bg-[var(--accent-red)] text-white"
+                  "font-bold text-lg",
+                  data.test.niveau === "LAAG" && "text-[var(--accent-green)]",
+                  data.test.niveau === "GEMIDDELD" && "text-[var(--accent-amber)]",
+                  data.test.niveau === "HOOG" && "text-[var(--accent-red)]"
                 )}
               >
-                <span className="text-xl font-bold leading-none">{data.test.score}</span>
-                <span className="text-[10px] opacity-80">/24</span>
-              </div>
+                {data.test.niveau === "LAAG" && "Lage belasting"}
+                {data.test.niveau === "GEMIDDELD" && "Gemiddelde belasting"}
+                {data.test.niveau === "HOOG" && "Hoge belasting"}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {data.test.daysSinceTest === 0 ? "Vandaag" : `${data.test.daysSinceTest}d geleden`}
+                {data.test.trend && (
+                  <span className="ml-1">
+                    {data.test.trend === "improved" && "📈"}
+                    {data.test.trend === "worse" && "📉"}
+                    {data.test.trend === "same" && "➡️"}
+                  </span>
+                )}
+              </p>
+            </div>
 
-              {/* Titel en meta */}
-              <div className="flex-1 min-w-0">
-                <h2
+            {/* Thermometer */}
+            <div className="relative">
+              {/* Score label boven thermometer */}
+              <div className="flex justify-between items-end mb-2">
+                <span
                   className={cn(
-                    "font-bold text-lg",
+                    "text-3xl font-bold",
                     data.test.niveau === "LAAG" && "text-[var(--accent-green)]",
                     data.test.niveau === "GEMIDDELD" && "text-[var(--accent-amber)]",
                     data.test.niveau === "HOOG" && "text-[var(--accent-red)]"
                   )}
                 >
-                  {data.test.niveau === "LAAG" && "Lage belasting"}
-                  {data.test.niveau === "GEMIDDELD" && "Gemiddelde belasting"}
-                  {data.test.niveau === "HOOG" && "Hoge belasting"}
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  {data.test.daysSinceTest === 0 ? "Vandaag" : `${data.test.daysSinceTest} dagen geleden`}
-                  {data.test.trend && (
-                    <span className="ml-2">
-                      {data.test.trend === "improved" && "📈"}
-                      {data.test.trend === "worse" && "📉"}
-                      {data.test.trend === "same" && "➡️"}
-                    </span>
+                  {data.test.score}
+                  <span className="text-lg font-normal text-muted-foreground">/24</span>
+                </span>
+              </div>
+
+              {/* Thermometer balk */}
+              <div className="relative h-6 bg-muted rounded-full overflow-hidden">
+                {/* Gevulde balk */}
+                <div
+                  className={cn(
+                    "absolute left-0 top-0 h-full rounded-full transition-all duration-500",
+                    data.test.niveau === "LAAG" && "bg-[var(--accent-green)]",
+                    data.test.niveau === "GEMIDDELD" && "bg-[var(--accent-amber)]",
+                    data.test.niveau === "HOOG" && "bg-[var(--accent-red)]"
                   )}
-                </p>
+                  style={{ width: `${((data.test.score || 0) / 24) * 100}%` }}
+                />
+                {/* Streepjes voor zones */}
+                <div className="absolute inset-0 flex">
+                  <div className="flex-1 border-r border-white/30" /> {/* 0-8 groen */}
+                  <div className="flex-1 border-r border-white/30" /> {/* 9-16 oranje */}
+                  <div className="flex-1" /> {/* 17-24 rood */}
+                </div>
+              </div>
+
+              {/* Labels onder thermometer */}
+              <div className="flex justify-between mt-1 text-[10px] text-muted-foreground">
+                <span>0</span>
+                <span>8</span>
+                <span>16</span>
+                <span>24</span>
               </div>
             </div>
 
-            {/* Zorgtaken verdeling - compacter */}
+            {/* Zorgtaken verdeling */}
             {(data.test.zorgtaken?.length || 0) > 0 && (
               <div className="grid grid-cols-3 gap-2 text-center mt-4 pt-4 border-t border-border/50">
                 <div>

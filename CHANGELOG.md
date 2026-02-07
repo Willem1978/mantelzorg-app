@@ -5,6 +5,18 @@ Alle belangrijke wijzigingen aan MantelBuddy worden hier gedocumenteerd.
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.0.0/),
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [1.5.0] - 2025-02-07
+
+### Toegevoegd
+- **Dashboard thermometer**: Score wordt nu getoond als thermometer/voortgangsbalk
+  - Balk wordt gevuld op basis van score (bijv. 13/24 = 54% gevuld)
+  - Kleur verandert per niveau: groen (0-8), oranje (9-16), rood (17-24)
+  - Streepjes tonen de zone-grenzen
+  - Labels 0, 8, 16, 24 onder de balk
+
+### Gewijzigd
+- **Dashboard layout**: Score prominent boven thermometer, titel en datum in header
+
 ## [1.4.4] - 2025-02-07
 
 ### Gewijzigd
