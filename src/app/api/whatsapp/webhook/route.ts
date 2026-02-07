@@ -715,18 +715,15 @@ async function handleHulpSession(
       })
 
       clearHulpSession(phoneNumber)
-      const menuButton = [{ id: 'menu', title: '📋 Menu' }]
 
       if (hulpbronnen.length === 0) {
         return {
-          response: `😔 Geen hulpbronnen gevonden voor "${soortHulp.naam}"${gemeente ? ` in ${gemeente}` : ''}.\n\n📞 Bel de Mantelzorglijn: 030-760 60 55\nZij kunnen je verder helpen!`,
-          quickReplyButtons: menuButton,
+          response: `😔 Geen hulpbronnen gevonden voor "${soortHulp.naam}"${gemeente ? ` in ${gemeente}` : ''}.\n\n📞 Bel de Mantelzorglijn: 030-760 60 55\nZij kunnen je verder helpen!\n\n_Typ 0 voor menu_`,
         }
       }
 
       return {
-        response: formatHulpResults(soortHulp.naam, soortHulp.emoji, hulpbronnen, gemeente),
-        quickReplyButtons: menuButton,
+        response: formatHulpResults(soortHulp.naam, soortHulp.emoji, hulpbronnen, gemeente) + `\n\n_Typ 0 voor menu_`,
       }
     }
 
@@ -760,18 +757,15 @@ async function handleHulpSession(
       })
 
       clearHulpSession(phoneNumber)
-      const menuButton = [{ id: 'menu', title: '📋 Menu' }]
 
       if (hulpbronnen.length === 0) {
         return {
-          response: `😔 Geen hulpbronnen gevonden voor "${onderdeelTaak.naam}"${gemeente ? ` in ${gemeente}` : ''}.\n\n📞 Bel de Mantelzorglijn: 030-760 60 55\nZij kunnen je verder helpen!`,
-          quickReplyButtons: menuButton,
+          response: `😔 Geen hulpbronnen gevonden voor "${onderdeelTaak.naam}"${gemeente ? ` in ${gemeente}` : ''}.\n\n📞 Bel de Mantelzorglijn: 030-760 60 55\nZij kunnen je verder helpen!\n\n_Typ 0 voor menu_`,
         }
       }
 
       return {
-        response: formatHulpResults(onderdeelTaak.naam, onderdeelTaak.emoji, hulpbronnen, gemeente),
-        quickReplyButtons: menuButton,
+        response: formatHulpResults(onderdeelTaak.naam, onderdeelTaak.emoji, hulpbronnen, gemeente) + `\n\n_Typ 0 voor menu_`,
       }
     }
 
@@ -847,12 +841,40 @@ async function handleLoggedInUser(
     orderBy: { completedAt: 'desc' },
   })
 
-  // Opnieuw test doen - check ook "1" als er al een test is gedaan
-  // (Na score zien zijn buttons: 1. Opnieuw testen, 2. Menu)
-  const wantsNewTest = command === 'opnieuw' || command === 'nieuwe test' || command === 'hertest' ||
-    (command === '1' && lastTest)  // "1" na score zien = opnieuw testen
+  // ===========================================
+  // PRIORITEIT: BUTTON ID's (rapport, menu, opnieuw)
+  // Deze hebben voorrang op standaard menu nummers
+  // ===========================================
 
-  if (wantsNewTest) {
+  // Rapport bekijken (vanuit test voltooiing buttons)
+  if (command === 'rapport' || command === '📄 bekijk rapport') {
+    const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
+
+    // Genereer magic link voor directe toegang naar rapport
+    const token = generateShortToken()
+    await prisma.magicLinkToken.create({
+      data: {
+        token,
+        userId: caregiver.user.id,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 uur
+      },
+    })
+
+    // Magic link met redirect parameter naar rapport
+    const rapportUrl = `${baseUrl}/m/${token}?redirect=/rapport`
+
+    const response = `📄 *Jouw Rapport*\n\nKlik op de link om je volledige rapport te bekijken:\n\n👉 ${rapportUrl}\n\n_Link is 24 uur geldig_\n\n_Typ 0 voor menu_`
+
+    return { response }
+  }
+
+  // Menu (ook via button) - VOOR de nummers checken
+  if (command === '0' || command === 'menu' || command === 'start' || command === '📋 menu') {
+    return { response: await getWelcomeBackMessage(caregiver, lastTest) }
+  }
+
+  // Opnieuw testen (button ID)
+  if (command === 'opnieuw' || command === 'nieuwe test' || command === 'hertest' || command === '🔄 opnieuw testen') {
     const session = startTestSession(phoneNumber)
     const firstQuestion = getCurrentQuestion(session)
 
@@ -860,12 +882,15 @@ async function handleLoggedInUser(
 
     session.currentStep = 'questions'
 
-    // Start met interactieve buttons
     return {
       response: questionText,
       quickReplyButtons: testAnswerButtons,
     }
   }
+
+  // ===========================================
+  // STANDAARD MENU NUMMERS (1-5)
+  // ===========================================
 
   // 1. Balanstest / Mijn Score
   if (
@@ -884,7 +909,6 @@ async function handleLoggedInUser(
 
       session.currentStep = 'questions'
 
-      // Start met interactieve buttons
       return {
         response: questionText,
         quickReplyButtons: testAnswerButtons,
@@ -917,12 +941,9 @@ async function handleLoggedInUser(
 
     response += `📱 Bekijk volledig rapport:\n${dashboardUrl}\n\n`
 
-    // Buttons voor opnieuw test en menu (1 = opnieuw, 2 = menu)
-    // Let op: als gebruiker "1" typt gaat dit opnieuw naar deze functie,
-    // maar omdat er al een test is, moeten we de score tonen MET optie opnieuw
+    // Button voor opnieuw testen, menu via 0
     const scoreButtons = [
       { id: 'opnieuw', title: '🔄 Opnieuw testen' },
-      { id: 'menu', title: '📋 Menu' },
     ]
 
     return { response, quickReplyButtons: scoreButtons }
@@ -958,12 +979,9 @@ async function handleLoggedInUser(
       orderBy: [{ dueDate: 'asc' }, { priority: 'desc' }],
     })
 
-    const menuButton = [{ id: 'menu', title: '📋 Menu' }]
-
     if (tasks.length === 0) {
       return {
-        response: `🎉 *Geen open taken!*\n\nGoed bezig!`,
-        quickReplyButtons: menuButton,
+        response: `🎉 *Geen open taken!*\n\nGoed bezig!\n\n_Typ 0 voor menu_`,
       }
     }
 
@@ -975,31 +993,9 @@ async function handleLoggedInUser(
       const priorityIcon = task.priority === 'HIGH' ? '🔴' : task.priority === 'MEDIUM' ? '🟡' : ''
       response += `${i + 1}. ${priorityIcon} ${task.title}\n   📅 ${dueDate}\n\n`
     })
+    response += `_Typ 0 voor menu_`
 
-    return { response, quickReplyButtons: menuButton }
-  }
-
-  // Rapport bekijken (vanuit test voltooiing buttons)
-  if (command === 'rapport') {
-    const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
-
-    // Genereer magic link voor directe toegang naar rapport
-    const token = generateShortToken()
-    await prisma.magicLinkToken.create({
-      data: {
-        token,
-        userId: caregiver.user.id,
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 uur
-      },
-    })
-
-    // Magic link met redirect parameter naar rapport
-    const rapportUrl = `${baseUrl}/m/${token}?redirect=/rapport`
-
-    const response = `📄 *Jouw Rapport*\n\nKlik op de link om je volledige rapport te bekijken:\n\n👉 ${rapportUrl}\n\n_Link is 24 uur geldig_`
-
-    const menuButton = [{ id: 'menu', title: '📋 Menu' }]
-    return { response, quickReplyButtons: menuButton }
+    return { response }
   }
 
   // 4. Dashboard
@@ -1058,25 +1054,16 @@ async function handleLoggedInUser(
     })
 
     const magicLink = getMagicLinkUrl(token)
-    response += `\n🔗 *Open dashboard:*\n${magicLink}\n\n⏰ _15 min geldig_`
+    response += `\n🔗 *Open dashboard:*\n${magicLink}\n\n⏰ _15 min geldig_\n\n_Typ 0 voor menu_`
 
-    // Menu button toevoegen
-    const menuButton = [{ id: 'menu', title: '📋 Menu' }]
-    return { response, quickReplyButtons: menuButton }
+    return { response }
   }
 
   // 5. Contact
   if (command === '5' || command === 'contact' || command === 'praten') {
-    const menuButton = [{ id: 'menu', title: '📋 Menu' }]
     return {
-      response: `💬 *Direct Persoonlijk Contact*\n\n📞 *Mantelzorglijn*\n   030-760 60 55\n   (ma-vr 9-17u)\n\n🚨 *Crisis / 24/7*\n   113 Zelfmoordpreventie\n   0800-0113\n\n❤️ Je staat er niet alleen voor!`,
-      quickReplyButtons: menuButton,
+      response: `💬 *Direct Persoonlijk Contact*\n\n📞 *Mantelzorglijn*\n   030-760 60 55\n   (ma-vr 9-17u)\n\n🚨 *Crisis / 24/7*\n   113 Zelfmoordpreventie\n   0800-0113\n\n❤️ Je staat er niet alleen voor!\n\n_Typ 0 voor menu_`,
     }
-  }
-
-  // Menu (ook via button)
-  if (command === '0' || command === 'menu' || command === 'start' || command === '📋 menu') {
-    return { response: await getWelcomeBackMessage(caregiver, lastTest) }
   }
 
   // Begroeting of onbekend
@@ -1140,9 +1127,6 @@ function handleGuestMenu(phoneNumber: string, input: string): {
     }
   }
 
-  // Menu button voor hergebruik
-  const menuButton = [{ id: 'menu', title: '📋 Menu' }]
-
   // 2. Account aanmaken
   if (command === '2' || command === 'account' || command === 'nieuw') {
     const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
@@ -1151,8 +1135,9 @@ function handleGuestMenu(phoneNumber: string, input: string): {
 
 Met een account bewaar ik je resultaten en geef ik persoonlijke tips.
 
-👉 ${baseUrl}/register`,
-      quickReplyButtons: menuButton,
+👉 ${baseUrl}/register
+
+_Typ 0 voor menu_`,
     }
   }
 
@@ -1164,16 +1149,16 @@ Met een account bewaar ik je resultaten en geef ik persoonlijke tips.
 
 Na inloggen wordt je WhatsApp gekoppeld.
 
-👉 ${baseUrl}/login`,
-      quickReplyButtons: menuButton,
+👉 ${baseUrl}/login
+
+_Typ 0 voor menu_`,
     }
   }
 
   // 4. Direct spreken
   if (command === '4' || command === 'praten' || command === 'contact' || command === 'hulp') {
     return {
-      response: `💬 *Direct met iemand praten*\n\nSoms wil je gewoon even je verhaal kwijt. Dat begrijp ik. ❤️\n\n📞 *Mantelzorglijn*\n   030-760 60 55\n   (ma-vr 9:00-17:00)\n   _Gratis en anoniem_\n\n🚨 *Crisis / 24 uur*\n   113 Zelfmoordpreventie\n   0800-0113 (gratis)\n\nJe staat er niet alleen voor!`,
-      quickReplyButtons: menuButton,
+      response: `💬 *Direct met iemand praten*\n\nSoms wil je gewoon even je verhaal kwijt. Dat begrijp ik. ❤️\n\n📞 *Mantelzorglijn*\n   030-760 60 55\n   (ma-vr 9:00-17:00)\n   _Gratis en anoniem_\n\n🚨 *Crisis / 24 uur*\n   113 Zelfmoordpreventie\n   0800-0113 (gratis)\n\nJe staat er niet alleen voor!\n\n_Typ 0 voor menu_`,
     }
   }
 
@@ -1251,10 +1236,9 @@ async function finishTestAndRespond(
 
     const response = await buildTestCompletionMessage(session, score, level, true)
 
-    // Buttons voor vervolgacties na test voltooiing
+    // Na test: toon alleen rapport optie, menu via 0
     const completionButtons = [
       { id: 'rapport', title: '📄 Bekijk rapport' },
-      { id: 'menu', title: '📋 Menu' },
     ]
 
     return { response, quickReplyButtons: completionButtons }
@@ -1547,10 +1531,9 @@ async function sendResponse(
       const numEmoji = numEmojis[index] || `${index + 1}.`
       messageWithButtons += `${numEmoji} ${btn.title}\n`
     })
-    // Dynamisch de keuze-opties tonen op basis van aantal buttons
-    const numOptions = quickReplyButtons.length
-    const optionsText = numOptions === 2 ? '1 of 2' : `1, 2${numOptions > 2 ? ` of ${numOptions}` : ''}`
-    messageWithButtons += `\n_Typ je keuze (${optionsText})_`
+    // Voeg altijd menu optie toe met 0
+    messageWithButtons += `\n0️⃣ Terug naar menu\n`
+    messageWithButtons += `\n_Typ het nummer van je keuze_`
     return sendTwiML(messageWithButtons)
   }
 
