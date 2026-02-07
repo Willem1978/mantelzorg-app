@@ -1509,11 +1509,15 @@ async function sendResponse(
   // (Interactieve buttons werken niet met Twilio Sandbox)
   if (quickReplyButtons && quickReplyButtons.length > 0) {
     let messageWithButtons = response + '\n\n'
+    const numEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣']
     quickReplyButtons.forEach((btn, index) => {
-      const numEmoji = ['1️⃣', '2️⃣', '3️⃣'][index] || `${index + 1}.`
+      const numEmoji = numEmojis[index] || `${index + 1}.`
       messageWithButtons += `${numEmoji} ${btn.title}\n`
     })
-    messageWithButtons += '\n_Typ je keuze (1, 2 of 3)_'
+    // Dynamisch de keuze-opties tonen op basis van aantal buttons
+    const numOptions = quickReplyButtons.length
+    const optionsText = numOptions === 2 ? '1 of 2' : `1, 2${numOptions > 2 ? ` of ${numOptions}` : ''}`
+    messageWithButtons += `\n_Typ je keuze (${optionsText})_`
     return sendTwiML(messageWithButtons)
   }
 

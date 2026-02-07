@@ -159,7 +159,8 @@ function StreetSearch({ label, value, onChange, placeholder }: StreetSearchProps
 // ============================================
 
 function formatPhoneNumber(phone: string): string {
-  if (!phone) return "-"
+  // Check voor lege, null, undefined of "undefined" string waarden
+  if (!phone || phone === "undefined" || phone === "null") return "-"
   // Verwijder whatsapp: prefix indien aanwezig
   const cleaned = phone.replace("whatsapp:", "")
   // Format +316... naar 06...

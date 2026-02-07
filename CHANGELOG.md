@@ -5,6 +5,13 @@ Alle belangrijke wijzigingen aan MantelBuddy worden hier gedocumenteerd.
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.0.0/),
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [1.5.3] - 2025-02-07
+
+### Gewijzigd
+- **Test/Check-in footer**: Vereenvoudigd - alleen "terug" knop, MB logo en actieknoppen verwijderd
+- **WhatsApp berichten**: Dynamische nummering ("Typ je keuze 1 of 2" ipv hardcoded "1, 2 of 3")
+- **Profiel pagina**: Telefoonnummer toont "-" ipv "undefined" wanneer niet ingevuld
+
 ## [1.5.2] - 2025-02-07
 
 ### Opgelost
