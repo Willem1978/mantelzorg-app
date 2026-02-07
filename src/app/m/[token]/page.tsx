@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
+import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import { GerAvatar } from '@/components/GerAvatar'
 
@@ -10,10 +10,26 @@ import { GerAvatar } from '@/components/GerAvatar'
  * Verifieert token en logt gebruiker automatisch in
  */
 export default function MagicLinkPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <MagicLinkContent />
+    </Suspense>
+  )
+}
+
+function MagicLinkContent() {
   const router = useRouter()
   const params = useParams()
+  const searchParams = useSearchParams()
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [error, setError] = useState('')
+
+  // Haal redirect parameter op (bijv. /rapport)
+  const redirectTo = searchParams.get('redirect') || '/dashboard'
 
   useEffect(() => {
     async function verifyAndLogin() {
@@ -56,9 +72,9 @@ export default function MagicLinkPage() {
 
         setStatus('success')
 
-        // Redirect naar dashboard na korte delay
+        // Redirect naar opgegeven pagina of dashboard na korte delay
         setTimeout(() => {
-          router.push('/dashboard')
+          router.push(redirectTo)
         }, 1000)
 
       } catch (err) {
@@ -69,7 +85,7 @@ export default function MagicLinkPage() {
     }
 
     verifyAndLogin()
-  }, [params.token, router])
+  }, [params.token, router, redirectTo])
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
@@ -97,7 +113,7 @@ export default function MagicLinkPage() {
                 </svg>
               </div>
               <h1 className="text-xl font-bold text-foreground mb-2">Gelukt!</h1>
-              <p className="text-muted-foreground">Je gaat naar je dashboard...</p>
+              <p className="text-muted-foreground">Je gaat naar je {redirectTo === '/rapport' ? 'rapport' : 'dashboard'}...</p>
             </>
           )}
 

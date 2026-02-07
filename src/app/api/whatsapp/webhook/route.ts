@@ -987,18 +987,18 @@ async function handleLoggedInUser(
   if (command === 'rapport') {
     const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
 
-    // Genereer magic link voor directe toegang
+    // Genereer magic link voor directe toegang naar rapport
     const token = generateShortToken()
     await prisma.magicLinkToken.create({
       data: {
         token,
         userId: caregiver.user.id,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 uur
-        redirectTo: '/rapport',
       },
     })
 
-    const rapportUrl = `${baseUrl}/m/${token}`
+    // Magic link met redirect parameter naar rapport
+    const rapportUrl = `${baseUrl}/m/${token}?redirect=/rapport`
 
     const response = `📄 *Jouw Rapport*\n\nKlik op de link om je volledige rapport te bekijken:\n\n👉 ${rapportUrl}\n\n_Link is 24 uur geldig_`
 
