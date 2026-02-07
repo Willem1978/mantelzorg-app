@@ -89,25 +89,40 @@ interface DashboardData {
 }
 
 // Mapping van taak namen naar categorieën voor hulpbronnen
+// Ondersteunt variaties uit web test, WhatsApp test en database
 const TAAK_NAAR_CATEGORIE: Record<string, string> = {
+  // Persoonlijke verzorging
   'Wassen/aankleden': 'Persoonlijke verzorging',
   'Persoonlijke verzorging': 'Persoonlijke verzorging',
   'Toiletgang': 'Persoonlijke verzorging',
   'Medicijnen': 'Persoonlijke verzorging',
   'Toezicht': 'Persoonlijke verzorging',
   'Medische zorg': 'Persoonlijke verzorging',
+  // Huishoudelijke taken
   'Huishouden': 'Huishoudelijke taken',
   'Huishoudelijke taken': 'Huishoudelijke taken',
+  // Vervoer
   'Vervoer': 'Vervoer',
   'Vervoer/begeleiding': 'Vervoer',
+  // Administratie
   'Administratie': 'Administratie en aanvragen',
   'Administratie en aanvragen': 'Administratie en aanvragen',
+  // Sociaal contact
   'Sociaal contact': 'Sociaal contact en activiteiten',
   'Sociaal contact en activiteiten': 'Sociaal contact en activiteiten',
   'Activiteiten': 'Sociaal contact en activiteiten',
+  // Maaltijden - alle variaties
   'Maaltijden': 'Bereiden en/of nuttigen van maaltijden',
+  'Eten maken': 'Bereiden en/of nuttigen van maaltijden',
+  'Eten en drinken': 'Bereiden en/of nuttigen van maaltijden',
+  // Boodschappen
   'Boodschappen': 'Boodschappen',
+  // Klusjes - alle variaties
   'Klusjes': 'Klusjes in en om het huis',
+  'Klusjes in huis': 'Klusjes in en om het huis',
+  'Klusjes in en om huis': 'Klusjes in en om het huis',
+  'Klusjes in/om huis': 'Klusjes in en om het huis',
+  'Klusjes in en om het huis': 'Klusjes in en om het huis',
 }
 
 // Wrapper component voor Suspense boundary
@@ -310,34 +325,35 @@ function DashboardContent() {
       {/* SECTIE 1: Jouw Score Overzicht */}
       {data?.test?.hasTest ? (
         <section className="mb-8">
+          {/* Score Card - Clean Design */}
           <div
             className={cn(
-              "ker-card",
-              data.test.niveau === "LAAG" && "bg-[var(--accent-green-bg)] border-[var(--accent-green)]",
-              data.test.niveau === "GEMIDDELD" && "bg-[var(--accent-amber-bg)] border-[var(--accent-amber)]",
-              data.test.niveau === "HOOG" && "bg-[var(--accent-red-bg)] border-[var(--accent-red)]"
+              "ker-card overflow-hidden",
+              data.test.niveau === "LAAG" && "border-[var(--accent-green)]",
+              data.test.niveau === "GEMIDDELD" && "border-[var(--accent-amber)]",
+              data.test.niveau === "HOOG" && "border-[var(--accent-red)]"
             )}
           >
-            {/* Score Header met grote score */}
-            <div className="flex items-center gap-4 mb-4">
-              <div className="flex-shrink-0">
-                {/* Score cirkel met nummer */}
-                <div
-                  className={cn(
-                    "w-20 h-20 rounded-full flex flex-col items-center justify-center",
-                    data.test.niveau === "LAAG" && "bg-[var(--accent-green)] text-white",
-                    data.test.niveau === "GEMIDDELD" && "bg-[var(--accent-amber)] text-white",
-                    data.test.niveau === "HOOG" && "bg-[var(--accent-red)] text-white"
-                  )}
-                >
-                  <span className="text-2xl font-bold">{data.test.score}</span>
-                  <span className="text-xs opacity-80">/24</span>
-                </div>
+            {/* Compact Header met Score */}
+            <div className="flex items-center gap-4">
+              {/* Score cirkel - prominent */}
+              <div
+                className={cn(
+                  "w-16 h-16 rounded-full flex flex-col items-center justify-center flex-shrink-0",
+                  data.test.niveau === "LAAG" && "bg-[var(--accent-green)] text-white",
+                  data.test.niveau === "GEMIDDELD" && "bg-[var(--accent-amber)] text-white",
+                  data.test.niveau === "HOOG" && "bg-[var(--accent-red)] text-white"
+                )}
+              >
+                <span className="text-xl font-bold leading-none">{data.test.score}</span>
+                <span className="text-[10px] opacity-80">/24</span>
               </div>
-              <div className="flex-1">
+
+              {/* Titel en meta */}
+              <div className="flex-1 min-w-0">
                 <h2
                   className={cn(
-                    "font-bold text-xl",
+                    "font-bold text-lg",
                     data.test.niveau === "LAAG" && "text-[var(--accent-green)]",
                     data.test.niveau === "GEMIDDELD" && "text-[var(--accent-amber)]",
                     data.test.niveau === "HOOG" && "text-[var(--accent-red)]"
@@ -348,65 +364,46 @@ function DashboardContent() {
                   {data.test.niveau === "HOOG" && "Hoge belasting"}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  {data.test.daysSinceTest} dagen geleden
+                  {data.test.daysSinceTest === 0 ? "Vandaag" : `${data.test.daysSinceTest} dagen geleden`}
                   {data.test.trend && (
                     <span className="ml-2">
-                      {data.test.trend === "improved" && "📈 Verbeterd"}
-                      {data.test.trend === "worse" && "📉 Aandacht nodig"}
-                      {data.test.trend === "same" && "➡️ Stabiel"}
+                      {data.test.trend === "improved" && "📈"}
+                      {data.test.trend === "worse" && "📉"}
+                      {data.test.trend === "same" && "➡️"}
                     </span>
                   )}
                 </p>
-                <Link
-                  href="/rapport"
-                  className="inline-flex items-center gap-1 mt-2 px-3 py-1.5 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-opacity"
-                >
-                  Bekijk rapport
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </Link>
               </div>
             </div>
 
-            {/* Score uitleg */}
-            <div className="bg-white/50 rounded-lg p-3 mb-4">
-              <p className="text-sm text-foreground">
-                {data.test.niveau === "LAAG" && (
-                  <>
-                    <strong>Score 0-8:</strong> Je houdt het goed vol. Blijf alert op je grenzen.
-                  </>
-                )}
-                {data.test.niveau === "GEMIDDELD" && (
-                  <>
-                    <strong>Score 9-16:</strong> Je ervaart behoorlijke druk. Overweeg hulp te zoeken voor de zwaardere taken.
-                  </>
-                )}
-                {data.test.niveau === "HOOG" && (
-                  <>
-                    <strong>Score 17-24:</strong> Je belasting is hoog. Het is belangrijk om nu hulp te zoeken.
-                  </>
-                )}
-              </p>
-            </div>
-
-            {/* Zorgtaken verdeling */}
+            {/* Zorgtaken verdeling - compacter */}
             {(data.test.zorgtaken?.length || 0) > 0 && (
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="bg-white/50 rounded-lg p-2">
-                  <p className="text-xl font-bold text-[var(--accent-green)]">{lichtTaken.length}</p>
+              <div className="grid grid-cols-3 gap-2 text-center mt-4 pt-4 border-t border-border/50">
+                <div>
+                  <p className="text-lg font-bold text-[var(--accent-green)]">{lichtTaken.length}</p>
                   <p className="text-xs text-muted-foreground">Gaat goed</p>
                 </div>
-                <div className="bg-white/50 rounded-lg p-2">
-                  <p className="text-xl font-bold text-[var(--accent-amber)]">{matigTaken.length}</p>
-                  <p className="text-xs text-muted-foreground">Matig zwaar</p>
+                <div>
+                  <p className="text-lg font-bold text-[var(--accent-amber)]">{matigTaken.length}</p>
+                  <p className="text-xs text-muted-foreground">Matig</p>
                 </div>
-                <div className="bg-white/50 rounded-lg p-2">
-                  <p className="text-xl font-bold text-[var(--accent-red)]">{zwareTaken.length}</p>
+                <div>
+                  <p className="text-lg font-bold text-[var(--accent-red)]">{zwareTaken.length}</p>
                   <p className="text-xs text-muted-foreground">Zwaar</p>
                 </div>
               </div>
             )}
+
+            {/* Bekijk rapport link - onderaan */}
+            <Link
+              href="/rapport"
+              className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-border/50 text-sm font-medium text-primary hover:underline"
+            >
+              Bekijk volledig rapport
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
           </div>
 
           {/* Urgentie melding bij hoge belasting */}

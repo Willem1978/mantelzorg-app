@@ -5,6 +5,17 @@ Alle belangrijke wijzigingen aan MantelBuddy worden hier gedocumenteerd.
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.0.0/),
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [1.4.2] - 2025-02-07
+
+### Gewijzigd
+- **Dashboard score blok**: Cleaner design - compacter, overzichtelijker
+- **Dashboard**: "Bekijk volledig rapport" link onderaan score blok ipv midden
+- **Taak kleuren**: Klusjes (zwaar) krijgt nu rode arcering, Huishouden/Eten maken (matig) krijgen oranje arcering
+
+### Opgelost
+- Fix: Taaknamen mapping uitgebreid voor alle variaties (Eten maken, Klusjes in huis, etc.)
+- Fix: Zorgtaken in hulpvragen pagina toonden geen kleur bij bepaalde taaknamen
+
 ## [1.4.1] - 2025-02-07
 
 ### Gewijzigd

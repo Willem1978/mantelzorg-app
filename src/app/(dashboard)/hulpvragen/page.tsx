@@ -80,25 +80,40 @@ const CATEGORIEEN_MANTELZORGER = [
 ]
 
 // Mapping van taak namen naar categorieën
+// Ondersteunt variaties uit web test, WhatsApp test en database
 const TAAK_NAAR_CATEGORIE: Record<string, string> = {
+  // Persoonlijke verzorging
   'Wassen/aankleden': 'Persoonlijke verzorging',
   'Persoonlijke verzorging': 'Persoonlijke verzorging',
   'Toiletgang': 'Persoonlijke verzorging',
   'Medicijnen': 'Persoonlijke verzorging',
   'Toezicht': 'Persoonlijke verzorging',
   'Medische zorg': 'Persoonlijke verzorging',
+  // Huishoudelijke taken
   'Huishouden': 'Huishoudelijke taken',
   'Huishoudelijke taken': 'Huishoudelijke taken',
+  // Vervoer
   'Vervoer': 'Vervoer',
   'Vervoer/begeleiding': 'Vervoer',
+  // Administratie
   'Administratie': 'Administratie en aanvragen',
   'Administratie en aanvragen': 'Administratie en aanvragen',
+  // Sociaal contact
   'Sociaal contact': 'Sociaal contact en activiteiten',
   'Sociaal contact en activiteiten': 'Sociaal contact en activiteiten',
   'Activiteiten': 'Sociaal contact en activiteiten',
+  // Maaltijden - alle variaties
   'Maaltijden': 'Bereiden en/of nuttigen van maaltijden',
+  'Eten maken': 'Bereiden en/of nuttigen van maaltijden',
+  'Eten en drinken': 'Bereiden en/of nuttigen van maaltijden',
+  // Boodschappen
   'Boodschappen': 'Boodschappen',
+  // Klusjes - alle variaties
   'Klusjes': 'Klusjes in en om het huis',
+  'Klusjes in huis': 'Klusjes in en om het huis',
+  'Klusjes in en om huis': 'Klusjes in en om het huis',
+  'Klusjes in/om huis': 'Klusjes in en om het huis',
+  'Klusjes in en om het huis': 'Klusjes in en om het huis',
 }
 
 // Hulpvraag categorieën
