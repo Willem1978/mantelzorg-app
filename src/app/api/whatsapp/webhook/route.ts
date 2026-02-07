@@ -887,6 +887,9 @@ async function handleLoggedInUser(
       ? new Date(lastTest.completedAt).toLocaleDateString('nl-NL')
       : 'Onbekend'
 
+    const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
+    const dashboardUrl = `${baseUrl}/login`
+
     let response = `📊 *Jouw Balansscore*\n\n`
     response += `${levelEmoji} Belasting: *${lastTest.belastingNiveau.toLowerCase()}*\n`
     response += `📈 Score: *${lastTest.totaleBelastingScore}/24*\n`
@@ -895,6 +898,8 @@ async function handleLoggedInUser(
     if (lastTest.belastingNiveau === 'HOOG') {
       response += `⚠️ Je belasting is hoog. Zoek hulp!\n\n`
     }
+
+    response += `📱 Bekijk volledig rapport:\n${dashboardUrl}\n\n`
 
     // Buttons voor opnieuw test en menu
     const scoreButtons = [

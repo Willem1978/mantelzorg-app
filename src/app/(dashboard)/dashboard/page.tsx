@@ -342,7 +342,7 @@ function DashboardContent() {
                 {data.test.niveau === "HOOG" && "Hoge belasting"}
               </h2>
               <p className="text-sm text-muted-foreground">
-                {data.test.daysSinceTest === 0 ? "Vandaag" : `${data.test.daysSinceTest}d geleden`}
+                Laatste meting: {data.test.daysSinceTest === 0 ? "Vandaag" : `${data.test.daysSinceTest}d geleden`}
                 {data.test.trend && (
                   <span className="ml-1">
                     {data.test.trend === "improved" && "📈"}
@@ -390,13 +390,6 @@ function DashboardContent() {
                 </div>
               </div>
 
-              {/* Labels onder thermometer */}
-              <div className="flex justify-between mt-1 text-[10px] text-muted-foreground">
-                <span>0</span>
-                <span>8</span>
-                <span>16</span>
-                <span>24</span>
-              </div>
             </div>
 
             {/* Zorgtaken verdeling */}

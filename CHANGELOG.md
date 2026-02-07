@@ -5,6 +5,12 @@ Alle belangrijke wijzigingen aan MantelBuddy worden hier gedocumenteerd.
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.0.0/),
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [1.5.4] - 2025-02-07
+
+### Gewijzigd
+- **Dashboard thermometer**: Nummering (0/8/16/24) verwijderd, "Laatste meting:" toegevoegd bij datum
+- **WhatsApp balansscore**: Link naar dashboard/rapport toegevoegd
+
 ## [1.5.3] - 2025-02-07
 
 ### Gewijzigd
