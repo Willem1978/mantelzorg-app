@@ -1049,10 +1049,10 @@ export default function BelastbaarheidstestPage() {
 
             <button
               onClick={handleGegevensSubmit}
-              disabled={isSubmitting}
+              disabled={isSaving}
               className="ker-btn ker-btn-primary flex items-center gap-2"
             >
-              {isSubmitting ? "even geduld..." : "opslaan"}
+              {isSaving ? "even geduld..." : "opslaan"}
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
