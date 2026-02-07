@@ -708,7 +708,7 @@ export default function BelastbaarheidstestPage() {
 
             <button
               onClick={() => {
-                const selectedTasks = TAKEN.filter(t => taken[t.id].isGeselecteerd)
+                const selectedTasks = zorgtaken.filter(t => taken[t.id].isGeselecteerd)
                 if (selectedTasks.length > 0) {
                   setCurrentStep("taken-details")
                 } else {
