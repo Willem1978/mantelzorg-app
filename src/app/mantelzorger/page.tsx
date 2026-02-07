@@ -83,9 +83,9 @@ export default function MantelzorgerHomePage() {
                   1
                 </div>
                 <div className="pt-2">
-                  <h3 className="font-bold text-foreground">Doe de balanstest</h3>
+                  <h3 className="font-bold text-foreground">Krijg snel inzicht</h3>
                   <p className="text-muted-foreground mt-1">
-                    Beantwoord vragen over je situatie en hoe je je voelt.
+                    Doe de Balanstest en zie in 10 minuten hoe het met je gaat.
                   </p>
                 </div>
               </div>
@@ -96,9 +96,9 @@ export default function MantelzorgerHomePage() {
                   2
                 </div>
                 <div className="pt-2">
-                  <h3 className="font-bold text-foreground">Krijg inzicht</h3>
+                  <h3 className="font-bold text-foreground">Vind hulp in de buurt</h3>
                   <p className="text-muted-foreground mt-1">
-                    Zie direct hoe belast je bent en wat je kunt doen.
+                    Krijg advies en vind lokale organisaties die je kunnen helpen.
                   </p>
                 </div>
               </div>
@@ -109,9 +109,9 @@ export default function MantelzorgerHomePage() {
                   3
                 </div>
                 <div className="pt-2">
-                  <h3 className="font-bold text-foreground">Vind een MantelBuddy</h3>
+                  <h3 className="font-bold text-foreground">Roep hulp in</h3>
                   <p className="text-muted-foreground mt-1">
-                    Krijg hulp van een vrijwilliger uit je buurt.
+                    Vraag betrouwbare MantelBuddy&apos;s uit de buurt om hulp bij taken.
                   </p>
                 </div>
               </div>
@@ -131,39 +131,39 @@ export default function MantelzorgerHomePage() {
                 <div className="w-12 h-12 rounded-full bg-[var(--accent-green-bg)] flex items-center justify-center mb-3">
                   <span className="text-2xl">📊</span>
                 </div>
-                <h3 className="font-bold text-foreground">Persoonlijk inzicht</h3>
+                <h3 className="font-bold text-foreground">Inzicht in belasting en taken</h3>
                 <p className="text-muted-foreground mt-1 text-sm">
-                  Begrijp hoe zwaar de mantelzorg voor jou is en volg dit over tijd.
+                  Zie direct hoe zwaar het zorgen voor jou is en welke taken je doet.
                 </p>
               </div>
 
               <div className="ker-card">
                 <div className="w-12 h-12 rounded-full bg-[var(--accent-amber-bg)] flex items-center justify-center mb-3">
-                  <span className="text-2xl">🤝</span>
+                  <span className="text-2xl">📍</span>
                 </div>
-                <h3 className="font-bold text-foreground">MantelBuddy matching</h3>
+                <h3 className="font-bold text-foreground">Hulp en advies in de buurt</h3>
                 <p className="text-muted-foreground mt-1 text-sm">
-                  Vind een betrouwbare vrijwilliger uit je buurt die je kan helpen.
+                  Vind snel lokale organisaties en krijg advies dat bij jou past.
                 </p>
               </div>
 
               <div className="ker-card">
                 <div className="w-12 h-12 rounded-full bg-[var(--primary-light)] flex items-center justify-center mb-3">
-                  <span className="text-2xl">📋</span>
+                  <span className="text-2xl">🤝</span>
                 </div>
-                <h3 className="font-bold text-foreground">Taken delen</h3>
+                <h3 className="font-bold text-foreground">Betrouwbare MantelBuddy&apos;s</h3>
                 <p className="text-muted-foreground mt-1 text-sm">
-                  Zet taken uit waar je hulp bij wilt, eenmalig of structureel.
+                  Vrijwilligers uit de buurt met beoordelingen, VOG-gescreend.
                 </p>
               </div>
 
               <div className="ker-card">
                 <div className="w-12 h-12 rounded-full bg-[var(--accent-red-bg)] flex items-center justify-center mb-3">
-                  <span className="text-2xl">📱</span>
+                  <span className="text-2xl">⚡</span>
                 </div>
-                <h3 className="font-bold text-foreground">Altijd toegankelijk</h3>
+                <h3 className="font-bold text-foreground">Snel en eenvoudig</h3>
                 <p className="text-muted-foreground mt-1 text-sm">
-                  Je rapport en hulp zijn altijd beschikbaar, ook op je telefoon.
+                  In een paar klikken hulp aanvragen bij taken die zwaar vallen.
                 </p>
               </div>
             </div>

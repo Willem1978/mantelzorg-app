@@ -45,7 +45,7 @@ export default function LandingPage() {
                     Ik ben mantelzorger
                   </h2>
                   <p className="text-muted-foreground mb-6">
-                    Krijg inzicht in je belasting, vind hulp in de buurt en kom in contact met een MantelBuddy.
+                    Krijg snel inzicht in je belasting en taken. Vind hulp en advies in de buurt. Roep hulp in van betrouwbare MantelBuddy&apos;s.
                   </p>
                   <div className="ker-btn ker-btn-primary w-full group-hover:bg-primary/90 flex items-center justify-center gap-2">
                     Ga verder
@@ -100,17 +100,17 @@ export default function LandingPage() {
                       <span className="text-sm">📊</span>
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">Doe de Balanstest</p>
-                      <p className="text-sm text-muted-foreground">Krijg inzicht in je belasting</p>
+                      <p className="font-medium text-foreground">Krijg inzicht</p>
+                      <p className="text-sm text-muted-foreground">Doe de Balanstest en zie hoe het met je gaat</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <div className="w-6 h-6 rounded-full bg-[var(--accent-amber-bg)] flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-sm">📋</span>
+                      <span className="text-sm">📍</span>
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">Zet taken uit</p>
-                      <p className="text-sm text-muted-foreground">Geef aan waar je hulp bij wilt</p>
+                      <p className="font-medium text-foreground">Vind snel hulp in de buurt</p>
+                      <p className="text-sm text-muted-foreground">Lokale organisaties en advies op maat</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -118,8 +118,8 @@ export default function LandingPage() {
                       <span className="text-sm">🤝</span>
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">Vind een MantelBuddy</p>
-                      <p className="text-sm text-muted-foreground">Een vast maatje of eenmalige hulp</p>
+                      <p className="font-medium text-foreground">Roep hulp in van een MantelBuddy</p>
+                      <p className="text-sm text-muted-foreground">Betrouwbare vrijwilligers uit je buurt</p>
                     </div>
                   </div>
                 </div>
