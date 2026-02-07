@@ -103,8 +103,11 @@ const TAAK_NAAR_CATEGORIE: Record<string, string> = {
   'Administratie': 'Administratie en aanvragen',
   'Administratie en aanvragen': 'Administratie en aanvragen',
   'Administratie en geldzaken': 'Administratie en aanvragen',
-  'Regelen en afspraken maken': 'Administratie en aanvragen',
-  'Plannen en organiseren': 'Administratie en aanvragen',
+  // Plannen en organiseren - aparte categorie
+  'Plannen en organiseren': 'Plannen en organiseren',
+  'Regelen en afspraken maken': 'Plannen en organiseren',
+  'Plannen': 'Plannen en organiseren',
+  'Organiseren': 'Plannen en organiseren',
   // Sociaal contact - alle variaties
   'Sociaal contact': 'Sociaal contact en activiteiten',
   'Sociaal contact en activiteiten': 'Sociaal contact en activiteiten',
