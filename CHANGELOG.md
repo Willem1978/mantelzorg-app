@@ -5,6 +5,14 @@ Alle belangrijke wijzigingen aan MantelBuddy worden hier gedocumenteerd.
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.0.0/),
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [1.5.2] - 2025-02-07
+
+### Opgelost
+- **Telefoonnummer bug**: Fix voor bug waarbij telefoonnummer als "undefined" string werd opgeslagen
+  - Auth: Validatie toegevoegd om ongeldige telefoonwaarden te filteren
+  - Profile API: Validatie toegevoegd bij opslaan telefoon
+  - Database: Bestaande "undefined" waarden gefixed naar null
+
 ## [1.5.0] - 2025-02-07
 
 ### Toegevoegd

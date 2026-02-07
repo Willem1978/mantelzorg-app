@@ -49,20 +49,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         // Koppel WhatsApp telefoonnummer aan Caregiver profiel als meegegeven
-        console.log("Login attempt - phoneNumber:", credentials.phoneNumber, "caregiver:", user.caregiver?.id)
-        if (credentials.phoneNumber && user.caregiver) {
+        // Let op: phoneNumber kan "undefined" string zijn door NextAuth serialisatie
+        const phoneNumber = credentials.phoneNumber as string | undefined
+        const hasValidPhone = phoneNumber &&
+          phoneNumber !== "undefined" &&
+          phoneNumber !== "null" &&
+          phoneNumber.trim() !== "" &&
+          phoneNumber.startsWith("+31")
+
+        console.log("Login attempt - phoneNumber:", phoneNumber, "hasValidPhone:", hasValidPhone, "caregiver:", user.caregiver?.id)
+        if (hasValidPhone && user.caregiver) {
           try {
-            console.log("Linking phone number:", credentials.phoneNumber, "to caregiver:", user.caregiver.id)
+            console.log("Linking phone number:", phoneNumber, "to caregiver:", user.caregiver.id)
             await prisma.caregiver.update({
               where: { id: user.caregiver.id },
-              data: { phoneNumber: credentials.phoneNumber as string },
+              data: { phoneNumber: phoneNumber },
             })
             console.log("Phone number linked successfully")
           } catch (error) {
             console.error("Failed to link phone number:", error)
           }
         } else {
-          console.log("Not linking - phoneNumber:", !!credentials.phoneNumber, "caregiver:", !!user.caregiver)
+          console.log("Not linking - phoneNumber:", phoneNumber, "caregiver:", !!user.caregiver)
         }
 
         // Incrementeer sessionVersion om oude sessies te invalideren (single-session login)
