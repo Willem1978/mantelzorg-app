@@ -48,24 +48,28 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header met Ger */}
-      <div className="px-4 pt-8 pb-4">
-        <div className="max-w-md mx-auto flex items-start gap-4">
-          <GerAvatar size="lg" />
-          <div className="pt-2">
-            <h1 className="text-2xl font-bold text-foreground">Welkom terug!</h1>
-            <p className="text-muted-foreground mt-1">
-              Vul je e-mail en wachtwoord in om verder te gaan.
-            </p>
+    <div className="min-h-screen bg-background flex flex-col lg:flex-row">
+      {/* Desktop: linker kolom met Ger en welkomstboodschap */}
+      <div className="lg:w-1/2 lg:bg-primary/5 lg:flex lg:flex-col lg:justify-center lg:items-center lg:p-12">
+        {/* Mobiel: Header met Ger */}
+        <div className="px-4 pt-8 pb-4 lg:p-0 lg:text-center lg:max-w-md">
+          <div className="flex items-start gap-4 lg:flex-col lg:items-center lg:gap-6">
+            <GerAvatar size="lg" className="lg:w-32 lg:h-32" />
+            <div className="pt-2 lg:pt-0">
+              <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Welkom terug!</h1>
+              <p className="text-muted-foreground mt-1 lg:mt-3 lg:text-lg">
+                Vul je e-mail en wachtwoord in om verder te gaan.
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <main className="px-4 pb-8">
-        <div className="max-w-md mx-auto">
-          <div className="ker-card">
+      {/* Rechter kolom / Content */}
+      <div className="flex-1 lg:flex lg:flex-col lg:justify-center lg:items-center lg:p-12">
+        <main className="px-4 pb-8 lg:px-0 lg:w-full lg:max-w-md">
+          <div className="max-w-md mx-auto lg:mx-0 lg:max-w-none">
+            <div className="ker-card lg:shadow-lg">
             {sessionInvalidated && (
               <div className="bg-amber-50 border-2 border-amber-300 text-amber-800 px-4 py-3 rounded-xl mb-6 text-sm">
                 <p className="font-medium">Je bent uitgelogd</p>
@@ -156,20 +160,21 @@ function LoginForm() {
                 Account aanmaken
               </Link>
             </div>
+            </div>
           </div>
 
           {/* Terug links */}
-          <div className="mt-4 flex justify-center gap-4 text-sm">
-            <Link href="/" className="text-muted-foreground hover:text-foreground">
+          <div className="mt-4 flex justify-center gap-4 text-sm lg:text-base">
+            <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">
               ← Terug naar home
             </Link>
             <span className="text-muted-foreground">|</span>
-            <Link href="/belastbaarheidstest" className="text-muted-foreground hover:text-foreground">
+            <Link href="/belastbaarheidstest" className="text-muted-foreground hover:text-foreground transition-colors">
               Doe eerst de Balanstest
             </Link>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   )
 }

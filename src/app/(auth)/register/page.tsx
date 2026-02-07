@@ -203,37 +203,37 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header met Ger */}
-      <div className="px-4 pt-8 pb-4">
-        <div className="max-w-md mx-auto flex items-start gap-4">
-          <GerAvatar size="lg" />
-          <div className="pt-2">
-            <h1 className="text-2xl font-bold text-foreground">
-              {getStepTitle()}
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {getStepSubtitle()}
-            </p>
+    <div className="min-h-screen bg-background flex flex-col lg:flex-row">
+      {/* Desktop: linker kolom met Ger en welkomstboodschap */}
+      <div className="lg:w-1/2 lg:bg-primary/5 lg:flex lg:flex-col lg:justify-center lg:items-center lg:p-12">
+        {/* Mobiel: Header met Ger */}
+        <div className="px-4 pt-8 pb-4 lg:p-0 lg:text-center lg:max-w-md">
+          <div className="flex items-start gap-4 lg:flex-col lg:items-center lg:gap-6">
+            <GerAvatar size="lg" className="lg:w-32 lg:h-32" />
+            <div className="pt-2 lg:pt-0">
+              <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
+                {getStepTitle()}
+              </h1>
+              <p className="text-muted-foreground mt-1 lg:mt-3 lg:text-lg">
+                {getStepSubtitle()}
+              </p>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Stappen indicator */}
-      <div className="px-4 pb-4">
-        <div className="max-w-md mx-auto">
-          <div className="flex justify-center">
-            <div className="ker-pill">
+          {/* Stappen indicator - nu in de linker kolom op desktop */}
+          <div className="mt-4 lg:mt-8 flex justify-center lg:justify-center">
+            <div className="ker-pill lg:text-base lg:px-6 lg:py-2">
               stap <span className="font-bold mx-1">{step}</span> van 3
             </div>
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <main className="px-4 pb-8">
-        <div className="max-w-md mx-auto">
-          <div className="ker-card">
+      {/* Rechter kolom / Content */}
+      <div className="flex-1 lg:flex lg:flex-col lg:justify-center lg:items-center lg:p-12">
+        <main className="px-4 pb-8 lg:px-0 lg:w-full lg:max-w-md">
+          <div className="max-w-md mx-auto lg:mx-0 lg:max-w-none">
+            <div className="ker-card lg:shadow-lg">
             {error && (
               <div className="bg-[#FFEBEE] border-2 border-[#F44336] text-[#C62828] px-4 py-3 rounded-xl mb-6 text-sm">
                 {error}
@@ -473,16 +473,17 @@ export default function RegisterPage() {
             )}
 
             <div className="mt-6 pt-6 border-t border-border text-center">
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground lg:text-base">
                 Heb je al een account?{" "}
-                <Link href="/login" className="text-primary font-medium hover:underline">
+                <Link href="/login" className="text-primary font-medium hover:underline transition-colors">
                   Log in
                 </Link>
               </p>
             </div>
+            </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   )
 }

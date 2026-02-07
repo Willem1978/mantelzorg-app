@@ -492,24 +492,28 @@ export default function BelastbaarheidstestPage() {
 
   if (currentStep === "intro") {
     return (
-      <div className="min-h-screen bg-background">
-        {/* Header met Ger */}
-        <div className="px-4 pt-8 pb-4">
-          <div className="max-w-md mx-auto flex items-start gap-4">
-            <GerAvatar size="lg" />
-            <div className="pt-2">
-              <h1 className="text-2xl font-bold text-foreground">Goedendag!</h1>
-              <p className="text-muted-foreground mt-1">
-                Mijn naam is Ger en ik ben jouw digitale mantelzorgmaatje van MantelBuddy.
-              </p>
+      <div className="min-h-screen bg-background flex flex-col lg:flex-row">
+        {/* Desktop: linker kolom met Ger en welkomstboodschap */}
+        <div className="lg:w-1/2 lg:bg-primary/5 lg:flex lg:flex-col lg:justify-center lg:items-center lg:p-12">
+          {/* Mobiel: Header met Ger */}
+          <div className="px-4 pt-8 pb-4 lg:p-0 lg:text-center lg:max-w-md">
+            <div className="flex items-start gap-4 lg:flex-col lg:items-center lg:gap-6">
+              <GerAvatar size="lg" className="lg:w-32 lg:h-32" />
+              <div className="pt-2 lg:pt-0">
+                <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Goedendag!</h1>
+                <p className="text-muted-foreground mt-1 lg:mt-3 lg:text-lg">
+                  Mijn naam is Ger en ik ben jouw digitale mantelzorgmaatje van MantelBuddy.
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Content card */}
-        <main className="px-4 pb-32">
-          <div className="max-w-md mx-auto">
-            <div className="ker-card">
+        {/* Rechter kolom / Content */}
+        <div className="flex-1 lg:flex lg:flex-col lg:justify-center lg:items-center lg:p-12">
+          <main className="px-4 pb-32 lg:px-0 lg:pb-8 lg:w-full lg:max-w-lg">
+            <div className="max-w-md mx-auto lg:mx-0 lg:max-w-none">
+              <div className="ker-card lg:shadow-lg">
               <h2 className="font-bold text-foreground text-lg mb-4">
                 Welkom bij de Mantelzorg Balanstest!
               </h2>
@@ -524,16 +528,40 @@ export default function BelastbaarheidstestPage() {
                 <p className="font-medium">
                   Er zijn geen goede of foute antwoorden. Het gaat alleen om jouw eigen ervaring.
                 </p>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-muted-foreground text-sm lg:text-base">
                   Onder elke vraag staat ook een weetje voor jou als mantelzorger.
                 </p>
               </div>
-            </div>
-          </div>
-        </main>
 
-        {/* Footer met terug en start knoppen */}
-        <footer className="fixed bottom-0 left-0 right-0 bg-background p-4">
+              {/* Desktop: knoppen in de card */}
+              <div className="hidden lg:flex items-center justify-between gap-4 mt-8">
+                <button
+                  onClick={() => router.back()}
+                  className="ker-btn ker-btn-secondary flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  terug
+                </button>
+
+                <button
+                  onClick={() => setCurrentStep("vragen")}
+                  className="ker-btn ker-btn-primary flex items-center gap-2"
+                >
+                  start test
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+              </div>
+            </div>
+          </main>
+        </div>
+
+        {/* Mobiel: Footer met terug en start knoppen */}
+        <footer className="fixed bottom-0 left-0 right-0 bg-background p-4 lg:hidden">
           <div className="max-w-md mx-auto flex items-center justify-between gap-4">
             <button
               onClick={() => router.back()}
@@ -566,31 +594,35 @@ export default function BelastbaarheidstestPage() {
 
   if (currentStep === "vragen") {
     return (
-      <div className="min-h-screen bg-background">
-        {/* Progress pill */}
-        <div className="flex justify-center pt-6 pb-4">
-          <div className="ker-pill">
-            vraag <span className="font-bold mx-1">{currentVraagIndex + 1}</span> van {totalVragen}
+      <div className="min-h-screen bg-background flex flex-col lg:flex-row">
+        {/* Desktop: linker kolom met Ger en sectie */}
+        <div className="lg:w-1/2 lg:bg-primary/5 lg:flex lg:flex-col lg:justify-center lg:items-center lg:p-12">
+          {/* Progress pill */}
+          <div className="flex justify-center pt-6 pb-4 lg:pt-0 lg:pb-6">
+            <div className="ker-pill lg:text-base lg:px-6 lg:py-2">
+              vraag <span className="font-bold mx-1">{currentVraagIndex + 1}</span> van {totalVragen}
+            </div>
           </div>
-        </div>
 
-        {/* Header met Ger en sectie titel */}
-        <div className="px-4 pb-4">
-          <div className="max-w-md mx-auto flex items-start gap-4">
-            <GerAvatar size="md" />
-            <div className="pt-1">
-              <h2 className="text-xl font-bold text-foreground">{currentVraag.header}</h2>
-              {showSectionHeader && currentVraag.headerIntro && (
-                <p className="text-muted-foreground text-sm mt-1">{currentVraag.headerIntro}</p>
-              )}
+          {/* Header met Ger en sectie titel */}
+          <div className="px-4 pb-4 lg:p-0 lg:text-center lg:max-w-md">
+            <div className="flex items-start gap-4 lg:flex-col lg:items-center lg:gap-6">
+              <GerAvatar size="md" className="lg:w-24 lg:h-24" />
+              <div className="pt-1 lg:pt-0">
+                <h2 className="text-xl lg:text-2xl font-bold text-foreground">{currentVraag.header}</h2>
+                {showSectionHeader && currentVraag.headerIntro && (
+                  <p className="text-muted-foreground text-sm lg:text-base mt-1 lg:mt-3">{currentVraag.headerIntro}</p>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Vraag card */}
-        <main className="px-4 pb-32">
-          <div className="max-w-md mx-auto">
-            <div className="ker-card">
+        {/* Rechter kolom / Vraag card */}
+        <div className="flex-1 lg:flex lg:flex-col lg:justify-center lg:items-center lg:p-12">
+          <main className="px-4 pb-32 lg:px-0 lg:pb-8 lg:w-full lg:max-w-lg">
+            <div className="max-w-md mx-auto lg:mx-0 lg:max-w-none">
+              <div className="ker-card lg:shadow-lg">
               <p className="text-foreground text-center text-lg mb-8">
                 {currentVraag.vraag}
               </p>
@@ -611,15 +643,29 @@ export default function BelastbaarheidstestPage() {
                   <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
                     <span className="text-primary-foreground text-sm font-bold">i</span>
                   </div>
-                  <p className="text-sm text-foreground">{currentVraag.tip}</p>
+                  <p className="text-sm lg:text-base text-foreground">{currentVraag.tip}</p>
                 </div>
               )}
-            </div>
-          </div>
-        </main>
 
-        {/* Footer - alleen terug knop */}
-        <footer className="fixed bottom-0 left-0 right-0 bg-background p-4">
+              {/* Desktop: terug knop in de card */}
+              <div className="hidden lg:flex justify-center mt-8">
+                <button
+                  onClick={() => currentVraagIndex > 0 ? setCurrentVraagIndex(prev => prev - 1) : setCurrentStep("intro")}
+                  className="ker-btn ker-btn-secondary flex items-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  terug
+                </button>
+              </div>
+              </div>
+            </div>
+          </main>
+        </div>
+
+        {/* Mobiel: Footer - alleen terug knop */}
+        <footer className="fixed bottom-0 left-0 right-0 bg-background p-4 lg:hidden">
           <div className="max-w-md mx-auto flex items-center justify-center">
             <button
               onClick={() => currentVraagIndex > 0 ? setCurrentVraagIndex(prev => prev - 1) : setCurrentStep("intro")}
