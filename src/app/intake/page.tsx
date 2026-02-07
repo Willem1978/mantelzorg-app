@@ -328,7 +328,7 @@ export default function IntakePage() {
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <span className="text-primary-foreground font-bold">K</span>
             </div>
-            <span className="font-bold text-foreground">KER</span>
+            <span className="font-bold text-foreground">MB</span>
           </Link>
           <div className="ker-pill text-sm">
             vraag <span className="font-bold mx-1">{currentQuestionNumber}</span> van {totalQuestions}
@@ -452,7 +452,7 @@ export default function IntakePage() {
           </button>
 
           <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-            <span className="text-primary font-bold text-lg">KER</span>
+            <span className="text-primary font-bold text-lg">MB</span>
           </div>
 
           <div

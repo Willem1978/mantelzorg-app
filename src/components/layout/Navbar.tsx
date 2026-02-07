@@ -64,7 +64,7 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
                 <span className="text-primary-foreground font-bold text-lg">M</span>
               </div>
               <span className="font-semibold text-foreground text-base sm:text-lg hidden sm:block">
-                MantelzorgApp
+                MantelBuddy
               </span>
             </Link>
 

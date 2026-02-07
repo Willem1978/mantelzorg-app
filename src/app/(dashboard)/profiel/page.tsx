@@ -804,7 +804,7 @@ export default function ProfielPage() {
         {/* Versie info */}
         <div className="text-center pt-4 pb-8">
           <p className="text-xs text-muted-foreground">
-            KER Mantelzorg App v1.0
+            MantelBuddy v1.0
           </p>
         </div>
       </div>

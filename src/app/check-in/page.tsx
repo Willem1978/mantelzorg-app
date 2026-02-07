@@ -341,7 +341,7 @@ export default function CheckInPage() {
 
             <div className="flex items-center justify-center">
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <span className="text-primary font-bold text-lg">KER</span>
+                <span className="text-primary font-bold text-lg">MB</span>
               </div>
             </div>
 
@@ -496,7 +496,7 @@ export default function CheckInPage() {
 
           <div className="flex items-center justify-center">
             <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-              <span className="text-primary font-bold text-lg">KER</span>
+              <span className="text-primary font-bold text-lg">MB</span>
             </div>
           </div>
 

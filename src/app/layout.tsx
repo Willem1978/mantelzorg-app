@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "KER - Mantelzorg App",
-  description: "Jouw digitale mantelzorgconsulent",
+  title: "MantelBuddy - Samen zorgen, samen sterk",
+  description: "MantelBuddy verbindt mantelzorgers met vrijwilligers uit de buurt",
 };
 
 export default function RootLayout({

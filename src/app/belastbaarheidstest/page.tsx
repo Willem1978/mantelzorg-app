@@ -500,7 +500,7 @@ export default function BelastbaarheidstestPage() {
             <div className="pt-2">
               <h1 className="text-2xl font-bold text-foreground">Goedendag!</h1>
               <p className="text-muted-foreground mt-1">
-                Mijn naam is Ger van KER en ik ben jouw digitale mantelzorgconsulent.
+                Mijn naam is Ger en ik ben jouw digitale mantelzorgmaatje van MantelBuddy.
               </p>
             </div>
           </div>
@@ -547,7 +547,7 @@ export default function BelastbaarheidstestPage() {
 
             <div className="flex items-center justify-center">
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <span className="text-primary font-bold text-lg">KER</span>
+                <span className="text-primary font-bold text-lg">MB</span>
               </div>
             </div>
 
@@ -671,7 +671,7 @@ export default function BelastbaarheidstestPage() {
 
             <div className="flex items-center justify-center">
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <span className="text-primary font-bold text-lg">KER</span>
+                <span className="text-primary font-bold text-lg">MB</span>
               </div>
             </div>
 
@@ -769,7 +769,7 @@ export default function BelastbaarheidstestPage() {
 
             <div className="flex items-center justify-center">
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <span className="text-primary font-bold text-lg">KER</span>
+                <span className="text-primary font-bold text-lg">MB</span>
               </div>
             </div>
 
@@ -946,7 +946,7 @@ export default function BelastbaarheidstestPage() {
 
             <div className="flex items-center justify-center">
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <span className="text-primary font-bold text-lg">KER</span>
+                <span className="text-primary font-bold text-lg">MB</span>
               </div>
             </div>
 
@@ -1198,7 +1198,7 @@ export default function BelastbaarheidstestPage() {
 
             <div className="flex items-center justify-center">
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <span className="text-primary font-bold text-lg">KER</span>
+                <span className="text-primary font-bold text-lg">MB</span>
               </div>
             </div>
 

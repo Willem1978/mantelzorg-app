@@ -150,7 +150,7 @@ export async function GET(request: NextRequest) {
             color: '#cbd5e1',
           }}
         >
-          KER Mantelzorg Assistent
+          MantelBuddy
         </div>
       </div>
     ),

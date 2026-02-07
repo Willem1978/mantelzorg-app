@@ -20,6 +20,7 @@ model User {
   updatedAt     DateTime            @updatedAt
   accounts      Account[]
   caregiver     Caregiver?
+  mantelBuddy   MantelBuddy?
   magicLinks    MagicLinkToken[]
   orgMember     OrganisationMember?
   sessions      Session[]
@@ -100,6 +101,10 @@ model Caregiver {
   intakeResponses           IntakeResponse[]
   monthlyCheckIns           MonthlyCheckIn[]
   tasks                     Task[]
+  // MantelBuddy relaties
+  buddyMatches              BuddyMatch[]
+  uitgezetteTaken           BuddyTaak[]
+  gegevenBeoordelingen      BuddyBeoordeling[]
 }
 
 model IntakeCategory {
@@ -401,8 +406,216 @@ model AlarmLog {
   test            BelastbaarheidTest @relation(fields: [testId], references: [id], onDelete: Cascade)
 }
 
+// ============================================
+// MANTELBUDDY VRIJWILLIGERS
+// ============================================
+
+model MantelBuddy {
+  id                String              @id @default(cuid())
+
+  // Persoonlijke gegevens
+  voornaam          String
+  achternaam        String
+  email             String              @unique
+  telefoon          String
+  postcode          String
+  woonplaats        String
+
+  // Wat wil de buddy doen
+  hulpvormen        String[]            // gesprek, boodschappen, vervoer, klusjes, oppas, administratie
+  beschikbaarheid   BuddyBeschikbaarheid @default(BEIDE)
+  motivatie         String?
+  ervaring          String?
+
+  // Status & verificatie
+  status            BuddyStatus         @default(AANGEMELD)
+  vogGoedgekeurd    Boolean             @default(false)
+  trainingVoltooid  Boolean             @default(false)
+  isActief          Boolean             @default(false)
+
+  // Scores & beoordelingen
+  gemiddeldeScore   Float               @default(0)
+  aantalBeoordelingen Int               @default(0)
+  betrouwbaarheidScore Float            @default(0)
+  aantalTakenVoltooid Int               @default(0)
+  aantalTakenGeannuleerd Int            @default(0)
+
+  // Relaties
+  userId            String?             @unique
+  user              User?               @relation(fields: [userId], references: [id])
+  matches           BuddyMatch[]
+  taakReacties      BuddyTaakReactie[]
+  ontvangenBeoordelingen BuddyBeoordeling[] @relation("BeoordeeldeBuddy")
+  gegevenBeoordelingen   BuddyBeoordeling[] @relation("BeoordelendePersoon")
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model BuddyMatch {
+  id                String              @id @default(cuid())
+  buddyId           String
+  caregiverId       String
+
+  // Status van de match
+  status            MatchStatus         @default(VOORGESTELD)
+
+  // Type match
+  isVasteBuddy      Boolean             @default(false)  // vast maatje vs eenmalig
+
+  // Notities
+  notities          String?
+
+  // Relaties
+  buddy             MantelBuddy         @relation(fields: [buddyId], references: [id], onDelete: Cascade)
+  caregiver         Caregiver           @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+  taakReacties      BuddyTaakReactie[]
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@unique([buddyId, caregiverId])
+}
+
+model BuddyTaak {
+  id                String              @id @default(cuid())
+  caregiverId       String
+
+  // Taak details
+  titel             String
+  beschrijving      String?
+  categorie         BuddyTaakCategorie
+
+  // Wanneer
+  datum             DateTime?
+  tijdstip          String?             // bijv. "ochtend", "middag", "avond"
+  isFlexibel        Boolean             @default(true)
+
+  // Status
+  status            TaakUitzetStatus    @default(OPEN)
+
+  // Koppeling
+  toegewezenAan     String?             // MantelBuddy id
+
+  // Relaties
+  caregiver         Caregiver           @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+  reacties          BuddyTaakReactie[]
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model BuddyTaakReactie {
+  id                String              @id @default(cuid())
+  taakId            String
+  buddyId           String
+  matchId           String?
+
+  // Status
+  status            ReactieStatus       @default(INTERESSE)
+
+  // Bericht van de buddy
+  bericht           String?
+
+  // Relaties
+  taak              BuddyTaak           @relation(fields: [taakId], references: [id], onDelete: Cascade)
+  buddy             MantelBuddy         @relation(fields: [buddyId], references: [id], onDelete: Cascade)
+  match             BuddyMatch?         @relation(fields: [matchId], references: [id])
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@unique([taakId, buddyId])
+}
+
+model BuddyBeoordeling {
+  id                String              @id @default(cuid())
+
+  // Wie beoordeelt wie
+  buddyId           String              // De beoordeelde MantelBuddy
+  beoordeeldDoorId  String?             // Optioneel: als dit een buddy is die terugkoppelt
+  caregiverId       String?             // De mantelzorger die beoordeelt
+
+  // Scores (1-5 sterren)
+  algemeenScore     Int                 // Algemene ervaring
+  betrouwbaarheidScore Int?             // Kwam op tijd, deed wat afgesproken
+  vriendelijkheidScore Int?             // Was vriendelijk en behulpzaam
+  kwaliteitScore    Int?                // Kwaliteit van de hulp
+
+  // Feedback
+  positieveFeedback String?
+  verbeterpunten    String?
+
+  // Zichtbaarheid
+  isAnoniem         Boolean             @default(false)
+  isZichtbaar       Boolean             @default(true)
+
+  // Relaties
+  buddy             MantelBuddy         @relation("BeoordeeldeBuddy", fields: [buddyId], references: [id], onDelete: Cascade)
+  beoordeeldDoor    MantelBuddy?        @relation("BeoordelendePersoon", fields: [beoordeeldDoorId], references: [id])
+  caregiver         Caregiver?          @relation(fields: [caregiverId], references: [id])
+
+  createdAt         DateTime            @default(now())
+
+  @@index([buddyId])
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum BuddyBeschikbaarheid {
+  EENMALIG          // Alleen losse taken
+  VAST              // Alleen vast maatje
+  BEIDE             // Allebei
+}
+
+enum BuddyStatus {
+  AANGEMELD         // Net aangemeld
+  IN_BEHANDELING    // Kennismakingsgesprek gepland
+  VOG_AANGEVRAAGD   // VOG in behandeling
+  GOEDGEKEURD       // Volledig goedgekeurd, kan matchen
+  INACTIEF          // Tijdelijk niet beschikbaar
+  AFGEWEZEN         // Aanmelding afgewezen
+}
+
+enum MatchStatus {
+  VOORGESTELD       // Match voorgesteld aan beide partijen
+  BUDDY_AKKOORD     // Buddy heeft geaccepteerd
+  CAREGIVER_AKKOORD // Mantelzorger heeft geaccepteerd
+  ACTIEF            // Match is actief
+  GEPAUZEERD        // Tijdelijk gepauzeerd
+  BEEINDIGD         // Match is beëindigd
+}
+
+enum BuddyTaakCategorie {
+  GESPREK           // Koffiedrinken, luisterend oor
+  BOODSCHAPPEN      // Supermarkt, apotheek
+  VERVOER           // Naar afspraken rijden
+  KLUSJES           // Kleine reparaties, tuin
+  OPPAS             // Bij zorgvrager zijn
+  ADMINISTRATIE     // Papierwerk, formulieren
+  OVERIG            // Anders
+}
+
+enum TaakUitzetStatus {
+  OPEN              // Taak staat open
+  REACTIES          // Er zijn reacties
+  TOEGEWEZEN        // Iemand is toegewezen
+  VOLTOOID          // Taak is voltooid
+  GEANNULEERD       // Taak geannuleerd
+}
+
+enum ReactieStatus {
+  INTERESSE         // Buddy heeft interesse getoond
+  GEACCEPTEERD      // Mantelzorger heeft buddy gekozen
+  AFGEWEZEN         // Niet gekozen
+  VOLTOOID          // Taak is voltooid door deze buddy
+}
+
 enum UserRole {
   CAREGIVER
+  BUDDY             // Nieuwe rol voor MantelBuddy vrijwilligers
   ORG_MEMBER
   ORG_ADMIN
   ADMIN
