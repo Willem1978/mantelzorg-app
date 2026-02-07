@@ -469,9 +469,7 @@ async function handleOnboardingSession(
 
 Je testresultaten worden opgeslagen na inloggen.
 
-📱 Vul je telefoonnummer in als: +316... (met +31)
-
-${baseUrl}
+👉 ${baseUrl}/login
 
 _Typ 0 voor menu_`,
       }
@@ -486,9 +484,7 @@ _Typ 0 voor menu_`,
 
 Je testresultaten worden opgeslagen na registratie.
 
-📱 Vul je telefoonnummer in als: +316... (met +31)
-
-${baseUrl}
+👉 ${baseUrl}/register
 
 _Typ 0 voor menu_`,
       }
@@ -1155,9 +1151,7 @@ function handleGuestMenu(phoneNumber: string, input: string): {
 
 Met een account bewaar ik je resultaten en geef ik persoonlijke tips.
 
-📱 Vul je telefoonnummer in als: +316... (met +31)
-
-${baseUrl}`,
+👉 ${baseUrl}/register`,
       quickReplyButtons: menuButton,
     }
   }
@@ -1170,9 +1164,7 @@ ${baseUrl}`,
 
 Na inloggen wordt je WhatsApp gekoppeld.
 
-📱 Vul je telefoonnummer in als: +316... (met +31)
-
-${baseUrl}`,
+👉 ${baseUrl}/login`,
       quickReplyButtons: menuButton,
     }
   }
