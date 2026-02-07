@@ -174,9 +174,16 @@ function HulpPageContent() {
       if (dashboardRes.ok) {
         const dashboardData = await dashboardRes.json()
 
-        // Voeg categorie toe aan zware taken (check op database enum waarden)
+        // Voeg categorie toe aan zware taken
+        // Database kan twee formats hebben:
+        // 1. Web test: MOEILIJK/ZEER_MOEILIJK/GEMIDDELD/MAKKELIJK
+        // 2. WhatsApp test: JA/SOMS/NEE
+        const isZwaarOfMatig = (m: string | null) =>
+          m === 'MOEILIJK' || m === 'ZEER_MOEILIJK' || m === 'GEMIDDELD' ||
+          m === 'JA' || m === 'ja' || m === 'SOMS' || m === 'soms'
+
         const zwareTaken = (dashboardData.test?.zorgtaken || [])
-          .filter((t: any) => t.moeilijkheid === 'MOEILIJK' || t.moeilijkheid === 'ZEER_MOEILIJK' || t.moeilijkheid === 'GEMIDDELD')
+          .filter((t: any) => isZwaarOfMatig(t.moeilijkheid))
           .map((t: any) => ({
             ...t,
             categorie: TAAK_NAAR_CATEGORIE[t.naam] || null
@@ -267,12 +274,18 @@ function HulpPageContent() {
   const openHulpvragen = helpRequests.filter(r => r.status !== 'RESOLVED' && r.status !== 'CLOSED').length
 
   // Bepaal welke categorieën zware taken hebben en hun niveau
+  // Ondersteunt zowel web format (MOEILIJK/GEMIDDELD) als WhatsApp format (JA/SOMS)
   const getTaakStatus = (categorieNaam: string): 'zwaar' | 'gemiddeld' | null => {
     const taken = hulpData?.zwareTaken?.filter(t => t.categorie === categorieNaam) || []
-    if (taken.some(t => t.moeilijkheid === 'MOEILIJK' || t.moeilijkheid === 'ZEER_MOEILIJK')) {
+    const isZwaar = (m: string | null) =>
+      m === 'MOEILIJK' || m === 'ZEER_MOEILIJK' || m === 'JA' || m === 'ja'
+    const isMatig = (m: string | null) =>
+      m === 'GEMIDDELD' || m === 'SOMS' || m === 'soms'
+
+    if (taken.some(t => isZwaar(t.moeilijkheid))) {
       return 'zwaar'
     }
-    if (taken.some(t => t.moeilijkheid === 'GEMIDDELD')) {
+    if (taken.some(t => isMatig(t.moeilijkheid))) {
       return 'gemiddeld'
     }
     return null

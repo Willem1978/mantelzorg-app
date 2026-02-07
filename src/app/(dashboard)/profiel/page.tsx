@@ -1102,7 +1102,7 @@ export default function ProfielPage() {
         {/* Versie info */}
         <div className="text-center pt-4 pb-8">
           <p className="text-xs text-muted-foreground">
-            MantelBuddy v1.3.0
+            MantelBuddy v1.4.0
           </p>
         </div>
       </div>

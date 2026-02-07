@@ -6,7 +6,6 @@ import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
-import { ResultSmiley } from "@/components/ui"
 
 interface Hulpbron {
   naam: string
@@ -182,14 +181,20 @@ function DashboardContent() {
     )
   }
 
-  // Bereken zware taken (database gebruikt MOEILIJK/ZEER_MOEILIJK/GEMIDDELD/MAKKELIJK)
-  const zwareTaken = data?.test?.zorgtaken?.filter(t =>
-    t.moeilijkheid === 'MOEILIJK' || t.moeilijkheid === 'ZEER_MOEILIJK'
-  ) || []
-  const matigTaken = data?.test?.zorgtaken?.filter(t => t.moeilijkheid === 'GEMIDDELD') || []
-  const lichtTaken = data?.test?.zorgtaken?.filter(t =>
-    !t.moeilijkheid || t.moeilijkheid === 'MAKKELIJK'
-  ) || []
+  // Bereken zware taken
+  // Database kan twee formats hebben:
+  // 1. Web test: MOEILIJK/ZEER_MOEILIJK/GEMIDDELD/MAKKELIJK
+  // 2. WhatsApp test: JA/SOMS/NEE
+  const isZwaar = (m: string | null) =>
+    m === 'MOEILIJK' || m === 'ZEER_MOEILIJK' || m === 'JA' || m === 'ja'
+  const isMatig = (m: string | null) =>
+    m === 'GEMIDDELD' || m === 'SOMS' || m === 'soms'
+  const isLicht = (m: string | null) =>
+    !m || m === 'MAKKELIJK' || m === 'NEE' || m === 'nee'
+
+  const zwareTaken = data?.test?.zorgtaken?.filter(t => isZwaar(t.moeilijkheid)) || []
+  const matigTaken = data?.test?.zorgtaken?.filter(t => isMatig(t.moeilijkheid)) || []
+  const lichtTaken = data?.test?.zorgtaken?.filter(t => isLicht(t.moeilijkheid)) || []
 
   // Genereer aanbevolen acties
   const getAanbevolenActies = () => {
@@ -313,13 +318,21 @@ function DashboardContent() {
               data.test.niveau === "HOOG" && "bg-[var(--accent-red-bg)] border-[var(--accent-red)]"
             )}
           >
-            {/* Score Header */}
+            {/* Score Header met grote score */}
             <div className="flex items-center gap-4 mb-4">
               <div className="flex-shrink-0">
-                <ResultSmiley
-                  type={data.test.niveau === "LAAG" ? "green" : data.test.niveau === "GEMIDDELD" ? "amber" : "red"}
-                  size="xl"
-                />
+                {/* Score cirkel met nummer */}
+                <div
+                  className={cn(
+                    "w-20 h-20 rounded-full flex flex-col items-center justify-center",
+                    data.test.niveau === "LAAG" && "bg-[var(--accent-green)] text-white",
+                    data.test.niveau === "GEMIDDELD" && "bg-[var(--accent-amber)] text-white",
+                    data.test.niveau === "HOOG" && "bg-[var(--accent-red)] text-white"
+                  )}
+                >
+                  <span className="text-2xl font-bold">{data.test.score}</span>
+                  <span className="text-xs opacity-80">/24</span>
+                </div>
               </div>
               <div className="flex-1">
                 <h2
@@ -356,22 +369,85 @@ function DashboardContent() {
               </div>
             </div>
 
-            {/* Score Verdeling */}
-            <div className="grid grid-cols-3 gap-2 text-center mb-4">
-              <div className="bg-white/50 rounded-lg p-2">
-                <p className="text-xl font-bold text-[var(--accent-green)]">{lichtTaken.length}</p>
-                <p className="text-xs text-muted-foreground">Gaat goed</p>
+            {/* Score uitleg */}
+            <div className="bg-white/50 rounded-lg p-3 mb-4">
+              <p className="text-sm text-foreground">
+                {data.test.niveau === "LAAG" && (
+                  <>
+                    <strong>Score 0-8:</strong> Je houdt het goed vol. Blijf alert op je grenzen.
+                  </>
+                )}
+                {data.test.niveau === "GEMIDDELD" && (
+                  <>
+                    <strong>Score 9-16:</strong> Je ervaart behoorlijke druk. Overweeg hulp te zoeken voor de zwaardere taken.
+                  </>
+                )}
+                {data.test.niveau === "HOOG" && (
+                  <>
+                    <strong>Score 17-24:</strong> Je belasting is hoog. Het is belangrijk om nu hulp te zoeken.
+                  </>
+                )}
+              </p>
+            </div>
+
+            {/* Zorgtaken verdeling */}
+            {(data.test.zorgtaken?.length || 0) > 0 && (
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="bg-white/50 rounded-lg p-2">
+                  <p className="text-xl font-bold text-[var(--accent-green)]">{lichtTaken.length}</p>
+                  <p className="text-xs text-muted-foreground">Gaat goed</p>
+                </div>
+                <div className="bg-white/50 rounded-lg p-2">
+                  <p className="text-xl font-bold text-[var(--accent-amber)]">{matigTaken.length}</p>
+                  <p className="text-xs text-muted-foreground">Matig zwaar</p>
+                </div>
+                <div className="bg-white/50 rounded-lg p-2">
+                  <p className="text-xl font-bold text-[var(--accent-red)]">{zwareTaken.length}</p>
+                  <p className="text-xs text-muted-foreground">Zwaar</p>
+                </div>
               </div>
-              <div className="bg-white/50 rounded-lg p-2">
-                <p className="text-xl font-bold text-[var(--accent-amber)]">{matigTaken.length}</p>
-                <p className="text-xs text-muted-foreground">Matig zwaar</p>
-              </div>
-              <div className="bg-white/50 rounded-lg p-2">
-                <p className="text-xl font-bold text-[var(--accent-red)]">{zwareTaken.length}</p>
-                <p className="text-xs text-muted-foreground">Zwaar</p>
+            )}
+          </div>
+
+          {/* Urgentie melding bij hoge belasting */}
+          {data.test.niveau === "HOOG" && (
+            <div className="mt-4 p-4 bg-[var(--accent-red-bg)] rounded-xl border-l-4 border-[var(--accent-red)]">
+              <h3 className="font-bold text-foreground mb-2 flex items-center gap-2">
+                ⚠️ Aandacht nodig
+              </h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Je belastingsscore is hoog. Het is belangrijk om nu actie te ondernemen.
+                Praat met iemand of zoek professionele hulp.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <a
+                  href="tel:0302059059"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-lg text-sm font-medium hover:bg-gray-50"
+                >
+                  📞 Mantelzorglijn: 030-2059059
+                </a>
+                <Link
+                  href="/hulpvragen?tab=voor-jou"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium"
+                >
+                  🤝 Zoek hulp
+                </Link>
               </div>
             </div>
-          </div>
+          )}
+
+          {/* Gemiddelde belasting tip */}
+          {data.test.niveau === "GEMIDDELD" && (
+            <div className="mt-4 p-4 bg-[var(--accent-amber-bg)] rounded-xl border-l-4 border-[var(--accent-amber)]">
+              <h3 className="font-bold text-foreground mb-2 flex items-center gap-2">
+                💡 Tip
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Je ervaart een gemiddelde belasting. Bekijk welke taken je kunt uitbesteden
+                of waar je hulp bij kunt krijgen.
+              </p>
+            </div>
+          )}
         </section>
       ) : (
         <section className="mb-8">

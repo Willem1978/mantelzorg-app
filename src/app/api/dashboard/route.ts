@@ -85,9 +85,14 @@ async function getHulpbronnenVoorTaken(
     }
   }
 
-  // Vind zware taken (MOEILIJK, ZEER_MOEILIJK of GEMIDDELD)
+  // Vind zware taken
+  // Ondersteunt zowel web format (MOEILIJK/GEMIDDELD) als WhatsApp format (JA/SOMS)
+  const isZwaarOfMatig = (m: string | null) =>
+    m === 'MOEILIJK' || m === 'ZEER_MOEILIJK' || m === 'GEMIDDELD' ||
+    m === 'JA' || m === 'ja' || m === 'SOMS' || m === 'soms'
+
   const zwareTaken = latestTest.taakSelecties?.filter(
-    (t: any) => t.isGeselecteerd && (t.moeilijkheid === 'MOEILIJK' || t.moeilijkheid === 'ZEER_MOEILIJK' || t.moeilijkheid === 'GEMIDDELD')
+    (t: any) => t.isGeselecteerd && isZwaarOfMatig(t.moeilijkheid)
   ) || []
 
   const perTaak: Record<string, HulpbronResult[]> = {}

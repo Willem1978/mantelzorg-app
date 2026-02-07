@@ -5,6 +5,23 @@ Alle belangrijke wijzigingen aan MantelBuddy worden hier gedocumenteerd.
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.0.0/),
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [1.4.0] - 2025-02-07
+
+### Gewijzigd
+- **Dashboard score weergave**: Smiley vervangen door numerieke score (bijv. "12/24") in grote gekleurde cirkel
+- **Score uitleg**: Toegevoegd bij score ("Score 0-8: Je houdt het goed vol..." etc.)
+- **Urgentie sectie**: Bij hoge of gemiddelde belasting verschijnt nu een melding met tips en hulplinks
+- **Zorgtaken kleuren**: Taken in hulpvragen pagina tonen nu correct hun moeilijkheidsniveau met kleuren
+
+### Opgelost
+- Fix: Zorgtaken telden niet correct omdat WhatsApp test "JA/SOMS/NEE" gebruikt ipv "MOEILIJK/GEMIDDELD/MAKKELIJK"
+- Fix: Dashboard toonde 0/0/0 voor taken verdeling
+- Fix: Hulpvragen pagina categorieën toonden geen kleur-indicators
+
+### Technisch
+- Uniforme moeilijkheid check functies die beide formats ondersteunen (web + WhatsApp)
+- Dashboard API, dashboard pagina en hulpvragen pagina bijgewerkt
+
 ## [1.3.0] - 2025-02-07
 
 ### Toegevoegd
