@@ -5,6 +5,13 @@ Alle belangrijke wijzigingen aan MantelBuddy worden hier gedocumenteerd.
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.0.0/),
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [1.4.1] - 2025-02-07
+
+### Gewijzigd
+- **Hulpvragen pagina**: "Kies hieronder waar je hulp bij zoekt" tekst verplaatst naar boven de tabknoppen
+- **Urgentiebox**: Mantelzorglijn wordt nu als telefoonnummer getoond (030-2059059) ipv knop
+- **Urgentiebox**: "Bekijk rapport" knop verwijderd uit urgentiebox
+
 ## [1.4.0] - 2025-02-07
 
 ### Gewijzigd

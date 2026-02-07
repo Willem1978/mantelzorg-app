@@ -508,9 +508,6 @@ function HulpPageContent() {
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <span className="text-3xl">💜</span> Hulp
         </h1>
-        <p className="text-muted-foreground mt-1">
-          Kies waar je hulp bij zoekt
-        </p>
       </div>
 
       {/* Urgente melding bij hoge belasting */}
@@ -520,22 +517,16 @@ function HulpPageContent() {
           <p className="text-sm text-muted-foreground mb-3">
             Neem contact op met je huisarts of de mantelzorglijn voor ondersteuning.
           </p>
-          <div className="flex flex-wrap gap-2">
-            <a
-              href="tel:0900-2020496"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-lg text-sm font-medium hover:bg-gray-50"
-            >
-              📞 Mantelzorglijn
-            </a>
-            <Link
-              href="/rapport"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium"
-            >
-              Bekijk rapport
-            </Link>
-          </div>
+          <p className="text-sm font-medium text-foreground">
+            📞 Mantelzorglijn: <a href="tel:0302059059" className="text-primary hover:underline">030-2059059</a>
+          </p>
         </div>
       )}
+
+      {/* Instructietekst boven tabs */}
+      <p className="text-center text-muted-foreground mb-4">
+        Kies hieronder waar je hulp bij zoekt
+      </p>
 
       {/* DRIE TABS NAAST ELKAAR */}
       {(() => {
@@ -623,12 +614,6 @@ function HulpPageContent() {
       })()}
 
       {/* CONTENT OP BASIS VAN GESELECTEERDE TAB */}
-      {!activeTab && (
-        <div className="text-center py-8 text-muted-foreground">
-          <p className="text-lg">👆</p>
-          <p className="mt-2">Kies hierboven waar je hulp bij zoekt</p>
-        </div>
-      )}
 
       {/* TAB: VOOR JOU (Mantelzorger) */}
       {activeTab === 'voor-jou' && (
