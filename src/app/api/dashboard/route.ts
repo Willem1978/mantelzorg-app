@@ -196,10 +196,12 @@ async function getHulpbronnenVoorTaken(
     'Huishoudelijke taken',
     'Vervoer',
     'Administratie en aanvragen',
+    'Plannen en organiseren',
     'Sociaal contact en activiteiten',
     'Bereiden en/of nuttigen van maaltijden',
     'Boodschappen',
     'Klusjes in en om het huis',
+    'Huisdieren',
     'Mantelzorgondersteuning',
   ]
 

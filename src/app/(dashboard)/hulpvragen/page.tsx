@@ -65,10 +65,12 @@ const CATEGORIEEN_ZORGVRAGER = [
   { naam: 'Huishoudelijke taken', icon: '🧹', kort: 'Huishouden' },
   { naam: 'Vervoer', icon: '🚗', kort: 'Vervoer' },
   { naam: 'Administratie en aanvragen', icon: '📋', kort: 'Administratie' },
+  { naam: 'Plannen en organiseren', icon: '📅', kort: 'Plannen' },
   { naam: 'Sociaal contact en activiteiten', icon: '👥', kort: 'Sociaal' },
   { naam: 'Bereiden en/of nuttigen van maaltijden', icon: '🍽️', kort: 'Maaltijden' },
   { naam: 'Boodschappen', icon: '🛒', kort: 'Boodschappen' },
   { naam: 'Klusjes in en om het huis', icon: '🔧', kort: 'Klusjes' },
+  { naam: 'Huisdieren', icon: '🐕', kort: 'Huisdieren' },
 ]
 
 // Categorieën voor mantelzorger (hulp voor jou)
@@ -122,6 +124,10 @@ const TAAK_NAAR_CATEGORIE: Record<string, string> = {
   'Klusjes in en om huis': 'Klusjes in en om het huis',
   'Klusjes in/om huis': 'Klusjes in en om het huis',
   'Klusjes in en om het huis': 'Klusjes in en om het huis',
+  // Huisdieren
+  'Huisdieren': 'Huisdieren',
+  'Huisdieren verzorgen': 'Huisdieren',
+  'Dieren': 'Huisdieren',
 }
 
 // Hulpvraag categorieën
