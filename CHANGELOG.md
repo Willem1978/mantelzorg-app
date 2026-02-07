@@ -5,6 +5,11 @@ Alle belangrijke wijzigingen aan MantelBuddy worden hier gedocumenteerd.
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.0.0/),
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [1.4.4] - 2025-02-07
+
+### Gewijzigd
+- **Dashboard urgentiebox**: "Zoek hulp" knop verwijderd, alleen Mantelzorglijn telefoonnummer getoond
+
 ## [1.4.3] - 2025-02-07
 
 ### Gewijzigd

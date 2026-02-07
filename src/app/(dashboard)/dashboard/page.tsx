@@ -416,20 +416,9 @@ function DashboardContent() {
                 Je belastingsscore is hoog. Het is belangrijk om nu actie te ondernemen.
                 Praat met iemand of zoek professionele hulp.
               </p>
-              <div className="flex flex-wrap gap-2">
-                <a
-                  href="tel:0302059059"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-lg text-sm font-medium hover:bg-gray-50"
-                >
-                  📞 Mantelzorglijn: 030-2059059
-                </a>
-                <Link
-                  href="/hulpvragen?tab=voor-jou"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium"
-                >
-                  🤝 Zoek hulp
-                </Link>
-              </div>
+              <p className="text-sm font-medium text-foreground">
+                📞 Mantelzorglijn: <a href="tel:0302059059" className="text-primary hover:underline">030-2059059</a>
+              </p>
             </div>
           )}
 
