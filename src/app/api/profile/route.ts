@@ -79,20 +79,26 @@ export async function PUT(request: Request) {
       body.naasteStraat && body.naasteWoonplaats
     )
 
-    // Valideer telefoonnummer - voorkom "undefined" string
-    const telefoon = body.telefoon
-    const validPhone = telefoon &&
-      telefoon !== "undefined" &&
-      telefoon !== "null" &&
-      telefoon.trim() !== ""
-        ? telefoon
-        : null
+    // Valideer telefoonnummer - alleen updaten als expliciet meegestuurd
+    // undefined = niet meegestuurd, behoud huidige waarde
+    // null of lege string = bewust verwijderen
+    let phoneUpdate: { phoneNumber?: string | null } = {}
+    if (body.telefoon !== undefined) {
+      const telefoon = body.telefoon
+      const validPhone = telefoon &&
+        telefoon !== "undefined" &&
+        telefoon !== "null" &&
+        telefoon.trim() !== ""
+          ? telefoon
+          : null
+      phoneUpdate = { phoneNumber: validPhone }
+    }
 
     // Update caregiver
     const caregiver = await prisma.caregiver.update({
       where: { id: session.user.caregiverId },
       data: {
-        phoneNumber: validPhone,
+        ...phoneUpdate,
         // Locatie mantelzorger
         street: body.straat,
         city: body.woonplaats,
