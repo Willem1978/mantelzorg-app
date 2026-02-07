@@ -332,28 +332,28 @@ function DashboardContent() {
           {/* Score Card met Thermometer */}
           <div className="ker-card overflow-hidden">
             {/* Header: Titel en datum */}
-            <div className="flex items-center justify-between mb-4">
-              <h2
-                className={cn(
-                  "font-bold text-lg",
-                  data.test.niveau === "LAAG" && "text-[var(--accent-green)]",
-                  data.test.niveau === "GEMIDDELD" && "text-[var(--accent-amber)]",
-                  data.test.niveau === "HOOG" && "text-[var(--accent-red)]"
-                )}
-              >
-                {data.test.niveau === "LAAG" && "Lage belasting"}
-                {data.test.niveau === "GEMIDDELD" && "Gemiddelde belasting"}
-                {data.test.niveau === "HOOG" && "Hoge belasting"}
-              </h2>
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <h2
+                  className={cn(
+                    "font-bold text-lg",
+                    data.test.niveau === "LAAG" && "text-[var(--accent-green)]",
+                    data.test.niveau === "GEMIDDELD" && "text-[var(--accent-amber)]",
+                    data.test.niveau === "HOOG" && "text-[var(--accent-red)]"
+                  )}
+                >
+                  {data.test.niveau === "LAAG" && "Lage belasting"}
+                  {data.test.niveau === "GEMIDDELD" && "Gemiddelde belasting"}
+                  {data.test.niveau === "HOOG" && "Hoge belasting"}
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {data.test.daysSinceTest === 0 ? "Vandaag gemeten" : `${data.test.daysSinceTest} dagen geleden`}
+                </p>
+              </div>
               <p className="text-sm text-muted-foreground">
-                Laatste meting: {data.test.daysSinceTest === 0 ? "Vandaag" : `${data.test.daysSinceTest}d geleden`}
-                {data.test.trend && (
-                  <span className="ml-1">
-                    {data.test.trend === "improved" && "📈"}
-                    {data.test.trend === "worse" && "📉"}
-                    {data.test.trend === "same" && "➡️"}
-                  </span>
-                )}
+                {data.test.niveau === "LAAG" && "Het gaat goed met je! Blijf goed voor jezelf zorgen."}
+                {data.test.niveau === "GEMIDDELD" && "Je draagt best veel. Kijk of je ergens hulp bij kunt krijgen."}
+                {data.test.niveau === "HOOG" && "Je hebt het zwaar. Het is belangrijk om hulp te zoeken."}
               </p>
             </div>
 
@@ -487,9 +487,14 @@ function DashboardContent() {
         {/* SECTIE 2: Jouw Eerste 3 Acties */}
         {aanbevolenActies.length > 0 && (
           <section className="mb-8">
-            <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-              <span className="text-2xl">🎯</span> Jouw Eerste Stappen
-            </h2>
+            <div className="mb-4">
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2 mb-2">
+                <span className="text-2xl">🎯</span> Jouw Eerste Stappen
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Wij raden je aan om met deze stappen te beginnen. Zo krijg je de beste hulp.
+              </p>
+            </div>
 
             <div className="space-y-3">
             {aanbevolenActies.map((actie, i) => (
@@ -525,13 +530,14 @@ function DashboardContent() {
               {/* SECTIE 3: Je Zorgtaken met Hulp */}
           {data?.test?.zorgtaken && data.test.zorgtaken.length > 0 && (
             <section className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <div className="mb-4">
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2 mb-2">
                 <span className="text-2xl">📋</span> Je Zorgtaken
               </h2>
-              <Link href="/hulpvragen" className="text-sm text-primary hover:underline">
-                Alle hulp →
-              </Link>
+              <p className="text-sm text-muted-foreground">
+                Dit zijn de taken die je doet voor je naaste. Bij de rode en oranje taken kun je hulp zoeken.
+                Tik op een taak om te zien welke hulp er is bij jou in de buurt.
+              </p>
             </div>
 
             <div className="space-y-3">
@@ -635,6 +641,11 @@ function DashboardContent() {
                 <span className="text-2xl">{data?.checkIns?.weeklyDone ? "✅" : "📝"}</span>
                 <p className="font-medium text-sm mt-2">
                   {data?.checkIns?.weeklyDone ? "Check-in gedaan" : "Wekelijkse check-in"}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {data?.checkIns?.weeklyDone
+                    ? "Goed bezig! Tot volgende week."
+                    : "Even kijken hoe het met je gaat. Duurt maar 2 minuten."}
                 </p>
               </div>
             </Link>

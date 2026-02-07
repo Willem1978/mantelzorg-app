@@ -515,21 +515,31 @@ export default function BelastbaarheidstestPage() {
             <div className="max-w-md mx-auto lg:mx-0 lg:max-w-none">
               <div className="ker-card lg:shadow-lg">
               <h2 className="font-bold text-foreground text-lg mb-4">
-                Welkom bij de Mantelzorg Balanstest!
+                Welkom bij de Balanstest
               </h2>
 
               <div className="space-y-4 text-foreground">
                 <p>
-                  In deel 1 krijg je vragen over hoe jij je voelt, hoeveel energie je hebt en of je tijd voor jezelf hebt. Zo zie je snel wat de zorg voor je naaste met jou doet.
+                  Deze test helpt je om te zien hoe zwaar de zorg voor jou is.
+                  Het duurt ongeveer 5 minuten.
                 </p>
-                <p>
-                  In deel 2 krijg je vragen wat je voor je naaste doet. Help je meer mensen? Tel dan de taken en uren die je maakt bij elkaar op.
-                </p>
-                <p className="font-medium">
-                  Er zijn geen goede of foute antwoorden. Het gaat alleen om jouw eigen ervaring.
-                </p>
-                <p className="text-muted-foreground text-sm lg:text-base">
-                  Onder elke vraag staat ook een weetje voor jou als mantelzorger.
+
+                <div className="bg-muted rounded-xl p-4">
+                  <p className="font-medium mb-2">De test heeft 2 delen:</p>
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex items-start gap-2">
+                      <span className="font-bold text-primary">1.</span>
+                      <span>Vragen over hoe jij je voelt. Over je energie, je gevoel en je tijd.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="font-bold text-primary">2.</span>
+                      <span>Vragen over wat je doet voor je naaste. Welke taken en hoeveel uur.</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <p className="font-medium text-primary">
+                  Er zijn geen goede of foute antwoorden. Het gaat om hoe jij het ervaart.
                 </p>
               </div>
 
@@ -694,9 +704,9 @@ export default function BelastbaarheidstestPage() {
           <div className="max-w-md mx-auto flex items-start gap-4">
             <GerAvatar size="md" />
             <div className="pt-1">
-              <h2 className="text-xl font-bold text-foreground">Jouw zorgtaken</h2>
+              <h2 className="text-xl font-bold text-foreground">Wat doe jij voor je naaste?</h2>
               <p className="text-muted-foreground text-sm mt-1">
-                Welke taken doe jij voor je naaste? Selecteer alles wat van toepassing is.
+                Vink aan welke taken jij doet. Je mag meerdere dingen aankruisen.
               </p>
             </div>
           </div>
@@ -706,6 +716,9 @@ export default function BelastbaarheidstestPage() {
         <main className="px-4 pb-32">
           <div className="max-w-md mx-auto">
             <div className="ker-card">
+              <p className="text-sm text-muted-foreground mb-4">
+                Klik op een taak om deze te selecteren. Daarna vragen we hoeveel tijd dit kost.
+              </p>
               <div className="space-y-3">
                 {zorgtaken.map((taak) => (
                   <button
@@ -899,7 +912,7 @@ export default function BelastbaarheidstestPage() {
             <div className="pt-1">
               <h2 className="text-xl font-bold text-foreground">Jouw resultaat</h2>
               <p className="text-muted-foreground text-sm mt-1">
-                Dit is jouw persoonlijke Mantelzorg Balanstest rapport.
+                Hieronder zie je hoe zwaar de zorg voor jou is. Dit is geen oordeel, maar een hulpmiddel.
               </p>
             </div>
           </div>
@@ -908,6 +921,14 @@ export default function BelastbaarheidstestPage() {
         {/* Resultaat */}
         <main className="px-4 pb-32">
           <div className="max-w-md mx-auto space-y-4">
+            {/* Uitleg */}
+            <div className="bg-primary/5 rounded-xl p-4">
+              <p className="text-sm text-foreground">
+                <span className="font-medium">Wat betekent dit?</span> Hoe hoger je score, hoe meer de zorg
+                je belast. Een hoge score is geen falen. Het betekent dat je hulp kunt gebruiken.
+              </p>
+            </div>
+
             {/* Score card */}
             <div className={cn(
               "ker-card text-center",
@@ -1028,9 +1049,9 @@ export default function BelastbaarheidstestPage() {
           <div className="max-w-md mx-auto flex items-start gap-4">
             <GerAvatar size="md" />
             <div className="pt-1">
-              <h2 className="text-xl font-bold text-foreground">Jouw Balanstest</h2>
+              <h2 className="text-xl font-bold text-foreground">Sla je resultaat op</h2>
               <p className="text-muted-foreground text-sm mt-1">
-                Vul nu je gegevens in en klik op verstuur.
+                Vul je gegevens in. Dan kunnen we je resultaat bewaren.
               </p>
             </div>
           </div>
@@ -1040,11 +1061,18 @@ export default function BelastbaarheidstestPage() {
         <main className="px-4 pb-32">
           <div className="max-w-md mx-auto">
             <div className="ker-card">
-              <p className="text-foreground mb-6">
-                Vul nu je gegevens in en klik op verstuur. Dan lees je op de volgende pagina meteen het resultaat van jouw <span className="font-bold">Mantelzorg Balanstest.</span> Je krijgt ook een link per e-mail, zodat je de check vaker kunt bekijken of uitprinten.
+              <p className="text-foreground mb-4">
+                We slaan je resultaat op. Zo kun je later zien hoe het met je gaat.
+                Je krijgt ook een link per e-mail.
               </p>
 
-              <p className="font-medium text-foreground mb-4">Vul hier jouw gegevens in:</p>
+              <div className="bg-muted rounded-xl p-3 mb-6">
+                <p className="text-sm text-muted-foreground">
+                  Je adres hebben we nodig om hulp bij jou in de buurt te vinden.
+                </p>
+              </div>
+
+              <p className="font-medium text-foreground mb-4">Vul hier je gegevens in:</p>
 
               <div className="space-y-4">
                 <div>
@@ -1136,7 +1164,7 @@ export default function BelastbaarheidstestPage() {
           <div className="pt-1">
             <h2 className="text-xl font-bold text-foreground">Bijna klaar!</h2>
             <p className="text-muted-foreground text-sm mt-1">
-              Je rapport is klaar. Hoe wil je verder?
+              Je resultaat is klaar. Kies hoe je verder wilt.
             </p>
           </div>
         </div>
@@ -1145,6 +1173,9 @@ export default function BelastbaarheidstestPage() {
       {/* Opties */}
       <main className="px-4 pb-8">
         <div className="max-w-md mx-auto space-y-3">
+          <p className="text-sm text-muted-foreground mb-2">
+            Met een account kun je je resultaten bewaren en hulp bij jou in de buurt vinden.
+          </p>
           <button
             onClick={() => handleAccountKeuze("register")}
             disabled={isSaving}
@@ -1158,7 +1189,7 @@ export default function BelastbaarheidstestPage() {
               </div>
               <div className="flex-1">
                 <p className="font-bold text-foreground">Account aanmaken</p>
-                <p className="text-sm text-muted-foreground">Sla je rapport op en volg je voortgang</p>
+                <p className="text-sm text-muted-foreground">Sla je resultaat op en volg je voortgang</p>
               </div>
             </div>
           </button>

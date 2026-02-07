@@ -373,6 +373,10 @@ function HulpPageContent() {
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <span className="text-3xl">📝</span> Mijn vragen
           </h1>
+          <p className="text-muted-foreground mt-2">
+            Hier zie je de vragen die je hebt gesteld. Wij zoeken hulp voor je en
+            laten je weten als er een antwoord is.
+          </p>
         </div>
 
         <div className="space-y-4">
@@ -389,7 +393,10 @@ function HulpPageContent() {
           {/* Hulpvraag formulier */}
           {showHulpvraagForm && (
             <div className="ker-card">
-              <h3 className="font-semibold text-foreground mb-4">Nieuwe hulpvraag</h3>
+              <h3 className="font-semibold text-foreground mb-2">Nieuwe hulpvraag</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Vertel ons waar je hulp bij nodig hebt. Wij zoeken dan iemand die je kan helpen.
+              </p>
               <form onSubmit={handleSubmitHulpvraag} className="space-y-4">
                 {/* Categorie */}
                 <div>
@@ -521,8 +528,12 @@ function HulpPageContent() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          <span className="text-3xl">💜</span> Hulp
+          <span className="text-3xl">💜</span> Hulp zoeken
         </h1>
+        <p className="text-muted-foreground mt-2">
+          Je hebt aangegeven dat sommige zorgtaken zwaar voor je zijn.
+          Hier vind je hulp bij jou in de buurt. Zo hoef je het niet alleen te doen.
+        </p>
       </div>
 
       {/* Urgente melding bij hoge belasting */}
@@ -539,9 +550,12 @@ function HulpPageContent() {
       )}
 
       {/* Instructietekst boven tabs */}
-      <p className="text-center text-muted-foreground mb-4">
-        Tik op een knop om hulp te vinden
-      </p>
+      <div className="bg-primary/5 rounded-xl p-4 mb-4">
+        <p className="text-sm text-foreground">
+          <span className="font-medium">Hoe werkt het?</span> Kies hieronder voor wie je hulp zoekt.
+          Tik op een categorie om te zien welke hulp er is.
+        </p>
+      </div>
 
       {/* DRIE TABS NAAST ELKAAR */}
       {(() => {
@@ -633,6 +647,12 @@ function HulpPageContent() {
       {/* TAB: VOOR JOU (Mantelzorger) */}
       {activeTab === 'voor-jou' && (
         <div className="space-y-4">
+          <div className="bg-primary/10 rounded-xl p-4 mb-2">
+            <p className="text-sm text-foreground">
+              <span className="font-medium">💜 Hulp voor jou als mantelzorger.</span> Mantelzorgen is zwaar werk.
+              Ook jij hebt soms hulp nodig. Hier vind je organisaties die jou kunnen helpen.
+            </p>
+          </div>
           {locatieMantelzorger && (
             <p className="text-sm text-muted-foreground flex items-center gap-1">
               📍 {locatieMantelzorger}
@@ -736,6 +756,13 @@ function HulpPageContent() {
       {/* TAB: VOOR NAASTE (Zorgvrager) */}
       {activeTab === 'voor-naaste' && (
         <div className="space-y-4">
+          <div className="bg-[var(--accent-amber-bg)] rounded-xl p-4 mb-2">
+            <p className="text-sm text-foreground">
+              <span className="font-medium">💝 Hulp voor je naaste.</span> Hier vind je hulp voor de taken
+              die je voor je naaste doet. Rode en oranje taken zijn het zwaarst voor jou.
+              Daar kun je het beste eerst hulp bij zoeken.
+            </p>
+          </div>
           {locatieZorgvrager && (
             <p className="text-sm text-muted-foreground flex items-center gap-1">
               📍 {locatieZorgvrager}
@@ -819,14 +846,20 @@ function HulpPageContent() {
       {/* TAB: ALGEMEEN (Landelijk) - alleen overige hulpbronnen die niet in categorieën passen */}
       {activeTab === 'algemeen' && (
         <div className="space-y-4">
+          <div className="bg-muted rounded-xl p-4 mb-2">
+            <p className="text-sm text-foreground">
+              <span className="font-medium">🌍 Landelijke hulplijnen.</span> Deze organisaties helpen
+              mantelzorgers in heel Nederland. Je kunt ze bellen of hun website bezoeken.
+            </p>
+          </div>
           {(() => {
             const overigeLandelijke = getOverigeLandelijke()
 
             if (overigeLandelijke.length === 0) {
               return (
                 <div className="text-center py-8 text-muted-foreground ker-card">
-                  <p>Alle landelijke hulpbronnen zijn te vinden bij de categorieën hierboven</p>
-                  <p className="text-sm mt-2">Klik op "Voor jou" om hulpbronnen te bekijken</p>
+                  <p>Alle landelijke hulpbronnen staan bij de andere categorieën.</p>
+                  <p className="text-sm mt-2">Klik op "Voor jou" om hulpbronnen te bekijken.</p>
                 </div>
               )
             }
@@ -847,7 +880,7 @@ function HulpPageContent() {
             return (
               <>
                 <p className="text-sm text-muted-foreground">
-                  Overige landelijke hulplijnen en informatie
+                  Hier vind je landelijke hulplijnen en informatie.
                 </p>
 
                 {/* Hulplijnen met telefoonnummer */}
@@ -905,9 +938,11 @@ function HulpPageContent() {
               <span className="text-2xl">🤝</span>
             </div>
             <div className="flex-1">
-              <h3 className="font-bold text-foreground text-lg">Schakel de hulp van een MantelBuddy in!</h3>
+              <h3 className="font-bold text-foreground text-lg">Wil je hulp van een vrijwilliger?</h3>
               <p className="text-sm text-muted-foreground mt-2">
-                Kan je wel hulp gebruiken met het uitvoeren van een kleine taak of juist meer ondersteuning zodat je meer ruimte krijgt? Schakel dan snel en eenvoudig de hulp in van een lokale betrouwbare vrijwillige MantelBuddy.
+                Een MantelBuddy is een vrijwilliger bij jou in de buurt.
+                Die kan je helpen met kleine taken. Of gewoon even met je praten.
+                Zo krijg jij meer tijd en ruimte voor jezelf.
               </p>
               <button
                 onClick={() => setShowVragenTab(true)}

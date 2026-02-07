@@ -183,9 +183,9 @@ export default function CheckInPage() {
             <div className="flex items-start gap-4 lg:flex-col lg:items-center lg:gap-6">
               <GerAvatar size="md" className="lg:w-24 lg:h-24" />
               <div className="pt-1 lg:pt-0">
-                <h2 className="text-xl lg:text-2xl font-bold text-foreground">Check-in voltooid!</h2>
+                <h2 className="text-xl lg:text-2xl font-bold text-foreground">Klaar!</h2>
                 <p className="text-muted-foreground text-sm lg:text-base mt-1 lg:mt-3">
-                  Zo te zien gaat het {mood.label.toLowerCase()} met je deze maand.
+                  Bedankt voor het invullen. Hieronder zie je hoe het met je gaat.
                 </p>
               </div>
             </div>
@@ -214,12 +214,12 @@ export default function CheckInPage() {
               )}>
                 {mood.label}
               </h3>
-              <p className="text-foreground">
+              <p className="text-foreground text-sm">
                 {mood.kleur === "green"
-                  ? "Fijn dat het goed met je gaat! Blijf goed voor jezelf zorgen."
+                  ? "Fijn dat het goed met je gaat! Blijf goed voor jezelf zorgen. Je doet het prima."
                   : mood.kleur === "amber"
-                  ? "Het gaat wisselend. Vergeet niet af en toe hulp te vragen."
-                  : "Het lijkt erop dat je het zwaar hebt. We zijn er voor je."}
+                  ? "Je hebt het soms zwaar. Dat is normaal als mantelzorger. Vergeet niet om hulp te vragen."
+                  : "Je hebt het zwaar. Dat is niet gek bij alles wat je doet. Praat erover met iemand."}
               </p>
             </div>
 
@@ -423,9 +423,10 @@ export default function CheckInPage() {
           <div className="flex items-start gap-4 lg:flex-col lg:items-center lg:gap-6">
             <GerAvatar size="md" className="lg:w-24 lg:h-24" />
             <div className="pt-1 lg:pt-0">
-              <h2 className="text-xl lg:text-2xl font-bold text-foreground">Maandelijkse check-in</h2>
+              <h2 className="text-xl lg:text-2xl font-bold text-foreground">Hoe gaat het met je?</h2>
               <p className="text-muted-foreground text-sm lg:text-base mt-1 lg:mt-3">
-                Even kijken hoe het met je gaat
+                We stellen je een paar korte vragen. Zo kunnen we zien hoe het met je gaat.
+                Dit duurt maar 2 minuten.
               </p>
             </div>
           </div>

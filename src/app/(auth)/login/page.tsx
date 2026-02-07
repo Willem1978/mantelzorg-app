@@ -58,7 +58,7 @@ function LoginForm() {
             <div className="pt-2 lg:pt-0">
               <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Welkom terug!</h1>
               <p className="text-muted-foreground mt-1 lg:mt-3 lg:text-lg">
-                Vul je e-mail en wachtwoord in om verder te gaan.
+                Vul je gegevens in om in te loggen. Na het inloggen ga je naar je dashboard.
               </p>
             </div>
           </div>
@@ -87,7 +87,7 @@ function LoginForm() {
             {error && (
               <div className="bg-[#FFEBEE] border-2 border-[#F44336] text-[#C62828] px-4 py-3 rounded-xl mb-6 text-sm">
                 <p className="font-medium">Dat lukte niet</p>
-                <p>Controleer je e-mail en wachtwoord en probeer het nog eens.</p>
+                <p>Je e-mail of wachtwoord is niet goed. Kijk het na en probeer opnieuw.</p>
               </div>
             )}
 
@@ -151,7 +151,7 @@ function LoginForm() {
 
             <div className="mt-6 pt-6 border-t border-border">
               <p className="text-center text-muted-foreground mb-4">
-                Nog geen account?
+                Nog geen account? Maak er gratis een aan.
               </p>
               <Link
                 href="/register"

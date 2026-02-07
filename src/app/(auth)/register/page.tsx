@@ -186,18 +186,18 @@ export default function RegisterPage() {
 
   const getStepTitle = () => {
     switch (step) {
-      case 1: return "Welkom!"
+      case 1: return "Maak een account"
       case 2: return "Over jou"
-      case 3: return "Voor wie zorg je?"
+      case 3: return "Over je naaste"
       default: return ""
     }
   }
 
   const getStepSubtitle = () => {
     switch (step) {
-      case 1: return "We maken eerst een account voor je aan."
-      case 2: return "Vertel ons iets over jezelf."
-      case 3: return "Bijna klaar! Nog even over je naaste."
+      case 1: return "Vul je e-mail en wachtwoord in. Zo kun je later weer inloggen."
+      case 2: return "Vul je naam en adres in. Met je adres zoeken we hulp bij jou in de buurt."
+      case 3: return "Bijna klaar! Vul de gegevens van je naaste in."
       default: return ""
     }
   }
