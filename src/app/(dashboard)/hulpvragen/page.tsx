@@ -897,44 +897,29 @@ function HulpPageContent() {
         </div>
       )}
 
-      {/* HULPVRAAG STELLEN - altijd zichtbaar onderaan */}
-      <div className="mt-8 space-y-4">
+      {/* MantelBuddy inschakelen - altijd zichtbaar onderaan */}
+      <div className="mt-8">
         <div className="ker-card bg-gradient-to-r from-primary/5 to-primary/10">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-              <span className="text-xl">🤝</span>
+            <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+              <span className="text-2xl">🤝</span>
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-foreground">Stel een vraag</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Vraag hulp aan organisaties of buurtgenoten
+              <h3 className="font-bold text-foreground text-lg">Schakel de hulp van een MantelBuddy in!</h3>
+              <p className="text-sm text-muted-foreground mt-2">
+                Kan je wel hulp gebruiken met het uitvoeren van een kleine taak of juist meer ondersteuning zodat je meer ruimte krijgt? Schakel dan snel en eenvoudig de hulp in van een lokale betrouwbare vrijwillige MantelBuddy.
               </p>
               <button
                 onClick={() => setShowVragenTab(true)}
-                className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90"
+                className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity"
               >
-                Mijn vragen
-                {openHulpvragen > 0 && (
-                  <span className="w-5 h-5 bg-white/20 rounded-full flex items-center justify-center text-xs">
-                    {openHulpvragen}
-                  </span>
-                )}
+                Vraag een MantelBuddy aan
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </button>
             </div>
           </div>
-        </div>
-
-        {/* Externe zoekoptie */}
-        <div className="ker-card">
-          <p className="font-medium text-foreground mb-2">Meer hulp zoeken?</p>
-          <a
-            href={`https://www.zorgkaartnederland.nl/zoeken?q=mantelzorg&plaats=${hulpData?.mantelzorgerGemeente || ''}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-muted rounded-lg text-sm hover:bg-muted/80"
-          >
-            🔍 Zoek op Zorgkaart Nederland
-          </a>
         </div>
       </div>
     </div>

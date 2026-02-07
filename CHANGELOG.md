@@ -5,6 +5,16 @@ Alle belangrijke wijzigingen aan MantelBuddy worden hier gedocumenteerd.
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.0.0/),
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [1.4.3] - 2025-02-07
+
+### Gewijzigd
+- **Hulpvragen pagina**: "Stel een vraag" sectie vervangen door "Schakel de hulp van een MantelBuddy in!"
+- **Hulpvragen pagina**: Nieuwe tekst over lokale vrijwillige MantelBuddies
+- **Hulpvragen pagina**: Call-to-action knop "Vraag een MantelBuddy aan"
+
+### Verwijderd
+- **Hulpvragen pagina**: "Meer hulp zoeken? Zoek op Zorgkaart Nederland" sectie verwijderd
+
 ## [1.4.2] - 2025-02-07
 
 ### Gewijzigd
