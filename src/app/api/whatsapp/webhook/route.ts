@@ -1505,47 +1505,16 @@ async function sendResponse(
     response = '❌ Er ging iets mis. Typ iets om opnieuw te beginnen.'
   }
 
-  // Optie 1: Quick Reply Buttons via API (modern)
-  if (quickReplyButtons && quickReplyButtons.length > 0 && twilioClient) {
-    try {
-      await sendInteractiveButtonMessage(
-        phoneNumber,
-        response,
-        quickReplyButtons
-      )
-
-      return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?><Response></Response>`, {
-        status: 200,
-        headers: { 'Content-Type': 'text/xml' },
-      })
-    } catch (error) {
-      console.error('Error sending quick reply buttons:', error)
-      // Fallback: tekst met genummerde opties
-      let fallbackText = response + '\n\n'
-      quickReplyButtons.forEach((btn, index) => {
-        const numEmoji = ['1️⃣', '2️⃣', '3️⃣'][index] || `${index + 1}.`
-        fallbackText += `${numEmoji} ${btn.title}\n`
-      })
-      fallbackText += '\n_Typ 1, 2 of 3_'
-      return sendTwiML(fallbackText)
-    }
-  }
-
-  // Optie 2: Content Template (legacy)
-  if (useInteractiveButtons && interactiveContentSid && twilioClient) {
-    try {
-      await sendContentTemplateMessage(phoneNumber, interactiveContentSid, {
-        '1': interactiveBodyText || '',
-      })
-
-      return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?><Response></Response>`, {
-        status: 200,
-        headers: { 'Content-Type': 'text/xml' },
-      })
-    } catch (error) {
-      console.error('Error sending interactive message:', error)
-      return sendTwiML((interactiveBodyText || response) + `\n\n1️⃣ Ja\n2️⃣ Soms\n3️⃣ Nee\n\n_Typ 1, 2 of 3_`)
-    }
+  // Als er quick reply buttons zijn, voeg ze toe als tekst
+  // (Interactieve buttons werken niet met Twilio Sandbox)
+  if (quickReplyButtons && quickReplyButtons.length > 0) {
+    let messageWithButtons = response + '\n\n'
+    quickReplyButtons.forEach((btn, index) => {
+      const numEmoji = ['1️⃣', '2️⃣', '3️⃣'][index] || `${index + 1}.`
+      messageWithButtons += `${numEmoji} ${btn.title}\n`
+    })
+    messageWithButtons += '\n_Typ je keuze (1, 2 of 3)_'
+    return sendTwiML(messageWithButtons)
   }
 
   return sendTwiML(response)

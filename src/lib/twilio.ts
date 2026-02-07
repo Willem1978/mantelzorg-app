@@ -31,9 +31,12 @@ export interface InteractiveMessageOptions {
 
 /**
  * Stuur een WhatsApp bericht met interactieve Quick Reply knoppen
- * Gebruikt Twilio's native interactive message format
  *
- * Let op: Dit werkt alleen binnen het 24-uur sessievenster
+ * BELANGRIJK: Interactieve buttons werken NIET met de Twilio Sandbox!
+ * Ze vereisen een goedgekeurd WhatsApp Business account.
+ *
+ * Deze functie stuurt daarom altijd tekst met genummerde opties,
+ * wat universeel werkt met alle WhatsApp accounts.
  */
 export async function sendInteractiveButtonMessage(
   to: string,
@@ -46,55 +49,9 @@ export async function sendInteractiveButtonMessage(
     throw new Error('Twilio client not configured')
   }
 
-  const formattedTo = to.startsWith('whatsapp:') ? to : `whatsapp:${to}`
-  const formattedFrom = whatsappFrom.startsWith('whatsapp:') ? whatsappFrom : `whatsapp:${whatsappFrom}`
-
-  // Bouw het interactieve bericht volgens WhatsApp Business API format
-  const interactivePayload: any = {
-    type: 'button',
-    body: {
-      text: bodyText.substring(0, 1024), // Max 1024 chars
-    },
-    action: {
-      buttons: buttons.slice(0, 3).map((btn, index) => ({
-        type: 'reply',
-        reply: {
-          id: btn.id,
-          title: btn.title.substring(0, 20), // Max 20 chars
-        },
-      })),
-    },
-  }
-
-  if (headerText) {
-    interactivePayload.header = {
-      type: 'text',
-      text: headerText.substring(0, 60), // Max 60 chars
-    }
-  }
-
-  if (footerText) {
-    interactivePayload.footer = {
-      text: footerText.substring(0, 60), // Max 60 chars
-    }
-  }
-
-  try {
-    // Verstuur via Twilio's Messages API met persistentAction
-    const message = await twilioClient.messages.create({
-      from: formattedFrom,
-      to: formattedTo,
-      persistentAction: [`interactive:${JSON.stringify(interactivePayload)}`],
-      body: bodyText, // Fallback body voor niet-ondersteunde clients
-    })
-
-    console.log(`Interactive button message sent. SID: ${message.sid}`)
-    return message
-  } catch (error: any) {
-    console.error('Error sending interactive button message:', error?.message || error)
-    // Fallback naar tekst-gebaseerd bericht
-    return sendTextWithButtonFallback(to, bodyText, buttons, headerText, footerText)
-  }
+  // Altijd tekst-gebaseerd bericht sturen (werkt met Sandbox)
+  // Interactieve buttons werken alleen met goedgekeurd WhatsApp Business account
+  return sendTextWithButtonFallback(to, bodyText, buttons, headerText, footerText)
 }
 
 /**
