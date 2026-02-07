@@ -29,8 +29,8 @@ export default function LandingPage() {
               Samen zorgen, samen sterk
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12">
-              MantelBuddy verbindt mantelzorgers met vrijwilligers uit de buurt.
-              Voor ondersteuning, een luisterend oor, of praktische hulp.
+              MantelBuddy is er voor iedere mantelzorger. Krijg inzicht, informatie en zie lokale hulp.
+              Vrijwillige MantelBuddy&apos;s staan klaar om bij te springen wanneer nodig.
             </p>
 
             {/* Two paths */}
