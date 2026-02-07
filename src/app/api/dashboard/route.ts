@@ -109,7 +109,6 @@ async function getHulpbronnenVoorTaken(
         onderdeelTest: onderdeel,
         gemeente: zorgvragerGemeente,
       },
-      take: 3,
       orderBy: { naam: 'asc' },
       select: {
         naam: true,
@@ -127,7 +126,6 @@ async function getHulpbronnenVoorTaken(
         onderdeelTest: onderdeel,
         gemeente: null,
       },
-      take: 3,
       orderBy: { naam: 'asc' },
       select: {
         naam: true,
@@ -155,7 +153,6 @@ async function getHulpbronnenVoorTaken(
       onderdeelTest: 'Mantelzorgondersteuning',
       gemeente: mantelzorgerGemeente,
     },
-    take: 5,
     orderBy: { naam: 'asc' },
     select: {
       naam: true,
@@ -177,7 +174,6 @@ async function getHulpbronnenVoorTaken(
       ],
       gemeente: null,
     },
-    take: 5,
     orderBy: { naam: 'asc' },
     select: {
       naam: true,
@@ -218,7 +214,6 @@ async function getHulpbronnenVoorTaken(
           onderdeelTest: onderdeel,
           gemeente: onderdeel === 'Mantelzorgondersteuning' ? mantelzorgerGemeente : zorgvragerGemeente,
         },
-        take: 3,
         orderBy: { naam: 'asc' },
         select: {
           naam: true,
@@ -235,7 +230,6 @@ async function getHulpbronnenVoorTaken(
           onderdeelTest: onderdeel,
           gemeente: null,
         },
-        take: 3,
         orderBy: { naam: 'asc' },
         select: {
           naam: true,

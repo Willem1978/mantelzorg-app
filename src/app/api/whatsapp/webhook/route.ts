@@ -710,7 +710,6 @@ async function handleHulpSession(
           soortHulp: soortHulp.dbValue,
           ...(gemeente && { gemeente }),
         },
-        take: 5,
         orderBy: { naam: 'asc' },
       })
 
@@ -752,7 +751,6 @@ async function handleHulpSession(
           onderdeelTest: onderdeelTaak.dbValue,
           ...(gemeente && { gemeente }),
         },
-        take: 5,
         orderBy: { naam: 'asc' },
       })
 
@@ -1346,7 +1344,6 @@ async function buildTestCompletionMessage(
             onderdeelTest: { in: onderdeelWaarden },
             zichtbaarBijHoog: true,
           },
-          take: 3,
           orderBy: { naam: 'asc' },
         })
 
