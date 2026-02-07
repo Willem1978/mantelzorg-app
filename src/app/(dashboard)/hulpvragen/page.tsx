@@ -82,8 +82,9 @@ const CATEGORIEEN_MANTELZORGER = [
 // Mapping van taak namen naar categorieën
 // Ondersteunt variaties uit web test, WhatsApp test en database
 const TAAK_NAAR_CATEGORIE: Record<string, string> = {
-  // Persoonlijke verzorging
+  // Persoonlijke verzorging - alle variaties
   'Wassen/aankleden': 'Persoonlijke verzorging',
+  'Wassen en aankleden': 'Persoonlijke verzorging',
   'Persoonlijke verzorging': 'Persoonlijke verzorging',
   'Toiletgang': 'Persoonlijke verzorging',
   'Medicijnen': 'Persoonlijke verzorging',
@@ -95,19 +96,26 @@ const TAAK_NAAR_CATEGORIE: Record<string, string> = {
   // Vervoer
   'Vervoer': 'Vervoer',
   'Vervoer/begeleiding': 'Vervoer',
-  // Administratie
+  'Vervoer naar afspraken': 'Vervoer',
+  // Administratie - alle variaties
   'Administratie': 'Administratie en aanvragen',
   'Administratie en aanvragen': 'Administratie en aanvragen',
-  // Sociaal contact
+  'Administratie en geldzaken': 'Administratie en aanvragen',
+  'Regelen en afspraken maken': 'Administratie en aanvragen',
+  'Plannen en organiseren': 'Administratie en aanvragen',
+  // Sociaal contact - alle variaties
   'Sociaal contact': 'Sociaal contact en activiteiten',
   'Sociaal contact en activiteiten': 'Sociaal contact en activiteiten',
   'Activiteiten': 'Sociaal contact en activiteiten',
+  'Bezoek en gezelschap': 'Sociaal contact en activiteiten',
+  'Bezoek en uitjes': 'Sociaal contact en activiteiten',
   // Maaltijden - alle variaties
   'Maaltijden': 'Bereiden en/of nuttigen van maaltijden',
   'Eten maken': 'Bereiden en/of nuttigen van maaltijden',
   'Eten en drinken': 'Bereiden en/of nuttigen van maaltijden',
-  // Boodschappen
+  // Boodschappen - alle variaties
   'Boodschappen': 'Boodschappen',
+  'Boodschappen doen': 'Boodschappen',
   // Klusjes - alle variaties
   'Klusjes': 'Klusjes in en om het huis',
   'Klusjes in huis': 'Klusjes in en om het huis',
