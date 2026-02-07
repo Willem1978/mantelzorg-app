@@ -11,6 +11,9 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 - **Dashboard thermometer**: Nummering (0/8/16/24) verwijderd, "Laatste meting:" toegevoegd bij datum
 - **WhatsApp balansscore**: Link naar dashboard/rapport toegevoegd
 
+### Opgelost
+- **WhatsApp test opnieuw**: Fix voor bug waarbij "1" typen na score zien niet naar nieuwe test ging
+
 ## [1.5.3] - 2025-02-07
 
 ### Gewijzigd

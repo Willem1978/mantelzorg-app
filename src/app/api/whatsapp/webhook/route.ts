@@ -851,6 +851,26 @@ async function handleLoggedInUser(
     orderBy: { completedAt: 'desc' },
   })
 
+  // Opnieuw test doen - check ook "1" als er al een test is gedaan
+  // (Na score zien zijn buttons: 1. Opnieuw testen, 2. Menu)
+  const wantsNewTest = command === 'opnieuw' || command === 'nieuwe test' || command === 'hertest' ||
+    (command === '1' && lastTest)  // "1" na score zien = opnieuw testen
+
+  if (wantsNewTest) {
+    const session = startTestSession(phoneNumber)
+    const firstQuestion = getCurrentQuestion(session)
+
+    const questionText = `📊 *Mantelzorg Balanstest*\n\nIk stel je 12 korte vragen.\n\n*Vraag 1/12*\n\n${firstQuestion?.vraag}`
+
+    session.currentStep = 'questions'
+
+    // Start met interactieve buttons
+    return {
+      response: questionText,
+      quickReplyButtons: testAnswerButtons,
+    }
+  }
+
   // 1. Balanstest / Mijn Score
   if (
     command === '1' ||
@@ -901,29 +921,15 @@ async function handleLoggedInUser(
 
     response += `📱 Bekijk volledig rapport:\n${dashboardUrl}\n\n`
 
-    // Buttons voor opnieuw test en menu
+    // Buttons voor opnieuw test en menu (1 = opnieuw, 2 = menu)
+    // Let op: als gebruiker "1" typt gaat dit opnieuw naar deze functie,
+    // maar omdat er al een test is, moeten we de score tonen MET optie opnieuw
     const scoreButtons = [
       { id: 'opnieuw', title: '🔄 Opnieuw testen' },
       { id: 'menu', title: '📋 Menu' },
     ]
 
     return { response, quickReplyButtons: scoreButtons }
-  }
-
-  // Opnieuw test doen
-  if (command === 'opnieuw' || command === 'nieuwe test' || command === 'hertest') {
-    const session = startTestSession(phoneNumber)
-    const firstQuestion = getCurrentQuestion(session)
-
-    const questionText = `📊 *Mantelzorg Balanstest*\n\nIk stel je 12 korte vragen.\n\n*Vraag 1/12*\n\n${firstQuestion?.vraag}`
-
-    session.currentStep = 'questions'
-
-    // Start met interactieve buttons
-    return {
-      response: questionText,
-      quickReplyButtons: testAnswerButtons,
-    }
   }
 
   // 2. Hulp in de buurt
