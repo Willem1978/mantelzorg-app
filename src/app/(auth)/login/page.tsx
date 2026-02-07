@@ -54,9 +54,9 @@ function LoginForm() {
         <div className="max-w-md mx-auto flex items-start gap-4">
           <GerAvatar size="lg" />
           <div className="pt-2">
-            <h1 className="text-2xl font-bold text-foreground">Welkom terug!</h1>
+            <h1 className="text-2xl font-bold text-foreground">Welkom bij MantelBuddy</h1>
             <p className="text-muted-foreground mt-1">
-              Log in om verder te gaan met je MantelzorgApp.
+              Log in of maak een account aan.
             </p>
           </div>
         </div>
@@ -139,20 +139,27 @@ function LoginForm() {
               </button>
             </form>
 
-            <div className="mt-6 pt-6 border-t border-border text-center">
-              <p className="text-muted-foreground">
-                Nog geen account?{" "}
-                <Link href="/register" className="text-primary font-medium hover:underline">
-                  Registreer hier
-                </Link>
+            <div className="mt-6 pt-6 border-t border-border">
+              <p className="text-center text-muted-foreground mb-4">
+                Nog geen account?
               </p>
+              <Link
+                href="/register"
+                className="ker-btn ker-btn-secondary w-full flex items-center justify-center gap-2"
+              >
+                Account aanmaken
+              </Link>
             </div>
           </div>
 
-          {/* Terug naar test link */}
-          <div className="mt-4 text-center">
-            <Link href="/belastbaarheidstest" className="text-sm text-muted-foreground hover:text-foreground">
-              ← Terug naar de Balanstest
+          {/* Terug links */}
+          <div className="mt-4 flex justify-center gap-4 text-sm">
+            <Link href="/" className="text-muted-foreground hover:text-foreground">
+              ← Terug naar home
+            </Link>
+            <span className="text-muted-foreground">|</span>
+            <Link href="/belastbaarheidstest" className="text-muted-foreground hover:text-foreground">
+              Doe eerst de Balanstest
             </Link>
           </div>
         </div>

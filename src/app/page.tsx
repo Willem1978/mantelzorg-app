@@ -5,19 +5,13 @@ export default function LandingPage() {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted">
       {/* Header */}
       <header className="px-4 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
+        <div className="max-w-4xl mx-auto flex items-center justify-center">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-lg">M</span>
             </div>
             <span className="font-bold text-foreground text-xl">MantelBuddy</span>
           </div>
-          <Link
-            href="/login"
-            className="ker-btn ker-btn-secondary text-sm py-2 px-4"
-          >
-            Inloggen
-          </Link>
         </div>
       </header>
 
