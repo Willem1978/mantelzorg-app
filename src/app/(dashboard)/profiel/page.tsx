@@ -651,7 +651,7 @@ export default function ProfielPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <h1 className="text-xl font-bold text-foreground">Gegevens bewerken</h1>
+          <h1 className="text-xl font-bold text-foreground">Gegevens aanpassen</h1>
         </div>
 
         <div className="space-y-4">
@@ -685,10 +685,10 @@ export default function ProfielPage() {
               </div>
 
               <StreetSearch
-                label="Mijn adres"
+                label="Waar woon jij?"
                 value={profile.adres}
                 onChange={(adres) => setProfile({ ...profile, adres })}
-                placeholder="Zoek op postcode of straatnaam"
+                placeholder="Begin met typen, bijv. Kerkstraat"
               />
             </div>
           </div>
@@ -730,10 +730,10 @@ export default function ProfielPage() {
               </div>
 
               <StreetSearch
-                label="Adres van je naaste"
+                label="Waar woont je naaste?"
                 value={profile.naasteAdres}
                 onChange={(adres) => setProfile({ ...profile, naasteAdres: adres })}
-                placeholder="Zoek op postcode of straatnaam"
+                placeholder="Begin met typen, bijv. Kerkstraat"
               />
             </div>
           </div>
@@ -744,7 +744,7 @@ export default function ProfielPage() {
             disabled={isSaving}
             className="ker-btn ker-btn-primary w-full"
           >
-            {isSaving ? "Opslaan..." : "Gegevens opslaan"}
+            {isSaving ? "Even geduld..." : "Opslaan"}
           </button>
         </div>
       </div>
@@ -762,10 +762,10 @@ export default function ProfielPage() {
         <GerAvatar size="lg" />
         <div className="pt-2">
           <h1 className="text-2xl font-bold text-foreground">
-            {profile.naam || "Mijn profiel"}
+            Hoi {profile.naam || "daar"}!
           </h1>
           <p className="text-muted-foreground mt-1">
-            Jouw gegevens en instellingen
+            Hier zie je jouw gegevens
           </p>
         </div>
       </div>

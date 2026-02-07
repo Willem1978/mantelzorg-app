@@ -7,42 +7,43 @@ import { GerAvatar } from "@/components/GerAvatar"
 import { SmileyGroup, ResultSmiley } from "@/components/ui"
 
 // Korte maandelijkse check-in vragen (NEE/SOMS/JA stijl)
+// B1 taalgebruik - korte, eenvoudige zinnen
 const checkInQuestions = [
   {
     id: "c1",
-    question: "Voel je je de afgelopen maand vaak moe of uitgeput?",
-    tip: "Vermoeidheid kan een signaal zijn dat je te veel hooi op je vork hebt.",
+    question: "Ben je vaak moe?",
+    tip: "Als je veel moe bent, is dat een teken dat je rust nodig hebt.",
     reversed: false, // "nee" is positief
   },
   {
     id: "c2",
-    question: "Had je genoeg tijd voor jezelf deze maand?",
-    tip: "Tijd voor jezelf is essentieel, ook al voelt het soms als luxe.",
+    question: "Heb je tijd voor jezelf?",
+    tip: "Tijd voor jezelf is belangrijk. Ook voor jou.",
     reversed: true, // "ja" is hier positief
   },
   {
     id: "c3",
-    question: "Maakte je je veel zorgen over de zorgsituatie?",
-    tip: "Zorgen maken is normaal, maar het mag niet overweldigend worden.",
+    question: "Maak je je vaak zorgen?",
+    tip: "Zorgen maken hoort erbij. Maar het mag niet te veel worden.",
     reversed: false,
   },
   {
     id: "c4",
-    question: "Voelde je je gesteund door je omgeving?",
-    tip: "Steun van anderen kan een groot verschil maken.",
+    question: "Krijg je hulp van anderen?",
+    tip: "Hulp van anderen is fijn. Je hoeft het niet alleen te doen.",
     reversed: true,
   },
   {
     id: "c5",
-    question: "Waar zou je extra hulp bij willen?",
-    tip: "We kunnen je helpen met het vinden van de juiste ondersteuning.",
+    question: "Waar wil je hulp bij?",
+    tip: "Kies wat voor jou belangrijk is. Je kunt meer dan één ding kiezen.",
     isMultiSelect: true,
     options: [
-      { value: "geen", label: "Nergens, het gaat goed", icon: "✅" },
+      { value: "geen", label: "Het gaat goed zo", icon: "✅" },
       { value: "huishouden", label: "Huishouden", icon: "🧹" },
       { value: "zorgtaken", label: "Zorgtaken", icon: "🩺" },
       { value: "tijd_voor_mezelf", label: "Tijd voor mezelf", icon: "🧘" },
-      { value: "administratie", label: "Administratie", icon: "📋" },
+      { value: "administratie", label: "Papierwerk", icon: "📋" },
       { value: "emotioneel", label: "Praten met iemand", icon: "💬" },
     ],
   },

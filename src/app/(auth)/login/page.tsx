@@ -54,9 +54,9 @@ function LoginForm() {
         <div className="max-w-md mx-auto flex items-start gap-4">
           <GerAvatar size="lg" />
           <div className="pt-2">
-            <h1 className="text-2xl font-bold text-foreground">Welkom bij MantelBuddy</h1>
+            <h1 className="text-2xl font-bold text-foreground">Welkom terug!</h1>
             <p className="text-muted-foreground mt-1">
-              Log in of maak een account aan.
+              Vul je e-mail en wachtwoord in om verder te gaan.
             </p>
           </div>
         </div>
@@ -82,14 +82,15 @@ function LoginForm() {
 
             {error && (
               <div className="bg-[#FFEBEE] border-2 border-[#F44336] text-[#C62828] px-4 py-3 rounded-xl mb-6 text-sm">
-                {error}
+                <p className="font-medium">Dat lukte niet</p>
+                <p>Controleer je e-mail en wachtwoord en probeer het nog eens.</p>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-                  E-mail
+                  Je e-mailadres
                 </label>
                 <input
                   id="email"
@@ -97,14 +98,18 @@ function LoginForm() {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="ker-input"
-                  placeholder="jouw@email.nl"
+                  placeholder="naam@voorbeeld.nl"
                   required
+                  autoComplete="email"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Het adres waarmee je bent aangemeld
+                </p>
               </div>
 
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
-                  Wachtwoord
+                  Je wachtwoord
                 </label>
                 <input
                   id="password"
@@ -112,8 +117,9 @@ function LoginForm() {
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   className="ker-input"
-                  placeholder="Je wachtwoord"
+                  placeholder="••••••••"
                   required
+                  autoComplete="current-password"
                 />
               </div>
 

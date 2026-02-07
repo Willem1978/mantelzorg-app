@@ -186,18 +186,18 @@ export default function RegisterPage() {
 
   const getStepTitle = () => {
     switch (step) {
-      case 1: return "Maak een account"
+      case 1: return "Welkom!"
       case 2: return "Over jou"
-      case 3: return "Over je naaste"
+      case 3: return "Voor wie zorg je?"
       default: return ""
     }
   }
 
   const getStepSubtitle = () => {
     switch (step) {
-      case 1: return "E-mail, wachtwoord en telefoonnummer"
-      case 2: return "Je naam en waar je woont"
-      case 3: return "Voor wie zorg je?"
+      case 1: return "We maken eerst een account voor je aan."
+      case 2: return "Vertel ons iets over jezelf."
+      case 3: return "Bijna klaar! Nog even over je naaste."
       default: return ""
     }
   }
@@ -245,7 +245,7 @@ export default function RegisterPage() {
               <form onSubmit={handleStep1Submit} className="space-y-4">
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-                    Je e-mail
+                    Je e-mailadres
                   </label>
                   <input
                     id="email"
@@ -253,9 +253,13 @@ export default function RegisterPage() {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="ker-input"
-                    placeholder="jouw@email.nl"
+                    placeholder="naam@voorbeeld.nl"
                     required
+                    autoComplete="email"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Hier sturen we belangrijke berichten naartoe
+                  </p>
                 </div>
 
                 <div>
@@ -270,12 +274,16 @@ export default function RegisterPage() {
                     className="ker-input"
                     placeholder="Minimaal 8 tekens"
                     required
+                    autoComplete="new-password"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Kies iets dat je makkelijk onthoudt
+                  </p>
                 </div>
 
                 <div>
                   <label htmlFor="passwordConfirm" className="block text-sm font-medium text-foreground mb-2">
-                    Herhaal je wachtwoord
+                    Typ je wachtwoord nog een keer
                   </label>
                   <input
                     id="passwordConfirm"
@@ -283,14 +291,15 @@ export default function RegisterPage() {
                     value={formData.passwordConfirm}
                     onChange={(e) => setFormData({ ...formData, passwordConfirm: e.target.value })}
                     className="ker-input"
-                    placeholder="Typ het nog een keer"
+                    placeholder="Hetzelfde als hierboven"
                     required
+                    autoComplete="new-password"
                   />
                 </div>
 
                 <div>
                   <label htmlFor="phoneNumber" className="block text-sm font-medium text-foreground mb-2">
-                    Je telefoonnummer <span className="text-muted-foreground font-normal">(voor WhatsApp)</span>
+                    Je mobiele nummer <span className="text-muted-foreground font-normal">(niet verplicht)</span>
                   </label>
                   <input
                     id="phoneNumber"
@@ -298,15 +307,16 @@ export default function RegisterPage() {
                     value={formData.phoneNumber}
                     onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                     className="ker-input"
-                    placeholder="0612345678"
+                    placeholder="06 12345678"
+                    autoComplete="tel"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    10 cijfers, beginnend met 06
+                    Dan kun je MantelBuddy ook via WhatsApp gebruiken
                   </p>
                 </div>
 
                 <button type="submit" className="ker-btn ker-btn-primary w-full">
-                  Volgende
+                  Ga verder
                 </button>
               </form>
             )}
@@ -316,7 +326,7 @@ export default function RegisterPage() {
               <form onSubmit={handleStep2Submit} className="space-y-4">
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
-                    Je naam
+                    Hoe mogen we je noemen?
                   </label>
                   <input
                     id="name"
@@ -324,17 +334,21 @@ export default function RegisterPage() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="ker-input"
-                    placeholder="Voornaam en achternaam"
+                    placeholder="Je voornaam"
                     required
+                    autoComplete="given-name"
                   />
                 </div>
 
                 <AddressSearch
-                  label="Waar woon je?"
+                  label="Waar woon jij?"
                   value={formData.address}
                   onChange={(address) => setFormData({ ...formData, address })}
-                  placeholder="Typ je straat of postcode"
+                  placeholder="Begin met typen, bijv. Kerkstraat of 1234AB"
                 />
+                <p className="text-xs text-muted-foreground -mt-2">
+                  Dit hebben we nodig om hulp bij jou in de buurt te vinden
+                </p>
 
                 <div className="flex gap-3 pt-2">
                   <button
@@ -342,10 +356,10 @@ export default function RegisterPage() {
                     onClick={() => setStep(1)}
                     className="ker-btn ker-btn-secondary flex-1"
                   >
-                    Terug
+                    ← Terug
                   </button>
                   <button type="submit" className="ker-btn ker-btn-primary flex-1">
-                    Volgende
+                    Ga verder
                   </button>
                 </div>
               </form>
@@ -356,7 +370,7 @@ export default function RegisterPage() {
               <form onSubmit={handleStep3Submit} className="space-y-4">
                 <div>
                   <label htmlFor="careRecipientName" className="block text-sm font-medium text-foreground mb-2">
-                    Naam van je naaste
+                    Hoe heet degene voor wie je zorgt?
                   </label>
                   <input
                     id="careRecipientName"
@@ -371,15 +385,16 @@ export default function RegisterPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    Wat is je relatie?
+                    Wie is dat voor jou?
                   </label>
+                  <p className="text-xs text-muted-foreground mb-3">Tik op wat van toepassing is</p>
                   <div className="grid grid-cols-2 gap-2">
                     {RELATIE_OPTIES.map((relatie) => (
                       <button
                         key={relatie}
                         type="button"
                         onClick={() => setFormData({ ...formData, careRecipientRelation: relatie })}
-                        className={`px-3 py-2 rounded-xl border-2 text-sm transition-colors ${
+                        className={`px-3 py-3 rounded-xl border-2 text-sm transition-colors ${
                           formData.careRecipientRelation === relatie
                             ? "border-primary bg-primary/10 text-primary font-medium"
                             : "border-border hover:border-primary/30"
@@ -395,8 +410,11 @@ export default function RegisterPage() {
                   label="Waar woont je naaste?"
                   value={formData.careRecipientAddress}
                   onChange={(address) => setFormData({ ...formData, careRecipientAddress: address })}
-                  placeholder="Typ straat of postcode"
+                  placeholder="Begin met typen, bijv. Kerkstraat of 1234AB"
                 />
+                <p className="text-xs text-muted-foreground -mt-2">
+                  Zo vinden we hulp bij je naaste in de buurt
+                </p>
 
                 {/* Privacy */}
                 <div className="space-y-3 pt-2">
@@ -434,7 +452,7 @@ export default function RegisterPage() {
                     onClick={() => setStep(2)}
                     className="ker-btn ker-btn-secondary flex-1"
                   >
-                    Terug
+                    ← Terug
                   </button>
                   <button
                     type="submit"
@@ -444,10 +462,10 @@ export default function RegisterPage() {
                     {isLoading ? (
                       <span className="flex items-center justify-center gap-2">
                         <span className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                        Bezig...
+                        Even geduld...
                       </span>
                     ) : (
-                      "Account aanmaken"
+                      "Klaar!"
                     )}
                   </button>
                 </div>

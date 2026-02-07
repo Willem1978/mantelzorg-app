@@ -540,7 +540,7 @@ function HulpPageContent() {
 
       {/* Instructietekst boven tabs */}
       <p className="text-center text-muted-foreground mb-4">
-        Kies hieronder waar je hulp bij zoekt
+        Tik op een knop om hulp te vinden
       </p>
 
       {/* DRIE TABS NAAST ELKAAR */}
