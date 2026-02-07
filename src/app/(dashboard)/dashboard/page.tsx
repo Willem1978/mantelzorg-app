@@ -734,15 +734,6 @@ function DashboardContent() {
         </div>
       </section>
 
-      {/* Bemoediging */}
-      <div className="text-center py-6">
-        <p className="text-muted-foreground font-medium text-lg">
-          Je doet het goed 💜
-        </p>
-        <p className="text-sm text-muted-foreground mt-1">
-          Vergeet niet: jouw welzijn is ook belangrijk
-        </p>
-      </div>
     </div>
   )
 }
