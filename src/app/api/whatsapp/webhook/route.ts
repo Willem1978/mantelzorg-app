@@ -3,12 +3,13 @@ import {
   parseIncomingWhatsAppMessage,
   sendContentTemplateMessage,
   sendWhatsAppMessageWithImage,
+  sendInteractiveButtonMessage,
   getScoreImageUrl,
   getMagicLinkUrl,
+  generateShortToken,
   CONTENT_SIDS,
   twilioClient,
 } from '@/lib/twilio'
-import { randomBytes } from 'crypto'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import {
@@ -123,6 +124,7 @@ export async function POST(request: NextRequest) {
     let useInteractiveButtons = false
     let interactiveContentSid: string | undefined
     let interactiveBodyText: string | undefined
+    let quickReplyButtons: { id: string; title: string }[] | undefined
 
     // ===========================================
     // PRIORITEIT 1: ACTIEVE TEST SESSIE
@@ -140,6 +142,7 @@ export async function POST(request: NextRequest) {
       useInteractiveButtons = result.useInteractiveButtons || false
       interactiveContentSid = result.interactiveContentSid
       interactiveBodyText = result.interactiveBodyText
+      quickReplyButtons = result.quickReplyButtons
     }
 
     // ===========================================
@@ -156,6 +159,7 @@ export async function POST(request: NextRequest) {
           caregiver
         )
         response = result.response
+        quickReplyButtons = result.quickReplyButtons
       }
     }
 
@@ -172,6 +176,7 @@ export async function POST(request: NextRequest) {
           onboardingSession
         )
         response = result.response
+        quickReplyButtons = result.quickReplyButtons
       }
     }
 
@@ -184,13 +189,16 @@ export async function POST(request: NextRequest) {
       useInteractiveButtons = result.useInteractiveButtons || false
       interactiveContentSid = result.interactiveContentSid
       interactiveBodyText = result.interactiveBodyText
+      quickReplyButtons = result.quickReplyButtons
     }
 
     // ===========================================
     // PRIORITEIT 5: GAST MENU (geen account)
     // ===========================================
     if (!response && !caregiver) {
-      response = handleGuestMenu(message.from, userInput)
+      const result = handleGuestMenu(message.from, userInput)
+      response = result.response
+      quickReplyButtons = result.quickReplyButtons
     }
 
     // ===========================================
@@ -201,7 +209,8 @@ export async function POST(request: NextRequest) {
       message.from,
       useInteractiveButtons,
       interactiveContentSid,
-      interactiveBodyText
+      interactiveBodyText,
+      quickReplyButtons
     )
   } catch (error) {
     console.error('Webhook error:', error)
@@ -222,8 +231,23 @@ async function handleTestSession(
   useInteractiveButtons?: boolean
   interactiveContentSid?: string
   interactiveBodyText?: string
+  quickReplyButtons?: { id: string; title: string }[]
 }> {
   if (!session) return { response: '' }
+
+  // Standaard buttons voor ja/soms/nee vragen
+  const testAnswerButtons = [
+    { id: 'ja', title: '🔴 Ja' },
+    { id: 'soms', title: '🟡 Soms' },
+    { id: 'nee', title: '🟢 Nee' },
+  ]
+
+  // Buttons voor moeilijkheid (omgekeerde volgorde: Nee/Soms/Ja)
+  const difficultyButtons = [
+    { id: 'nee', title: '🟢 Nee' },
+    { id: 'soms', title: '🟡 Soms' },
+    { id: 'ja', title: '🔴 Ja' },
+  ]
 
   const command = input.toLowerCase().trim()
 
@@ -270,10 +294,12 @@ async function handleTestSession(
         const taskId = updatedSession.selectedTasks[taskIndex]
         const taak = ZORGTAKEN.find((t) => t.id === taskId)
 
-        // Vraag zoals in screenshot: "Vind je X een zware taak?"
-        let response = `📋 *Vind je ${taak?.beschrijving?.toLowerCase() || taak?.naam?.toLowerCase()} een zware taak?*\n\n`
-        response += `1️⃣ Nee\n2️⃣ Soms\n3️⃣ Ja\n\n_Typ 1, 2 of 3_`
-        return { response }
+        // Vraag met interactieve buttons
+        const response = `📋 *Vind je ${taak?.beschrijving?.toLowerCase() || taak?.naam?.toLowerCase()} een zware taak?*`
+        return {
+          response,
+          quickReplyButtons: difficultyButtons,
+        }
       }
     }
 
@@ -282,11 +308,19 @@ async function handleTestSession(
 
   // STAP: Moeilijkheid per taak
   if (session.currentStep === 'tasks_difficulty') {
-    const num = parseInt(command)
+    // Verwerk antwoord via button of nummer
+    let moeilijkheidWaarde: string | null = null
 
-    if (num >= 1 && num <= MOEILIJKHEID_OPTIES.length) {
-      const moeilijkheidOptie = MOEILIJKHEID_OPTIES[num - 1]
-      const updatedSession = setTaskDifficulty(phoneNumber, moeilijkheidOptie.waarde)
+    if (command === 'nee' || command === '1') {
+      moeilijkheidWaarde = 'NEE'
+    } else if (command === 'soms' || command === '2') {
+      moeilijkheidWaarde = 'SOMS'
+    } else if (command === 'ja' || command === '3') {
+      moeilijkheidWaarde = 'JA'
+    }
+
+    if (moeilijkheidWaarde) {
+      const updatedSession = setTaskDifficulty(phoneNumber, moeilijkheidWaarde)
 
       if (updatedSession && updatedSession.currentStep === 'completed') {
         return await finishTestAndRespond(phoneNumber, updatedSession, caregiver)
@@ -305,7 +339,7 @@ async function handleTestSession(
   if (session.currentStep === 'questions') {
     let normalizedAnswer = command
 
-    // Normaliseer antwoord
+    // Normaliseer antwoord (van button of tekst)
     if (
       command === 'j' ||
       command === '1' ||
@@ -317,6 +351,7 @@ async function handleTestSession(
       command === 's' ||
       command === '2' ||
       command === 'soms' ||
+      command.includes('🟡') ||
       command.includes('🟠')
     )
       normalizedAnswer = 'soms'
@@ -360,14 +395,16 @@ async function handleTestSession(
         startTasksFlow(phoneNumber)
         return { response }
       } else if (updatedSession) {
-        // Volgende vraag
+        // Volgende vraag met interactieve buttons
         const nextQuestion = getCurrentQuestion(updatedSession)
         if (nextQuestion) {
           const questionNum = updatedSession.currentQuestion + 1
           const questionText = `📊 *Vraag ${questionNum}/${BELASTBAARHEID_QUESTIONS.length}*\n\n${nextQuestion.vraag}`
 
-          // Consistente numerieke opties met gekleurde bolletjes
-          return { response: questionText + `\n\n1️⃣ 🔴 Ja\n2️⃣ 🟡 Soms\n3️⃣ 🟢 Nee\n\n_Typ 1, 2 of 3_` }
+          return {
+            response: questionText,
+            quickReplyButtons: testAnswerButtons,
+          }
         }
       }
     } else if (command === 'stop' || command === 'stoppen') {
@@ -375,13 +412,15 @@ async function handleTestSession(
       return { response: `❌ Test gestopt.\n\n_Typ 0 voor menu_` }
     }
 
-    // Ongeldig antwoord
+    // Ongeldig antwoord - toon opnieuw met buttons
     const currentQuestion = getCurrentQuestion(session)
     const questionNum = session.currentQuestion + 1
     const questionText = `❌ Kies een antwoord:\n\n📊 *Vraag ${questionNum}/${BELASTBAARHEID_QUESTIONS.length}*\n\n${currentQuestion?.vraag}`
 
-    // Altijd consistente tekst met gekleurde bolletjes (geen knoppen)
-    return { response: questionText + `\n\n1️⃣ 🔴 Ja\n2️⃣ 🟡 Soms\n3️⃣ 🟢 Nee\n\n_Typ 1, 2 of 3_` }
+    return {
+      response: questionText,
+      quickReplyButtons: testAnswerButtons,
+    }
   }
 
   return { response: '' }
@@ -396,11 +435,20 @@ async function handleOnboardingSession(
   phoneNumber: string,
   input: string,
   session: ReturnType<typeof getOnboardingSession>
-): Promise<{ response: string }> {
+): Promise<{
+  response: string
+  quickReplyButtons?: { id: string; title: string }[]
+}> {
   if (!session) return { response: '' }
 
   const command = input.trim()
   const commandLower = command.toLowerCase()
+
+  // Buttons voor inloggen/registreren keuze
+  const choiceButtons = [
+    { id: 'inloggen', title: '🔑 Inloggen' },
+    { id: 'registreren', title: '✨ Account maken' },
+  ]
 
   // Stop/annuleer
   if (commandLower === 'stop' || commandLower === '0') {
@@ -412,7 +460,7 @@ async function handleOnboardingSession(
   if (session.currentStep === 'choice') {
     const num = parseInt(command)
 
-    if (num === 1) {
+    if (num === 1 || commandLower === 'inloggen') {
       // Inloggen
       const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
       clearOnboardingSession(phoneNumber)
@@ -429,7 +477,7 @@ _Typ 0 voor menu_`,
       }
     }
 
-    if (num === 2) {
+    if (num === 2 || commandLower === 'registreren') {
       // Registreren
       const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
       clearOnboardingSession(phoneNumber)
@@ -446,9 +494,10 @@ _Typ 0 voor menu_`,
       }
     }
 
-    // Ongeldige keuze
+    // Ongeldige keuze - toon met interactieve buttons
     return {
-      response: `💾 *Wil je dit resultaat bewaren?*\n\n1️⃣ Inloggen (ik heb al een account)\n2️⃣ Account aanmaken\n\n_Typ 1 of 2, of 0 voor menu_`,
+      response: `💾 *Wil je dit resultaat bewaren?*`,
+      quickReplyButtons: choiceButtons,
     }
   }
 
@@ -593,11 +642,20 @@ async function handleHulpSession(
   input: string,
   session: ReturnType<typeof getHulpSession>,
   caregiver: any
-): Promise<{ response: string }> {
+): Promise<{
+  response: string
+  quickReplyButtons?: { id: string; title: string }[]
+}> {
   if (!session) return { response: '' }
 
   const command = input.toLowerCase().trim()
   const num = parseInt(command)
+
+  // Buttons voor hulp keuze
+  const hulpChoiceButtons = [
+    { id: 'hulp_mij', title: '💚 Hulp voor mij' },
+    { id: 'hulp_taak', title: '🔧 Hulp bij taak' },
+  ]
 
   // Annuleren
   if (command === 'stop' || command === 'terug' || command === '0') {
@@ -607,7 +665,7 @@ async function handleHulpSession(
 
   // STAP 1: Hoofdkeuze - hulp voor mij of hulp bij taak
   if (session.currentStep === 'main_choice') {
-    if (num === 1) {
+    if (num === 1 || command === 'hulp_mij') {
       // Hulp voor mantelzorger - toon soort hulp opties
       updateHulpSession(phoneNumber, 'soort_hulp', { mainChoice: 'mantelzorger' })
 
@@ -620,7 +678,7 @@ async function handleHulpSession(
       return { response }
     }
 
-    if (num === 2) {
+    if (num === 2 || command === 'hulp_taak') {
       // Hulp bij taak - toon taak opties
       updateHulpSession(phoneNumber, 'onderdeel_taak', { mainChoice: 'taak' })
 
@@ -633,9 +691,10 @@ async function handleHulpSession(
       return { response }
     }
 
-    // Toon opnieuw de hoofdkeuze
+    // Toon opnieuw de hoofdkeuze met interactieve buttons
     return {
-      response: `🗺️ *Hulp in de Buurt*\n\nWat voor hulp zoek je?\n\n1️⃣ Hulp voor mij als mantelzorger\n2️⃣ Hulp bij een taak die ik uitvoer\n\n_Typ 1 of 2_`,
+      response: `🗺️ *Hulp in de Buurt*\n\nWat voor hulp zoek je?`,
+      quickReplyButtons: hulpChoiceButtons,
     }
   }
 
@@ -660,14 +719,19 @@ async function handleHulpSession(
       })
 
       clearHulpSession(phoneNumber)
+      const menuButton = [{ id: 'menu', title: '📋 Menu' }]
 
       if (hulpbronnen.length === 0) {
         return {
-          response: `😔 Geen hulpbronnen gevonden voor "${soortHulp.naam}"${gemeente ? ` in ${gemeente}` : ''}.\n\n📞 Bel de Mantelzorglijn: 030-760 60 55\nZij kunnen je verder helpen!\n\n_Typ 0 voor menu_`,
+          response: `😔 Geen hulpbronnen gevonden voor "${soortHulp.naam}"${gemeente ? ` in ${gemeente}` : ''}.\n\n📞 Bel de Mantelzorglijn: 030-760 60 55\nZij kunnen je verder helpen!`,
+          quickReplyButtons: menuButton,
         }
       }
 
-      return { response: formatHulpResults(soortHulp.naam, soortHulp.emoji, hulpbronnen, gemeente) }
+      return {
+        response: formatHulpResults(soortHulp.naam, soortHulp.emoji, hulpbronnen, gemeente),
+        quickReplyButtons: menuButton,
+      }
     }
 
     // Toon opnieuw de opties
@@ -700,14 +764,19 @@ async function handleHulpSession(
       })
 
       clearHulpSession(phoneNumber)
+      const menuButton = [{ id: 'menu', title: '📋 Menu' }]
 
       if (hulpbronnen.length === 0) {
         return {
-          response: `😔 Geen hulpbronnen gevonden voor "${onderdeelTaak.naam}"${gemeente ? ` in ${gemeente}` : ''}.\n\n📞 Bel de Mantelzorglijn: 030-760 60 55\nZij kunnen je verder helpen!\n\n_Typ 0 voor menu_`,
+          response: `😔 Geen hulpbronnen gevonden voor "${onderdeelTaak.naam}"${gemeente ? ` in ${gemeente}` : ''}.\n\n📞 Bel de Mantelzorglijn: 030-760 60 55\nZij kunnen je verder helpen!`,
+          quickReplyButtons: menuButton,
         }
       }
 
-      return { response: formatHulpResults(onderdeelTaak.naam, onderdeelTaak.emoji, hulpbronnen, gemeente) }
+      return {
+        response: formatHulpResults(onderdeelTaak.naam, onderdeelTaak.emoji, hulpbronnen, gemeente),
+        quickReplyButtons: menuButton,
+      }
     }
 
     // Toon opnieuw de opties
@@ -750,7 +819,6 @@ function formatHulpResults(
     response += `\n`
   }
 
-  response += `_Typ 0 voor menu_`
   return response
 }
 
@@ -766,8 +834,16 @@ async function handleLoggedInUser(
   useInteractiveButtons?: boolean
   interactiveContentSid?: string
   interactiveBodyText?: string
+  quickReplyButtons?: { id: string; title: string }[]
 }> {
   const command = input.toLowerCase().trim()
+
+  // Standaard buttons voor ja/soms/nee vragen
+  const testAnswerButtons = [
+    { id: 'ja', title: '🔴 Ja' },
+    { id: 'soms', title: '🟡 Soms' },
+    { id: 'nee', title: '🟢 Nee' },
+  ]
 
   // Check of gebruiker al een test heeft gedaan
   const lastTest = await prisma.belastbaarheidTest.findFirst({
@@ -792,8 +868,11 @@ async function handleLoggedInUser(
 
       session.currentStep = 'questions'
 
-      // Altijd consistente tekst met gekleurde bolletjes (geen knoppen)
-      return { response: questionText + `\n\n1️⃣ 🔴 Ja\n2️⃣ 🟡 Soms\n3️⃣ 🟢 Nee\n\n_Typ 1, 2 of 3_` }
+      // Start met interactieve buttons
+      return {
+        response: questionText,
+        quickReplyButtons: testAnswerButtons,
+      }
     }
 
     // Als wel test gedaan: toon score met optie om opnieuw te doen
@@ -817,10 +896,13 @@ async function handleLoggedInUser(
       response += `⚠️ Je belasting is hoog. Zoek hulp!\n\n`
     }
 
-    response += `🔄 Typ "opnieuw" voor een nieuwe test\n\n`
-    response += `🔗 ${process.env.NEXTAUTH_URL}/rapport\n\n_Typ 0 voor menu_`
+    // Buttons voor opnieuw test en menu
+    const scoreButtons = [
+      { id: 'opnieuw', title: '🔄 Opnieuw testen' },
+      { id: 'menu', title: '📋 Menu' },
+    ]
 
-    return { response }
+    return { response, quickReplyButtons: scoreButtons }
   }
 
   // Opnieuw test doen
@@ -832,16 +914,26 @@ async function handleLoggedInUser(
 
     session.currentStep = 'questions'
 
-    // Altijd consistente tekst met gekleurde bolletjes (geen knoppen)
-    return { response: questionText + `\n\n1️⃣ 🔴 Ja\n2️⃣ 🟡 Soms\n3️⃣ 🟢 Nee\n\n_Typ 1, 2 of 3_` }
+    // Start met interactieve buttons
+    return {
+      response: questionText,
+      quickReplyButtons: testAnswerButtons,
+    }
   }
 
   // 2. Hulp in de buurt
   if (command === '2' || command === 'hulp' || command === 'help') {
     startHulpSession(phoneNumber)
 
+    // Buttons voor hulp keuze
+    const hulpChoiceButtons = [
+      { id: 'hulp_mij', title: '💚 Hulp voor mij' },
+      { id: 'hulp_taak', title: '🔧 Hulp bij taak' },
+    ]
+
     return {
-      response: `🗺️ *Hulp in de Buurt*\n\nWat voor hulp zoek je?\n\n1️⃣ Hulp voor mij als mantelzorger\n2️⃣ Hulp bij een taak die ik uitvoer\n\n_Typ 1 of 2_`,
+      response: `🗺️ *Hulp in de Buurt*\n\nWat voor hulp zoek je?`,
+      quickReplyButtons: hulpChoiceButtons,
     }
   }
 
@@ -859,9 +951,12 @@ async function handleLoggedInUser(
       orderBy: [{ dueDate: 'asc' }, { priority: 'desc' }],
     })
 
+    const menuButton = [{ id: 'menu', title: '📋 Menu' }]
+
     if (tasks.length === 0) {
       return {
-        response: `🎉 *Geen open taken!*\n\nGoed bezig!\n\n🔗 ${process.env.NEXTAUTH_URL}/taken\n\n_Typ 0 voor menu_`,
+        response: `🎉 *Geen open taken!*\n\nGoed bezig!`,
+        quickReplyButtons: menuButton,
       }
     }
 
@@ -873,9 +968,8 @@ async function handleLoggedInUser(
       const priorityIcon = task.priority === 'HIGH' ? '🔴' : task.priority === 'MEDIUM' ? '🟡' : ''
       response += `${i + 1}. ${priorityIcon} ${task.title}\n   📅 ${dueDate}\n\n`
     })
-    response += `🔗 ${process.env.NEXTAUTH_URL}/taken\n\n_Typ 0 voor menu_`
 
-    return { response }
+    return { response, quickReplyButtons: menuButton }
   }
 
   // 4. Dashboard
@@ -923,8 +1017,8 @@ async function handleLoggedInUser(
       }
     }
 
-    // Genereer magic link voor directe login
-    const token = randomBytes(32).toString('hex')
+    // Genereer korte magic link voor directe login
+    const token = generateShortToken()
     await prisma.magicLinkToken.create({
       data: {
         token,
@@ -934,20 +1028,24 @@ async function handleLoggedInUser(
     })
 
     const magicLink = getMagicLinkUrl(token)
-    response += `\n🔗 *Open dashboard:*\n${magicLink}\n\n⏰ _Link 15 min geldig_\n\n_Typ 0 voor menu_`
+    response += `\n🔗 *Open dashboard:*\n${magicLink}\n\n⏰ _15 min geldig_`
 
-    return { response }
+    // Menu button toevoegen
+    const menuButton = [{ id: 'menu', title: '📋 Menu' }]
+    return { response, quickReplyButtons: menuButton }
   }
 
   // 5. Contact
   if (command === '5' || command === 'contact' || command === 'praten') {
+    const menuButton = [{ id: 'menu', title: '📋 Menu' }]
     return {
-      response: `💬 *Direct Persoonlijk Contact*\n\n📞 *Mantelzorglijn*\n   030-760 60 55\n   (ma-vr 9-17u)\n\n🚨 *Crisis / 24/7*\n   113 Zelfmoordpreventie\n   0800-0113\n\n✉️ Hulpvraag indienen:\n   ${process.env.NEXTAUTH_URL}/hulpvragen\n\n❤️ Je staat er niet alleen voor!\n\n_Typ 0 voor menu_`,
+      response: `💬 *Direct Persoonlijk Contact*\n\n📞 *Mantelzorglijn*\n   030-760 60 55\n   (ma-vr 9-17u)\n\n🚨 *Crisis / 24/7*\n   113 Zelfmoordpreventie\n   0800-0113\n\n❤️ Je staat er niet alleen voor!`,
+      quickReplyButtons: menuButton,
     }
   }
 
-  // Menu
-  if (command === '0' || command === 'menu' || command === 'start') {
+  // Menu (ook via button)
+  if (command === '0' || command === 'menu' || command === 'start' || command === '📋 menu') {
     return { response: await getWelcomeBackMessage(caregiver, lastTest) }
   }
 
@@ -986,8 +1084,18 @@ async function getWelcomeBackMessage(caregiver: any, lastTest: any): Promise<str
 // ===========================================
 // HANDLER: GAST MENU
 // ===========================================
-function handleGuestMenu(phoneNumber: string, input: string): string {
+function handleGuestMenu(phoneNumber: string, input: string): {
+  response: string
+  quickReplyButtons?: { id: string; title: string }[]
+} {
   const command = input.toLowerCase().trim()
+
+  // Standaard buttons voor ja/soms/nee vragen
+  const testAnswerButtons = [
+    { id: 'ja', title: '🔴 Ja' },
+    { id: 'soms', title: '🟡 Soms' },
+    { id: 'nee', title: '🟢 Nee' },
+  ]
 
   // 1. Balanstest
   if (command === '1' || command === 'test' || command === 'balanstest') {
@@ -995,45 +1103,56 @@ function handleGuestMenu(phoneNumber: string, input: string): string {
     const firstQuestion = getCurrentQuestion(session)
     session.currentStep = 'questions'
 
-    // Consistente numerieke opties met gekleurde bolletjes
-    return `📊 *Mantelzorg Balanstest*\n\nSuper dat je even stilstaat bij hoe het met jou gaat! 💚\n\nIk stel je 12 korte vragen. Beantwoord ze eerlijk.\n\n*Vraag 1/12*\n\n${firstQuestion?.vraag}\n\n1️⃣ 🔴 Ja\n2️⃣ 🟡 Soms\n3️⃣ 🟢 Nee\n\n_Typ 1, 2 of 3_`
+    // Start met interactieve buttons
+    return {
+      response: `📊 *Mantelzorg Balanstest*\n\nSuper dat je even stilstaat bij hoe het met jou gaat! 💚\n\nIk stel je 12 korte vragen. Beantwoord ze eerlijk.\n\n*Vraag 1/12*\n\n${firstQuestion?.vraag}`,
+      quickReplyButtons: testAnswerButtons,
+    }
   }
+
+  // Menu button voor hergebruik
+  const menuButton = [{ id: 'menu', title: '📋 Menu' }]
 
   // 2. Account aanmaken
   if (command === '2' || command === 'account' || command === 'nieuw') {
     const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
-    return `✨ *Account aanmaken*
+    return {
+      response: `✨ *Account aanmaken*
 
 Met een account bewaar ik je resultaten en geef ik persoonlijke tips.
 
 📱 Vul je telefoonnummer in als: +316... (met +31)
 
-${baseUrl}
-
-_Typ 0 voor menu_`
+${baseUrl}`,
+      quickReplyButtons: menuButton,
+    }
   }
 
   // 3. Inloggen
   if (command === '3' || command === 'inloggen' || command === 'login') {
     const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
-    return `🔑 *Inloggen*
+    return {
+      response: `🔑 *Inloggen*
 
 Na inloggen wordt je WhatsApp gekoppeld.
 
 📱 Vul je telefoonnummer in als: +316... (met +31)
 
-${baseUrl}
-
-_Typ 0 voor menu_`
+${baseUrl}`,
+      quickReplyButtons: menuButton,
+    }
   }
 
   // 4. Direct spreken
   if (command === '4' || command === 'praten' || command === 'contact' || command === 'hulp') {
-    return `💬 *Direct met iemand praten*\n\nSoms wil je gewoon even je verhaal kwijt. Dat begrijp ik. ❤️\n\n📞 *Mantelzorglijn*\n   030-760 60 55\n   (ma-vr 9:00-17:00)\n   _Gratis en anoniem_\n\n🚨 *Crisis / 24 uur*\n   113 Zelfmoordpreventie\n   0800-0113 (gratis)\n\nJe staat er niet alleen voor!\n\n_Typ 0 voor menu_`
+    return {
+      response: `💬 *Direct met iemand praten*\n\nSoms wil je gewoon even je verhaal kwijt. Dat begrijp ik. ❤️\n\n📞 *Mantelzorglijn*\n   030-760 60 55\n   (ma-vr 9:00-17:00)\n   _Gratis en anoniem_\n\n🚨 *Crisis / 24 uur*\n   113 Zelfmoordpreventie\n   0800-0113 (gratis)\n\nJe staat er niet alleen voor!`,
+      quickReplyButtons: menuButton,
+    }
   }
 
   // Menu
-  return getFirstTimeWelcome()
+  return { response: getFirstTimeWelcome() }
 }
 
 // Eerste keer welkom boodschap
@@ -1078,7 +1197,10 @@ async function finishTestAndRespond(
   phoneNumber: string,
   session: any,
   caregiver: any
-): Promise<{ response: string }> {
+): Promise<{
+  response: string
+  quickReplyButtons?: { id: string; title: string }[]
+}> {
   const score = calculateScore(session.answers)
   const level = getScoreLevel(score)
   const userName = caregiver?.user?.name?.split(' ')[0] || ''
@@ -1112,10 +1234,19 @@ async function finishTestAndRespond(
   const pendingResults = createPendingTestResults(session)
   startOnboardingSession(phoneNumber, 'choice', pendingResults)
 
-  let response = await buildTestCompletionMessage(session, score, level, false)
-  response += `\n\n💾 *Wil je dit resultaat bewaren?*\n\n1️⃣ Inloggen (ik heb al een account)\n2️⃣ Account aanmaken\n\n_Typ 1 of 2_`
+  // Buttons voor inloggen/registreren keuze
+  const choiceButtons = [
+    { id: 'inloggen', title: '🔑 Inloggen' },
+    { id: 'registreren', title: '✨ Account maken' },
+  ]
 
-  return { response }
+  let response = await buildTestCompletionMessage(session, score, level, false)
+  response += `\n\n💾 *Wil je dit resultaat bewaren?*`
+
+  return {
+    response,
+    quickReplyButtons: choiceButtons,
+  }
 }
 
 async function buildTestCompletionMessage(
@@ -1367,12 +1498,40 @@ async function sendResponse(
   phoneNumber: string,
   useInteractiveButtons: boolean,
   interactiveContentSid?: string,
-  interactiveBodyText?: string
+  interactiveBodyText?: string,
+  quickReplyButtons?: { id: string; title: string }[]
 ): Promise<NextResponse> {
-  if (!response && !useInteractiveButtons) {
+  if (!response && !useInteractiveButtons && !quickReplyButtons) {
     response = '❌ Er ging iets mis. Typ iets om opnieuw te beginnen.'
   }
 
+  // Optie 1: Quick Reply Buttons via API (modern)
+  if (quickReplyButtons && quickReplyButtons.length > 0 && twilioClient) {
+    try {
+      await sendInteractiveButtonMessage(
+        phoneNumber,
+        response,
+        quickReplyButtons
+      )
+
+      return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?><Response></Response>`, {
+        status: 200,
+        headers: { 'Content-Type': 'text/xml' },
+      })
+    } catch (error) {
+      console.error('Error sending quick reply buttons:', error)
+      // Fallback: tekst met genummerde opties
+      let fallbackText = response + '\n\n'
+      quickReplyButtons.forEach((btn, index) => {
+        const numEmoji = ['1️⃣', '2️⃣', '3️⃣'][index] || `${index + 1}.`
+        fallbackText += `${numEmoji} ${btn.title}\n`
+      })
+      fallbackText += '\n_Typ 1, 2 of 3_'
+      return sendTwiML(fallbackText)
+    }
+  }
+
+  // Optie 2: Content Template (legacy)
   if (useInteractiveButtons && interactiveContentSid && twilioClient) {
     try {
       await sendContentTemplateMessage(phoneNumber, interactiveContentSid, {

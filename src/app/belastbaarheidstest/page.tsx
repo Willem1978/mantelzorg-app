@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { Button } from "@/components/ui"
+import { Button, SmileyGroup } from "@/components/ui"
 import { cn } from "@/lib/utils"
 import { searchStreets } from "@/lib/pdok"
 import { GerAvatar } from "@/components/GerAvatar"
@@ -328,7 +328,7 @@ export default function BelastbaarheidstestPage() {
         setCurrentStep("taken-selectie")
       }
       setIsTransitioning(false)
-    }, 500)
+    }, 1500) // Langere timer zodat gebruiker keuze ziet
   }
 
   const handleTaakToggle = (taakId: string) => {
@@ -601,46 +601,14 @@ export default function BelastbaarheidstestPage() {
                 {currentVraag.vraag}
               </p>
 
-              {/* Emoticon knoppen */}
-              <div className="flex justify-center gap-6 mb-8">
-                {[
-                  { value: "nee", emoji: "🙂", color: "green", label: "NEE" },
-                  { value: "soms", emoji: "😐", color: "yellow", label: "SOMS" },
-                  { value: "ja", emoji: "🙁", color: "red", label: "JA" },
-                ].map((option) => {
-                  const isSelected = antwoorden[currentVraag.id] === option.value
-                  const hasAnswer = !!antwoorden[currentVraag.id]
-                  return (
-                    <button
-                      key={option.value}
-                      onClick={() => handleAntwoord(option.value)}
-                      disabled={isTransitioning}
-                      className="flex flex-col items-center gap-2"
-                    >
-                      <div
-                        className={cn(
-                          "emoticon-btn transition-all duration-300",
-                          isSelected
-                            ? `selected bg-[var(--emoticon-${option.color})] scale-110`
-                            : hasAnswer
-                              ? "bg-gray-200 opacity-50"
-                              : `bg-[var(--emoticon-${option.color})]/20 hover:bg-[var(--emoticon-${option.color})]/40`
-                        )}
-                      >
-                        <span className={cn(
-                          "text-3xl transition-all duration-300",
-                          hasAnswer && !isSelected && "grayscale"
-                        )}>{option.emoji}</span>
-                      </div>
-                      <span className={cn(
-                        "text-sm font-bold transition-all duration-300",
-                        isSelected ? "text-foreground" : hasAnswer ? "text-gray-400" : "text-muted-foreground"
-                      )}>
-                        {option.label}
-                      </span>
-                    </button>
-                  )
-                })}
+              {/* Smiley knoppen */}
+              <div className="mb-8">
+                <SmileyGroup
+                  value={antwoorden[currentVraag.id] as "nee" | "soms" | "ja" | null}
+                  onChange={(val) => handleAntwoord(val)}
+                  disabled={isTransitioning}
+                  size="lg"
+                />
               </div>
 
               {/* Tip */}
@@ -853,80 +821,15 @@ export default function BelastbaarheidstestPage() {
 
             {/* Belasting vraag */}
             <div className="ker-card">
-              <p className="text-foreground mb-6">
-                Ervaar je deze taak als <span className="font-bold">zwaar</span>?
+              <p className="text-foreground text-center mb-6">
+                Vind je {currentDetailTaak.naam.toLowerCase()} een <span className="font-bold">zware taak</span>?
               </p>
 
-              <div className="flex justify-center gap-6">
-                <button
-                  onClick={() => handleBelastingSelect("nee")}
-                  className="flex flex-col items-center gap-2"
-                >
-                  <div className={cn(
-                    "emoticon-btn transition-all duration-300",
-                    taakData.belasting === "nee"
-                      ? "selected bg-[var(--emoticon-green)] scale-110"
-                      : taakData.belasting
-                        ? "bg-gray-200 opacity-50"
-                        : "bg-[var(--emoticon-green)]/20 hover:bg-[var(--emoticon-green)]/40"
-                  )}>
-                    <span className={cn(
-                      "text-3xl transition-all duration-300",
-                      taakData.belasting && taakData.belasting !== "nee" && "grayscale"
-                    )}>🙂</span>
-                  </div>
-                  <span className={cn(
-                    "text-sm font-medium transition-all duration-300",
-                    taakData.belasting === "nee" ? "text-foreground" : taakData.belasting ? "text-gray-400" : "text-muted-foreground"
-                  )}>NEE</span>
-                </button>
-
-                <button
-                  onClick={() => handleBelastingSelect("soms")}
-                  className="flex flex-col items-center gap-2"
-                >
-                  <div className={cn(
-                    "emoticon-btn transition-all duration-300",
-                    taakData.belasting === "soms"
-                      ? "selected bg-[var(--emoticon-yellow)] scale-110"
-                      : taakData.belasting
-                        ? "bg-gray-200 opacity-50"
-                        : "bg-[var(--emoticon-yellow)]/20 hover:bg-[var(--emoticon-yellow)]/40"
-                  )}>
-                    <span className={cn(
-                      "text-3xl transition-all duration-300",
-                      taakData.belasting && taakData.belasting !== "soms" && "grayscale"
-                    )}>😐</span>
-                  </div>
-                  <span className={cn(
-                    "text-sm font-medium transition-all duration-300",
-                    taakData.belasting === "soms" ? "text-foreground" : taakData.belasting ? "text-gray-400" : "text-muted-foreground"
-                  )}>SOMS</span>
-                </button>
-
-                <button
-                  onClick={() => handleBelastingSelect("ja")}
-                  className="flex flex-col items-center gap-2"
-                >
-                  <div className={cn(
-                    "emoticon-btn transition-all duration-300",
-                    taakData.belasting === "ja"
-                      ? "selected bg-[var(--emoticon-red)] scale-110"
-                      : taakData.belasting
-                        ? "bg-gray-200 opacity-50"
-                        : "bg-[var(--emoticon-red)]/20 hover:bg-[var(--emoticon-red)]/40"
-                  )}>
-                    <span className={cn(
-                      "text-3xl transition-all duration-300",
-                      taakData.belasting && taakData.belasting !== "ja" && "grayscale"
-                    )}>🙁</span>
-                  </div>
-                  <span className={cn(
-                    "text-sm font-medium transition-all duration-300",
-                    taakData.belasting === "ja" ? "text-foreground" : taakData.belasting ? "text-gray-400" : "text-muted-foreground"
-                  )}>JA</span>
-                </button>
-              </div>
+              <SmileyGroup
+                value={taakData.belasting as "nee" | "soms" | "ja" | null}
+                onChange={(val) => handleBelastingSelect(val)}
+                size="lg"
+              />
             </div>
           </div>
         </main>

@@ -14,9 +14,9 @@ const hulpOpties = [
 ]
 
 const beschikbaarheidOpties = [
-  { id: "eenmalig", label: "Eenmalige taken", beschrijving: "Af en toe een taak oppakken" },
-  { id: "vast", label: "Vast maatje worden", beschrijving: "Structureel iemand ondersteunen" },
-  { id: "beide", label: "Beide", beschrijving: "Flexibel inzetbaar" },
+  { id: "eenmalig", label: "Eenmalige taken", beschrijving: "Af en toe een taak oppakken wanneer het jou uitkomt" },
+  { id: "vast", label: "Vast maatje worden", beschrijving: "Regelmatig taken voor de zorgvrager oppakken en uitvoeren" },
+  { id: "beide", label: "Beide", beschrijving: "Flexibel inzetbaar - zowel eenmalig als vast" },
 ]
 
 export default function WordMantelBuddyPage() {
@@ -96,7 +96,7 @@ export default function WordMantelBuddyPage() {
                   Word MantelBuddy
                 </h1>
                 <p className="text-muted-foreground">
-                  Help mantelzorgers in je buurt. Jouw steun maakt het verschil!
+                  Help mantelzorgers in je buurt. Eenmalig of als vast maatje - jij kiest hoe je wilt helpen!
                 </p>
               </div>
 

@@ -6,6 +6,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
+import { ResultSmiley } from "@/components/ui"
 
 // Mapping van taak naar categorie voor hulpvragen pagina
 const TAAK_NAAR_HULP_TAB: Record<string, { tab: 'voor-jou' | 'voor-naaste', categorie: string }> = {
@@ -204,8 +205,8 @@ export default function RapportPage() {
           {/* Urgente waarschuwing */}
           <div className="ker-card mb-4 bg-[var(--accent-red-bg)] border-2 border-[var(--accent-red)]">
             <div className="text-center mb-4">
-              <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center text-3xl font-bold text-white bg-[var(--emoticon-red)]">
-                {result.totaleBelastingScore}
+              <div className="mx-auto mb-4">
+                <ResultSmiley type="red" size="xl" />
               </div>
               <h2 className="text-xl font-bold text-[var(--accent-red)] mb-2">
                 Je bent overbelast
@@ -330,8 +331,8 @@ export default function RapportPage() {
         <>
           {/* Score card */}
           <div className="ker-card mb-4 bg-[var(--accent-amber-bg)] text-center">
-            <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center text-3xl font-bold text-white bg-[var(--emoticon-yellow)]">
-              {result.totaleBelastingScore}
+            <div className="mx-auto mb-4">
+              <ResultSmiley type="amber" size="xl" />
             </div>
             <h2 className="text-xl font-bold text-[var(--accent-amber)] mb-2">
               Je balans staat onder druk
@@ -439,8 +440,8 @@ export default function RapportPage() {
         <>
           {/* Score card - positief */}
           <div className="ker-card mb-4 bg-[var(--accent-green-bg)] text-center">
-            <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center text-3xl font-bold text-white bg-[var(--emoticon-green)]">
-              {result.totaleBelastingScore}
+            <div className="mx-auto mb-4">
+              <ResultSmiley type="green" size="xl" />
             </div>
             <h2 className="text-xl font-bold text-[var(--accent-green)] mb-2">
               Goed bezig!

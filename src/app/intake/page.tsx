@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
+import { SmileyGroup, ResultSmiley } from "@/components/ui"
 
 // Vragen - simpele B1 taalgebruik
 const intakeCategories = [
@@ -230,15 +231,11 @@ export default function IntakePage() {
                 overallLevel === "zorg" && "bg-[var(--accent-red-bg)]"
               )}
             >
-              <div
-                className={cn(
-                  "w-20 h-20 rounded-full mx-auto flex items-center justify-center text-4xl mb-4",
-                  overallLevel === "goed" && "bg-[var(--emoticon-green)]",
-                  overallLevel === "aandacht" && "bg-[var(--emoticon-yellow)]",
-                  overallLevel === "zorg" && "bg-[var(--emoticon-red)]"
-                )}
-              >
-                {overallLevel === "goed" ? "🙂" : overallLevel === "aandacht" ? "😐" : "🙁"}
+              <div className="mx-auto mb-4">
+                <ResultSmiley
+                  type={overallLevel === "goed" ? "green" : overallLevel === "aandacht" ? "amber" : "red"}
+                  size="xl"
+                />
               </div>
               <h3
                 className={cn(
@@ -362,55 +359,13 @@ export default function IntakePage() {
             <p className="text-foreground text-lg text-center mb-8">{currentQuestion.question}</p>
 
             {/* Emoticon buttons */}
-            <div className="flex justify-center gap-6 mb-6">
-              {[
-                { value: "nee", emoji: "🙂", color: "green", label: "NEE" },
-                { value: "soms", emoji: "😐", color: "yellow", label: "SOMS" },
-                { value: "ja", emoji: "🙁", color: "red", label: "JA" },
-              ].map((option) => {
-                const isSelected = selectedAnswer === option.value
-                const hasAnswer = !!selectedAnswer
-                return (
-                  <button
-                    key={option.value}
-                    onClick={() => handleAnswer(option.value)}
-                    disabled={isTransitioning}
-                    className="flex flex-col items-center gap-2"
-                  >
-                    <div
-                      className={cn(
-                        "emoticon-btn transition-all duration-300",
-                        isSelected
-                          ? `selected bg-[var(--emoticon-${option.color})] scale-110`
-                          : hasAnswer
-                          ? "bg-gray-200 opacity-50"
-                          : `bg-[var(--emoticon-${option.color})]/20 hover:bg-[var(--emoticon-${option.color})]/40`
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          "text-3xl transition-all duration-300",
-                          hasAnswer && !isSelected && "grayscale"
-                        )}
-                      >
-                        {option.emoji}
-                      </span>
-                    </div>
-                    <span
-                      className={cn(
-                        "text-sm font-bold transition-all duration-300",
-                        isSelected
-                          ? "text-foreground"
-                          : hasAnswer
-                          ? "text-gray-400"
-                          : "text-muted-foreground"
-                      )}
-                    >
-                      {option.label}
-                    </span>
-                  </button>
-                )
-              })}
+            <div className="mb-6">
+              <SmileyGroup
+                value={selectedAnswer as "nee" | "soms" | "ja" | null}
+                onChange={(val) => handleAnswer(val)}
+                disabled={isTransitioning}
+                size="lg"
+              />
             </div>
 
             {/* Loading indicator */}

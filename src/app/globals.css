@@ -122,10 +122,30 @@ body {
 /* KER Card - Basis card styling */
 .ker-card {
   background: var(--card);
-  border-radius: 1rem;
+  border-radius: 1.25rem;
   padding: 1.25rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
   border: 1px solid var(--border);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.ker-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+/* Card variant - elevated */
+.ker-card-elevated {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Card variant - interactive */
+.ker-card-interactive {
+  cursor: pointer;
+}
+
+.ker-card-interactive:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
 }
 
 /* KER Pill badge */
@@ -139,6 +159,32 @@ body {
   font-size: 0.9375rem;
   font-weight: 500;
   color: var(--foreground);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* Pill variants */
+.ker-pill-primary {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.ker-pill-success {
+  background: var(--accent-green-bg);
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+}
+
+.ker-pill-warning {
+  background: var(--accent-amber-bg);
+  border-color: var(--accent-amber);
+  color: var(--accent-amber);
+}
+
+.ker-pill-danger {
+  background: var(--accent-red-bg);
+  border-color: var(--accent-red);
+  color: var(--accent-red);
 }
 
 /* KER Button - Basis */
@@ -147,13 +193,14 @@ body {
   align-items: center;
   justify-content: center;
   padding: 0.875rem 1.75rem;
-  border-radius: 0.75rem;
+  border-radius: 0.875rem;
   font-weight: 600;
   font-size: 1rem;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
   cursor: pointer;
   border: none;
-  min-height: 48px; /* Minimaal voor touch targets */
+  min-height: 52px; /* Iets groter voor betere touch targets */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
 .ker-btn:disabled {
@@ -162,51 +209,94 @@ body {
 }
 
 .ker-btn-primary {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary), black 15%) 100%);
   color: var(--primary-foreground);
+  box-shadow: 0 4px 12px rgba(139, 43, 107, 0.25);
 }
 
 .ker-btn-primary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--primary), black 10%);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary), white 10%) 0%, var(--primary) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(139, 43, 107, 0.3);
 }
 
 .ker-btn-primary:active:not(:disabled) {
   transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(139, 43, 107, 0.2);
 }
 
 .ker-btn-secondary {
   background: var(--card);
   color: var(--foreground);
   border: 2px solid var(--border);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
 }
 
 .ker-btn-secondary:hover:not(:disabled) {
   border-color: var(--primary);
   background: var(--primary-light);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Button sizes */
+.ker-btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  min-height: 40px;
+  border-radius: 0.625rem;
+}
+
+.ker-btn-lg {
+  padding: 1rem 2rem;
+  font-size: 1.125rem;
+  min-height: 56px;
+  border-radius: 1rem;
 }
 
 /* KER Input */
 .ker-input {
   width: 100%;
   padding: 1rem 1.25rem;
-  border-radius: 0.75rem;
+  border-radius: 0.875rem;
   border: 2px solid var(--border);
   background: var(--input);
   color: var(--foreground);
   font-size: 1rem;
-  min-height: 48px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  min-height: 52px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.ker-input:hover:not(:focus) {
+  border-color: var(--border-strong);
 }
 
 .ker-input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(139, 43, 107, 0.1);
+  box-shadow: 0 0 0 4px rgba(139, 43, 107, 0.1);
+  background: white;
 }
 
 .ker-input::placeholder {
   color: var(--muted-foreground);
+}
+
+/* Input with icon */
+.ker-input-wrapper {
+  position: relative;
+}
+
+.ker-input-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted-foreground);
+}
+
+.ker-input-wrapper .ker-input {
+  padding-left: 3rem;
 }
 
 /* KER Radio/Checkbox style */
@@ -506,4 +596,168 @@ html {
 ::selection {
   background: var(--primary);
   color: var(--primary-foreground);
+}
+
+/* ============================================
+   KER SECTION HEADERS
+   ============================================ */
+
+.ker-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.ker-section-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.ker-section-icon {
+  font-size: 1.5rem;
+}
+
+/* ============================================
+   KER ICON CIRCLES
+   ============================================ */
+
+.ker-icon-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.ker-icon-circle-sm {
+  width: 2rem;
+  height: 2rem;
+}
+
+.ker-icon-circle-md {
+  width: 3rem;
+  height: 3rem;
+}
+
+.ker-icon-circle-lg {
+  width: 4rem;
+  height: 4rem;
+}
+
+.ker-icon-circle-xl {
+  width: 5rem;
+  height: 5rem;
+}
+
+/* ============================================
+   KER STAT CARDS
+   ============================================ */
+
+.ker-stat {
+  text-align: center;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.ker-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.ker-stat-label {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  margin-top: 0.25rem;
+}
+
+/* ============================================
+   KER LIST ITEMS
+   ============================================ */
+
+.ker-list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+}
+
+.ker-list-item + .ker-list-item {
+  border-top: 1px solid var(--border);
+}
+
+.ker-list-item-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ker-list-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.ker-list-item-title {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.ker-list-item-subtitle {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  margin-top: 0.125rem;
+}
+
+/* ============================================
+   KER DIVIDERS
+   ============================================ */
+
+.ker-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 1rem 0;
+}
+
+.ker-divider-thick {
+  height: 2px;
+}
+
+/* ============================================
+   KER BADGES
+   ============================================ */
+
+.ker-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.ker-badge-green {
+  background: var(--accent-green-bg);
+  color: var(--accent-green);
+}
+
+.ker-badge-amber {
+  background: var(--accent-amber-bg);
+  color: var(--accent-amber);
+}
+
+.ker-badge-red {
+  background: var(--accent-red-bg);
+  color: var(--accent-red);
+}
+
+.ker-badge-primary {
+  background: var(--primary-light);
+  color: var(--primary);
 }

@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
+import { ResultSmiley } from "@/components/ui"
 
 interface Hulpbron {
   naam: string
@@ -314,15 +315,11 @@ function DashboardContent() {
           >
             {/* Score Header */}
             <div className="flex items-center gap-4 mb-4">
-              <div
-                className={cn(
-                  "w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold text-white flex-shrink-0",
-                  data.test.niveau === "LAAG" && "bg-[var(--emoticon-green)]",
-                  data.test.niveau === "GEMIDDELD" && "bg-[var(--emoticon-yellow)]",
-                  data.test.niveau === "HOOG" && "bg-[var(--emoticon-red)]"
-                )}
-              >
-                {data.test.score}
+              <div className="flex-shrink-0">
+                <ResultSmiley
+                  type={data.test.niveau === "LAAG" ? "green" : data.test.niveau === "GEMIDDELD" ? "amber" : "red"}
+                  size="xl"
+                />
               </div>
               <div className="flex-1">
                 <h2

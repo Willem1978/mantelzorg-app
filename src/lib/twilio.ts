@@ -3,6 +3,7 @@ import twilio from 'twilio'
 const accountSid = process.env.TWILIO_ACCOUNT_SID
 const authToken = process.env.TWILIO_AUTH_TOKEN
 const whatsappFrom = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886'
+const messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID
 
 if (!accountSid || !authToken) {
   console.warn('Twilio credentials not configured. WhatsApp features will be disabled.')
@@ -30,49 +31,110 @@ export interface InteractiveMessageOptions {
 
 /**
  * Stuur een WhatsApp bericht met interactieve Quick Reply knoppen
+ * Gebruikt Twilio's native interactive message format
  *
  * Let op: Dit werkt alleen binnen het 24-uur sessievenster
- * Na 24 uur moet je approved templates gebruiken
  */
-export async function sendInteractiveMessage({ to, body, buttons, footer }: InteractiveMessageOptions) {
+export async function sendInteractiveButtonMessage(
+  to: string,
+  bodyText: string,
+  buttons: { id: string; title: string }[],
+  headerText?: string,
+  footerText?: string
+): Promise<any> {
+  if (!twilioClient) {
+    throw new Error('Twilio client not configured')
+  }
+
+  const formattedTo = to.startsWith('whatsapp:') ? to : `whatsapp:${to}`
+  const formattedFrom = whatsappFrom.startsWith('whatsapp:') ? whatsappFrom : `whatsapp:${whatsappFrom}`
+
+  // Bouw het interactieve bericht volgens WhatsApp Business API format
+  const interactivePayload: any = {
+    type: 'button',
+    body: {
+      text: bodyText.substring(0, 1024), // Max 1024 chars
+    },
+    action: {
+      buttons: buttons.slice(0, 3).map((btn, index) => ({
+        type: 'reply',
+        reply: {
+          id: btn.id,
+          title: btn.title.substring(0, 20), // Max 20 chars
+        },
+      })),
+    },
+  }
+
+  if (headerText) {
+    interactivePayload.header = {
+      type: 'text',
+      text: headerText.substring(0, 60), // Max 60 chars
+    }
+  }
+
+  if (footerText) {
+    interactivePayload.footer = {
+      text: footerText.substring(0, 60), // Max 60 chars
+    }
+  }
+
+  try {
+    // Verstuur via Twilio's Messages API met persistentAction
+    const message = await twilioClient.messages.create({
+      from: formattedFrom,
+      to: formattedTo,
+      persistentAction: [`interactive:${JSON.stringify(interactivePayload)}`],
+      body: bodyText, // Fallback body voor niet-ondersteunde clients
+    })
+
+    console.log(`Interactive button message sent. SID: ${message.sid}`)
+    return message
+  } catch (error: any) {
+    console.error('Error sending interactive button message:', error?.message || error)
+    // Fallback naar tekst-gebaseerd bericht
+    return sendTextWithButtonFallback(to, bodyText, buttons, headerText, footerText)
+  }
+}
+
+/**
+ * Fallback: Stuur tekst met genummerde opties als interactieve knoppen niet werken
+ */
+async function sendTextWithButtonFallback(
+  to: string,
+  bodyText: string,
+  buttons: { id: string; title: string }[],
+  headerText?: string,
+  footerText?: string
+): Promise<any> {
   if (!twilioClient) {
     throw new Error('Twilio client not configured')
   }
 
   const formattedTo = to.startsWith('whatsapp:') ? to : `whatsapp:${to}`
 
-  // Als er geen knoppen zijn, stuur gewoon een tekst bericht
-  if (!buttons || buttons.length === 0) {
-    return twilioClient.messages.create({
-      from: whatsappFrom,
-      to: formattedTo,
-      body,
-    })
+  let messageBody = ''
+  if (headerText) {
+    messageBody += `*${headerText}*\n\n`
+  }
+  messageBody += bodyText + '\n\n'
+
+  buttons.forEach((btn, index) => {
+    const numEmoji = ['1️⃣', '2️⃣', '3️⃣'][index] || `${index + 1}.`
+    messageBody += `${numEmoji} ${btn.title}\n`
+  })
+
+  if (footerText) {
+    messageBody += `\n_${footerText}_`
   }
 
-  // Bouw de interactieve message payload
-  // Twilio's WhatsApp API ondersteunt interactieve berichten via contentSid
-  // OF via de messaging API met specifieke parameters
+  const message = await twilioClient.messages.create({
+    from: whatsappFrom,
+    to: formattedTo,
+    body: messageBody,
+  })
 
-  // Methode: Gebruik de persistent content format
-  // Dit vereist dat je eerst een content template maakt in Twilio Console
-  // OF je kunt de inline interactive message format gebruiken
-
-  try {
-    // Probeer eerst met de nieuwere interactieve format
-    const message = await twilioClient.messages.create({
-      from: whatsappFrom,
-      to: formattedTo,
-      body: body,
-      // Voor nu vallen we terug op tekst met emoji knoppen
-      // De echte interactieve knoppen vereisen Content Templates
-    })
-
-    return message
-  } catch (error) {
-    console.error('Error sending interactive message:', error)
-    throw error
-  }
+  return message
 }
 
 /**
@@ -369,10 +431,25 @@ export function getScoreImageUrl(score: number, level: string, name?: string): s
 /**
  * Genereer magic link URL voor directe dashboard login vanuit WhatsApp
  * Token is 15 minuten geldig en kan maar 1x gebruikt worden
+ * Gebruikt korte /m/ route voor betere leesbaarheid in WhatsApp
  */
 export function getMagicLinkUrl(token: string): string {
   const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
-  return `${baseUrl}/api/auth/magic-link?token=${token}`
+  return `${baseUrl}/m/${token}`
+}
+
+/**
+ * Genereer korte magic link token (12 karakters)
+ * Wordt gebruikt voor kortere URLs in WhatsApp
+ * Vermijdt verwarrende karakters (0/O, 1/l/I)
+ */
+export function generateShortToken(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+  let token = ''
+  for (let i = 0; i < 12; i++) {
+    token += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return token
 }
 
 /**

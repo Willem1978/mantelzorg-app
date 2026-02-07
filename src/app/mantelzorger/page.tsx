@@ -111,7 +111,7 @@ export default function MantelzorgerHomePage() {
                 <div className="pt-2">
                   <h3 className="font-bold text-foreground">Roep hulp in</h3>
                   <p className="text-muted-foreground mt-1">
-                    Vraag betrouwbare MantelBuddy&apos;s uit de buurt om hulp bij taken.
+                    MantelBuddy&apos;s helpen eenmalig of als vast maatje met taken.
                   </p>
                 </div>
               </div>
@@ -153,7 +153,7 @@ export default function MantelzorgerHomePage() {
                 </div>
                 <h3 className="font-bold text-foreground">Betrouwbare MantelBuddy&apos;s</h3>
                 <p className="text-muted-foreground mt-1 text-sm">
-                  Vrijwilligers uit de buurt met beoordelingen, VOG-gescreend.
+                  Vrijwilligers die eenmalig of als vast maatje taken overnemen.
                 </p>
               </div>
 

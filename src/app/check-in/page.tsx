@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
+import { SmileyGroup, ResultSmiley } from "@/components/ui"
 
 // Korte maandelijkse check-in vragen (NEE/SOMS/JA stijl)
 const checkInQuestions = [
@@ -197,13 +198,8 @@ export default function CheckInPage() {
               mood.kleur === "amber" && "bg-[#FFF8E1]",
               mood.kleur === "red" && "bg-[#FFEBEE]"
             )}>
-              <div className={cn(
-                "w-20 h-20 rounded-full mx-auto flex items-center justify-center text-4xl mb-4",
-                mood.kleur === "green" && "bg-[var(--emoticon-green)]",
-                mood.kleur === "amber" && "bg-[var(--emoticon-yellow)]",
-                mood.kleur === "red" && "bg-[var(--emoticon-red)]"
-              )}>
-                {mood.kleur === "green" ? "🙂" : mood.kleur === "amber" ? "😐" : "🙁"}
+              <div className="mx-auto mb-4">
+                <ResultSmiley type={mood.kleur as "green" | "amber" | "red"} size="xl" />
               </div>
               <h3 className={cn(
                 "text-xl font-bold mb-2",
@@ -366,27 +362,6 @@ export default function CheckInPage() {
 
   // Normale vraag met smileys
   const selectedAnswer = answers[currentQuestion.id]
-  const isReversed = currentQuestion.reversed
-
-  // Bij reversed vragen: JA is positief (groen), NEE is negatief (rood)
-  // Bij normale vragen: NEE is positief (groen), JA is negatief (rood)
-  const getOptionConfig = (value: "nee" | "soms" | "ja") => {
-    if (isReversed) {
-      // Reversed: JA = goed, NEE = slecht
-      switch (value) {
-        case "ja": return { emoji: "🙂", color: "green" }
-        case "soms": return { emoji: "😐", color: "yellow" }
-        case "nee": return { emoji: "🙁", color: "red" }
-      }
-    } else {
-      // Normaal: NEE = goed, JA = slecht
-      switch (value) {
-        case "nee": return { emoji: "🙂", color: "green" }
-        case "soms": return { emoji: "😐", color: "yellow" }
-        case "ja": return { emoji: "🙁", color: "red" }
-      }
-    }
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -418,40 +393,14 @@ export default function CheckInPage() {
               {currentQuestion.question}
             </p>
 
-            {/* Emoticon buttons - volgorde afhankelijk van reversed */}
-            <div className="flex justify-center gap-6 mb-6">
-              {(["nee", "soms", "ja"] as const).map((value) => {
-                const config = getOptionConfig(value)
-                const isSelected = selectedAnswer === value
-                const hasAnswer = !!selectedAnswer
-
-                return (
-                  <button
-                    key={value}
-                    onClick={() => handleAnswer(value)}
-                    disabled={isTransitioning}
-                    className="flex flex-col items-center gap-2"
-                  >
-                    <div className={cn(
-                      "emoticon-btn transition-all duration-300",
-                      isSelected
-                        ? `selected bg-[var(--emoticon-${config.color})] scale-110`
-                        : hasAnswer
-                          ? "bg-gray-200 opacity-50"
-                          : `bg-[var(--emoticon-${config.color})]/20 hover:bg-[var(--emoticon-${config.color})]/40`
-                    )}>
-                      <span className={cn(
-                        "text-3xl transition-all duration-300",
-                        hasAnswer && !isSelected && "grayscale"
-                      )}>{config.emoji}</span>
-                    </div>
-                    <span className={cn(
-                      "text-sm font-medium transition-all duration-300",
-                      isSelected ? "text-foreground" : hasAnswer ? "text-gray-400" : "text-muted-foreground"
-                    )}>{value.toUpperCase()}</span>
-                  </button>
-                )
-              })}
+            {/* Smiley buttons */}
+            <div className="mb-6">
+              <SmileyGroup
+                value={selectedAnswer as "nee" | "soms" | "ja" | null}
+                onChange={(val) => handleAnswer(val)}
+                disabled={isTransitioning}
+                size="lg"
+              />
             </div>
 
             {/* Loading indicator during transition */}

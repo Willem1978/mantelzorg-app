@@ -156,7 +156,7 @@ export default function LandingPage() {
                     </div>
                     <div>
                       <p className="font-medium text-foreground">Maak het verschil</p>
-                      <p className="text-sm text-muted-foreground">Help met taken of wees er gewoon</p>
+                      <p className="text-sm text-muted-foreground">Eenmalig of als vast maatje</p>
                     </div>
                   </div>
                 </div>
@@ -173,7 +173,8 @@ export default function LandingPage() {
             </h2>
             <p className="text-muted-foreground text-lg mb-8">
               Een MantelBuddy is een vrijwilliger uit de buurt die mantelzorgers ondersteunt.
-              Dit kan op verschillende manieren:
+              Je kunt eenmalig helpen wanneer het jou uitkomt, of een vast maatje worden en
+              regelmatig taken voor de zorgvrager oppakken.
             </p>
 
             <div className="grid sm:grid-cols-3 gap-6">
