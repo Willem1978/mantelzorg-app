@@ -321,9 +321,9 @@ export default function CheckInPage() {
           </div>
         </main>
 
-        {/* Footer - alleen terug knop */}
+        {/* Footer met terug en volgende knoppen */}
         <footer className="fixed bottom-0 left-0 right-0 bg-background p-4">
-          <div className="max-w-md mx-auto flex items-center justify-center">
+          <div className="max-w-md mx-auto flex items-center justify-between gap-4">
             <button
               onClick={handlePrevious}
               disabled={currentQuestionIndex === 0}
@@ -333,6 +333,20 @@ export default function CheckInPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
               terug
+            </button>
+
+            <button
+              onClick={handleNext}
+              disabled={selectedOptions.length === 0}
+              className={cn(
+                "ker-btn flex items-center gap-2",
+                selectedOptions.length > 0 ? "ker-btn-primary" : "ker-btn-secondary opacity-50"
+              )}
+            >
+              {isLastQuestion ? "afsluiten" : "volgende"}
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </button>
           </div>
         </footer>

@@ -532,9 +532,9 @@ export default function BelastbaarheidstestPage() {
           </div>
         </main>
 
-        {/* Footer - alleen terug knop */}
+        {/* Footer met terug en start knoppen */}
         <footer className="fixed bottom-0 left-0 right-0 bg-background p-4">
-          <div className="max-w-md mx-auto flex items-center justify-center">
+          <div className="max-w-md mx-auto flex items-center justify-between gap-4">
             <button
               onClick={() => router.back()}
               className="ker-btn ker-btn-secondary flex items-center gap-2"
@@ -543,6 +543,16 @@ export default function BelastbaarheidstestPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
               terug
+            </button>
+
+            <button
+              onClick={() => setCurrentStep("vragen")}
+              className="ker-btn ker-btn-primary flex items-center gap-2"
+            >
+              start test
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </button>
           </div>
         </footer>
@@ -683,9 +693,9 @@ export default function BelastbaarheidstestPage() {
           </div>
         </main>
 
-        {/* Footer - alleen terug knop */}
+        {/* Footer met terug en verder knoppen */}
         <footer className="fixed bottom-0 left-0 right-0 bg-background p-4">
-          <div className="max-w-md mx-auto flex items-center justify-center">
+          <div className="max-w-md mx-auto flex items-center justify-between gap-4">
             <button
               onClick={() => setCurrentStep("vragen")}
               className="ker-btn ker-btn-secondary flex items-center gap-2"
@@ -694,6 +704,23 @@ export default function BelastbaarheidstestPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
               terug
+            </button>
+
+            <button
+              onClick={() => {
+                const selectedTasks = TAKEN.filter(t => taken[t.id].isGeselecteerd)
+                if (selectedTasks.length > 0) {
+                  setCurrentStep("taken-details")
+                } else {
+                  setCurrentStep("rapport")
+                }
+              }}
+              className="ker-btn ker-btn-primary flex items-center gap-2"
+            >
+              verder
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </button>
           </div>
         </footer>
@@ -1007,9 +1034,9 @@ export default function BelastbaarheidstestPage() {
           </div>
         </main>
 
-        {/* Footer - alleen terug knop */}
+        {/* Footer met terug en opslaan knoppen */}
         <footer className="fixed bottom-0 left-0 right-0 bg-background p-4">
-          <div className="max-w-md mx-auto flex items-center justify-center">
+          <div className="max-w-md mx-auto flex items-center justify-between gap-4">
             <button
               onClick={() => setCurrentStep("rapport")}
               className="ker-btn ker-btn-secondary flex items-center gap-2"
@@ -1018,6 +1045,17 @@ export default function BelastbaarheidstestPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
               terug
+            </button>
+
+            <button
+              onClick={handleGegevensSubmit}
+              disabled={isSubmitting}
+              className="ker-btn ker-btn-primary flex items-center gap-2"
+            >
+              {isSubmitting ? "even geduld..." : "opslaan"}
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
             </button>
           </div>
         </footer>
