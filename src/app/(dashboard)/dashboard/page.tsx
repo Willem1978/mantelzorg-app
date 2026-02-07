@@ -614,55 +614,6 @@ function DashboardContent() {
         </section>
       )}
 
-      {/* SECTIE: Educatie & Tips */}
-      <section className="mb-8">
-        <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-          <span className="text-2xl">📚</span> Leren & Tips
-        </h2>
-        <div className="grid grid-cols-2 gap-3">
-          <a
-            href="https://www.mantelzorg.nl/tips"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ker-card hover:border-primary/50 transition-colors"
-          >
-            <span className="text-2xl block mb-2">💡</span>
-            <p className="font-medium text-sm">Praktische tips</p>
-            <p className="text-xs text-muted-foreground mt-1">Voor het dagelijks leven</p>
-          </a>
-          <a
-            href="https://www.mantelzorg.nl/zelfzorg"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ker-card hover:border-primary/50 transition-colors"
-          >
-            <span className="text-2xl block mb-2">🧘</span>
-            <p className="font-medium text-sm">Zelfzorg tips</p>
-            <p className="text-xs text-muted-foreground mt-1">Zorg ook voor jezelf</p>
-          </a>
-          <a
-            href="https://www.mantelzorg.nl/rechten"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ker-card hover:border-primary/50 transition-colors"
-          >
-            <span className="text-2xl block mb-2">⚖️</span>
-            <p className="font-medium text-sm">Je rechten</p>
-            <p className="text-xs text-muted-foreground mt-1">Waar heb je recht op?</p>
-          </a>
-          <a
-            href="https://www.mantelzorg.nl/financieel"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ker-card hover:border-primary/50 transition-colors"
-          >
-            <span className="text-2xl block mb-2">💰</span>
-            <p className="font-medium text-sm">Financieel</p>
-            <p className="text-xs text-muted-foreground mt-1">Vergoedingen & regelingen</p>
-          </a>
-        </div>
-      </section>
-
       {/* SECTIE 4: Check-in Status */}
       <section className="mb-8">
         <Link href="/check-in" className="block">
