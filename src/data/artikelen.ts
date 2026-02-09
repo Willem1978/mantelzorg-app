@@ -257,6 +257,26 @@ export const gemeenteNieuws: GemeenteNieuws[] = [
     url: "https://www.arnhem.nl",
     emoji: "📝",
   },
+  {
+    id: "gn-zutphen-1",
+    titel: "Lotgenotengroep mantelzorgers in Zutphen",
+    beschrijving:
+      "In buurtcentrum De Hanzehof start in april een lotgenotengroep voor mantelzorgers. Elke twee weken kun je ervaringen delen en tips uitwisselen. Deelname is gratis. Aanmelden via Perspectief Zutphen.",
+    gemeente: "Zutphen",
+    datum: "2026-02-06",
+    url: "https://www.zutphen.nl",
+    emoji: "🤝",
+  },
+  {
+    id: "gn-zutphen-2",
+    titel: "Mantelzorgcompliment Zutphen: vraag het aan!",
+    beschrijving:
+      "De gemeente Zutphen waardeert mantelzorgers met een jaarlijks compliment van 150 euro. Je kunt dit aanvragen via het Sociaal Wijkteam of online via de website van de gemeente.",
+    gemeente: "Zutphen",
+    datum: "2026-01-20",
+    url: "https://www.zutphen.nl",
+    emoji: "💐",
+  },
 ]
 
 // Categorie metadata
