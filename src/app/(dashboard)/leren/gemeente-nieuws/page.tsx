@@ -173,18 +173,21 @@ export default function GemeenteNieuwsPage() {
 
       {/* Uitleg + alles gelezen knop */}
       {relevantNieuws.length > 0 && (
-        <div className="bg-primary/5 rounded-xl p-3 mb-6 flex items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground">
-            Tik op <span className="font-medium text-[var(--accent-green)]">Gelezen</span> als je een bericht hebt gelezen.
-          </p>
-          {aantalOngelezen > 0 && (
-            <button
-              onClick={allesGelezen}
-              className="text-xs text-primary hover:underline font-medium whitespace-nowrap"
-            >
-              Alles gelezen
-            </button>
-          )}
+        <div className="bg-primary/5 rounded-xl p-3 mb-6">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground">
+              Tik op <span className="font-medium text-[var(--accent-green)]">Gelezen</span> als je een bericht hebt gelezen.
+              Bewaar een bericht met het <span className="text-primary font-semibold">hartje</span>.
+            </p>
+            {aantalOngelezen > 0 && (
+              <button
+                onClick={allesGelezen}
+                className="text-xs text-primary hover:underline font-medium whitespace-nowrap"
+              >
+                Alles gelezen
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -202,47 +205,24 @@ export default function GemeenteNieuwsPage() {
         </div>
       )}
 
-      {/* Nieuws van gemeente mantelzorger */}
-      {nieuwsMantelzorger.length > 0 && (
-        <div className="mb-6">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-            📍 {gemeenteMantelzorger} — jouw gemeente
-          </p>
-          <div className="space-y-3">
-            {nieuwsMantelzorger.map(item => (
-              <NieuwsCard
-                key={item.id}
-                item={item}
-                favorieten={favorieten}
-                isGelezen={gelezenIds.includes(item.id)}
-                onGelezen={() => markeerAlsGelezen(item.id)}
-                onOngelezen={() => markeerAlsOngelezen(item.id)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Nieuws per gemeente - ongelezen bovenaan, gelezen onderaan */}
+      <NieuwsSectie
+        items={nieuwsMantelzorger}
+        label={gemeenteMantelzorger ? `📍 ${gemeenteMantelzorger} — jouw gemeente` : ""}
+        gelezenIds={gelezenIds}
+        favorieten={favorieten}
+        onGelezen={markeerAlsGelezen}
+        onOngelezen={markeerAlsOngelezen}
+      />
 
-      {/* Nieuws van gemeente zorgvrager */}
-      {nieuwsZorgvrager.length > 0 && (
-        <div className="mb-6">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-            📍 {gemeenteZorgvrager} — gemeente van je naaste
-          </p>
-          <div className="space-y-3">
-            {nieuwsZorgvrager.map(item => (
-              <NieuwsCard
-                key={item.id}
-                item={item}
-                favorieten={favorieten}
-                isGelezen={gelezenIds.includes(item.id)}
-                onGelezen={() => markeerAlsGelezen(item.id)}
-                onOngelezen={() => markeerAlsOngelezen(item.id)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      <NieuwsSectie
+        items={nieuwsZorgvrager}
+        label={gemeenteZorgvrager ? `📍 ${gemeenteZorgvrager} — gemeente van je naaste` : ""}
+        gelezenIds={gelezenIds}
+        favorieten={favorieten}
+        onGelezen={markeerAlsGelezen}
+        onOngelezen={markeerAlsOngelezen}
+      />
 
       {/* Gemeente wel ingesteld maar geen nieuws */}
       {!geenGemeente && relevantNieuws.length === 0 && (
@@ -258,6 +238,79 @@ export default function GemeenteNieuwsPage() {
             We houden het in de gaten!
           </p>
         </div>
+      )}
+    </div>
+  )
+}
+
+function NieuwsSectie({
+  items,
+  label,
+  gelezenIds,
+  favorieten,
+  onGelezen,
+  onOngelezen,
+}: {
+  items: GemeenteNieuws[]
+  label: string
+  gelezenIds: string[]
+  favorieten: Record<string, string>
+  onGelezen: (id: string) => void
+  onOngelezen: (id: string) => void
+}) {
+  if (items.length === 0) return null
+
+  const ongelezen = items.filter(item => !gelezenIds.includes(item.id))
+  const gelezen = items.filter(item => gelezenIds.includes(item.id))
+
+  return (
+    <div className="mb-6">
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+        {label}
+      </p>
+
+      {/* Ongelezen items */}
+      {ongelezen.length > 0 && (
+        <div className="space-y-3">
+          {ongelezen.map(item => (
+            <NieuwsCard
+              key={item.id}
+              item={item}
+              favorieten={favorieten}
+              isGelezen={false}
+              onGelezen={() => onGelezen(item.id)}
+              onOngelezen={() => onOngelezen(item.id)}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Gelezen items */}
+      {gelezen.length > 0 && (
+        <>
+          <div className="flex items-center gap-2 mt-4 mb-3">
+            <div className="h-px flex-1 bg-border" />
+            <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+              <svg className="w-3.5 h-3.5 text-[var(--accent-green)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+              Gelezen
+            </span>
+            <div className="h-px flex-1 bg-border" />
+          </div>
+          <div className="space-y-3">
+            {gelezen.map(item => (
+              <NieuwsCard
+                key={item.id}
+                item={item}
+                favorieten={favorieten}
+                isGelezen={true}
+                onGelezen={() => onGelezen(item.id)}
+                onOngelezen={() => onOngelezen(item.id)}
+              />
+            ))}
+          </div>
+        </>
       )}
     </div>
   )
