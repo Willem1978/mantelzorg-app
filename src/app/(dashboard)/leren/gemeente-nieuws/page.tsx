@@ -1,16 +1,31 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import Link from "next/link"
 import { gemeenteNieuws, type GemeenteNieuws } from "@/data/artikelen"
 import { FavorietButton } from "@/components/FavorietButton"
+
+const GELEZEN_KEY = "gemeente-nieuws-gelezen"
 
 export default function GemeenteNieuwsPage() {
   const [gemeenteMantelzorger, setGemeenteMantelzorger] = useState<string | null>(null)
   const [gemeenteZorgvrager, setGemeenteZorgvrager] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [favorieten, setFavorieten] = useState<Record<string, string>>({})
+  const [gelezenIds, setGelezenIds] = useState<string[]>([])
   const hasFetched = useRef(false)
+
+  // Laad gelezen items uit localStorage
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(GELEZEN_KEY)
+      if (raw) {
+        setGelezenIds(JSON.parse(raw))
+      }
+    } catch {
+      // Silently fail
+    }
+  }, [])
 
   useEffect(() => {
     const loadData = async () => {
@@ -43,17 +58,6 @@ export default function GemeenteNieuwsPage() {
   const relevantNieuws = [...nieuwsMantelzorger, ...nieuwsZorgvrager]
   const geenGemeente = !gemeenteMantelzorger && !gemeenteZorgvrager
 
-  // Markeer als gelezen in localStorage
-  useEffect(() => {
-    if (!loading && relevantNieuws.length > 0) {
-      const nieuwsIds = relevantNieuws.map(n => n.id)
-      localStorage.setItem("gemeente-nieuws-gelezen", JSON.stringify(nieuwsIds))
-      localStorage.setItem("gemeente-nieuws-gelezen-datum", new Date().toISOString())
-      window.dispatchEvent(new Event("gemeente-nieuws-gelezen"))
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, gemeenteMantelzorger, gemeenteZorgvrager])
-
   // Favorieten check
   useEffect(() => {
     if (hasFetched.current || loading || relevantNieuws.length === 0) return
@@ -79,6 +83,40 @@ export default function GemeenteNieuwsPage() {
     checkFavorieten()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, gemeenteMantelzorger, gemeenteZorgvrager])
+
+  // Markeer een item als gelezen
+  const markeerAlsGelezen = useCallback((itemId: string) => {
+    setGelezenIds(prev => {
+      if (prev.includes(itemId)) return prev
+      const updated = [...prev, itemId]
+      localStorage.setItem(GELEZEN_KEY, JSON.stringify(updated))
+      localStorage.setItem("gemeente-nieuws-gelezen-datum", new Date().toISOString())
+      window.dispatchEvent(new Event("gemeente-nieuws-gelezen"))
+      return updated
+    })
+  }, [])
+
+  // Markeer een item als ongelezen
+  const markeerAlsOngelezen = useCallback((itemId: string) => {
+    setGelezenIds(prev => {
+      const updated = prev.filter(id => id !== itemId)
+      localStorage.setItem(GELEZEN_KEY, JSON.stringify(updated))
+      localStorage.setItem("gemeente-nieuws-gelezen-datum", new Date().toISOString())
+      window.dispatchEvent(new Event("gemeente-nieuws-gelezen"))
+      return updated
+    })
+  }, [])
+
+  // Alles gelezen markeren
+  const allesGelezen = useCallback(() => {
+    const alleIds = relevantNieuws.map(n => n.id)
+    setGelezenIds(alleIds)
+    localStorage.setItem(GELEZEN_KEY, JSON.stringify(alleIds))
+    localStorage.setItem("gemeente-nieuws-gelezen-datum", new Date().toISOString())
+    window.dispatchEvent(new Event("gemeente-nieuws-gelezen"))
+  }, [relevantNieuws])
+
+  const aantalOngelezen = relevantNieuws.filter(n => !gelezenIds.includes(n.id)).length
 
   if (loading) {
     return (
@@ -106,9 +144,26 @@ export default function GemeenteNieuwsPage() {
         <span className="text-3xl">🏘️</span>
         <h1 className="text-2xl font-bold">Nieuws van de gemeente</h1>
       </div>
-      <p className="text-sm text-muted-foreground mb-6">
+      <p className="text-sm text-muted-foreground mb-4">
         Nieuws en updates over mantelzorg in jouw gemeente.
       </p>
+
+      {/* Uitleg + alles gelezen knop */}
+      {relevantNieuws.length > 0 && (
+        <div className="bg-primary/5 rounded-xl p-3 mb-6 flex items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            Tik op <span className="font-semibold">✅ Gelezen</span> als je een bericht hebt gelezen.
+          </p>
+          {aantalOngelezen > 0 && (
+            <button
+              onClick={allesGelezen}
+              className="text-xs text-primary hover:underline font-medium whitespace-nowrap"
+            >
+              Alles gelezen
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Geen gemeente ingesteld */}
       {geenGemeente && (
@@ -132,7 +187,14 @@ export default function GemeenteNieuwsPage() {
           </p>
           <div className="space-y-3">
             {nieuwsMantelzorger.map(item => (
-              <NieuwsCard key={item.id} item={item} favorieten={favorieten} />
+              <NieuwsCard
+                key={item.id}
+                item={item}
+                favorieten={favorieten}
+                isGelezen={gelezenIds.includes(item.id)}
+                onGelezen={() => markeerAlsGelezen(item.id)}
+                onOngelezen={() => markeerAlsOngelezen(item.id)}
+              />
             ))}
           </div>
         </div>
@@ -146,7 +208,14 @@ export default function GemeenteNieuwsPage() {
           </p>
           <div className="space-y-3">
             {nieuwsZorgvrager.map(item => (
-              <NieuwsCard key={item.id} item={item} favorieten={favorieten} />
+              <NieuwsCard
+                key={item.id}
+                item={item}
+                favorieten={favorieten}
+                isGelezen={gelezenIds.includes(item.id)}
+                onGelezen={() => markeerAlsGelezen(item.id)}
+                onOngelezen={() => markeerAlsOngelezen(item.id)}
+              />
             ))}
           </div>
         </div>
@@ -171,7 +240,19 @@ export default function GemeenteNieuwsPage() {
   )
 }
 
-function NieuwsCard({ item, favorieten }: { item: GemeenteNieuws; favorieten: Record<string, string> }) {
+function NieuwsCard({
+  item,
+  favorieten,
+  isGelezen,
+  onGelezen,
+  onOngelezen,
+}: {
+  item: GemeenteNieuws
+  favorieten: Record<string, string>
+  isGelezen: boolean
+  onGelezen: () => void
+  onOngelezen: () => void
+}) {
   const favKey = `INFORMATIE:${item.id}`
   const isFavorited = !!favorieten[favKey]
   const favorietId = favorieten[favKey]
@@ -182,7 +263,8 @@ function NieuwsCard({ item, favorieten }: { item: GemeenteNieuws; favorieten: Re
   }
 
   return (
-    <div className="ker-card py-4 relative">
+    <div className={`ker-card py-4 relative transition-opacity ${isGelezen ? "opacity-60" : ""}`}>
+      {/* Hartje rechtsboven */}
       <div className="absolute top-3 right-3">
         <FavorietButton
           type="INFORMATIE"
@@ -198,27 +280,48 @@ function NieuwsCard({ item, favorieten }: { item: GemeenteNieuws; favorieten: Re
         />
       </div>
 
-      <div className="pr-12">
-        <div className="flex items-center gap-2 mb-1">
+      {/* Nieuw bolletje */}
+      {!isGelezen && (
+        <div className="absolute top-3 left-3">
+          <span className="w-2.5 h-2.5 bg-[var(--accent-red)] rounded-full block animate-pulse" />
+        </div>
+      )}
+
+      <div className="pr-12 pl-2">
+        <div className="flex items-center gap-2 mb-1 pl-5">
           <span className="text-xl">{item.emoji}</span>
           <h2 className="font-semibold text-sm">{item.titel}</h2>
         </div>
-        <p className="text-[10px] text-muted-foreground pl-7 mb-1">
+        <p className="text-[10px] text-muted-foreground pl-12 mb-1">
           {formatDatum(item.datum)} — {item.gemeente}
         </p>
-        <p className="text-xs text-muted-foreground leading-relaxed pl-7 mb-2">
+        <p className="text-xs text-muted-foreground leading-relaxed pl-12 mb-3">
           {item.beschrijving}
         </p>
-        {item.url && (
-          <a
-            href={item.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-primary hover:underline font-medium flex items-center gap-1 pl-7"
+
+        {/* Acties: gelezen + link */}
+        <div className="flex items-center gap-4 pl-12">
+          {item.url && (
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-primary hover:underline font-medium flex items-center gap-1"
+            >
+              🌐 Meer info
+            </a>
+          )}
+          <button
+            onClick={isGelezen ? onOngelezen : onGelezen}
+            className={`text-xs font-medium flex items-center gap-1 transition-colors ${
+              isGelezen
+                ? "text-green-600 hover:text-muted-foreground"
+                : "text-muted-foreground hover:text-green-600"
+            }`}
           >
-            🌐 Meer informatie
-          </a>
-        )}
+            {isGelezen ? "✅ Gelezen" : "☐ Markeer als gelezen"}
+          </button>
+        </div>
       </div>
     </div>
   )

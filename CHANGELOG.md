@@ -5,6 +5,21 @@ Alle belangrijke wijzigingen aan MantelBuddy worden hier gedocumenteerd.
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.0.0/),
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [2.3.0] - 2026-02-09
+
+### Toegevoegd
+- **Per-item gelezen markering**: Gebruikers kunnen individuele gemeente-nieuwsberichten markeren als gelezen met een "☐ Markeer als gelezen" / "✅ Gelezen" knop
+- **Alles gelezen knop**: Snelknop om alle nieuwsberichten in één keer als gelezen te markeren
+- **Nieuw bolletje per artikel**: Rood pulserend bolletje links op ongelezen artikelen
+- **Ongedaan maken**: Gelezen markering kan teruggedraaid worden (toggle)
+- **Gemeente nieuws Zutphen**: 2 nieuwsartikelen toegevoegd voor gemeente Zutphen
+
+### Gewijzigd
+- **Gemeente-nieuws pagina**: Auto-read-all verwijderd, nu per-item gelezen markering met visuele feedback (opacity, groen vinkje)
+- **Leren hoofdpagina badge**: Herberekent nu correct bij individueel markeren als gelezen (was: reset naar 0)
+
+---
+
 ## [2.2.0] - 2026-02-09
 
 ### Toegevoegd

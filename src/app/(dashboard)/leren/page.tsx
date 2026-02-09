@@ -91,11 +91,13 @@ export default function LerenPage() {
   // Luister naar gelezen-event van gemeente-nieuws pagina
   useEffect(() => {
     const handleGelezen = () => {
-      setAantalNieuwItems(0)
+      // Herbereken op basis van actuele localStorage
+      berekenNieuwItems(gemeenteMantelzorger, gemeenteZorgvrager)
     }
     window.addEventListener("gemeente-nieuws-gelezen", handleGelezen)
     return () => window.removeEventListener("gemeente-nieuws-gelezen", handleGelezen)
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gemeenteMantelzorger, gemeenteZorgvrager])
 
   const berekenNieuwItems = (gMantelzorger: string | null, gZorgvrager: string | null) => {
     // Filter relevant nieuws
