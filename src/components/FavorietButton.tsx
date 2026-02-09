@@ -81,6 +81,8 @@ export function FavorietButton({
       }
 
       onToggle?.(!wasFavorited)
+      // Update navbar badge
+      window.dispatchEvent(new Event("favorieten-updated"))
     } catch {
       // Revert bij fout
       setIsFavorited(wasFavorited)

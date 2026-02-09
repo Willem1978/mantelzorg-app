@@ -1,30 +1,31 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 
 export function FavorietenIcon() {
   const [count, setCount] = useState(0)
-  const hasFetched = useRef(false)
+
+  const fetchCount = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/favorieten/count?t=${Date.now()}`)
+      if (res.ok) {
+        const data = await res.json()
+        setCount(data.count || 0)
+      }
+    } catch {
+      // Silently fail
+    }
+  }, [])
 
   useEffect(() => {
-    if (hasFetched.current) return
-    hasFetched.current = true
-
-    const fetchCount = async () => {
-      try {
-        const res = await fetch("/api/favorieten/count")
-        if (res.ok) {
-          const data = await res.json()
-          setCount(data.count || 0)
-        }
-      } catch (error) {
-        // Silently fail
-      }
-    }
-
     fetchCount()
-  }, [])
+
+    // Luister naar custom event van FavorietButton
+    const handleUpdate = () => fetchCount()
+    window.addEventListener("favorieten-updated", handleUpdate)
+    return () => window.removeEventListener("favorieten-updated", handleUpdate)
+  }, [fetchCount])
 
   return (
     <Link
