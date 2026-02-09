@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { NotificationBell } from "@/components/navigation/NotificationBell"
 import { ThemeToggle } from "@/components/navigation/ThemeToggle"
 import { FavorietenIcon } from "@/components/navigation/FavorietenIcon"
+import { useNieuwsBadge } from "@/hooks/useNieuwsBadge"
 
 interface NavbarProps {
   userRole?: "CAREGIVER" | "ORG_MEMBER" | "ORG_ADMIN" | "ADMIN"
@@ -16,6 +17,7 @@ interface NavbarProps {
 export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
   const pathname = usePathname()
   const [zwareTakenCount, setZwareTakenCount] = useState(0)
+  const nieuwsCount = useNieuwsBadge()
   const hasFetched = useRef(false)
 
   useEffect(() => {
@@ -40,15 +42,15 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
   // B1 taalgebruik - simpele menu woorden
   // Volgorde: Home, Hulp, Hoe gaat het?
   // NOTE: Agenda is tijdelijk verborgen maar code blijft behouden voor later
-  const caregiverLinks = [
+  const caregiverLinks: { href: string; label: string; hasBadge: boolean; nieuwsBadge?: boolean }[] = [
     { href: "/dashboard", label: "Home", hasBadge: false },
-    { href: "/leren", label: "Informatie", hasBadge: false },
+    { href: "/leren", label: "Informatie", hasBadge: false, nieuwsBadge: true },
     { href: "/hulpvragen", label: "Hulp", hasBadge: true },
     // { href: "/agenda", label: "Agenda", hasBadge: false }, // Tijdelijk verborgen
     { href: "/check-in", label: "Hoe gaat het?", hasBadge: false },
   ]
 
-  const orgLinks = [
+  const orgLinks: { href: string; label: string; hasBadge: boolean; nieuwsBadge?: boolean }[] = [
     { href: "/organisatie", label: "Home", hasBadge: false },
     { href: "/organisatie/mantelzorgers", label: "Mensen", hasBadge: false },
     { href: "/organisatie/rapportage", label: "Cijfers", hasBadge: false },
@@ -73,7 +75,8 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
             {/* Desktop navigatie */}
             <div className="hidden md:flex ml-8 lg:ml-10 space-x-1">
               {links.map((link) => {
-                const showBadge = link.hasBadge && zwareTakenCount > 0
+                const showHulpBadge = link.hasBadge && zwareTakenCount > 0
+                const showNieuwsBadge = link.nieuwsBadge && nieuwsCount > 0
                 return (
                   <Link
                     key={link.href}
@@ -86,9 +89,14 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
                     )}
                   >
                     {link.label}
-                    {showBadge && (
+                    {showHulpBadge && (
                       <span className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--accent-amber)] text-white text-xs font-bold rounded-full flex items-center justify-center">
                         {zwareTakenCount}
+                      </span>
+                    )}
+                    {showNieuwsBadge && (
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--accent-red)] text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
+                        {nieuwsCount}
                       </span>
                     )}
                   </Link>

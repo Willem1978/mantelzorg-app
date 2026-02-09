@@ -4,10 +4,11 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useState, useRef } from "react"
 import { cn } from "@/lib/utils"
+import { useNieuwsBadge } from "@/hooks/useNieuwsBadge"
 
 // B1 taalgebruik - simpele, duidelijke woorden
 // NOTE: Agenda is tijdelijk verborgen maar code blijft behouden voor later
-const navItems = [
+const navItems: { href: string; label: string; icon: React.ReactNode; hasBadge?: boolean; nieuwsBadge?: boolean }[] = [
   {
     href: "/dashboard",
     label: "Home",
@@ -20,6 +21,7 @@ const navItems = [
   {
     href: "/leren",
     label: "Info",
+    nieuwsBadge: true,
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -69,6 +71,7 @@ const navItems = [
 export function MobileNav() {
   const pathname = usePathname()
   const [zwareTakenCount, setZwareTakenCount] = useState(0)
+  const nieuwsCount = useNieuwsBadge()
   const hasFetched = useRef(false)
 
   useEffect(() => {
@@ -98,7 +101,8 @@ export function MobileNav() {
       <div className="flex justify-around items-center h-20 px-1">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
-          const showBadge = item.hasBadge && zwareTakenCount > 0
+          const showHulpBadge = item.hasBadge && zwareTakenCount > 0
+          const showNieuwsBadge = item.nieuwsBadge && nieuwsCount > 0
 
           return (
             <Link
@@ -117,9 +121,14 @@ export function MobileNav() {
                 isActive && "scale-110"
               )}>
                 {item.icon}
-                {showBadge && (
+                {showHulpBadge && (
                   <span className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--accent-amber)] text-white text-[11px] font-bold rounded-full flex items-center justify-center">
                     {zwareTakenCount}
+                  </span>
+                )}
+                {showNieuwsBadge && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--accent-red)] text-white text-[11px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                    {nieuwsCount}
                   </span>
                 )}
               </span>
