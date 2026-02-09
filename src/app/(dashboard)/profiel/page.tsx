@@ -1057,7 +1057,12 @@ export default function ProfielPage() {
                 localStorage.removeItem(TUTORIAL_STORAGE_KEY)
                 // Reset onboarded status in database
                 fetch("/api/user/onboarded", { method: "DELETE" }).catch(() => {})
+                // Navigeer naar dashboard en trigger tutorial via event
                 router.push("/dashboard")
+                // Kort wachten zodat navigatie klaar is, dan event dispatchen
+                setTimeout(() => {
+                  window.dispatchEvent(new Event("tutorial-reset"))
+                }, 100)
               }}
               className="w-full flex items-center gap-3 p-3 rounded-xl border-2 border-border hover:border-primary/50 transition-colors text-left"
             >

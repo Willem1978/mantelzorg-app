@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Navbar } from "@/components/layout/Navbar"
 import { MobileNav } from "@/components/navigation/MobileNav"
 import { SessionValidator } from "@/components/SessionValidator"
@@ -16,8 +16,8 @@ export function DashboardShell({ children }: DashboardShellProps) {
   const [isChecked, setIsChecked] = useState(false)
   const hasFetched = useRef(false)
 
+  // Initieel: haal naam op en check tutorial status
   useEffect(() => {
-    // Altijd de naam ophalen voor de Navbar
     if (hasFetched.current) return
     hasFetched.current = true
 
@@ -31,10 +31,8 @@ export function DashboardShell({ children }: DashboardShellProps) {
           // Check tutorial status
           const tutorialSeen = localStorage.getItem(TUTORIAL_STORAGE_KEY)
           if (!tutorialSeen && !data.onboardedAt) {
-            // Nieuwe gebruiker of nieuwe versie: toon tutorial
             setShowTutorial(true)
           } else if (!tutorialSeen && data.onboardedAt) {
-            // Gebruiker was al onboarded maar localStorage mist (bijv. nieuw apparaat)
             localStorage.setItem(TUTORIAL_STORAGE_KEY, "true")
           }
         }
@@ -45,10 +43,8 @@ export function DashboardShell({ children }: DashboardShellProps) {
       }
     }
 
-    // Snelle localStorage check voor terugkerende gebruikers
     const tutorialSeen = localStorage.getItem(TUTORIAL_STORAGE_KEY)
     if (tutorialSeen) {
-      // Terugkerende gebruiker — haal alleen naam op
       fetch("/api/user/onboarded")
         .then(res => res.ok ? res.json() : null)
         .then(data => { if (data?.name) setUserName(data.name) })
@@ -59,6 +55,17 @@ export function DashboardShell({ children }: DashboardShellProps) {
 
     fetchUserData()
   }, [])
+
+  // Luister naar "tutorial-reset" event vanuit Profiel pagina
+  const handleTutorialReset = useCallback(() => {
+    setShowTutorial(true)
+    setIsChecked(true)
+  }, [])
+
+  useEffect(() => {
+    window.addEventListener("tutorial-reset", handleTutorialReset)
+    return () => window.removeEventListener("tutorial-reset", handleTutorialReset)
+  }, [handleTutorialReset])
 
   const handleTutorialComplete = () => {
     setShowTutorial(false)
