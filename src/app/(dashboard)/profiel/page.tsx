@@ -7,6 +7,7 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
 import { searchStreets } from "@/lib/pdok"
+import { TUTORIAL_STORAGE_KEY } from "@/components/Tutorial"
 
 // ============================================
 // TYPES
@@ -1051,6 +1052,27 @@ export default function ProfielPage() {
           </h2>
 
           <div className="space-y-2">
+            <button
+              onClick={() => {
+                localStorage.removeItem(TUTORIAL_STORAGE_KEY)
+                // Reset onboarded status in database
+                fetch("/api/user/onboarded", { method: "DELETE" }).catch(() => {})
+                router.push("/dashboard")
+              }}
+              className="w-full flex items-center gap-3 p-3 rounded-xl border-2 border-border hover:border-primary/50 transition-colors text-left"
+            >
+              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                <span className="text-lg">📖</span>
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-foreground">Bekijk tutorial opnieuw</p>
+                <p className="text-xs text-muted-foreground">Uitleg over hoe MantelBuddy werkt</p>
+              </div>
+              <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+
             <button
               onClick={() => setIsChangingPassword(true)}
               className="w-full flex items-center gap-3 p-3 rounded-xl border-2 border-border hover:border-primary/50 transition-colors text-left"
