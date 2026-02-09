@@ -18,8 +18,10 @@ export default function GemeenteNieuwsPage() {
         const res = await fetch("/api/dashboard")
         if (res.ok) {
           const data = await res.json()
-          setGemeenteMantelzorger(data.locatie?.mantelzorger?.gemeente || null)
-          setGemeenteZorgvrager(data.locatie?.zorgvrager?.gemeente || null)
+          const gm = data.locatie?.mantelzorger?.gemeente || null
+          const gz = data.locatie?.zorgvrager?.gemeente || null
+          setGemeenteMantelzorger(gm)
+          setGemeenteZorgvrager(gz)
         }
       } catch {
         // Silently fail
@@ -31,18 +33,33 @@ export default function GemeenteNieuwsPage() {
     loadData()
   }, [])
 
+  // Filter nieuws per gemeente (berekend na state update)
+  const nieuwsMantelzorger = gemeenteMantelzorger
+    ? gemeenteNieuws.filter(n => n.gemeente.toLowerCase() === gemeenteMantelzorger.toLowerCase())
+    : []
+
+  const nieuwsZorgvrager = gemeenteZorgvrager && gemeenteZorgvrager !== gemeenteMantelzorger
+    ? gemeenteNieuws.filter(n => n.gemeente.toLowerCase() === gemeenteZorgvrager.toLowerCase())
+    : []
+
+  const relevantNieuws = [...nieuwsMantelzorger, ...nieuwsZorgvrager]
+
+  // Overig nieuws (van andere gemeenten, niet in jouw gemeente)
+  const overigNieuws = gemeenteNieuws.filter(n =>
+    !relevantNieuws.some(r => r.id === n.id)
+  )
+
+  const geenGemeente = !gemeenteMantelzorger && !gemeenteZorgvrager
+
   // Markeer als gelezen in localStorage
   useEffect(() => {
-    if (!loading) {
-      const nieuwsIds = relevantNieuws.map(n => n.id)
-      if (nieuwsIds.length > 0) {
-        localStorage.setItem("gemeente-nieuws-gelezen", JSON.stringify(nieuwsIds))
-        localStorage.setItem("gemeente-nieuws-gelezen-datum", new Date().toISOString())
-        // Dispatch event zodat de hoofdpagina het bolletje kan updaten
-        window.dispatchEvent(new Event("gemeente-nieuws-gelezen"))
-      }
+    if (!loading && gemeenteNieuws.length > 0) {
+      // Markeer alle nieuws items als gelezen
+      const alleIds = gemeenteNieuws.map(n => n.id)
+      localStorage.setItem("gemeente-nieuws-gelezen", JSON.stringify(alleIds))
+      localStorage.setItem("gemeente-nieuws-gelezen-datum", new Date().toISOString())
+      window.dispatchEvent(new Event("gemeente-nieuws-gelezen"))
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, gemeenteMantelzorger, gemeenteZorgvrager])
 
   // Favorieten check
@@ -52,7 +69,7 @@ export default function GemeenteNieuwsPage() {
 
     const checkFavorieten = async () => {
       try {
-        const items = relevantNieuws.map(n => ({ type: "INFORMATIE", itemId: n.id }))
+        const items = gemeenteNieuws.map(n => ({ type: "INFORMATIE", itemId: n.id }))
         if (items.length === 0) return
 
         const res = await fetch("/api/favorieten/check", {
@@ -70,22 +87,7 @@ export default function GemeenteNieuwsPage() {
     }
 
     checkFavorieten()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading])
-
-  // Filter nieuws per gemeente
-  const nieuwsMantelzorger = gemeenteMantelzorger
-    ? gemeenteNieuws.filter(n => n.gemeente.toLowerCase() === gemeenteMantelzorger.toLowerCase())
-    : []
-
-  const nieuwsZorgvrager = gemeenteZorgvrager && gemeenteZorgvrager !== gemeenteMantelzorger
-    ? gemeenteNieuws.filter(n => n.gemeente.toLowerCase() === gemeenteZorgvrager.toLowerCase())
-    : []
-
-  const relevantNieuws = [...nieuwsMantelzorger, ...nieuwsZorgvrager]
-
-  // Geen gemeente ingesteld
-  const geenGemeente = !gemeenteMantelzorger && !gemeenteZorgvrager
 
   if (loading) {
     return (
@@ -114,20 +116,17 @@ export default function GemeenteNieuwsPage() {
         <h1 className="text-2xl font-bold">Nieuws van de gemeente</h1>
       </div>
       <p className="text-sm text-muted-foreground mb-6">
-        Nieuws en updates over mantelzorg in jouw gemeente.
+        Nieuws en updates over mantelzorg in jouw regio.
       </p>
 
-      {/* Geen gemeente */}
+      {/* Geen gemeente ingesteld - tip */}
       {geenGemeente && (
-        <div className="ker-card p-6 text-center">
-          <div className="text-4xl mb-3">📍</div>
-          <h2 className="font-semibold text-sm mb-2">Gemeente nog niet ingesteld</h2>
-          <p className="text-xs text-muted-foreground mb-4">
-            Vul je adres in bij je profiel. Dan tonen we hier nieuws uit jouw gemeente.
+        <div className="bg-primary/5 rounded-xl p-3 mb-6">
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium">Tip:</span> Vul je adres in bij je{" "}
+            <Link href="/profiel" className="text-primary hover:underline font-medium">profiel</Link>.
+            Dan tonen we nieuws uit jouw gemeente bovenaan.
           </p>
-          <Link href="/profiel" className="ker-btn ker-btn-primary text-sm">
-            Naar profiel
-          </Link>
         </div>
       )}
 
@@ -159,15 +158,24 @@ export default function GemeenteNieuwsPage() {
         </div>
       )}
 
-      {/* Geen nieuws gevonden */}
-      {!geenGemeente && relevantNieuws.length === 0 && (
-        <div className="ker-card p-6 text-center">
-          <div className="text-4xl mb-3">📰</div>
-          <h2 className="font-semibold text-sm mb-2">Nog geen nieuws</h2>
-          <p className="text-xs text-muted-foreground">
-            Er is op dit moment geen nieuws over mantelzorg in {gemeenteMantelzorger || gemeenteZorgvrager}.
-            We houden het in de gaten.
-          </p>
+      {/* Overig nieuws (andere gemeenten of als geen gemeente is ingesteld) */}
+      {(overigNieuws.length > 0 || geenGemeente) && (
+        <div className="mb-6">
+          {relevantNieuws.length > 0 && (
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+              🌍 Overig nieuws
+            </p>
+          )}
+          {geenGemeente && (
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+              📰 Laatste berichten
+            </p>
+          )}
+          <div className="space-y-3">
+            {(geenGemeente ? gemeenteNieuws : overigNieuws).map(item => (
+              <NieuwsCard key={item.id} item={item} favorieten={favorieten} />
+            ))}
+          </div>
         </div>
       )}
     </div>
