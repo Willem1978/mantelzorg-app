@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { FavorietButton } from "@/components/FavorietButton"
 import { gemeenteNieuws } from "@/data/artikelen"
 import { artikelen } from "@/data/artikelen"
@@ -43,6 +43,53 @@ export default function LerenPage() {
   const [gemeenteZorgvrager, setGemeenteZorgvrager] = useState<string | null>(null)
   const [aantalNieuwItems, setAantalNieuwItems] = useState(0)
   const hasFetched = useRef(false)
+  const gemeenteRef = useRef<{ mantelzorger: string | null; zorgvrager: string | null }>({ mantelzorger: null, zorgvrager: null })
+
+  // Eenmalige reset van oude auto-read-all data (v2.2.0 → v2.3.0 migratie)
+  useEffect(() => {
+    try {
+      const migrated = localStorage.getItem("gemeente-nieuws-v2.3-migrated")
+      if (!migrated) {
+        localStorage.removeItem("gemeente-nieuws-gelezen")
+        localStorage.removeItem("gemeente-nieuws-gelezen-datum")
+        localStorage.setItem("gemeente-nieuws-v2.3-migrated", "true")
+      }
+    } catch {
+      // Silently fail
+    }
+  }, [])
+
+  const berekenNieuwItems = useCallback((gMantelzorger: string | null, gZorgvrager: string | null) => {
+    // Filter relevant nieuws
+    const relevant = gemeenteNieuws.filter(n => {
+      const gemeente = n.gemeente.toLowerCase()
+      return (
+        (gMantelzorger && gemeente === gMantelzorger.toLowerCase()) ||
+        (gZorgvrager && gemeente === gZorgvrager.toLowerCase())
+      )
+    })
+
+    if (relevant.length === 0) {
+      setAantalNieuwItems(0)
+      return
+    }
+
+    // Check localStorage voor gelezen items
+    try {
+      const gelezenRaw = localStorage.getItem("gemeente-nieuws-gelezen")
+      if (!gelezenRaw) {
+        // Nog nooit gelezen - alles is nieuw
+        setAantalNieuwItems(relevant.length)
+        return
+      }
+
+      const gelezen = JSON.parse(gelezenRaw) as string[]
+      const nieuw = relevant.filter(n => !gelezen.includes(n.id))
+      setAantalNieuwItems(nieuw.length)
+    } catch {
+      setAantalNieuwItems(relevant.length)
+    }
+  }, [])
 
   // Laad gemeente data en favorieten
   useEffect(() => {
@@ -76,6 +123,7 @@ export default function LerenPage() {
           const gZorgvrager = data.locatie?.zorgvrager?.gemeente || null
           setGemeenteMantelzorger(gMantelzorger)
           setGemeenteZorgvrager(gZorgvrager)
+          gemeenteRef.current = { mantelzorger: gMantelzorger, zorgvrager: gZorgvrager }
 
           // Bereken nieuw items
           berekenNieuwItems(gMantelzorger, gZorgvrager)
@@ -86,50 +134,17 @@ export default function LerenPage() {
     }
 
     loadAll()
-  }, [])
+  }, [berekenNieuwItems])
 
   // Luister naar gelezen-event van gemeente-nieuws pagina
   useEffect(() => {
     const handleGelezen = () => {
-      // Herbereken op basis van actuele localStorage
-      berekenNieuwItems(gemeenteMantelzorger, gemeenteZorgvrager)
+      // Herbereken op basis van actuele localStorage en opgeslagen gemeente
+      berekenNieuwItems(gemeenteRef.current.mantelzorger, gemeenteRef.current.zorgvrager)
     }
     window.addEventListener("gemeente-nieuws-gelezen", handleGelezen)
     return () => window.removeEventListener("gemeente-nieuws-gelezen", handleGelezen)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gemeenteMantelzorger, gemeenteZorgvrager])
-
-  const berekenNieuwItems = (gMantelzorger: string | null, gZorgvrager: string | null) => {
-    // Filter relevant nieuws
-    const relevant = gemeenteNieuws.filter(n => {
-      const gemeente = n.gemeente.toLowerCase()
-      return (
-        (gMantelzorger && gemeente === gMantelzorger.toLowerCase()) ||
-        (gZorgvrager && gemeente === gZorgvrager.toLowerCase())
-      )
-    })
-
-    if (relevant.length === 0) {
-      setAantalNieuwItems(0)
-      return
-    }
-
-    // Check localStorage voor gelezen items
-    try {
-      const gelezenRaw = localStorage.getItem("gemeente-nieuws-gelezen")
-      if (!gelezenRaw) {
-        // Nog nooit gelezen - alles is nieuw
-        setAantalNieuwItems(relevant.length)
-        return
-      }
-
-      const gelezen = JSON.parse(gelezenRaw) as string[]
-      const nieuw = relevant.filter(n => !gelezen.includes(n.id))
-      setAantalNieuwItems(nieuw.length)
-    } catch {
-      setAantalNieuwItems(relevant.length)
-    }
-  }
+  }, [berekenNieuwItems])
 
   // Tel artikelen per categorie
   const getAantalArtikelen = (catId: string) => {

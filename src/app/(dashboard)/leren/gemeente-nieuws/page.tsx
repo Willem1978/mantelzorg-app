@@ -15,9 +15,18 @@ export default function GemeenteNieuwsPage() {
   const [gelezenIds, setGelezenIds] = useState<string[]>([])
   const hasFetched = useRef(false)
 
-  // Laad gelezen items uit localStorage
+  // Laad gelezen items uit localStorage (na eventuele migratie)
   useEffect(() => {
     try {
+      // Eenmalige reset van oude auto-read-all data
+      const migrated = localStorage.getItem("gemeente-nieuws-v2.3-migrated")
+      if (!migrated) {
+        localStorage.removeItem(GELEZEN_KEY)
+        localStorage.removeItem("gemeente-nieuws-gelezen-datum")
+        localStorage.setItem("gemeente-nieuws-v2.3-migrated", "true")
+        return // Geen gelezen items na reset
+      }
+
       const raw = localStorage.getItem(GELEZEN_KEY)
       if (raw) {
         setGelezenIds(JSON.parse(raw))
@@ -263,7 +272,7 @@ function NieuwsCard({
   }
 
   return (
-    <div className={`ker-card py-4 relative transition-opacity ${isGelezen ? "opacity-60" : ""}`}>
+    <div className={`ker-card py-4 relative transition-all ${isGelezen ? "opacity-60" : ""}`}>
       {/* Hartje rechtsboven */}
       <div className="absolute top-3 right-3">
         <FavorietButton
@@ -280,46 +289,49 @@ function NieuwsCard({
         />
       </div>
 
-      {/* Nieuw bolletje */}
-      {!isGelezen && (
-        <div className="absolute top-3 left-3">
-          <span className="w-2.5 h-2.5 bg-[var(--accent-red)] rounded-full block animate-pulse" />
-        </div>
-      )}
-
-      <div className="pr-12 pl-2">
-        <div className="flex items-center gap-2 mb-1 pl-5">
+      {/* Nieuw bolletje naast titel */}
+      <div className="pr-12">
+        <div className="flex items-center gap-2 mb-1">
           <span className="text-xl">{item.emoji}</span>
           <h2 className="font-semibold text-sm">{item.titel}</h2>
+          {!isGelezen && (
+            <span className="w-2 h-2 bg-[var(--accent-red)] rounded-full flex-shrink-0 animate-pulse" />
+          )}
         </div>
-        <p className="text-[10px] text-muted-foreground pl-12 mb-1">
+        <p className="text-[10px] text-muted-foreground pl-7 mb-1">
           {formatDatum(item.datum)} — {item.gemeente}
         </p>
-        <p className="text-xs text-muted-foreground leading-relaxed pl-12 mb-3">
+        <p className="text-xs text-muted-foreground leading-relaxed pl-7 mb-3">
           {item.beschrijving}
         </p>
 
-        {/* Acties: gelezen + link */}
-        <div className="flex items-center gap-4 pl-12">
-          {item.url && (
-            <a
-              href={item.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-primary hover:underline font-medium flex items-center gap-1"
-            >
-              🌐 Meer info
-            </a>
-          )}
+        {/* Link naar meer info */}
+        {item.url && (
+          <a
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-primary hover:underline font-medium flex items-center gap-1 pl-7 mb-3"
+          >
+            🌐 Meer informatie
+          </a>
+        )}
+
+        {/* Gelezen knop - groot en rechtsonder */}
+        <div className="flex justify-end">
           <button
             onClick={isGelezen ? onOngelezen : onGelezen}
-            className={`text-xs font-medium flex items-center gap-1 transition-colors ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
               isGelezen
-                ? "text-green-600 hover:text-muted-foreground"
-                : "text-muted-foreground hover:text-green-600"
+                ? "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+                : "bg-muted text-muted-foreground border border-border hover:bg-primary/10 hover:text-primary hover:border-primary/30"
             }`}
           >
-            {isGelezen ? "✅ Gelezen" : "☐ Markeer als gelezen"}
+            {isGelezen ? (
+              <>✅ Gelezen</>
+            ) : (
+              <>☐ Gelezen</>
+            )}
           </button>
         </div>
       </div>
