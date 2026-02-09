@@ -195,8 +195,8 @@ export default function GemeenteNieuwsPage() {
       {geenGemeente && (
         <div className="ker-card p-6 text-center">
           <div className="text-4xl mb-3">📍</div>
-          <h2 className="font-semibold text-sm mb-2">Gemeente nog niet ingesteld</h2>
-          <p className="text-xs text-muted-foreground mb-4">
+          <h2 className="font-semibold text-base mb-2">Gemeente nog niet ingesteld</h2>
+          <p className="text-sm text-muted-foreground mb-4">
             Vul je adres in bij je profiel. Dan tonen we hier nieuws uit jouw gemeente.
           </p>
           <Link href="/profiel" className="ker-btn ker-btn-primary text-sm">
@@ -228,8 +228,8 @@ export default function GemeenteNieuwsPage() {
       {!geenGemeente && relevantNieuws.length === 0 && (
         <div className="ker-card p-6 text-center">
           <div className="text-4xl mb-3">📰</div>
-          <h2 className="font-semibold text-sm mb-2">Nog geen nieuws</h2>
-          <p className="text-xs text-muted-foreground">
+          <h2 className="font-semibold text-base mb-2">Nog geen nieuws</h2>
+          <p className="text-sm text-muted-foreground">
             Er is op dit moment geen nieuws over mantelzorg in{" "}
             {gemeenteMantelzorger && gemeenteZorgvrager && gemeenteMantelzorger !== gemeenteZorgvrager
               ? `${gemeenteMantelzorger} of ${gemeenteZorgvrager}`
@@ -265,7 +265,7 @@ function NieuwsSectie({
 
   return (
     <div className="mb-6">
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+      <p className="text-sm font-semibold text-muted-foreground mb-3">
         {label}
       </p>
 
@@ -359,15 +359,15 @@ function NieuwsCard({
       <div className="pr-12">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-xl">{item.emoji}</span>
-          <h2 className="font-semibold text-sm">{item.titel}</h2>
+          <h2 className="font-semibold text-base">{item.titel}</h2>
           {!isGelezen && (
             <span className="w-2 h-2 bg-[var(--accent-red)] rounded-full flex-shrink-0 animate-pulse" />
           )}
         </div>
-        <p className="text-[10px] text-muted-foreground pl-7 mb-1">
+        <p className="text-sm text-muted-foreground pl-7 mb-1">
           {formatDatum(item.datum)} — {item.gemeente}
         </p>
-        <p className="text-xs text-muted-foreground leading-relaxed pl-7 mb-2">
+        <p className="text-sm text-muted-foreground leading-relaxed pl-7 mb-3">
           {item.beschrijving}
         </p>
 
@@ -378,7 +378,7 @@ function NieuwsCard({
               href={item.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-primary hover:underline font-medium flex items-center gap-1"
+              className="text-sm text-primary hover:underline font-medium flex items-center gap-1"
             >
               🌐 Meer informatie
             </a>
@@ -388,7 +388,7 @@ function NieuwsCard({
           {!isGelezen ? (
             <button
               onClick={onGelezen}
-              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[var(--accent-green)]/15 text-[var(--accent-green)] font-medium text-xs hover:bg-[var(--accent-green)]/25 transition-colors min-h-[40px]"
+              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[var(--accent-green)]/15 text-[var(--accent-green)] font-medium text-sm hover:bg-[var(--accent-green)]/25 transition-colors min-h-[44px]"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
@@ -398,7 +398,7 @@ function NieuwsCard({
           ) : (
             <button
               onClick={onOngelezen}
-              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-border text-muted-foreground text-xs hover:bg-muted transition-colors min-h-[40px]"
+              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-border text-muted-foreground text-sm hover:bg-muted transition-colors min-h-[44px]"
             >
               Toch niet gelezen
             </button>

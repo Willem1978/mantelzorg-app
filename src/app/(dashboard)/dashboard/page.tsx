@@ -346,14 +346,14 @@ function DashboardContent() {
                   {data.test.niveau === "GEMIDDELD" && "Gemiddelde belasting"}
                   {data.test.niveau === "HOOG" && "Hoge belasting"}
                 </h2>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   {data.test.daysSinceTest === 0 ? "Vandaag gemeten" : `${data.test.daysSinceTest} dagen geleden`}
                 </p>
               </div>
               <p className="text-sm text-muted-foreground">
                 {data.test.niveau === "LAAG" && "Het gaat goed met je! Blijf goed voor jezelf zorgen."}
-                {data.test.niveau === "GEMIDDELD" && "Je draagt best veel. Kijk of je ergens hulp bij kunt krijgen."}
-                {data.test.niveau === "HOOG" && "Je hebt het zwaar. Het is belangrijk om hulp te zoeken."}
+                {data.test.niveau === "GEMIDDELD" && "Je draagt veel. Kijk of je ergens hulp bij kunt krijgen."}
+                {data.test.niveau === "HOOG" && "Je hebt heel veel te doen. Het is belangrijk hulp te zoeken."}
               </p>
             </div>
 
@@ -394,28 +394,28 @@ function DashboardContent() {
                 </div>
               </div>
               {/* Zone labels voor kleurblindheid ondersteuning */}
-              <div className="flex text-[10px] text-muted-foreground mt-1">
-                <div className="flex-1 text-center">✓ Laag</div>
-                <div className="flex-1 text-center">● Midden</div>
-                <div className="flex-1 text-center">⚠ Hoog</div>
+              <div className="flex text-sm text-muted-foreground mt-2">
+                <div className="flex-1 text-center">Laag ✓</div>
+                <div className="flex-1 text-center">Midden</div>
+                <div className="flex-1 text-center">Hoog ⚠</div>
               </div>
 
             </div>
 
             {/* Zorgtaken verdeling - met emoji's voor kleurblindheid */}
             {(data.test.zorgtaken?.length || 0) > 0 && (
-              <div className="grid grid-cols-3 gap-2 text-center mt-4 pt-4 border-t border-border/50">
+              <div className="grid grid-cols-3 gap-3 text-center mt-4 pt-4 border-t border-border/50">
                 <div>
                   <p className="text-lg font-bold text-[var(--accent-green)]">✓ {lichtTaken.length}</p>
-                  <p className="text-xs text-muted-foreground">Gaat goed</p>
+                  <p className="text-sm text-muted-foreground">Gaat goed</p>
                 </div>
                 <div>
                   <p className="text-lg font-bold text-[var(--accent-amber)]">● {matigTaken.length}</p>
-                  <p className="text-xs text-muted-foreground">Matig</p>
+                  <p className="text-sm text-muted-foreground">Matig</p>
                 </div>
                 <div>
                   <p className="text-lg font-bold text-[var(--accent-red)]">⚠ {zwareTaken.length}</p>
-                  <p className="text-xs text-muted-foreground">Zwaar</p>
+                  <p className="text-sm text-muted-foreground">Zwaar</p>
                 </div>
               </div>
             )}
@@ -439,8 +439,7 @@ function DashboardContent() {
                 ⚠️ Aandacht nodig
               </h3>
               <p className="text-sm text-muted-foreground mb-3">
-                Je belastingsscore is hoog. Het is belangrijk om nu actie te ondernemen.
-                Praat met iemand of zoek professionele hulp.
+                Je score is hoog. Vraag nu hulp. Praat met iemand of bel de Mantelzorglijn.
               </p>
               <p className="text-sm font-medium text-foreground">
                 📞 Mantelzorglijn: <a href="tel:0302059059" className="text-primary hover:underline">030-2059059</a>
@@ -455,8 +454,7 @@ function DashboardContent() {
                 💡 Tip
               </h3>
               <p className="text-sm text-muted-foreground">
-                Je ervaart een gemiddelde belasting. Bekijk welke taken je kunt uitbesteden
-                of waar je hulp bij kunt krijgen.
+                Je draagt veel. Bekijk welke taken iemand anders voor je kan doen.
               </p>
             </div>
           )}
@@ -498,7 +496,7 @@ function DashboardContent() {
                 <span className="text-2xl">🎯</span> Jouw Eerste Stappen
               </h2>
               <p className="text-sm text-muted-foreground">
-                Wij raden je aan om met deze stappen te beginnen. Zo krijg je de beste hulp.
+                Begin met deze stappen. Zo krijg je de beste hulp.
               </p>
             </div>
 
@@ -541,8 +539,8 @@ function DashboardContent() {
                 <span className="text-2xl">📋</span> Je Zorgtaken
               </h2>
               <p className="text-sm text-muted-foreground">
-                Dit zijn de taken die je doet voor je naaste. Bij de rode en oranje taken kun je hulp zoeken.
-                Tik op een taak om te zien welke hulp er is bij jou in de buurt.
+                Dit zijn de taken die je doet. Bij rode en oranje taken kun je hulp zoeken.
+                Tik op een taak voor hulp bij jou in de buurt.
               </p>
             </div>
 
@@ -564,9 +562,9 @@ function DashboardContent() {
                       <div className="flex items-center gap-2">
                         <span className="text-lg">🔴</span>
                         <span className="font-semibold">{taak.naam}</span>
-                        {taak.uren && <span className="text-xs text-muted-foreground">({taak.uren}u/week)</span>}
+                        {taak.uren && <span className="text-sm text-muted-foreground">({taak.uren}u/week)</span>}
                       </div>
-                      <span className="text-xs bg-[var(--accent-red-bg)] text-[var(--accent-red)] px-2 py-1 rounded-full font-medium">
+                      <span className="text-sm bg-[var(--accent-red-bg)] text-[var(--accent-red)] px-2.5 py-1 rounded-full font-medium">
                         Zwaar
                       </span>
                     </div>
@@ -597,9 +595,9 @@ function DashboardContent() {
                       <div className="flex items-center gap-2">
                         <span className="text-lg">🟡</span>
                         <span className="font-semibold">{taak.naam}</span>
-                        {taak.uren && <span className="text-xs text-muted-foreground">({taak.uren}u/week)</span>}
+                        {taak.uren && <span className="text-sm text-muted-foreground">({taak.uren}u/week)</span>}
                       </div>
-                      <span className="text-xs bg-[var(--accent-amber-bg)] text-[var(--accent-amber)] px-2 py-1 rounded-full font-medium">
+                      <span className="text-sm bg-[var(--accent-amber-bg)] text-[var(--accent-amber)] px-2.5 py-1 rounded-full font-medium">
                         Matig
                       </span>
                     </div>
@@ -622,7 +620,7 @@ function DashboardContent() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {lichtTaken.map((taak, i) => (
-                    <span key={i} className="text-xs bg-white/50 px-2 py-1 rounded-full">
+                    <span key={i} className="text-sm bg-white/50 px-2.5 py-1 rounded-full">
                       {taak.naam}
                     </span>
                   ))}
@@ -645,13 +643,13 @@ function DashboardContent() {
                 )}
               >
                 <span className="text-2xl">{data?.checkIns?.weeklyDone ? "✅" : "📝"}</span>
-                <p className="font-medium text-sm mt-2">
+                <p className="font-medium text-base mt-2">
                   {data?.checkIns?.weeklyDone ? "Check-in gedaan" : "Wekelijkse check-in"}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   {data?.checkIns?.weeklyDone
                     ? "Goed bezig! Tot volgende week."
-                    : "Even kijken hoe het met je gaat. Duurt maar 2 minuten."}
+                    : "Even kijken hoe het met je gaat. Duurt 2 minuten."}
                 </p>
               </div>
             </Link>

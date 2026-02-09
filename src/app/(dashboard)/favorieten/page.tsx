@@ -255,7 +255,7 @@ export default function FavorietenPage() {
                 return Object.entries(gegroepeerd).map(([categorie, catItems]) => (
                   <div key={categorie}>
                     {Object.keys(gegroepeerd).length > 1 && (
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 mt-4">
+                      <p className="text-sm font-semibold text-muted-foreground mb-2 mt-4">
                         {categorie}
                       </p>
                     )}
@@ -324,7 +324,7 @@ function TabButton({
       )}
       {/* Afgerond indicator */}
       {countAfgerond > 0 && (
-        <span className="block text-[10px] mt-0.5 opacity-70">
+        <span className="block text-xs mt-0.5 opacity-70">
           {countAfgerond} ✅
         </span>
       )}
@@ -355,17 +355,17 @@ function FavorietCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <p className={cn(
-              "font-medium text-sm",
+              "font-medium text-base",
               isVoltooid && "line-through text-muted-foreground"
             )}>
               {fav.titel}
             </p>
             {isVoltooid && (
-              <span className="text-xs text-[var(--accent-green)] font-medium">✅</span>
+              <span className="text-sm text-[var(--accent-green)] font-medium">✅</span>
             )}
           </div>
           {fav.beschrijving && (
-            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+            <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">
               {fav.beschrijving}
             </p>
           )}
@@ -373,12 +373,12 @@ function FavorietCard({
           {(fav.telefoon || fav.url) && (
             <div className="flex gap-3 mt-1.5">
               {fav.telefoon && (
-                <a href={`tel:${fav.telefoon}`} className="text-xs text-primary hover:underline flex items-center gap-1">
+                <a href={`tel:${fav.telefoon}`} className="text-sm text-primary hover:underline flex items-center gap-1">
                   📞 {fav.telefoon}
                 </a>
               )}
               {fav.url && (
-                <a href={fav.url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center gap-1">
+                <a href={fav.url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline flex items-center gap-1">
                   🌐 Website
                 </a>
               )}
@@ -392,7 +392,7 @@ function FavorietCard({
         {!isVoltooid ? (
           <button
             onClick={() => onToggleVoltooid(fav.id, fav.isVoltooid)}
-            className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[var(--accent-green)]/15 text-[var(--accent-green)] font-medium text-xs hover:bg-[var(--accent-green)]/25 transition-colors min-h-[40px]"
+            className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[var(--accent-green)]/15 text-[var(--accent-green)] font-medium text-sm hover:bg-[var(--accent-green)]/25 transition-colors min-h-[44px]"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
@@ -402,14 +402,14 @@ function FavorietCard({
         ) : (
           <button
             onClick={() => onToggleVoltooid(fav.id, fav.isVoltooid)}
-            className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-border text-muted-foreground text-xs hover:bg-muted transition-colors min-h-[40px]"
+            className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-border text-muted-foreground text-sm hover:bg-muted transition-colors min-h-[44px]"
           >
-            Toch niet afgerond
+            Niet afgerond
           </button>
         )}
         <button
           onClick={() => onVerwijder(fav.id)}
-          className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-red-50 text-red-600 text-xs font-medium hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 transition-colors min-h-[40px]"
+          className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 transition-colors min-h-[44px]"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

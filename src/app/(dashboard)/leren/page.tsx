@@ -233,7 +233,7 @@ export default function LerenPage() {
                 <h2 className="font-bold text-lg">{category.title}</h2>
                 <p className="text-sm text-muted-foreground">{category.description}</p>
                 {aantalArtikelen > 0 && (
-                  <p className="text-xs text-primary mt-1">{aantalArtikelen} artikelen</p>
+                  <p className="text-sm text-primary mt-1">{aantalArtikelen} artikelen</p>
                 )}
               </Link>
             </div>

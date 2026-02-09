@@ -1040,7 +1040,7 @@ function HulpPageContent() {
                 onClick={() => setShowVragenTab(true)}
                 className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity"
               >
-                Vraag een MantelBuddy aan
+                Vraag hulp aan een MantelBuddy
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
