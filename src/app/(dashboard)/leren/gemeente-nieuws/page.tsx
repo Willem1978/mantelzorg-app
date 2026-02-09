@@ -36,14 +36,49 @@ export default function GemeenteNieuwsPage() {
     }
   }, [])
 
+  // Laad gemeente + favorieten PARALLEL
   useEffect(() => {
-    const loadData = async () => {
+    if (hasFetched.current) return
+    hasFetched.current = true
+
+    const loadAll = async () => {
       try {
-        const res = await fetch("/api/dashboard")
-        if (res.ok) {
-          const data = await res.json()
-          setGemeenteMantelzorger(data.locatie?.mantelzorger?.gemeente || null)
-          setGemeenteZorgvrager(data.locatie?.zorgvrager?.gemeente || null)
+        // Stap 1: Haal gemeente data op (lichtgewicht endpoint)
+        const gemeenteRes = await fetch("/api/user/gemeente").catch(() => null)
+
+        let gMantelzorger: string | null = null
+        let gZorgvrager: string | null = null
+
+        if (gemeenteRes?.ok) {
+          const data = await gemeenteRes.json()
+          gMantelzorger = data.mantelzorger || null
+          gZorgvrager = data.zorgvrager || null
+          setGemeenteMantelzorger(gMantelzorger)
+          setGemeenteZorgvrager(gZorgvrager)
+        }
+
+        // Stap 2: Nu we de gemeenten weten, bereken relevante nieuws en check favorieten
+        const relevant = gemeenteNieuws.filter(n => {
+          const gemeente = n.gemeente.toLowerCase()
+          return (
+            (gMantelzorger && gemeente === gMantelzorger.toLowerCase()) ||
+            (gZorgvrager && gemeente === gZorgvrager.toLowerCase())
+          )
+        })
+
+        if (relevant.length > 0) {
+          const favRes = await fetch("/api/favorieten/check", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              items: relevant.map(n => ({ type: "INFORMATIE", itemId: n.id })),
+            }),
+          }).catch(() => null)
+
+          if (favRes?.ok) {
+            const favData = await favRes.json()
+            setFavorieten(favData.favorited || {})
+          }
         }
       } catch {
         // Silently fail
@@ -52,7 +87,7 @@ export default function GemeenteNieuwsPage() {
       }
     }
 
-    loadData()
+    loadAll()
   }, [])
 
   // Filter nieuws per gemeente
@@ -66,32 +101,6 @@ export default function GemeenteNieuwsPage() {
 
   const relevantNieuws = [...nieuwsMantelzorger, ...nieuwsZorgvrager]
   const geenGemeente = !gemeenteMantelzorger && !gemeenteZorgvrager
-
-  // Favorieten check
-  useEffect(() => {
-    if (hasFetched.current || loading || relevantNieuws.length === 0) return
-    hasFetched.current = true
-
-    const checkFavorieten = async () => {
-      try {
-        const items = relevantNieuws.map(n => ({ type: "INFORMATIE", itemId: n.id }))
-        const res = await fetch("/api/favorieten/check", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ items }),
-        })
-        if (res.ok) {
-          const data = await res.json()
-          setFavorieten(data.favorited || {})
-        }
-      } catch {
-        // Silently fail
-      }
-    }
-
-    checkFavorieten()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, gemeenteMantelzorger, gemeenteZorgvrager])
 
   // Markeer een item als gelezen
   const markeerAlsGelezen = useCallback((itemId: string) => {

@@ -91,45 +91,51 @@ export default function LerenPage() {
     }
   }, [])
 
-  // Laad gemeente data en favorieten
+  // Laad gemeente data en favorieten PARALLEL
   useEffect(() => {
     if (hasFetched.current) return
     hasFetched.current = true
 
     const loadAll = async () => {
-      // Favorieten check
-      try {
-        const res = await fetch("/api/favorieten/check", {
+      // Beide API calls tegelijk starten
+      const [favRes, gemeenteRes] = await Promise.all([
+        // Favorieten check
+        fetch("/api/favorieten/check", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             items: categories.map(c => ({ type: "INFORMATIE", itemId: c.id })),
           }),
-        })
-        if (res.ok) {
-          const data = await res.json()
+        }).catch(() => null),
+        // Lichtgewicht gemeente endpoint (ipv zwaar /api/dashboard)
+        fetch("/api/user/gemeente").catch(() => null),
+      ])
+
+      // Verwerk favorieten
+      if (favRes?.ok) {
+        try {
+          const data = await favRes.json()
           setFavorieten(data.favorited || {})
+        } catch {
+          // Silently fail
         }
-      } catch {
-        // Silently fail
       }
 
-      // Dashboard data voor gemeente
-      try {
-        const res = await fetch("/api/dashboard")
-        if (res.ok) {
-          const data = await res.json()
-          const gMantelzorger = data.locatie?.mantelzorger?.gemeente || null
-          const gZorgvrager = data.locatie?.zorgvrager?.gemeente || null
+      // Verwerk gemeente data
+      if (gemeenteRes?.ok) {
+        try {
+          const data = await gemeenteRes.json()
+          const gMantelzorger = data.mantelzorger || null
+          const gZorgvrager = data.zorgvrager || null
           setGemeenteMantelzorger(gMantelzorger)
           setGemeenteZorgvrager(gZorgvrager)
           gemeenteRef.current = { mantelzorger: gMantelzorger, zorgvrager: gZorgvrager }
 
           // Bereken nieuw items
           berekenNieuwItems(gMantelzorger, gZorgvrager)
+        } catch {
+          // Silently fail
         }
-      } catch {
-        // Silently fail
       }
     }
 

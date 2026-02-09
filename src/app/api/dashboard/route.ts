@@ -205,49 +205,55 @@ async function getHulpbronnenVoorTaken(
     'Mantelzorgondersteuning',
   ]
 
+  // Alle categorieën PARALLEL ophalen (ipv sequentieel in for-loop)
+  const categorieResultaten = await Promise.all(
+    alleOnderdelen.map(async (onderdeel) => {
+      const [lokaal, landelijkCat] = await Promise.all([
+        // Lokaal bij zorgvrager (behalve mantelzorgondersteuning, die is bij mantelzorger)
+        prisma.zorgorganisatie.findMany({
+          where: {
+            isActief: true,
+            onderdeelTest: onderdeel,
+            gemeente: onderdeel === 'Mantelzorgondersteuning' ? mantelzorgerGemeente : zorgvragerGemeente,
+          },
+          orderBy: { naam: 'asc' },
+          select: {
+            naam: true,
+            telefoon: true,
+            website: true,
+            beschrijving: true,
+            gemeente: true,
+          },
+        }),
+        // Landelijk
+        prisma.zorgorganisatie.findMany({
+          where: {
+            isActief: true,
+            onderdeelTest: onderdeel,
+            gemeente: null,
+          },
+          orderBy: { naam: 'asc' },
+          select: {
+            naam: true,
+            telefoon: true,
+            website: true,
+            beschrijving: true,
+            gemeente: true,
+          },
+        }),
+      ])
+
+      const gecombineerd: HulpbronResult[] = [
+        ...lokaal.map(h => ({ ...h, isLandelijk: false })),
+        ...landelijkCat.map(h => ({ ...h, isLandelijk: true })),
+      ]
+
+      return { onderdeel, gecombineerd }
+    })
+  )
+
   const perCategorie: Record<string, HulpbronResult[]> = {}
-
-  for (const onderdeel of alleOnderdelen) {
-    const [lokaal, landelijkCat] = await Promise.all([
-      // Lokaal bij zorgvrager (behalve mantelzorgondersteuning, die is bij mantelzorger)
-      prisma.zorgorganisatie.findMany({
-        where: {
-          isActief: true,
-          onderdeelTest: onderdeel,
-          gemeente: onderdeel === 'Mantelzorgondersteuning' ? mantelzorgerGemeente : zorgvragerGemeente,
-        },
-        orderBy: { naam: 'asc' },
-        select: {
-          naam: true,
-          telefoon: true,
-          website: true,
-          beschrijving: true,
-          gemeente: true,
-        },
-      }),
-      // Landelijk
-      prisma.zorgorganisatie.findMany({
-        where: {
-          isActief: true,
-          onderdeelTest: onderdeel,
-          gemeente: null,
-        },
-        orderBy: { naam: 'asc' },
-        select: {
-          naam: true,
-          telefoon: true,
-          website: true,
-          beschrijving: true,
-          gemeente: true,
-        },
-      }),
-    ])
-
-    const gecombineerd: HulpbronResult[] = [
-      ...lokaal.map(h => ({ ...h, isLandelijk: false })),
-      ...landelijkCat.map(h => ({ ...h, isLandelijk: true })),
-    ]
-
+  for (const { onderdeel, gecombineerd } of categorieResultaten) {
     if (gecombineerd.length > 0) {
       perCategorie[onderdeel] = gecombineerd
     }
