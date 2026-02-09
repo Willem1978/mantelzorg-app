@@ -19,7 +19,7 @@ interface Favoriet {
   createdAt: string
 }
 
-type FavTab = "voor-jou" | "voor-naaste" | "algemeen" | "informatie" | "afgerond"
+type FavTab = "voor-jou" | "voor-naaste" | "algemeen" | "informatie"
 
 // Categorieën die bij "Voor jou" horen (mantelzorger)
 const CATEGORIEEN_MANTELZORGER = [
@@ -101,20 +101,19 @@ export default function FavorietenPage() {
     )
   }
 
-  // Categoriseer favorieten
+  // Categoriseer favorieten - inclusief voltooide items per categorie
   const voorJou = favorieten.filter(f =>
-    !f.isVoltooid && f.type === "HULP" && CATEGORIEEN_MANTELZORGER.includes(f.categorie || "")
+    f.type === "HULP" && CATEGORIEEN_MANTELZORGER.includes(f.categorie || "")
   )
   const voorNaaste = favorieten.filter(f =>
-    !f.isVoltooid && f.type === "HULP" && CATEGORIEEN_ZORGVRAGER.includes(f.categorie || "")
+    f.type === "HULP" && CATEGORIEEN_ZORGVRAGER.includes(f.categorie || "")
   )
   const algemeen = favorieten.filter(f =>
-    !f.isVoltooid && f.type === "HULP" &&
+    f.type === "HULP" &&
     !CATEGORIEEN_MANTELZORGER.includes(f.categorie || "") &&
     !CATEGORIEEN_ZORGVRAGER.includes(f.categorie || "")
   )
-  const informatie = favorieten.filter(f => !f.isVoltooid && f.type === "INFORMATIE")
-  const afgerond = favorieten.filter(f => f.isVoltooid)
+  const informatie = favorieten.filter(f => f.type === "INFORMATIE")
 
   const geenFavorieten = favorieten.length === 0
 
@@ -129,20 +128,28 @@ export default function FavorietenPage() {
       case "voor-naaste": return voorNaaste
       case "algemeen": return algemeen
       case "informatie": return informatie
-      case "afgerond": return afgerond
       default: return []
     }
   }
 
-  // Groepeer per categorie
+  // Groepeer per categorie, met voltooide items onderaan
   const groepeerPerCategorie = (items: Favoriet[]): Record<string, Favoriet[]> => {
-    return items.reduce<Record<string, Favoriet[]>>((acc, fav) => {
+    // Sorteer: niet-voltooid eerst, dan voltooid
+    const gesorteerd = [...items].sort((a, b) => {
+      if (a.isVoltooid === b.isVoltooid) return 0
+      return a.isVoltooid ? 1 : -1
+    })
+
+    return gesorteerd.reduce<Record<string, Favoriet[]>>((acc, fav) => {
       const cat = fav.categorie || "Overig"
       if (!acc[cat]) acc[cat] = []
       acc[cat].push(fav)
       return acc
     }, {})
   }
+
+  // Tel afgeronde items per tab
+  const countAfgerond = (items: Favoriet[]) => items.filter(f => f.isVoltooid).length
 
   return (
     <div className="ker-page-content pb-24">
@@ -152,7 +159,7 @@ export default function FavorietenPage() {
           <span className="text-3xl">❤️</span> Mijn favorieten
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Alles wat je hebt bewaard. Gedaan? Tik op de groene knop.
+          Alles wat je hebt bewaard op één plek.
         </p>
       </div>
 
@@ -176,15 +183,23 @@ export default function FavorietenPage() {
         </div>
       )}
 
-      {/* Tabs - zelfde stijl als hulp pagina */}
+      {/* Tabs - 4 gelijke knoppen in 2x2 grid */}
       {!geenFavorieten && (
         <>
-          {/* Rij 1: Hulp tabs */}
-          <div className="grid grid-cols-3 gap-2 mb-2">
+          {/* Uitleg tekst */}
+          <div className="bg-primary/5 rounded-xl p-3 mb-4">
+            <p className="text-sm text-foreground">
+              Kies een categorie om je bewaarde items te bekijken.
+            </p>
+          </div>
+
+          {/* 2x2 grid met 4 gelijke tabs */}
+          <div className="grid grid-cols-2 gap-2 mb-6">
             <TabButton
               label="Voor jou"
               emoji="💜"
               count={voorJou.length}
+              countAfgerond={countAfgerond(voorJou)}
               isActive={activeTab === "voor-jou"}
               onClick={() => handleTabClick("voor-jou")}
               disabled={voorJou.length === 0}
@@ -193,6 +208,7 @@ export default function FavorietenPage() {
               label="Voor naaste"
               emoji="💝"
               count={voorNaaste.length}
+              countAfgerond={countAfgerond(voorNaaste)}
               isActive={activeTab === "voor-naaste"}
               onClick={() => handleTabClick("voor-naaste")}
               disabled={voorNaaste.length === 0}
@@ -201,49 +217,30 @@ export default function FavorietenPage() {
               label="Algemeen"
               emoji="🌍"
               count={algemeen.length}
+              countAfgerond={countAfgerond(algemeen)}
               isActive={activeTab === "algemeen"}
               onClick={() => handleTabClick("algemeen")}
               disabled={algemeen.length === 0}
             />
-          </div>
-
-          {/* Rij 2: Informatie en Afgerond */}
-          <div className="grid grid-cols-2 gap-2 mb-6">
             <TabButton
               label="Informatie"
               emoji="📚"
               count={informatie.length}
+              countAfgerond={countAfgerond(informatie)}
               isActive={activeTab === "informatie"}
               onClick={() => handleTabClick("informatie")}
               disabled={informatie.length === 0}
-            />
-            <TabButton
-              label="Afgerond"
-              emoji="✅"
-              count={afgerond.length}
-              isActive={activeTab === "afgerond"}
-              onClick={() => handleTabClick("afgerond")}
-              accentColor="green"
-              disabled={afgerond.length === 0}
             />
           </div>
 
           {/* Content voor actieve tab */}
           {activeTab && (
             <div className="space-y-3">
-              {/* Tab header tekst */}
-              {activeTab === "afgerond" && afgerond.length > 0 && (
-                <div className="bg-[var(--accent-green-bg)] rounded-xl p-3 mb-2">
-                  <p className="text-sm text-foreground">
-                    <span className="font-medium">Goed bezig!</span> Dit heb je al gedaan.
-                  </p>
-                </div>
-              )}
-
-              {activeTab !== "afgerond" && getActiveItems().length > 0 && (
+              {/* Instructie tekst */}
+              {getActiveItems().length > 0 && (
                 <div className="bg-primary/5 rounded-xl p-3 mb-2">
                   <p className="text-sm text-foreground">
-                    Gedaan? Tik op <span className="inline-flex items-center justify-center w-6 h-6 rounded bg-[var(--accent-green)] text-white text-xs align-middle">✓</span> om af te vinken.
+                    Klaar met een item? Tik op <span className="font-medium text-[var(--accent-green)]">Afgerond</span> om af te vinken.
                   </p>
                 </div>
               )}
@@ -283,22 +280,22 @@ export default function FavorietenPage() {
   )
 }
 
-// Tab button component - zelfde stijl als hulp pagina
+// Tab button component - 4 gelijke knoppen
 function TabButton({
   label,
   emoji,
   count,
+  countAfgerond,
   isActive,
   onClick,
-  accentColor,
   disabled = false,
 }: {
   label: string
   emoji: string
   count: number
+  countAfgerond: number
   isActive: boolean
   onClick: () => void
-  accentColor?: "green"
   disabled?: boolean
 }) {
   return (
@@ -309,9 +306,7 @@ function TabButton({
         "py-3 px-2 rounded-xl font-medium text-sm transition-all text-center relative",
         disabled && "opacity-40",
         isActive
-          ? accentColor === "green"
-            ? "bg-[var(--accent-green)] text-white"
-            : "bg-primary text-primary-foreground"
+          ? "bg-primary text-primary-foreground"
           : "bg-muted text-muted-foreground hover:bg-muted/80"
       )}
     >
@@ -322,18 +317,22 @@ function TabButton({
           "absolute -top-1 -right-1 w-5 h-5 text-xs font-bold rounded-full flex items-center justify-center",
           isActive
             ? "bg-white text-primary"
-            : accentColor === "green"
-              ? "bg-[var(--accent-green)] text-white"
-              : "bg-primary text-white"
+            : "bg-primary text-white"
         )}>
           {count}
+        </span>
+      )}
+      {/* Afgerond indicator */}
+      {countAfgerond > 0 && (
+        <span className="block text-[10px] mt-0.5 opacity-70">
+          {countAfgerond} ✅
         </span>
       )}
     </button>
   )
 }
 
-// Favoriet kaart - duidelijke grote knoppen
+// Favoriet kaart - subtielere knoppen
 function FavorietCard({
   fav,
   onVerwijder,
@@ -348,18 +347,23 @@ function FavorietCard({
   return (
     <div className={cn(
       "ker-card py-3 transition-all",
-      isVoltooid && "opacity-70"
+      isVoltooid && "opacity-60 bg-[var(--accent-green-bg)]"
     )}>
       {/* Bovenste rij: icoon + titel */}
       <div className="flex items-start gap-3">
         <span className="text-2xl">{fav.icon || (fav.type === "HULP" ? "💜" : "📚")}</span>
         <div className="flex-1 min-w-0">
-          <p className={cn(
-            "font-medium text-sm",
-            isVoltooid && "line-through text-muted-foreground"
-          )}>
-            {fav.titel}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className={cn(
+              "font-medium text-sm",
+              isVoltooid && "line-through text-muted-foreground"
+            )}>
+              {fav.titel}
+            </p>
+            {isVoltooid && (
+              <span className="text-xs text-[var(--accent-green)] font-medium">✅</span>
+            )}
+          </div>
           {fav.beschrijving && (
             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
               {fav.beschrijving}
@@ -383,34 +387,34 @@ function FavorietCard({
         </div>
       </div>
 
-      {/* Actie knoppen - grote, duidelijke knoppen onderaan */}
-      <div className="flex gap-2 mt-3 pl-9">
+      {/* Actie knoppen - subtielere stijl */}
+      <div className="flex gap-2 mt-2.5 pl-9">
         {!isVoltooid ? (
           <button
             onClick={() => onToggleVoltooid(fav.id, fav.isVoltooid)}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-[var(--accent-green)] text-white font-medium text-sm hover:opacity-90 transition-opacity min-h-[44px]"
+            className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[var(--accent-green)]/15 text-[var(--accent-green)] font-medium text-xs hover:bg-[var(--accent-green)]/25 transition-colors min-h-[40px]"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
             </svg>
-            Gedaan
+            Afgerond
           </button>
         ) : (
           <button
             onClick={() => onToggleVoltooid(fav.id, fav.isVoltooid)}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border-2 border-border text-muted-foreground font-medium text-sm hover:bg-muted transition-colors min-h-[44px]"
+            className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-border text-muted-foreground text-xs hover:bg-muted transition-colors min-h-[40px]"
           >
-            Toch niet gedaan
+            Toch niet afgerond
           </button>
         )}
         <button
           onClick={() => onVerwijder(fav.id)}
-          className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border-2 border-border text-muted-foreground font-medium text-sm hover:bg-red-50 hover:border-red-200 hover:text-red-600 dark:hover:bg-red-900/20 transition-colors min-h-[44px]"
+          className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-red-50 text-red-600 text-xs font-medium hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 transition-colors min-h-[40px]"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
           </svg>
-          Weg
+          Verwijderen
         </button>
       </div>
     </div>

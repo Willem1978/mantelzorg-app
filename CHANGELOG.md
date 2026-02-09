@@ -10,7 +10,7 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 ### Toegevoegd
 - **Favorieten systeem**: Hartje op elk item bij Hulp en Informatie pagina's om te bewaren
 - **Favorieten pagina** (`/favorieten`): Gecategoriseerd overzicht van bewaarde items
-- **Afvinken als gedaan**: Favorieten markeren als uitgevoerd (apart "Afgerond" sectie)
+- **Afvinken als afgerond**: Favorieten markeren als uitgevoerd (blijven in hun categorie)
 - **Hart-icoon in navbar**: Badge met aantal favorieten, tussen zon en bel
 - **FavorietButton component**: Herbruikbaar hart-knop met animatie
 - **4 API endpoints**: Favorieten toevoegen, verwijderen, afvinken, bulk-check
@@ -18,13 +18,15 @@ en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 ### Gewijzigd
 - **Navigatie**: "Leren" hernoemd naar "Informatie" (desktop) / "Info" (mobiel)
 - **Leren pagina**: Titel naar "Informatie, leren en tips", hartjes op categoriekaarten
-- **Hulpvragen pagina**: Hartjes op alle hulporganisaties (lokaal en landelijk)
+- **Hulpvragen pagina**: Hartjes op alle hulporganisaties (lokaal en landelijk), compactere header
 - **Tekstuele begeleiding**: B1-niveau uitleg over favorieten op elke pagina
+- **Favorieten pagina UX**: 4 gelijke categorietabs (2x2 grid), subtielere knoppen, afgeronde items binnen eigen categorie, rode verwijder-knop
 
 ### Technisch
 - Nieuw `Favoriet` model in Prisma (type HULP/INFORMATIE, unieke constraint)
 - Nieuw `FavorietType` enum
 - Hart-bounce CSS animatie
+- Custom event `favorieten-updated` voor real-time badge updates
 
 ---
 
