@@ -97,45 +97,49 @@ export default function LerenPage() {
     hasFetched.current = true
 
     const loadAll = async () => {
-      // Beide API calls tegelijk starten
-      const [favRes, gemeenteRes] = await Promise.all([
-        // Favorieten check
-        fetch("/api/favorieten/check", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            items: categories.map(c => ({ type: "INFORMATIE", itemId: c.id })),
-          }),
-        }).catch(() => null),
-        // Lichtgewicht gemeente endpoint (ipv zwaar /api/dashboard)
-        fetch("/api/user/gemeente").catch(() => null),
-      ])
+      try {
+        // Beide API calls tegelijk starten
+        const [favRes, gemeenteRes] = await Promise.all([
+          // Favorieten check
+          fetch("/api/favorieten/check", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              items: categories.map(c => ({ type: "INFORMATIE", itemId: c.id })),
+            }),
+          }).catch(() => null),
+          // Lichtgewicht gemeente endpoint (ipv zwaar /api/dashboard)
+          fetch("/api/user/gemeente").catch(() => null),
+        ])
 
-      // Verwerk favorieten
-      if (favRes?.ok) {
-        try {
-          const data = await favRes.json()
-          setFavorieten(data.favorited || {})
-        } catch {
-          // Silently fail
+        // Verwerk favorieten
+        if (favRes?.ok) {
+          try {
+            const data = await favRes.json()
+            setFavorieten(data.favorited || {})
+          } catch {
+            // Silently fail
+          }
         }
-      }
 
-      // Verwerk gemeente data
-      if (gemeenteRes?.ok) {
-        try {
-          const data = await gemeenteRes.json()
-          const gMantelzorger = data.mantelzorger || null
-          const gZorgvrager = data.zorgvrager || null
-          setGemeenteMantelzorger(gMantelzorger)
-          setGemeenteZorgvrager(gZorgvrager)
-          gemeenteRef.current = { mantelzorger: gMantelzorger, zorgvrager: gZorgvrager }
+        // Verwerk gemeente data
+        if (gemeenteRes?.ok) {
+          try {
+            const data = await gemeenteRes.json()
+            const gMantelzorger = data.mantelzorger || null
+            const gZorgvrager = data.zorgvrager || null
+            setGemeenteMantelzorger(gMantelzorger)
+            setGemeenteZorgvrager(gZorgvrager)
+            gemeenteRef.current = { mantelzorger: gMantelzorger, zorgvrager: gZorgvrager }
 
-          // Bereken nieuw items
-          berekenNieuwItems(gMantelzorger, gZorgvrager)
-        } catch {
-          // Silently fail
+            // Bereken nieuw items
+            berekenNieuwItems(gMantelzorger, gZorgvrager)
+          } catch {
+            // Silently fail
+          }
         }
+      } catch {
+        // Netwerk/onverwachte fout - silently fail
       }
     }
 
