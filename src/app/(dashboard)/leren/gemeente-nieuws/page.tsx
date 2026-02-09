@@ -157,10 +157,15 @@ export default function GemeenteNieuwsPage() {
         Terug
       </Link>
 
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-2">
+      {/* Header met ongelezen bolletje */}
+      <div className="flex items-center gap-3 mb-2 relative">
         <span className="text-3xl">🏘️</span>
         <h1 className="text-2xl font-bold">Nieuws van de gemeente</h1>
+        {aantalOngelezen > 0 && (
+          <span className="w-6 h-6 bg-[var(--accent-red)] text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
+            {aantalOngelezen}
+          </span>
+        )}
       </div>
       <p className="text-sm text-muted-foreground mb-4">
         Nieuws en updates over mantelzorg in jouw gemeente.
@@ -170,7 +175,7 @@ export default function GemeenteNieuwsPage() {
       {relevantNieuws.length > 0 && (
         <div className="bg-primary/5 rounded-xl p-3 mb-6 flex items-center justify-between gap-3">
           <p className="text-sm text-muted-foreground">
-            Tik op <span className="font-semibold">✅ Gelezen</span> als je een bericht hebt gelezen.
+            Tik op <span className="font-medium text-[var(--accent-green)]">Gelezen</span> als je een bericht hebt gelezen.
           </p>
           {aantalOngelezen > 0 && (
             <button
@@ -281,7 +286,7 @@ function NieuwsCard({
   }
 
   return (
-    <div className={`ker-card py-4 relative transition-all ${isGelezen ? "opacity-60" : ""}`}>
+    <div className={`ker-card py-4 relative transition-all ${isGelezen ? "opacity-60 bg-[var(--accent-green-bg)]" : ""}`}>
       {/* Hartje rechtsboven */}
       <div className="absolute top-3 right-3">
         <FavorietButton
@@ -298,7 +303,6 @@ function NieuwsCard({
         />
       </div>
 
-      {/* Nieuw bolletje naast titel */}
       <div className="pr-12">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-xl">{item.emoji}</span>
@@ -310,38 +314,42 @@ function NieuwsCard({
         <p className="text-[10px] text-muted-foreground pl-7 mb-1">
           {formatDatum(item.datum)} — {item.gemeente}
         </p>
-        <p className="text-xs text-muted-foreground leading-relaxed pl-7 mb-3">
+        <p className="text-xs text-muted-foreground leading-relaxed pl-7 mb-2">
           {item.beschrijving}
         </p>
 
-        {/* Link naar meer info */}
-        {item.url && (
-          <a
-            href={item.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-primary hover:underline font-medium flex items-center gap-1 pl-7 mb-3"
-          >
-            🌐 Meer informatie
-          </a>
-        )}
+        {/* Acties rij: link + gelezen knop */}
+        <div className="flex items-center justify-between pl-7">
+          {item.url ? (
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-primary hover:underline font-medium flex items-center gap-1"
+            >
+              🌐 Meer informatie
+            </a>
+          ) : <span />}
 
-        {/* Gelezen knop - groot en rechtsonder */}
-        <div className="flex justify-end">
-          <button
-            onClick={isGelezen ? onOngelezen : onGelezen}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-              isGelezen
-                ? "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
-                : "bg-muted text-muted-foreground border border-border hover:bg-primary/10 hover:text-primary hover:border-primary/30"
-            }`}
-          >
-            {isGelezen ? (
-              <>✅ Gelezen</>
-            ) : (
-              <>☐ Gelezen</>
-            )}
-          </button>
+          {/* Gelezen knop - zelfde stijl als Afgerond op favorieten pagina */}
+          {!isGelezen ? (
+            <button
+              onClick={onGelezen}
+              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[var(--accent-green)]/15 text-[var(--accent-green)] font-medium text-xs hover:bg-[var(--accent-green)]/25 transition-colors min-h-[40px]"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+              Gelezen
+            </button>
+          ) : (
+            <button
+              onClick={onOngelezen}
+              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-border text-muted-foreground text-xs hover:bg-muted transition-colors min-h-[40px]"
+            >
+              Toch niet gelezen
+            </button>
+          )}
         </div>
       </div>
     </div>
