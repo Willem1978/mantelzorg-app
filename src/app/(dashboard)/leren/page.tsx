@@ -3,6 +3,8 @@
 import Link from "next/link"
 import { useState, useEffect, useRef } from "react"
 import { FavorietButton } from "@/components/FavorietButton"
+import { gemeenteNieuws } from "@/data/artikelen"
+import { artikelen } from "@/data/artikelen"
 
 const categories = [
   {
@@ -37,13 +39,18 @@ const categories = [
 
 export default function LerenPage() {
   const [favorieten, setFavorieten] = useState<Record<string, string>>({})
+  const [gemeenteMantelzorger, setGemeenteMantelzorger] = useState<string | null>(null)
+  const [gemeenteZorgvrager, setGemeenteZorgvrager] = useState<string | null>(null)
+  const [aantalNieuwItems, setAantalNieuwItems] = useState(0)
   const hasFetched = useRef(false)
 
+  // Laad gemeente data en favorieten
   useEffect(() => {
     if (hasFetched.current) return
     hasFetched.current = true
 
-    const checkFavorieten = async () => {
+    const loadAll = async () => {
+      // Favorieten check
       try {
         const res = await fetch("/api/favorieten/check", {
           method: "POST",
@@ -59,10 +66,73 @@ export default function LerenPage() {
       } catch {
         // Silently fail
       }
+
+      // Dashboard data voor gemeente
+      try {
+        const res = await fetch("/api/dashboard")
+        if (res.ok) {
+          const data = await res.json()
+          const gMantelzorger = data.locatie?.mantelzorger?.gemeente || null
+          const gZorgvrager = data.locatie?.zorgvrager?.gemeente || null
+          setGemeenteMantelzorger(gMantelzorger)
+          setGemeenteZorgvrager(gZorgvrager)
+
+          // Bereken nieuw items
+          berekenNieuwItems(gMantelzorger, gZorgvrager)
+        }
+      } catch {
+        // Silently fail
+      }
     }
 
-    checkFavorieten()
+    loadAll()
   }, [])
+
+  // Luister naar gelezen-event van gemeente-nieuws pagina
+  useEffect(() => {
+    const handleGelezen = () => {
+      setAantalNieuwItems(0)
+    }
+    window.addEventListener("gemeente-nieuws-gelezen", handleGelezen)
+    return () => window.removeEventListener("gemeente-nieuws-gelezen", handleGelezen)
+  }, [])
+
+  const berekenNieuwItems = (gMantelzorger: string | null, gZorgvrager: string | null) => {
+    // Filter relevant nieuws
+    const relevant = gemeenteNieuws.filter(n => {
+      const gemeente = n.gemeente.toLowerCase()
+      return (
+        (gMantelzorger && gemeente === gMantelzorger.toLowerCase()) ||
+        (gZorgvrager && gemeente === gZorgvrager.toLowerCase())
+      )
+    })
+
+    if (relevant.length === 0) {
+      setAantalNieuwItems(0)
+      return
+    }
+
+    // Check localStorage voor gelezen items
+    try {
+      const gelezenRaw = localStorage.getItem("gemeente-nieuws-gelezen")
+      if (!gelezenRaw) {
+        // Nog nooit gelezen - alles is nieuw
+        setAantalNieuwItems(relevant.length)
+        return
+      }
+
+      const gelezen = JSON.parse(gelezenRaw) as string[]
+      const nieuw = relevant.filter(n => !gelezen.includes(n.id))
+      setAantalNieuwItems(nieuw.length)
+    } catch {
+      setAantalNieuwItems(relevant.length)
+    }
+  }
+
+  // Tel artikelen per categorie
+  const getAantalArtikelen = (catId: string) => {
+    return artikelen[catId]?.length || 0
+  }
 
   return (
     <div className="ker-page-content pb-24">
@@ -73,11 +143,40 @@ export default function LerenPage() {
       </div>
 
       {/* Uitleg hartje */}
-      <div className="ker-card p-4 mb-6 bg-primary/5 border-primary/20">
+      <div className="bg-primary/5 rounded-xl p-3 mb-6">
         <p className="text-sm text-muted-foreground">
-          Zie je iets dat je wilt onthouden? Tik op het <span className="text-primary font-semibold">hartje</span> om het te bewaren bij je favorieten.
+          Tik op een onderwerp om meer te lezen. Bewaar iets met het <span className="text-primary font-semibold">hartje</span>.
         </p>
       </div>
+
+      {/* Gemeente Nieuws - bovenaan als er nieuws is */}
+      <Link
+        href="/leren/gemeente-nieuws"
+        className="ker-card hover:shadow-md transition-shadow flex items-center gap-4 p-4 mb-6 relative"
+      >
+        <span className="text-3xl">🏘️</span>
+        <div className="flex-1">
+          <h2 className="font-bold text-lg">Nieuws van de gemeente</h2>
+          <p className="text-sm text-muted-foreground">
+            {gemeenteMantelzorger && gemeenteZorgvrager && gemeenteMantelzorger !== gemeenteZorgvrager
+              ? `Updates uit ${gemeenteMantelzorger} en ${gemeenteZorgvrager}`
+              : gemeenteMantelzorger
+                ? `Updates uit ${gemeenteMantelzorger}`
+                : "Nieuws over mantelzorg in jouw gemeente"
+            }
+          </p>
+        </div>
+        {/* Nieuw bolletje */}
+        {aantalNieuwItems > 0 && (
+          <span className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-[var(--accent-red)] text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
+            {aantalNieuwItems}
+          </span>
+        )}
+        {/* Pijl rechts */}
+        <svg className="w-5 h-5 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </Link>
 
       {/* Categorieën grid */}
       <div className="grid grid-cols-2 gap-4">
@@ -85,6 +184,7 @@ export default function LerenPage() {
           const favKey = `INFORMATIE:${category.id}`
           const isFavorited = !!favorieten[favKey]
           const favorietId = favorieten[favKey]
+          const aantalArtikelen = getAantalArtikelen(category.id)
 
           return (
             <div key={category.id} className="ker-card hover:shadow-md transition-shadow flex flex-col items-start p-5 relative">
@@ -105,6 +205,9 @@ export default function LerenPage() {
                 <span className="text-3xl mb-3">{category.emoji}</span>
                 <h2 className="font-bold text-lg">{category.title}</h2>
                 <p className="text-sm text-muted-foreground">{category.description}</p>
+                {aantalArtikelen > 0 && (
+                  <p className="text-xs text-primary mt-1">{aantalArtikelen} artikelen</p>
+                )}
               </Link>
             </div>
           )

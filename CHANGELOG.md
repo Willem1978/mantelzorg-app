@@ -5,6 +5,20 @@ Alle belangrijke wijzigingen aan MantelBuddy worden hier gedocumenteerd.
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.0.0/),
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [2.2.0] - 2026-02-09
+
+### Toegevoegd
+- **Informatieartikelen**: 5 artikelen per categorie (Praktische tips, Zelfzorg, Rechten, Financieel) met bronnen van MantelzorgNL, Rijksoverheid, Dementie.nl e.a.
+- **Categorie subpagina's** (`/leren/[categorie]`): Dynamische pagina's met artikellijsten per categorie, hartjes en bronlinks
+- **Gemeente nieuws** (`/leren/gemeente-nieuws`): Nieuwspagina met updates uit de gemeente van de mantelzorger en zorgvrager
+- **Nieuw-indicator bolletje**: Rood bolletje op gemeente-nieuws met aantal ongelezen items (localStorage)
+- **Artikelen databestand** (`src/data/artikelen.ts`): Centraal bestand met alle artikelen en gemeente-nieuws
+
+### Gewijzigd
+- **Leren hoofdpagina**: Gemeente-nieuws sectie bovenaan met dynamische gemeentenaam, artikelaantallen per categorie, compactere uitleg tekst
+
+---
+
 ## [2.1.0] - 2026-02-09
 
 ### Toegevoegd
