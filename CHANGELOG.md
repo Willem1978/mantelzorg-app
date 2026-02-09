@@ -5,6 +5,29 @@ Alle belangrijke wijzigingen aan MantelBuddy worden hier gedocumenteerd.
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.0.0/),
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [2.1.0] - 2026-02-09
+
+### Toegevoegd
+- **Favorieten systeem**: Hartje op elk item bij Hulp en Informatie pagina's om te bewaren
+- **Favorieten pagina** (`/favorieten`): Gecategoriseerd overzicht van bewaarde items
+- **Afvinken als gedaan**: Favorieten markeren als uitgevoerd (apart "Afgerond" sectie)
+- **Hart-icoon in navbar**: Badge met aantal favorieten, tussen zon en bel
+- **FavorietButton component**: Herbruikbaar hart-knop met animatie
+- **4 API endpoints**: Favorieten toevoegen, verwijderen, afvinken, bulk-check
+
+### Gewijzigd
+- **Navigatie**: "Leren" hernoemd naar "Informatie" (desktop) / "Info" (mobiel)
+- **Leren pagina**: Titel naar "Informatie, leren en tips", hartjes op categoriekaarten
+- **Hulpvragen pagina**: Hartjes op alle hulporganisaties (lokaal en landelijk)
+- **Tekstuele begeleiding**: B1-niveau uitleg over favorieten op elke pagina
+
+### Technisch
+- Nieuw `Favoriet` model in Prisma (type HULP/INFORMATIE, unieke constraint)
+- Nieuw `FavorietType` enum
+- Hart-bounce CSS animatie
+
+---
+
 ## [2.0.0] - 2026-02-09 ⭐ Stabiele release
 
 Eerste volledig afgeronde versie van MantelBuddy. Deze tag markeert de baseline voor verdere doorontwikkeling.
