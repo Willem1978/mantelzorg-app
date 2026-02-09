@@ -624,40 +624,25 @@ function HulpPageContent() {
 
   return (
     <div className="ker-page-content">
-      {/* Header */}
-      <div className="mb-6">
+      {/* Header - compact */}
+      <div className="mb-4">
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <span className="text-3xl">💜</span> Hulp zoeken
         </h1>
-        <p className="text-muted-foreground mt-2">
-          Je hebt aangegeven dat sommige zorgtaken zwaar voor je zijn.
-          Hier vind je hulp bij jou in de buurt. Zo hoef je het niet alleen te doen.
+        <p className="text-sm text-muted-foreground mt-1">
+          Kies hieronder voor wie je hulp zoekt. Tik op het <span className="text-primary font-semibold">hartje</span> om iets te bewaren.
         </p>
       </div>
 
       {/* Urgente melding bij hoge belasting */}
       {hulpData?.testNiveau === "HOOG" && (
-        <div className="mb-6 p-4 bg-[var(--accent-red-bg)] rounded-xl border-l-4 border-[var(--accent-red)]">
-          <p className="font-semibold text-foreground mb-2">Je belasting is hoog</p>
-          <p className="text-sm text-muted-foreground mb-3">
-            Neem contact op met je huisarts of de mantelzorglijn voor ondersteuning.
-          </p>
-          <p className="text-sm font-medium text-foreground">
-            📞 Mantelzorglijn: <a href="tel:0302059059" className="text-primary hover:underline">030-2059059</a>
+        <div className="mb-4 p-3 bg-[var(--accent-red-bg)] rounded-xl border-l-4 border-[var(--accent-red)]">
+          <p className="text-sm font-semibold text-foreground">Je belasting is hoog</p>
+          <p className="text-sm text-muted-foreground">
+            📞 Mantelzorglijn: <a href="tel:0302059059" className="text-primary hover:underline font-medium">030-2059059</a>
           </p>
         </div>
       )}
-
-      {/* Instructietekst boven tabs */}
-      <div className="bg-primary/5 rounded-xl p-4 mb-4">
-        <p className="text-sm text-foreground">
-          <span className="font-medium">Hoe werkt het?</span> Kies hieronder voor wie je hulp zoekt.
-          Tik op een categorie om te zien welke hulp er is.
-        </p>
-        <p className="text-sm text-muted-foreground mt-2">
-          Wil je iets onthouden? Tik op het <span className="text-primary font-semibold">hartje</span> om het te bewaren bij je favorieten.
-        </p>
-      </div>
 
       {/* DRIE TABS NAAST ELKAAR */}
       {(() => {
