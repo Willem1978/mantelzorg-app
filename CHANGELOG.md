@@ -5,6 +5,32 @@ Alle belangrijke wijzigingen aan MantelBuddy worden hier gedocumenteerd.
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.0.0/),
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [2.0.0] - 2026-02-09 ⭐ Stabiele release
+
+Eerste volledig afgeronde versie van MantelBuddy. Deze tag markeert de baseline voor verdere doorontwikkeling.
+
+### Alle functionaliteit
+- **WhatsApp Bot**: Belastbaarheidstest via WhatsApp met score-infographics
+- **Dashboard**: Score-thermometer, urgentie-indicatie, zorgtaken met kleur-codering
+- **Hulpvragen**: Categorieën met kleur-indicatoren en koppeling naar lokale hulporganisaties
+- **Lokale hulp**: Hulporganisaties Nijmegen en Arnhem per taakcategorie (geen max limiet)
+- **Authenticatie**: Magic link login, single-session, telefoonnummer koppeling
+- **UX/UI**: Responsive design, B1 taalniveau, ouderenvriendelijk
+- **Categorieën**: Inclusief Huisdieren en Plannen en organiseren
+
+### Sinds v1.5.4
+- Hulpvragen kleur-indicatoren per taakstatus
+- UX/UI verbeteringen: toegankelijkheid en ouderenvriendelijkheid
+- WhatsApp nummering consistent (menu altijd op 0)
+- Tekstuele begeleiding verbeterd naar B1 niveau
+- Responsive layout verbeteringen
+- Uitbreiding hulporganisaties Nijmegen en Arnhem per taakcategorie
+- Categorieën Huisdieren en Plannen en organiseren toegevoegd
+- Telefoonnummer niet meer gewist bij profiel update
+- Leren & Tips sectie verwijderd van dashboard
+
+---
+
 ## [1.5.4] - 2025-02-07
 
 ### Gewijzigd
