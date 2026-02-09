@@ -6,6 +6,7 @@ import { useEffect, useState, useRef } from "react"
 import { cn } from "@/lib/utils"
 import { NotificationBell } from "@/components/navigation/NotificationBell"
 import { ThemeToggle } from "@/components/navigation/ThemeToggle"
+import { FavorietenIcon } from "@/components/navigation/FavorietenIcon"
 
 interface NavbarProps {
   userRole?: "CAREGIVER" | "ORG_MEMBER" | "ORG_ADMIN" | "ADMIN"
@@ -41,7 +42,7 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
   // NOTE: Agenda is tijdelijk verborgen maar code blijft behouden voor later
   const caregiverLinks = [
     { href: "/dashboard", label: "Home", hasBadge: false },
-    { href: "/leren", label: "Leren", hasBadge: false },
+    { href: "/leren", label: "Informatie", hasBadge: false },
     { href: "/hulpvragen", label: "Hulp", hasBadge: true },
     // { href: "/agenda", label: "Agenda", hasBadge: false }, // Tijdelijk verborgen
     { href: "/check-in", label: "Hoe gaat het?", hasBadge: false },
@@ -103,6 +104,7 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
               </span>
             )}
             <ThemeToggle />
+            <FavorietenIcon />
             <NotificationBell />
             <Link
               href="/profiel"

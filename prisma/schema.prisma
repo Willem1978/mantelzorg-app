@@ -106,6 +106,8 @@ model Caregiver {
   buddyMatches              BuddyMatch[]
   uitgezetteTaken           BuddyTaak[]
   gegevenBeoordelingen      BuddyBeoordeling[]
+  // Favorieten
+  favorieten                Favoriet[]
 }
 
 model IntakeCategory {
@@ -408,6 +410,31 @@ model AlarmLog {
 }
 
 // ============================================
+// FAVORIETEN
+// ============================================
+
+model Favoriet {
+  id            String       @id @default(cuid())
+  caregiverId   String
+  type          FavorietType
+  itemId        String       // Uniek ID: voor HULP = slug van naam+gemeente, voor INFORMATIE = categorie-id
+  titel         String
+  beschrijving  String?
+  categorie     String?      // Groepering (bijv. "Persoonlijke verzorging", "Praktische tips")
+  url           String?
+  telefoon      String?
+  icon          String?      // Emoji icoon
+  isVoltooid    Boolean      @default(false)
+  voltooitOp    DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  caregiver     Caregiver    @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  @@unique([caregiverId, type, itemId])
+  @@index([caregiverId])
+}
+
+// ============================================
 // MANTELBUDDY VRIJWILLIGERS
 // ============================================
 
@@ -564,6 +591,11 @@ model BuddyBeoordeling {
 // ============================================
 // ENUMS
 // ============================================
+
+enum FavorietType {
+  HULP        // Hulporganisatie van hulpvragen pagina
+  INFORMATIE  // Leren/informatie item van informatie pagina
+}
 
 enum BuddyBeschikbaarheid {
   EENMALIG          // Alleen losse taken

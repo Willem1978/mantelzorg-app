@@ -1,9 +1,24 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, useRef, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
+import { FavorietButton } from "@/components/FavorietButton"
+
+// Genereer stabiel itemId voor hulporganisaties
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
+function generateHulpItemId(naam: string, gemeente: string | null | undefined): string {
+  return `${slugify(naam)}-${slugify(gemeente || 'landelijk')}`
+}
 
 interface Hulpbron {
   naam: string
@@ -169,6 +184,10 @@ function HulpPageContent() {
   const [showVragenTab, setShowVragenTab] = useState(false)
   const [initializedFromUrl, setInitializedFromUrl] = useState(false)
 
+  // Favorieten state
+  const [favorieten, setFavorieten] = useState<Record<string, string>>({})
+  const hasFetchedFav = useRef(false)
+
   // Hulpvraag form state
   const [formTitle, setFormTitle] = useState("")
   const [formDescription, setFormDescription] = useState("")
@@ -240,6 +259,57 @@ function HulpPageContent() {
       setLoading(false)
     }
   }
+
+  // Favorieten check laden
+  useEffect(() => {
+    if (hasFetchedFav.current || loading || !hulpData) return
+    hasFetchedFav.current = true
+
+    const checkFavorieten = async () => {
+      try {
+        // Verzamel alle mogelijke itemIds van hulpbronnen op de pagina
+        const items: { type: string; itemId: string }[] = []
+
+        // Lokale hulpbronnen per categorie
+        if (hulpData.perCategorie) {
+          Object.entries(hulpData.perCategorie).forEach(([, bronnen]) => {
+            bronnen.forEach(hulp => {
+              items.push({
+                type: "HULP",
+                itemId: generateHulpItemId(hulp.naam, hulp.gemeente),
+              })
+            })
+          })
+        }
+
+        // Landelijke hulpbronnen
+        if (hulpData.landelijk) {
+          hulpData.landelijk.forEach(hulp => {
+            items.push({
+              type: "HULP",
+              itemId: generateHulpItemId(hulp.naam, null),
+            })
+          })
+        }
+
+        if (items.length === 0) return
+
+        const res = await fetch("/api/favorieten/check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items }),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setFavorieten(data.favorited || {})
+        }
+      } catch {
+        // Silently fail
+      }
+    }
+
+    checkFavorieten()
+  }, [loading, hulpData])
 
   const handleSubmitHulpvraag = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -584,6 +654,9 @@ function HulpPageContent() {
           <span className="font-medium">Hoe werkt het?</span> Kies hieronder voor wie je hulp zoekt.
           Tik op een categorie om te zien welke hulp er is.
         </p>
+        <p className="text-sm text-muted-foreground mt-2">
+          Wil je iets onthouden? Tik op het <span className="text-primary font-semibold">hartje</span> om het te bewaren bij je favorieten.
+        </p>
       </div>
 
       {/* DRIE TABS NAAST ELKAAR */}
@@ -758,7 +831,7 @@ function HulpPageContent() {
                           📍 In je buurt
                         </p>
                         {lokaleHulp.map((hulp, i) => (
-                          <HulpbronCard key={`lokaal-${i}`} hulp={hulp} />
+                          <HulpbronCard key={`lokaal-${i}`} hulp={hulp} favorieten={favorieten} categorie={selectedCategorie || undefined} />
                         ))}
                       </div>
                     )}
@@ -770,7 +843,7 @@ function HulpPageContent() {
                           🌍 Landelijk
                         </p>
                         {landelijkeHulp.map((hulp, i) => (
-                          <LandelijkeHulpCard key={`landelijk-${i}`} hulp={hulp} />
+                          <LandelijkeHulpCard key={`landelijk-${i}`} hulp={hulp} favorieten={favorieten} categorie={selectedCategorie || undefined} />
                         ))}
                       </div>
                     )}
@@ -864,7 +937,7 @@ function HulpPageContent() {
               {hulpData?.perCategorie?.[selectedCategorie] && hulpData.perCategorie[selectedCategorie].length > 0 ? (
                 <div className="space-y-2">
                   {hulpData.perCategorie[selectedCategorie].map((hulp, i) => (
-                    <HulpbronCard key={i} hulp={hulp} />
+                    <HulpbronCard key={i} hulp={hulp} favorieten={favorieten} categorie={selectedCategorie || undefined} />
                   ))}
                 </div>
               ) : (
@@ -925,7 +998,7 @@ function HulpPageContent() {
                     </p>
                     <div className="space-y-2">
                       {hulplijnen.map((hulp, i) => (
-                        <LandelijkeHulpCard key={i} hulp={hulp} />
+                        <LandelijkeHulpCard key={i} hulp={hulp} favorieten={favorieten} categorie="Landelijk" />
                       ))}
                     </div>
                   </div>
@@ -939,7 +1012,7 @@ function HulpPageContent() {
                     </p>
                     <div className="space-y-2">
                       {informatieAdvies.map((hulp, i) => (
-                        <LandelijkeHulpCard key={i} hulp={hulp} />
+                        <LandelijkeHulpCard key={i} hulp={hulp} favorieten={favorieten} categorie="Landelijk" />
                       ))}
                     </div>
                   </div>
@@ -953,7 +1026,7 @@ function HulpPageContent() {
                     </p>
                     <div className="space-y-2">
                       {overig.map((hulp, i) => (
-                        <LandelijkeHulpCard key={i} hulp={hulp} />
+                        <LandelijkeHulpCard key={i} hulp={hulp} favorieten={favorieten} categorie="Landelijk" />
                       ))}
                     </div>
                   </div>
@@ -996,20 +1069,45 @@ function HulpPageContent() {
 }
 
 // Hulpbron card component
-function HulpbronCard({ hulp }: { hulp: Hulpbron }) {
+function HulpbronCard({ hulp, favorieten, categorie }: {
+  hulp: Hulpbron
+  favorieten?: Record<string, string>
+  categorie?: string
+}) {
+  const itemId = generateHulpItemId(hulp.naam, hulp.gemeente)
+  const favKey = `HULP:${itemId}`
+  const isFavorited = !!(favorieten && favorieten[favKey])
+  const favorietId = favorieten?.[favKey]
+
   return (
     <div className="ker-card py-3">
-      <div className="flex items-start justify-between">
-        <p className="font-medium text-sm">{hulp.naam}</p>
-        {hulp.isLandelijk ? (
-          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-            🌍 Landelijk
-          </span>
-        ) : hulp.gemeente && (
-          <span className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
-            📍 {hulp.gemeente}
-          </span>
-        )}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="font-medium text-sm">{hulp.naam}</p>
+            {hulp.isLandelijk ? (
+              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full flex-shrink-0">
+                🌍 Landelijk
+              </span>
+            ) : hulp.gemeente && (
+              <span className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground flex-shrink-0">
+                📍 {hulp.gemeente}
+              </span>
+            )}
+          </div>
+        </div>
+        <FavorietButton
+          type="HULP"
+          itemId={itemId}
+          titel={hulp.naam}
+          beschrijving={hulp.beschrijving || undefined}
+          categorie={categorie}
+          url={hulp.website || undefined}
+          telefoon={hulp.telefoon || undefined}
+          initialFavorited={isFavorited}
+          initialFavorietId={favorietId}
+          size="sm"
+        />
       </div>
       {hulp.beschrijving && (
         <p className="text-xs text-muted-foreground mt-1">{hulp.beschrijving}</p>
@@ -1031,35 +1129,57 @@ function HulpbronCard({ hulp }: { hulp: Hulpbron }) {
 }
 
 // Landelijke hulpbron card component
-function LandelijkeHulpCard({ hulp }: { hulp: LandelijkeHulpbron }) {
+function LandelijkeHulpCard({ hulp, favorieten, categorie }: {
+  hulp: LandelijkeHulpbron
+  favorieten?: Record<string, string>
+  categorie?: string
+}) {
+  const itemId = generateHulpItemId(hulp.naam, null)
+  const favKey = `HULP:${itemId}`
+  const isFavorited = !!(favorieten && favorieten[favKey])
+  const favorietId = favorieten?.[favKey]
+
   return (
-    <div className="flex items-center justify-between py-3 px-3 bg-white rounded-lg border border-border">
+    <div className="flex items-center justify-between py-3 px-3 bg-white dark:bg-card rounded-lg border border-border">
       <div className="flex-1 min-w-0">
         <p className="font-medium text-sm">{hulp.naam}</p>
         {hulp.beschrijving && (
           <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{hulp.beschrijving}</p>
         )}
+        <div className="flex gap-2 mt-1">
+          {hulp.telefoon && (
+            <a
+              href={`tel:${hulp.telefoon}`}
+              className="text-xs text-primary hover:underline font-medium flex items-center gap-1 whitespace-nowrap"
+            >
+              📞 {hulp.telefoon}
+            </a>
+          )}
+          {hulp.website && (
+            <a
+              href={hulp.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:text-primary/80"
+            >
+              🌐
+            </a>
+          )}
+        </div>
       </div>
-      <div className="flex gap-2 flex-shrink-0 ml-2">
-        {hulp.telefoon && (
-          <a
-            href={`tel:${hulp.telefoon}`}
-            className="text-xs text-primary hover:underline font-medium flex items-center gap-1 whitespace-nowrap"
-          >
-            📞 {hulp.telefoon}
-          </a>
-        )}
-        {hulp.website && (
-          <a
-            href={hulp.website}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary hover:text-primary/80"
-          >
-            🌐
-          </a>
-        )}
-      </div>
+      <FavorietButton
+        type="HULP"
+        itemId={itemId}
+        titel={hulp.naam}
+        beschrijving={hulp.beschrijving || undefined}
+        categorie={categorie || "Landelijk"}
+        url={hulp.website || undefined}
+        telefoon={hulp.telefoon || undefined}
+        icon="🌍"
+        initialFavorited={isFavorited}
+        initialFavorietId={favorietId}
+        size="sm"
+      />
     </div>
   )
 }
