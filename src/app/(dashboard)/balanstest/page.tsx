@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
+import { PdfDownloadButton } from "@/components/PdfDownloadButton"
 
 interface TestOverzicht {
   id: string
@@ -26,6 +27,8 @@ export default function BalanstestOverzichtPage() {
   const { status } = useSession()
   const [data, setData] = useState<OverzichtData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     if (status === "loading") return
@@ -66,6 +69,24 @@ export default function BalanstestOverzichtPage() {
 
   // Bereken score voor de grafiek (max 24)
   const maxScore = 24
+
+  const handleDelete = async (testId: string) => {
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/balanstest/${testId}`, { method: "DELETE" })
+      if (res.ok) {
+        setData(prev => prev ? {
+          ...prev,
+          tests: prev.tests.filter(t => t.id !== testId),
+        } : null)
+      }
+    } catch (error) {
+      console.error("Delete failed:", error)
+    } finally {
+      setDeleting(false)
+      setDeleteId(null)
+    }
+  }
 
   return (
     <div className="ker-page-content">
@@ -327,47 +348,90 @@ export default function BalanstestOverzichtPage() {
           </h2>
           <div className="space-y-3">
             {tests.map((test, i) => (
-              <Link key={test.id} href="/rapport" className="block">
-                <div className="ker-card hover:border-primary/50 transition-all">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={cn(
-                          "w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm",
-                          test.niveau === "LAAG" && "bg-[var(--accent-green-bg)] text-[var(--accent-green)]",
-                          test.niveau === "GEMIDDELD" && "bg-[var(--accent-amber-bg)] text-[var(--accent-amber)]",
-                          test.niveau === "HOOG" && "bg-[var(--accent-red-bg)] text-[var(--accent-red)]"
-                        )}
-                      >
-                        {test.score}
+              <div key={test.id} className="relative">
+                {/* Bevestigingsdialoog */}
+                {deleteId === test.id && (
+                  <div className="absolute inset-0 z-10 bg-card/95 backdrop-blur-sm rounded-2xl flex items-center justify-center p-4">
+                    <div className="text-center">
+                      <p className="font-medium text-foreground mb-3">
+                        Weet je het zeker? Deze test wordt definitief verwijderd.
+                      </p>
+                      <div className="flex gap-2 justify-center">
+                        <button
+                          type="button"
+                          onClick={() => setDeleteId(null)}
+                          className="px-4 py-2 text-sm font-medium rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors"
+                        >
+                          Annuleren
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(test.id)}
+                          disabled={deleting}
+                          className="px-4 py-2 text-sm font-medium rounded-lg bg-[var(--accent-red)] text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+                        >
+                          {deleting ? "Bezig..." : "Verwijderen"}
+                        </button>
                       </div>
-                      <div>
-                        <p className="font-medium text-foreground">
-                          {new Date(test.datum).toLocaleDateString("nl-NL", {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                          })}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {test.aantalTaken} taken &middot; {test.totaleZorguren} uur/week
-                          {test.zwareTaken > 0 && ` · ${test.zwareTaken} zwaar`}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {i === 0 && (
-                        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
-                          Laatste
-                        </span>
-                      )}
-                      <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
                     </div>
                   </div>
-                </div>
-              </Link>
+                )}
+
+                <Link href="/rapport" className="block">
+                  <div className="ker-card hover:border-primary/50 transition-all">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={cn(
+                            "w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm",
+                            test.niveau === "LAAG" && "bg-[var(--accent-green-bg)] text-[var(--accent-green)]",
+                            test.niveau === "GEMIDDELD" && "bg-[var(--accent-amber-bg)] text-[var(--accent-amber)]",
+                            test.niveau === "HOOG" && "bg-[var(--accent-red-bg)] text-[var(--accent-red)]"
+                          )}
+                        >
+                          {test.score}
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">
+                            {new Date(test.datum).toLocaleDateString("nl-NL", {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            })}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {test.aantalTaken} taken &middot; {test.totaleZorguren} uur/week
+                            {test.zwareTaken > 0 && ` · ${test.zwareTaken} zwaar`}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {i === 0 && (
+                          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+                            Laatste
+                          </span>
+                        )}
+                        {/* PDF download knop */}
+                        <PdfDownloadButton testId={test.id} size="sm" />
+                        {/* Verwijder knop */}
+                        <button
+                          type="button"
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeleteId(test.id) }}
+                          className="p-2 text-muted-foreground hover:text-[var(--accent-red)] transition-colors rounded-lg"
+                          aria-label="Test verwijderen"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                        <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              </div>
             ))}
           </div>
         </section>

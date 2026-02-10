@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
 import { ResultSmiley } from "@/components/ui"
+import { PdfDownloadButton } from "@/components/PdfDownloadButton"
 
 // Mapping van taak naar categorie voor hulpvragen pagina
 const TAAK_NAAR_HULP_TAB: Record<string, { tab: 'voor-jou' | 'voor-naaste', categorie: string }> = {
@@ -22,6 +23,7 @@ const TAAK_NAAR_HULP_TAB: Record<string, { tab: 'voor-jou' | 'voor-naaste', cate
 }
 
 interface TestResult {
+  id?: string
   voornaam: string
   totaleBelastingScore: number
   belastingNiveau: "LAAG" | "GEMIDDELD" | "HOOG"
@@ -525,6 +527,11 @@ export default function RapportPage() {
             </div>
           </div>
         </>
+      )}
+
+      {/* PDF download */}
+      {result.id && (
+        <PdfDownloadButton testId={result.id} className="mb-3" />
       )}
 
       {/* Opnieuw doen - altijd tonen */}
