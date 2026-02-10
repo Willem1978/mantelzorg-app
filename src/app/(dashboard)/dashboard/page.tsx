@@ -211,101 +211,120 @@ function DashboardContent() {
   const matigTaken = data?.test?.zorgtaken?.filter(t => isMatig(t.moeilijkheid)) || []
   const lichtTaken = data?.test?.zorgtaken?.filter(t => isLicht(t.moeilijkheid)) || []
 
-  // Genereer aanbevolen acties
-  const getAanbevolenActies = () => {
-    const acties: { icon: string; titel: string; beschrijving: string; href: string; prioriteit: number }[] = []
+  // Genereer vervolgstappen op basis van testscore en -status
+  const getVervolgstappen = () => {
+    const stappen: { icon: string; titel: string; beschrijving: string; href: string }[] = []
 
-    // Actie 0: Nog geen test gedaan - ALTIJD EERSTE
+    // Na 3 maanden altijd de balanstest als eerste stap
+    const needsNewTest = data?.test?.hasTest && data?.test?.needsNewTest
+
+    if (needsNewTest) {
+      stappen.push({
+        icon: "📊",
+        titel: "Doe de mantelzorg balanstest",
+        beschrijving: "Het is tijd om opnieuw te kijken hoe het met je gaat",
+        href: "/belastbaarheidstest",
+      })
+    }
+
     if (!data?.test?.hasTest) {
-      acties.push({
-        icon: "📊",
-        titel: "Doe de Balanstest",
-        beschrijving: "Ontdek hoe het met je gaat",
-        href: "/belastbaarheidstest",
-        prioriteit: 0
-      })
+      // Geen test gedaan
+      stappen.push(
+        {
+          icon: "📊",
+          titel: "Doe de mantelzorg balanstest",
+          beschrijving: "Ontdek hoe het met je gaat en waar je hulp bij kunt krijgen",
+          href: "/belastbaarheidstest",
+        },
+        {
+          icon: "📚",
+          titel: "Tips voor mantelzorgers",
+          beschrijving: "Praktische tips en informatie speciaal voor jou",
+          href: "/leren",
+        },
+        {
+          icon: "🤝",
+          titel: "Vind hulp voor jezelf of een van je taken",
+          beschrijving: "Bekijk welke hulp er bij jou in de buurt is",
+          href: "/hulpvragen",
+        }
+      )
+    } else if (data?.test?.niveau === "LAAG") {
+      // Groen - lage belasting
+      const extraStappen = [
+        {
+          icon: "📚",
+          titel: "Tips voor mantelzorgers",
+          beschrijving: "Praktische tips om het goed te blijven doen",
+          href: "/leren",
+        },
+        {
+          icon: "🤝",
+          titel: "Vind hulp voor jezelf of bij een van jouw taken",
+          beschrijving: "Bekijk welke hulp er bij jou in de buurt is",
+          href: "/hulpvragen",
+        },
+        {
+          icon: "📞",
+          titel: "Neem contact op met de mantelzorg hulplijn mocht het zwaarder worden",
+          beschrijving: "De Mantelzorglijn: 030-2059059 (gratis)",
+          href: "tel:0302059059",
+        },
+      ]
+      stappen.push(...extraStappen)
+    } else if (data?.test?.niveau === "GEMIDDELD") {
+      // Oranje - gemiddelde belasting
+      const extraStappen = [
+        {
+          icon: "🏛️",
+          titel: "Neem contact op met de mantelzorg ondersteuner in de gemeente",
+          beschrijving: "Zij kunnen je helpen met het vinden van de juiste hulp",
+          href: "/hulpvragen?tab=voor-mij",
+        },
+        {
+          icon: "🤝",
+          titel: "Vind hulp voor jezelf of bij een van jouw taken",
+          beschrijving: "Bekijk welke hulp er bij jou in de buurt is",
+          href: "/hulpvragen",
+        },
+        {
+          icon: "📚",
+          titel: "Tips voor mantelzorgers",
+          beschrijving: "Praktische tips en informatie speciaal voor jou",
+          href: "/leren",
+        },
+      ]
+      stappen.push(...extraStappen)
+    } else if (data?.test?.niveau === "HOOG") {
+      // Rood - hoge belasting
+      const extraStappen = [
+        {
+          icon: "💚",
+          titel: "Denk aan jezelf",
+          beschrijving: "Jij bent belangrijk. Neem even de tijd om stil te staan bij hoe het met jou gaat",
+          href: "/leren?categorie=zelfzorg",
+        },
+        {
+          icon: "🏛️",
+          titel: "Neem contact op met de mantelzorg ondersteuner in de gemeente",
+          beschrijving: "Zij kunnen samen met jou kijken wat er mogelijk is",
+          href: "/hulpvragen?tab=voor-mij",
+        },
+        {
+          icon: "🤝",
+          titel: "Vind hulp voor jezelf of bij een van jouw taken",
+          beschrijving: "Bekijk welke hulp er bij jou in de buurt is",
+          href: "/hulpvragen",
+        },
+      ]
+      stappen.push(...extraStappen)
     }
 
-    // Actie 1: Bij hoge belasting - bel mantelzorglijn
-    if (data?.test?.niveau === "HOOG") {
-      acties.push({
-        icon: "📞",
-        titel: "Bel de Mantelzorglijn",
-        beschrijving: "Praat met iemand over je situatie",
-        href: "tel:0302059059",
-        prioriteit: 1
-      })
-    }
-
-    // Actie 2: Hulp zoeken bij zware taken
-    if (zwareTaken.length > 0 || matigTaken.length > 0) {
-      const totaal = zwareTaken.length + matigTaken.length
-      acties.push({
-        icon: "🤝",
-        titel: "Zoek hulp bij je taken",
-        beschrijving: `${totaal} ${totaal === 1 ? 'taak' : 'taken'} waar je hulp bij kunt krijgen`,
-        href: "/hulpvragen",
-        prioriteit: 2
-      })
-    }
-
-    // Actie 3: Check-in doen
-    if (!data?.checkIns?.weeklyDone) {
-      acties.push({
-        icon: "📝",
-        titel: "Doe je wekelijkse check-in",
-        beschrijving: "Even kijken hoe het met je gaat",
-        href: "/check-in",
-        prioriteit: 3
-      })
-    }
-
-    // Actie 4: Leer over mantelzorg (educatie)
-    acties.push({
-      icon: "📚",
-      titel: "Tips voor mantelzorgers",
-      beschrijving: "Ontdek praktische tips en informatie",
-      href: "https://www.mantelzorg.nl/tips",
-      prioriteit: 4
-    })
-
-    // Actie 5: Tijd voor jezelf plannen
-    if ((data?.selfCare?.completed || 0) < (data?.selfCare?.weeklyGoal || 3)) {
-      acties.push({
-        icon: "🌱",
-        titel: "Plan tijd voor jezelf",
-        beschrijving: "Zelfzorg is geen luxe, maar noodzaak",
-        href: "/taken?category=SELF_CARE",
-        prioriteit: 5
-      })
-    }
-
-    // Actie 6: Verlopen taken
-    if ((data?.tasks?.overdue || 0) > 0) {
-      acties.push({
-        icon: "⏰",
-        titel: "Bekijk verlopen taken",
-        beschrijving: `${data?.tasks?.overdue} ${data?.tasks?.overdue === 1 ? 'taak' : 'taken'} nog open`,
-        href: "/taken",
-        prioriteit: 6
-      })
-    }
-
-    // Actie 7: Kwartaal test (alleen als er al een test is)
-    if (data?.test?.hasTest && data?.test?.needsNewTest) {
-      acties.push({
-        icon: "📊",
-        titel: "Doe je kwartaal check",
-        beschrijving: "Vergelijk met je vorige resultaat",
-        href: "/belastbaarheidstest",
-        prioriteit: 7
-      })
-    }
-
-    return acties.sort((a, b) => a.prioriteit - b.prioriteit).slice(0, 3)
+    // Bij needsNewTest: balanstest staat al bovenaan, neem max 3 totaal
+    return stappen.slice(0, 3)
   }
 
-  const aanbevolenActies = getAanbevolenActies()
+  const vervolgstappen = getVervolgstappen()
 
   return (
     <div className="ker-page-content">
@@ -340,9 +359,9 @@ function DashboardContent() {
                 </p>
               </div>
               <p className="text-sm text-muted-foreground">
-                {data.test.niveau === "LAAG" && "Goed bezig! Blijf ook op jezelf letten."}
-                {data.test.niveau === "GEMIDDELD" && "Je draagt veel. Kijk of iemand je ergens mee kan helpen."}
-                {data.test.niveau === "HOOG" && "Je hebt heel veel op je bordje. Laat je alsjeblieft helpen."}
+                {data.test.niveau === "LAAG" && "Goed bezig! Je balans is in orde. Blijf goed op jezelf letten en neem af en toe bewust een moment van rust. Zo houd je het vol op de lange termijn."}
+                {data.test.niveau === "GEMIDDELD" && "Je draagt veel op je schouders en dat is niet niks. Het is verstandig om te kijken of iemand je ergens mee kan helpen. Denk aan familie, buren, of professionele ondersteuning in je gemeente. Kleine stappen maken al een groot verschil."}
+                {data.test.niveau === "HOOG" && "Je hebt heel veel op je bordje en dat vraagt te veel van je. Het is belangrijk dat je hier niet alleen mee doorgaat. Neem contact op met een mantelzorgondersteuner in je gemeente of bel de Mantelzorglijn (030-2059059, gratis). Zij kunnen samen met jou kijken wat er mogelijk is."}
               </p>
             </div>
 
@@ -414,32 +433,6 @@ function DashboardContent() {
             </Link>
           </div>
 
-          {/* Urgentie melding bij hoge belasting */}
-          {data.test.niveau === "HOOG" && (
-            <div className="mt-4 p-4 bg-[var(--accent-red-bg)] rounded-xl border-l-4 border-[var(--accent-red)]">
-              <h3 className="font-bold text-foreground mb-2">
-                Je staat er niet alleen voor
-              </h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                Het is oké om hulp te vragen. Bel gerust de Mantelzorglijn.
-              </p>
-              <p className="text-sm font-medium text-foreground">
-                📞 <a href="tel:0302059059" className="text-primary hover:underline">030-2059059</a> (gratis)
-              </p>
-            </div>
-          )}
-
-          {/* Gemiddelde belasting tip */}
-          {data.test.niveau === "GEMIDDELD" && (
-            <div className="mt-4 p-4 bg-[var(--accent-amber-bg)] rounded-xl border-l-4 border-[var(--accent-amber)]">
-              <h3 className="font-bold text-foreground mb-2">
-                💡 Wist je dit?
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Bij je oranje en rode taken kun je hulp zoeken. Tik hieronder op een taak.
-              </p>
-            </div>
-          )}
         </section>
       ) : (
         <section className="mb-8">
@@ -470,34 +463,36 @@ function DashboardContent() {
         </section>
       )}
 
-        {/* SECTIE 2: Jouw Eerste 3 Acties */}
-        {aanbevolenActies.length > 0 && (
+        {/* SECTIE 2: Jouw Vervolgstappen */}
+        {vervolgstappen.length > 0 && (
           <section className="mb-8">
             <div className="mb-4">
               <h2 className="text-lg font-bold text-foreground flex items-center gap-2 mb-2">
-                <span className="text-2xl">🎯</span> Jouw Eerste Stappen
+                <span className="text-2xl">🎯</span> Jouw Vervolgstappen
               </h2>
               <p className="text-sm text-muted-foreground">
-                Begin met deze stappen. Zo krijg je de beste hulp.
+                {!data?.test?.hasTest
+                  ? "Begin met deze stappen. Zo krijg je de beste hulp."
+                  : "Dit zijn de stappen die je nu kunt nemen."}
               </p>
             </div>
 
             <div className="space-y-3">
-            {aanbevolenActies.map((actie, i) => (
-              <Link key={i} href={actie.href} className="block">
+            {vervolgstappen.map((stap, i) => (
+              <Link key={i} href={stap.href} className="block">
                 <div className="ker-card hover:border-primary/50 transition-all">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <span className="text-2xl">{actie.icon}</span>
+                      <span className="text-2xl">{stap.icon}</span>
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center">
                           {i + 1}
                         </span>
-                        <h3 className="font-semibold">{actie.titel}</h3>
+                        <h3 className="font-semibold">{stap.titel}</h3>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">{actie.beschrijving}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{stap.beschrijving}</p>
                     </div>
                     <svg className="w-5 h-5 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
