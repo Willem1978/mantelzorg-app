@@ -326,40 +326,32 @@ function DashboardContent() {
       <div className="lg:grid lg:grid-cols-2 lg:gap-8">
         {/* Linker kolom: Score en Taken */}
         <div>
-          {/* SECTIE 1: Jouw Score Overzicht */}
+          {/* SECTIE 1: Jouw Balans */}
           {data?.test?.hasTest ? (
             <section className="mb-8">
-          {/* Score Card met Thermometer */}
+          {/* Score Card — persoonlijk en warm */}
           <div className="ker-card overflow-hidden">
-            {/* Header: Titel en datum */}
+            {/* Header: persoonlijke titel */}
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2">
-                <h2
-                  className={cn(
-                    "font-bold text-lg",
-                    data.test.niveau === "LAAG" && "text-[var(--accent-green)]",
-                    data.test.niveau === "GEMIDDELD" && "text-[var(--accent-amber)]",
-                    data.test.niveau === "HOOG" && "text-[var(--accent-red)]"
-                  )}
-                >
-                  {data.test.niveau === "LAAG" && "Lage belasting"}
-                  {data.test.niveau === "GEMIDDELD" && "Gemiddelde belasting"}
-                  {data.test.niveau === "HOOG" && "Hoge belasting"}
+                <h2 className="font-bold text-lg text-foreground">
+                  {data.test.niveau === "LAAG" && "Je houdt het goed vol 💚"}
+                  {data.test.niveau === "GEMIDDELD" && "Je doet heel veel 🧡"}
+                  {data.test.niveau === "HOOG" && "Je doet te veel ❤️"}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  {data.test.daysSinceTest === 0 ? "Vandaag gemeten" : `${data.test.daysSinceTest} dagen geleden`}
+                  {data.test.daysSinceTest === 0 ? "Vandaag" : `${data.test.daysSinceTest}d geleden`}
                 </p>
               </div>
               <p className="text-sm text-muted-foreground">
-                {data.test.niveau === "LAAG" && "Het gaat goed met je! Blijf goed voor jezelf zorgen."}
-                {data.test.niveau === "GEMIDDELD" && "Je draagt veel. Kijk of je ergens hulp bij kunt krijgen."}
-                {data.test.niveau === "HOOG" && "Je hebt heel veel te doen. Het is belangrijk hulp te zoeken."}
+                {data.test.niveau === "LAAG" && "Goed bezig! Blijf ook op jezelf letten."}
+                {data.test.niveau === "GEMIDDELD" && "Je draagt veel. Kijk of iemand je ergens mee kan helpen."}
+                {data.test.niveau === "HOOG" && "Je hebt heel veel op je bordje. Laat je alsjeblieft helpen."}
               </p>
             </div>
 
-            {/* Thermometer */}
+            {/* Score + Thermometer */}
             <div className="relative">
-              {/* Score label boven thermometer */}
               <div className="flex justify-between items-end mb-2">
                 <span
                   className={cn(
@@ -376,7 +368,6 @@ function DashboardContent() {
 
               {/* Thermometer balk */}
               <div className="relative h-6 bg-muted rounded-full overflow-hidden">
-                {/* Gevulde balk */}
                 <div
                   className={cn(
                     "absolute left-0 top-0 h-full rounded-full transition-all duration-500",
@@ -386,41 +377,36 @@ function DashboardContent() {
                   )}
                   style={{ width: `${((data.test.score || 0) / 24) * 100}%` }}
                 />
-                {/* Streepjes voor zones */}
                 <div className="absolute inset-0 flex">
-                  <div className="flex-1 border-r border-white/30" /> {/* 0-8 groen */}
-                  <div className="flex-1 border-r border-white/30" /> {/* 9-16 oranje */}
-                  <div className="flex-1" /> {/* 17-24 rood */}
+                  <div className="flex-1 border-r border-white/30" />
+                  <div className="flex-1 border-r border-white/30" />
+                  <div className="flex-1" />
                 </div>
               </div>
-              {/* Zone labels voor kleurblindheid ondersteuning */}
-              <div className="flex text-sm text-muted-foreground mt-2">
-                <div className="flex-1 text-center">Laag ✓</div>
-                <div className="flex-1 text-center">Midden</div>
-                <div className="flex-1 text-center">Hoog ⚠</div>
-              </div>
-
             </div>
 
-            {/* Zorgtaken verdeling - met emoji's voor kleurblindheid */}
+            {/* Jouw taken — kleurblokken */}
             {(data.test.zorgtaken?.length || 0) > 0 && (
-              <div className="grid grid-cols-3 gap-3 text-center mt-4 pt-4 border-t border-border/50">
-                <div>
-                  <p className="text-lg font-bold text-[var(--accent-green)]">✓ {lichtTaken.length}</p>
-                  <p className="text-sm text-muted-foreground">Gaat goed</p>
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-[var(--accent-amber)]">● {matigTaken.length}</p>
-                  <p className="text-sm text-muted-foreground">Matig</p>
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-[var(--accent-red)]">⚠ {zwareTaken.length}</p>
-                  <p className="text-sm text-muted-foreground">Zwaar</p>
+              <div className="mt-5 pt-4 border-t border-border/50">
+                <p className="text-sm font-semibold text-foreground mb-3">Jouw zorgtaken</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="rounded-xl bg-[var(--accent-green-bg)] p-3 text-center">
+                    <p className="text-2xl font-bold text-[var(--accent-green)]">{lichtTaken.length}</p>
+                    <p className="text-sm text-[var(--accent-green)] font-medium">Gaan goed</p>
+                  </div>
+                  <div className="rounded-xl bg-[var(--accent-amber-bg)] p-3 text-center">
+                    <p className="text-2xl font-bold text-[var(--accent-amber)]">{matigTaken.length}</p>
+                    <p className="text-sm text-[var(--accent-amber)] font-medium">Matig</p>
+                  </div>
+                  <div className="rounded-xl bg-[var(--accent-red-bg)] p-3 text-center">
+                    <p className="text-2xl font-bold text-[var(--accent-red)]">{zwareTaken.length}</p>
+                    <p className="text-sm text-[var(--accent-red)] font-medium">Zwaar</p>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Bekijk rapport link - onderaan */}
+            {/* Bekijk rapport link */}
             <Link
               href="/rapport"
               className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-border/50 text-sm font-medium text-primary hover:underline"
@@ -435,14 +421,14 @@ function DashboardContent() {
           {/* Urgentie melding bij hoge belasting */}
           {data.test.niveau === "HOOG" && (
             <div className="mt-4 p-4 bg-[var(--accent-red-bg)] rounded-xl border-l-4 border-[var(--accent-red)]">
-              <h3 className="font-bold text-foreground mb-2 flex items-center gap-2">
-                ⚠️ Aandacht nodig
+              <h3 className="font-bold text-foreground mb-2">
+                Je staat er niet alleen voor
               </h3>
               <p className="text-sm text-muted-foreground mb-3">
-                Je score is hoog. Vraag nu hulp. Praat met iemand of bel de Mantelzorglijn.
+                Het is oké om hulp te vragen. Bel gerust de Mantelzorglijn.
               </p>
               <p className="text-sm font-medium text-foreground">
-                📞 Mantelzorglijn: <a href="tel:0302059059" className="text-primary hover:underline">030-2059059</a>
+                📞 <a href="tel:0302059059" className="text-primary hover:underline">030-2059059</a> (gratis)
               </p>
             </div>
           )}
@@ -450,11 +436,11 @@ function DashboardContent() {
           {/* Gemiddelde belasting tip */}
           {data.test.niveau === "GEMIDDELD" && (
             <div className="mt-4 p-4 bg-[var(--accent-amber-bg)] rounded-xl border-l-4 border-[var(--accent-amber)]">
-              <h3 className="font-bold text-foreground mb-2 flex items-center gap-2">
-                💡 Tip
+              <h3 className="font-bold text-foreground mb-2">
+                💡 Wist je dit?
               </h3>
               <p className="text-sm text-muted-foreground">
-                Je draagt veel. Bekijk welke taken iemand anders voor je kan doen.
+                Bij je oranje en rode taken kun je hulp zoeken. Tik hieronder op een taak.
               </p>
             </div>
           )}

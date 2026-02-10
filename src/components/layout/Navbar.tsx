@@ -73,7 +73,7 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
             </Link>
 
             {/* Desktop navigatie */}
-            <div className="hidden md:flex ml-8 lg:ml-10 space-x-1">
+            <div className="hidden md:flex ml-8 lg:ml-10 gap-1">
               {links.map((link) => {
                 const showHulpBadge = link.hasBadge && zwareTakenCount > 0
                 const showNieuwsBadge = link.nieuwsBadge && nieuwsCount > 0
@@ -82,7 +82,7 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
                     key={link.href}
                     href={link.href}
                     className={cn(
-                      "px-3 lg:px-4 py-2 rounded-lg text-sm font-medium transition-colors relative",
+                      "flex-1 text-center px-3 lg:px-4 py-2 rounded-lg text-sm font-medium transition-colors relative",
                       pathname === link.href
                         ? "bg-primary/10 text-primary"
                         : "text-muted-foreground hover:bg-secondary hover:text-foreground"
