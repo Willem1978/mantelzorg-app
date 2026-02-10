@@ -746,7 +746,7 @@ function HulpPageContent() {
             </p>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             {CATEGORIEEN_MANTELZORGER.map((cat) => {
               const aantalLokaal = hulpData?.perCategorie?.[cat.naam]?.length || 0
               const aantalLandelijk = getLandelijkeHulpVoorCategorie(cat.naam).length
@@ -758,23 +758,17 @@ function HulpPageContent() {
                   key={cat.naam}
                   onClick={() => handleSelectCategorie(cat.naam)}
                   className={cn(
-                    "ker-card hover:shadow-md transition-shadow flex flex-col items-start p-5 text-left",
+                    "flex flex-col items-start p-3 rounded-xl text-left transition-all border",
                     isSelected
-                      ? "bg-primary text-primary-foreground ring-2 ring-primary"
-                      : ""
+                      ? "bg-primary text-primary-foreground ring-2 ring-primary border-primary"
+                      : "bg-card hover:shadow-md border-border"
                   )}
                 >
-                  <span className="text-3xl mb-3">{cat.icon}</span>
-                  <p className="font-bold text-lg">{cat.kort}</p>
-                  <p className={cn(
-                    "text-sm",
-                    isSelected ? "text-primary-foreground/70" : "text-muted-foreground"
-                  )}>
-                    {cat.naam}
-                  </p>
+                  <span className="text-2xl mb-2">{cat.icon}</span>
+                  <p className="font-bold text-sm">{cat.kort}</p>
                   {aantalHulp > 0 && (
                     <p className={cn(
-                      "text-sm mt-1",
+                      "text-xs mt-0.5",
                       isSelected ? "text-primary-foreground/70" : "text-primary"
                     )}>
                       {aantalHulp} hulpbron{aantalHulp > 1 ? 'nen' : ''}
@@ -862,7 +856,7 @@ function HulpPageContent() {
             </p>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             {CATEGORIEEN_ZORGVRAGER.map((cat) => {
               const taakStatus = getTaakStatus(cat.naam)
               const aantalHulp = hulpData?.perCategorie?.[cat.naam]?.length || 0
@@ -873,16 +867,16 @@ function HulpPageContent() {
                   key={cat.naam}
                   onClick={() => handleSelectCategorie(cat.naam)}
                   className={cn(
-                    "ker-card hover:shadow-md transition-shadow flex flex-col items-start p-5 text-left relative",
+                    "flex flex-col items-start p-3 rounded-xl text-left transition-all relative",
                     isSelected
-                      ? "bg-primary text-primary-foreground ring-2 ring-primary"
+                      ? "bg-primary text-primary-foreground ring-2 ring-primary border border-primary"
                       : taakStatus === 'zwaar'
-                        ? "bg-[var(--accent-red-bg)] border-[3px] border-[var(--accent-red)]"
+                        ? "bg-[var(--accent-red-bg)] border-[3px] border-[var(--accent-red)] hover:shadow-md"
                         : taakStatus === 'gemiddeld'
-                          ? "bg-[var(--accent-amber-bg)] border-[3px] border-[var(--accent-amber)]"
+                          ? "bg-[var(--accent-amber-bg)] border-[3px] border-[var(--accent-amber)] hover:shadow-md"
                           : taakStatus === 'licht'
-                            ? "bg-[var(--accent-green-bg)] border-[3px] border-[var(--accent-green)]"
-                            : ""
+                            ? "bg-[var(--accent-green-bg)] border-[3px] border-[var(--accent-green)] hover:shadow-md"
+                            : "bg-card border border-border hover:shadow-md"
                   )}
                 >
                   {/* Status label */}
@@ -900,17 +894,11 @@ function HulpPageContent() {
                       </span>
                     </div>
                   )}
-                  <span className="text-3xl mb-3">{cat.icon}</span>
-                  <p className="font-bold text-lg">{cat.kort}</p>
-                  <p className={cn(
-                    "text-sm",
-                    isSelected ? "text-primary-foreground/70" : "text-muted-foreground"
-                  )}>
-                    {cat.naam}
-                  </p>
+                  <span className="text-2xl mb-2">{cat.icon}</span>
+                  <p className="font-bold text-sm">{cat.kort}</p>
                   {aantalHulp > 0 && (
                     <p className={cn(
-                      "text-sm mt-1",
+                      "text-xs mt-0.5",
                       isSelected ? "text-primary-foreground/70" : "text-primary"
                     )}>
                       {aantalHulp} hulpbron{aantalHulp > 1 ? 'nen' : ''}
