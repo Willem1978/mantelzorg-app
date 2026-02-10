@@ -84,7 +84,7 @@ function getShortLoginUrl(phone: string): string {
  * 5. Klaar → Menu voor ingelogde gebruikers
  *
  * FLOW VOOR BESTAANDE GEBRUIKERS (account gekoppeld):
- * 1. Eerste bericht → Menu: Test / Taken / Hulp / Dashboard / Contact
+ * 1. Eerste bericht → Menu: Test / Hulp / Dashboard / Contact
  */
 
 export async function POST(request: NextRequest) {
@@ -701,17 +701,31 @@ async function handleHulpSession(
       updateHulpSession(phoneNumber, 'results', { soortHulp: soortHulp.dbValue })
 
       // Haal hulpbronnen op - filter op onderdeel = Mantelzorgondersteuning EN soort hulp
+      // Zoek eerst lokaal (eigen gemeente), dan landelijk als fallback
       const gemeente = caregiver?.municipality
 
-      const hulpbronnen = await prisma.zorgorganisatie.findMany({
+      const lokaleHulp = gemeente ? await prisma.zorgorganisatie.findMany({
         where: {
           isActief: true,
-          onderdeelTest: { contains: 'Mantelzorgondersteuning' },
+          onderdeelTest: 'Mantelzorgondersteuning',
           soortHulp: soortHulp.dbValue,
-          ...(gemeente && { gemeente }),
+          gemeente,
+        },
+        orderBy: { naam: 'asc' },
+      }) : []
+
+      // Landelijke hulpbronnen (zonder gemeente)
+      const landelijkeHulp = await prisma.zorgorganisatie.findMany({
+        where: {
+          isActief: true,
+          onderdeelTest: 'Mantelzorgondersteuning',
+          soortHulp: soortHulp.dbValue,
+          gemeente: null,
         },
         orderBy: { naam: 'asc' },
       })
+
+      const hulpbronnen = [...lokaleHulp, ...landelijkeHulp]
 
       clearHulpSession(phoneNumber)
 
@@ -743,16 +757,29 @@ async function handleHulpSession(
       updateHulpSession(phoneNumber, 'results', { onderdeelTaak: onderdeelTaak.dbValue })
 
       // Haal hulpbronnen op - filter op onderdeel test
+      // Zoek eerst lokaal (gemeente zorgvrager), dan landelijk als fallback
       const gemeente = caregiver?.careRecipientMunicipality || caregiver?.municipality
 
-      const hulpbronnen = await prisma.zorgorganisatie.findMany({
+      const lokaleHulp = gemeente ? await prisma.zorgorganisatie.findMany({
         where: {
           isActief: true,
           onderdeelTest: onderdeelTaak.dbValue,
-          ...(gemeente && { gemeente }),
+          gemeente,
+        },
+        orderBy: { naam: 'asc' },
+      }) : []
+
+      // Landelijke hulpbronnen (zonder gemeente)
+      const landelijkeHulp = await prisma.zorgorganisatie.findMany({
+        where: {
+          isActief: true,
+          onderdeelTest: onderdeelTaak.dbValue,
+          gemeente: null,
         },
         orderBy: { naam: 'asc' },
       })
+
+      const hulpbronnen = [...lokaleHulp, ...landelijkeHulp]
 
       clearHulpSession(phoneNumber)
 
@@ -887,7 +914,7 @@ async function handleLoggedInUser(
   }
 
   // ===========================================
-  // STANDAARD MENU NUMMERS (1-5)
+  // STANDAARD MENU NUMMERS (1-4)
   // ===========================================
 
   // 1. Balanstest / Mijn Score
@@ -963,41 +990,8 @@ async function handleLoggedInUser(
     }
   }
 
-  // 3. Taken
-  if (command === '3' || command === 'taken' || command === 'tasks') {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-
-    const tasks = await prisma.task.findMany({
-      where: {
-        caregiverId: caregiver.id,
-        status: { in: ['TODO', 'IN_PROGRESS'] },
-      },
-      take: 5,
-      orderBy: [{ dueDate: 'asc' }, { priority: 'desc' }],
-    })
-
-    if (tasks.length === 0) {
-      return {
-        response: `🎉 *Geen open taken!*\n\nGoed bezig!\n\n_Typ 0 voor menu_`,
-      }
-    }
-
-    let response = `📋 *Jouw taken:*\n\n`
-    tasks.forEach((task, i) => {
-      const dueDate = task.dueDate
-        ? new Date(task.dueDate).toLocaleDateString('nl-NL')
-        : 'Geen deadline'
-      const priorityIcon = task.priority === 'HIGH' ? '🔴' : task.priority === 'MEDIUM' ? '🟡' : ''
-      response += `${i + 1}. ${priorityIcon} ${task.title}\n   📅 ${dueDate}\n\n`
-    })
-    response += `_Typ 0 voor menu_`
-
-    return { response }
-  }
-
-  // 4. Dashboard
-  if (command === '4' || command === 'dashboard') {
+  // 3. Dashboard
+  if (command === '3' || command === 'dashboard') {
     const openTasks = await prisma.task.count({
       where: {
         caregiverId: caregiver.id,
@@ -1057,8 +1051,8 @@ async function handleLoggedInUser(
     return { response }
   }
 
-  // 5. Contact
-  if (command === '5' || command === 'contact' || command === 'praten') {
+  // 4. Contact
+  if (command === '4' || command === 'contact' || command === 'praten') {
     return {
       response: `💬 *Direct Persoonlijk Contact*\n\n📞 *Mantelzorglijn*\n   030-760 60 55\n   (ma-vr 9-17u)\n\n🚨 *Crisis / 24/7*\n   113 Zelfmoordpreventie\n   0800-0113\n\n❤️ Je staat er niet alleen voor!\n\n_Typ 0 voor menu_`,
     }
@@ -1194,9 +1188,8 @@ async function getLoggedInMenu(caregiver: any, lastTest: any): Promise<string> {
   let menu = `*Wat wil je doen?*\n\n`
   menu += `1️⃣ ${testLabel} 📊\n`
   menu += `2️⃣ Hulp in de buurt 🗺️\n`
-  menu += `3️⃣ Mijn taken 📋\n`
-  menu += `4️⃣ Mijn dashboard 📈\n`
-  menu += `5️⃣ Direct contact 💬\n`
+  menu += `3️⃣ Mijn dashboard 📈\n`
+  menu += `4️⃣ Direct contact 💬\n`
   menu += `\n_Typ het nummer van je keuze_`
 
   return menu
