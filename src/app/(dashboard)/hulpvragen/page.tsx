@@ -746,7 +746,7 @@ function HulpPageContent() {
             </p>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             {CATEGORIEEN_MANTELZORGER.map((cat) => {
               const aantalLokaal = hulpData?.perCategorie?.[cat.naam]?.length || 0
               const aantalLandelijk = getLandelijkeHulpVoorCategorie(cat.naam).length
@@ -758,22 +758,28 @@ function HulpPageContent() {
                   key={cat.naam}
                   onClick={() => handleSelectCategorie(cat.naam)}
                   className={cn(
-                    "flex items-center gap-3 p-4 rounded-xl text-sm transition-all text-left",
+                    "ker-card hover:shadow-md transition-shadow flex flex-col items-start p-5 text-left",
                     isSelected
                       ? "bg-primary text-primary-foreground ring-2 ring-primary"
-                      : "bg-primary/5 hover:bg-primary/10 border-2 border-primary/30"
+                      : ""
                   )}
                 >
-                  <span className="text-2xl">{cat.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold">{cat.kort}</p>
+                  <span className="text-3xl mb-3">{cat.icon}</span>
+                  <p className="font-bold text-lg">{cat.kort}</p>
+                  <p className={cn(
+                    "text-sm",
+                    isSelected ? "text-primary-foreground/70" : "text-muted-foreground"
+                  )}>
+                    {cat.naam}
+                  </p>
+                  {aantalHulp > 0 && (
                     <p className={cn(
-                      "text-xs mt-0.5",
-                      isSelected ? "text-primary-foreground/70" : "text-muted-foreground"
+                      "text-sm mt-1",
+                      isSelected ? "text-primary-foreground/70" : "text-primary"
                     )}>
-                      ({aantalHulp})
+                      {aantalHulp} hulpbron{aantalHulp > 1 ? 'nen' : ''}
                     </p>
-                  </div>
+                  )}
                 </button>
               )
             })}
@@ -856,7 +862,7 @@ function HulpPageContent() {
             </p>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             {CATEGORIEEN_ZORGVRAGER.map((cat) => {
               const taakStatus = getTaakStatus(cat.naam)
               const aantalHulp = hulpData?.perCategorie?.[cat.naam]?.length || 0
@@ -867,7 +873,7 @@ function HulpPageContent() {
                   key={cat.naam}
                   onClick={() => handleSelectCategorie(cat.naam)}
                   className={cn(
-                    "flex items-center gap-3 p-4 rounded-xl text-sm transition-all text-left relative",
+                    "ker-card hover:shadow-md transition-shadow flex flex-col items-start p-5 text-left relative",
                     isSelected
                       ? "bg-primary text-primary-foreground ring-2 ring-primary"
                       : taakStatus === 'zwaar'
@@ -876,19 +882,9 @@ function HulpPageContent() {
                           ? "bg-[var(--accent-amber-bg)] border-[3px] border-[var(--accent-amber)]"
                           : taakStatus === 'licht'
                             ? "bg-[var(--accent-green-bg)] border-[3px] border-[var(--accent-green)]"
-                            : "bg-muted/50 hover:bg-muted/70 border border-border/50"
+                            : ""
                   )}
                 >
-                  <span className="text-2xl">{cat.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold">{cat.kort}</p>
-                    <p className={cn(
-                      "text-xs mt-0.5",
-                      isSelected ? "text-primary-foreground/70" : "text-muted-foreground"
-                    )}>
-                      ({aantalHulp})
-                    </p>
-                  </div>
                   {/* Status label */}
                   {!isSelected && taakStatus && (
                     <div className="absolute top-2 right-2">
@@ -903,6 +899,22 @@ function HulpPageContent() {
                         {taakStatus === 'licht' && 'Goed'}
                       </span>
                     </div>
+                  )}
+                  <span className="text-3xl mb-3">{cat.icon}</span>
+                  <p className="font-bold text-lg">{cat.kort}</p>
+                  <p className={cn(
+                    "text-sm",
+                    isSelected ? "text-primary-foreground/70" : "text-muted-foreground"
+                  )}>
+                    {cat.naam}
+                  </p>
+                  {aantalHulp > 0 && (
+                    <p className={cn(
+                      "text-sm mt-1",
+                      isSelected ? "text-primary-foreground/70" : "text-primary"
+                    )}>
+                      {aantalHulp} hulpbron{aantalHulp > 1 ? 'nen' : ''}
+                    </p>
                   )}
                 </button>
               )
