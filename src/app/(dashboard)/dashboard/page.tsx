@@ -610,30 +610,6 @@ function DashboardContent() {
           </section>
         )}
 
-          {/* SECTIE 4: Check-in Status */}
-          <section className="mb-8">
-            <Link href="/check-in" className="block">
-              <div
-                className={cn(
-                  "ker-card text-center py-4",
-                  data?.checkIns?.weeklyDone
-                    ? "bg-[var(--accent-green-bg)]"
-                    : "border-2 border-dashed border-primary/30 hover:border-primary"
-                )}
-              >
-                <span className="text-2xl">{data?.checkIns?.weeklyDone ? "✅" : "📝"}</span>
-                <p className="font-medium text-base mt-2">
-                  {data?.checkIns?.weeklyDone ? "Check-in gedaan" : "Wekelijkse check-in"}
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {data?.checkIns?.weeklyDone
-                    ? "Goed bezig! Tot volgende week."
-                    : "Even kijken hoe het met je gaat. Duurt 2 minuten."}
-                </p>
-              </div>
-            </Link>
-          </section>
-
           {/* SECTIE 5: WhatsApp - compact, minder prominent */}
           <section className="mb-8">
             <a
