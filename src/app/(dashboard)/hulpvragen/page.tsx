@@ -634,16 +634,6 @@ function HulpPageContent() {
         </p>
       </div>
 
-      {/* Urgente melding bij hoge belasting */}
-      {hulpData?.testNiveau === "HOOG" && (
-        <div className="mb-4 p-3 bg-[var(--accent-red-bg)] rounded-xl border-l-4 border-[var(--accent-red)]">
-          <p className="text-sm font-semibold text-foreground">Je belasting is hoog</p>
-          <p className="text-sm text-muted-foreground">
-            📞 Mantelzorglijn: <a href="tel:0302059059" className="text-primary hover:underline font-medium">030-2059059</a>
-          </p>
-        </div>
-      )}
-
       {/* DRIE TABS NAAST ELKAAR */}
       {(() => {
         // Bereken totalen voor badges
