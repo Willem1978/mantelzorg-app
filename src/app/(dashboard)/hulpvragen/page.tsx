@@ -761,7 +761,7 @@ function HulpPageContent() {
                     "flex items-center gap-3 p-4 rounded-xl text-sm transition-all text-left",
                     isSelected
                       ? "bg-primary text-primary-foreground ring-2 ring-primary"
-                      : "bg-primary/10 hover:bg-primary/20 border border-primary/20"
+                      : "bg-primary/5 hover:bg-primary/10 border-2 border-primary/30"
                   )}
                 >
                   <span className="text-2xl">{cat.icon}</span>
@@ -871,12 +871,12 @@ function HulpPageContent() {
                     isSelected
                       ? "bg-primary text-primary-foreground ring-2 ring-primary"
                       : taakStatus === 'zwaar'
-                        ? "bg-[var(--accent-red-bg)] border-2 border-[var(--accent-red)] hover:border-[var(--accent-red)]"
+                        ? "bg-[var(--accent-red-bg)] border-[3px] border-[var(--accent-red)]"
                         : taakStatus === 'gemiddeld'
-                          ? "bg-[var(--accent-amber-bg)] border-2 border-[var(--accent-amber)] hover:border-[var(--accent-amber)]"
+                          ? "bg-[var(--accent-amber-bg)] border-[3px] border-[var(--accent-amber)]"
                           : taakStatus === 'licht'
-                            ? "bg-[var(--accent-green-bg)] border-2 border-[var(--accent-green)] hover:border-[var(--accent-green)]"
-                            : "bg-muted hover:bg-muted/80 border border-border"
+                            ? "bg-[var(--accent-green-bg)] border-[3px] border-[var(--accent-green)]"
+                            : "bg-muted/50 hover:bg-muted/70 border border-border/50"
                   )}
                 >
                   <span className="text-2xl">{cat.icon}</span>
@@ -889,13 +889,18 @@ function HulpPageContent() {
                       ({aantalHulp})
                     </p>
                   </div>
-                  {/* Status indicator met emoji voor kleurblindheid */}
+                  {/* Status label */}
                   {!isSelected && taakStatus && (
-                    <div className="absolute top-2 right-2 flex items-center gap-1">
-                      <span className="text-sm">
-                        {taakStatus === 'zwaar' && '⚠'}
-                        {taakStatus === 'gemiddeld' && '●'}
-                        {taakStatus === 'licht' && '✓'}
+                    <div className="absolute top-2 right-2">
+                      <span className={cn(
+                        "text-xs font-semibold px-2 py-0.5 rounded-full",
+                        taakStatus === 'zwaar' && "bg-[var(--accent-red)]/15 text-[var(--accent-red)]",
+                        taakStatus === 'gemiddeld' && "bg-[var(--accent-amber)]/15 text-[var(--accent-amber)]",
+                        taakStatus === 'licht' && "bg-[var(--accent-green)]/15 text-[var(--accent-green)]",
+                      )}>
+                        {taakStatus === 'zwaar' && 'Zwaar'}
+                        {taakStatus === 'gemiddeld' && 'Matig'}
+                        {taakStatus === 'licht' && 'Goed'}
                       </span>
                     </div>
                   )}

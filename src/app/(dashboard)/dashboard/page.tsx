@@ -536,14 +536,13 @@ function DashboardContent() {
 
               return (
                 <Link key={`zwaar-${i}`} href={hulpLink} className="block">
-                  <div className="ker-card border-l-4 border-l-[var(--accent-red)] hover:border-primary/50 transition-colors">
+                  <div className="ker-card bg-[var(--accent-red-bg)] border-[3px] border-[var(--accent-red)] hover:shadow-md transition-all">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-lg">🔴</span>
                         <span className="font-semibold">{taak.naam}</span>
                         {taak.uren && <span className="text-sm text-muted-foreground">({taak.uren}u/week)</span>}
                       </div>
-                      <span className="text-sm bg-[var(--accent-red-bg)] text-[var(--accent-red)] px-2.5 py-1 rounded-full font-medium">
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-red)]/15 text-[var(--accent-red)]">
                         Zwaar
                       </span>
                     </div>
@@ -569,14 +568,13 @@ function DashboardContent() {
 
               return (
                 <Link key={`matig-${i}`} href={hulpLink} className="block">
-                  <div className="ker-card border-l-4 border-l-[var(--accent-amber)] hover:border-primary/50 transition-colors">
+                  <div className="ker-card bg-[var(--accent-amber-bg)] border-[3px] border-[var(--accent-amber)] hover:shadow-md transition-all">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-lg">🟡</span>
                         <span className="font-semibold">{taak.naam}</span>
                         {taak.uren && <span className="text-sm text-muted-foreground">({taak.uren}u/week)</span>}
                       </div>
-                      <span className="text-sm bg-[var(--accent-amber-bg)] text-[var(--accent-amber)] px-2.5 py-1 rounded-full font-medium">
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-amber)]/15 text-[var(--accent-amber)]">
                         Matig
                       </span>
                     </div>
@@ -592,14 +590,16 @@ function DashboardContent() {
 
             {/* Lichte taken - compact */}
             {lichtTaken.length > 0 && (
-              <div className="ker-card bg-[var(--accent-green-bg)]/30">
+              <div className="ker-card bg-[var(--accent-green-bg)] border-[3px] border-[var(--accent-green)]">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">🟢</span>
-                  <span className="font-medium text-muted-foreground">Taken die goed gaan ({lichtTaken.length})</span>
+                  <span className="font-medium text-foreground">Taken die goed gaan</span>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-green)]/15 text-[var(--accent-green)]">
+                    {lichtTaken.length}
+                  </span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {lichtTaken.map((taak, i) => (
-                    <span key={i} className="text-sm bg-white/50 px-2.5 py-1 rounded-full">
+                    <span key={i} className="text-sm bg-white/50 dark:bg-white/10 px-2.5 py-1 rounded-full">
                       {taak.naam}
                     </span>
                   ))}
