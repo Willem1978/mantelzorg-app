@@ -425,7 +425,7 @@ body {
   flex: 1;
   padding: 1.5rem 1rem;
   padding-bottom: 6rem; /* Ruimte voor footer */
-  max-width: 28rem;
+  max-width: 40rem;
   margin: 0 auto;
   width: 100%;
 }

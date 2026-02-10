@@ -82,7 +82,7 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
                     key={link.href}
                     href={link.href}
                     className={cn(
-                      "flex-1 text-center px-3 lg:px-4 py-2 rounded-lg text-sm font-medium transition-colors relative",
+                      "whitespace-nowrap px-4 lg:px-5 py-2 rounded-lg text-sm font-medium transition-colors relative",
                       pathname === link.href
                         ? "bg-primary/10 text-primary"
                         : "text-muted-foreground hover:bg-secondary hover:text-foreground"

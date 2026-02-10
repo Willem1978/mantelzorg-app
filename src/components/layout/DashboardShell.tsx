@@ -76,8 +76,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
       {/* Valideert sessie periodiek en logt uit bij inloggen op ander apparaat */}
       <SessionValidator />
       <Navbar userRole="CAREGIVER" userName={userName || undefined} />
-      {/* pb-28 (112px) voor grotere mobile nav (h-20 = 80px + extra ruimte) */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-28 md:pb-8">
+      <main className="py-4 pb-24 md:pb-8">
         {children}
       </main>
       <MobileNav />

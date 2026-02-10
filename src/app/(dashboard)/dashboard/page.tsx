@@ -308,24 +308,20 @@ function DashboardContent() {
   const aanbevolenActies = getAanbevolenActies()
 
   return (
-    <div className="ker-page-content lg:max-w-5xl lg:mx-auto">
+    <div className="ker-page-content">
       {/* Header met Ger */}
-      <div className="flex items-start gap-4 mb-6 lg:mb-8">
-        <GerAvatar size="lg" className="lg:w-20 lg:h-20" />
-        <div className="pt-2 lg:pt-3">
-          <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
+      <div className="flex items-center gap-4 mb-6">
+        <GerAvatar size="lg" />
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">
             Hoi {userName}!
           </h1>
-          <p className="text-muted-foreground mt-1 lg:text-lg">
+          <p className="text-muted-foreground mt-1">
             {getGreeting()}
           </p>
         </div>
       </div>
 
-      {/* Desktop: twee kolommen layout */}
-      <div className="lg:grid lg:grid-cols-2 lg:gap-8">
-        {/* Linker kolom: Score en Taken */}
-        <div>
           {/* SECTIE 1: Jouw Balans */}
           {data?.test?.hasTest ? (
             <section className="mb-8">
@@ -513,10 +509,7 @@ function DashboardContent() {
             </div>
           </section>
         )}
-        </div>
 
-        {/* Rechter kolom: Zorgtaken, Check-in, WhatsApp */}
-        <div>
               {/* SECTIE 3: Je Zorgtaken met Hulp */}
           {data?.test?.zorgtaken && data.test.zorgtaken.length > 0 && (
             <section className="mb-8">
@@ -665,8 +658,6 @@ function DashboardContent() {
               </div>
             </a>
           </section>
-        </div>
-      </div>
     </div>
   )
 }
