@@ -288,45 +288,6 @@ export default function BalanstestOverzichtPage() {
               <span>{laatsteTest.totaleZorguren} uur/week</span>
             </div>
 
-            {/* Trend tonen als er meerdere tests zijn */}
-            {tests.length >= 2 && (
-              <div className="mt-4 pt-4 border-t border-border/50">
-                {(() => {
-                  const vorige = tests[1]
-                  const verschil = laatsteTest.score - vorige.score
-                  if (verschil < 0) {
-                    return (
-                      <div className="flex items-center gap-2 text-[var(--accent-green)]">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                        </svg>
-                        <span className="text-sm font-medium">
-                          {Math.abs(verschil)} punt{Math.abs(verschil) !== 1 ? "en" : ""} lager dan vorige keer - goed bezig!
-                        </span>
-                      </div>
-                    )
-                  } else if (verschil > 0) {
-                    return (
-                      <div className="flex items-center gap-2 text-[var(--accent-red)]">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-                        </svg>
-                        <span className="text-sm font-medium">
-                          {verschil} punt{verschil !== 1 ? "en" : ""} hoger dan vorige keer - kijk of je hulp kunt vragen
-                        </span>
-                      </div>
-                    )
-                  } else {
-                    return (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <span className="text-sm">Zelfde score als vorige keer</span>
-                      </div>
-                    )
-                  }
-                })()}
-              </div>
-            )}
-
             <Link
               href="/rapport"
               className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-border/50 text-sm font-medium text-primary hover:underline"
@@ -348,19 +309,22 @@ export default function BalanstestOverzichtPage() {
           </h2>
           <div className="space-y-3">
             {tests.map((test, i) => (
-              <div key={test.id} className="relative">
+              <div key={test.id} className="ker-card relative">
                 {/* Bevestigingsdialoog */}
                 {deleteId === test.id && (
                   <div className="absolute inset-0 z-10 bg-card/95 backdrop-blur-sm rounded-2xl flex items-center justify-center p-4">
                     <div className="text-center">
                       <p className="font-medium text-foreground mb-3">
-                        Weet je het zeker? Deze test wordt definitief verwijderd.
+                        Weet je het zeker?
+                      </p>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Deze test wordt definitief verwijderd.
                       </p>
                       <div className="flex gap-2 justify-center">
                         <button
                           type="button"
                           onClick={() => setDeleteId(null)}
-                          className="px-4 py-2 text-sm font-medium rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors"
+                          className="px-4 py-2.5 text-sm font-medium rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors"
                         >
                           Annuleren
                         </button>
@@ -368,7 +332,7 @@ export default function BalanstestOverzichtPage() {
                           type="button"
                           onClick={() => handleDelete(test.id)}
                           disabled={deleting}
-                          className="px-4 py-2 text-sm font-medium rounded-lg bg-[var(--accent-red)] text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+                          className="px-4 py-2.5 text-sm font-medium rounded-lg bg-[var(--accent-red)] text-white hover:opacity-90 transition-opacity disabled:opacity-50"
                         >
                           {deleting ? "Bezig..." : "Verwijderen"}
                         </button>
@@ -377,60 +341,63 @@ export default function BalanstestOverzichtPage() {
                   </div>
                 )}
 
-                <Link href="/rapport" className="block">
-                  <div className="ker-card hover:border-primary/50 transition-all">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={cn(
-                            "w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm",
-                            test.niveau === "LAAG" && "bg-[var(--accent-green-bg)] text-[var(--accent-green)]",
-                            test.niveau === "GEMIDDELD" && "bg-[var(--accent-amber-bg)] text-[var(--accent-amber)]",
-                            test.niveau === "HOOG" && "bg-[var(--accent-red-bg)] text-[var(--accent-red)]"
-                          )}
-                        >
-                          {test.score}
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground">
-                            {new Date(test.datum).toLocaleDateString("nl-NL", {
-                              day: "numeric",
-                              month: "long",
-                              year: "numeric",
-                            })}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {test.aantalTaken} taken &middot; {test.totaleZorguren} uur/week
-                            {test.zwareTaken > 0 && ` · ${test.zwareTaken} zwaar`}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {i === 0 && (
-                          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
-                            Laatste
-                          </span>
-                        )}
-                        {/* PDF download knop */}
-                        <PdfDownloadButton testId={test.id} size="sm" />
-                        {/* Verwijder knop */}
-                        <button
-                          type="button"
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDeleteId(test.id) }}
-                          className="p-2 text-muted-foreground hover:text-[var(--accent-red)] transition-colors rounded-lg"
-                          aria-label="Test verwijderen"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                        <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </div>
-                    </div>
+                {/* Test info */}
+                <div className="flex items-center gap-3 mb-3">
+                  <div
+                    className={cn(
+                      "w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0",
+                      test.niveau === "LAAG" && "bg-[var(--accent-green-bg)] text-[var(--accent-green)]",
+                      test.niveau === "GEMIDDELD" && "bg-[var(--accent-amber-bg)] text-[var(--accent-amber)]",
+                      test.niveau === "HOOG" && "bg-[var(--accent-red-bg)] text-[var(--accent-red)]"
+                    )}
+                  >
+                    {test.score}
                   </div>
-                </Link>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-foreground">
+                        {new Date(test.datum).toLocaleDateString("nl-NL", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })}
+                      </p>
+                      {i === 0 && (
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+                          Laatste
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {test.aantalTaken} taken &middot; {test.totaleZorguren} uur/week
+                      {test.zwareTaken > 0 && ` · ${test.zwareTaken} zwaar`}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Actieknoppen */}
+                <div className="flex gap-2">
+                  <Link
+                    href="/rapport"
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Bekijken
+                  </Link>
+                  <PdfDownloadButton testId={test.id} size="sm" variant="button" />
+                  <button
+                    type="button"
+                    onClick={() => setDeleteId(test.id)}
+                    className="flex items-center justify-center gap-2 py-2.5 px-4 text-sm font-medium rounded-lg bg-[var(--accent-red-bg)] text-[var(--accent-red)] hover:bg-[var(--accent-red)]/20 transition-colors"
+                    aria-label="Test verwijderen"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             ))}
           </div>
