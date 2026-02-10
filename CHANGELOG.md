@@ -5,6 +5,28 @@ Alle belangrijke wijzigingen aan MantelBuddy worden hier gedocumenteerd.
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.0.0/),
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [2.4.0] - 2026-02-10
+
+### Toegevoegd
+- **Balanstest overzichtspagina** (`/balanstest`): Nieuwe pagina met score verloop grafiek (balkdiagram), laatste score met thermometer en trend-indicator, en overzicht van alle rapporten per datum
+- **Balanstest overzicht API** (`/api/balanstest/overzicht`): Endpoint voor het ophalen van alle testgeschiedenis met scores en datums
+- **Dynamische vervolgstappen**: "Jouw Vervolgstappen" op het dashboard met stappen op basis van testscore:
+  - Geen test: Balanstest → Tips → Hulp zoeken
+  - Groen (LAAG): Tips → Hulp zoeken → Hulplijn als backup
+  - Oranje (GEMIDDELD): Gemeente ondersteuner → Hulp zoeken → Tips
+  - Rood (HOOG): Denk aan jezelf → Gemeente ondersteuner → Hulp zoeken
+  - Na 3 maanden: Balanstest altijd als stap 1
+
+### Gewijzigd
+- **Dashboard tip-teksten**: Uitgebreidere toelichting per belastingsniveau (LAAG/GEMIDDELD/HOOG) met concrete adviezen
+- **Navigatie**: "Check-in" hernoemd naar "Balanstest" met staafdiagram-icoon (desktop + mobiel)
+- **Dashboard sectie**: "Jouw Eerste Stappen" hernoemd naar "Jouw Vervolgstappen"
+
+### Verwijderd
+- **"Je staat er niet alleen voor" blok**: Verwijderd van dashboard (telefoonnummer nu verwerkt in uitgebreidere tip-tekst bij rode score)
+
+---
+
 ## [2.3.0] - 2026-02-09
 
 ### Toegevoegd
