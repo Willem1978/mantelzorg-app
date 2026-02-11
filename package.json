@@ -11,7 +11,8 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "xd:pdf": "node scripts/xd-to-pdf.mjs"
   },
   "prisma": {
     "seed": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
@@ -42,6 +43,7 @@
     "@types/uuid": "^10.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.4",
+    "playwright-core": "^1.50.0",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "typescript": "5.9.3",

@@ -42,3 +42,6 @@ WHATSAPP_SETUP.md
 test-*.js
 test-*.ts
 create-*.js
+
+# XD to PDF output
+/output/
