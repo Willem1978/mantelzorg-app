@@ -198,21 +198,53 @@ export default function GemeenteNieuwsPage() {
         </div>
       )}
 
-      {/* Nieuws per gemeente - nieuw bovenaan, gezien onderaan */}
-      <NieuwsSectie
-        items={nieuwsMantelzorger}
+      {/* NIEUWE berichten — alle gemeenten */}
+      <NieuwsGroep
+        items={nieuwsMantelzorger.filter(n => !gelezenIds.includes(n.id))}
         label={gemeenteMantelzorger ? `📍 ${gemeenteMantelzorger} — jouw gemeente` : ""}
-        gelezenIds={gelezenIds}
         favorieten={favorieten}
+        isGezien={false}
+        onGezien={markeerAlsGezien}
+        onNietGezien={markeerAlsNietGezien}
+      />
+      <NieuwsGroep
+        items={nieuwsZorgvrager.filter(n => !gelezenIds.includes(n.id))}
+        label={gemeenteZorgvrager ? `📍 ${gemeenteZorgvrager} — gemeente van je naaste` : ""}
+        favorieten={favorieten}
+        isGezien={false}
         onGezien={markeerAlsGezien}
         onNietGezien={markeerAlsNietGezien}
       />
 
-      <NieuwsSectie
-        items={nieuwsZorgvrager}
-        label={gemeenteZorgvrager ? `📍 ${gemeenteZorgvrager} — gemeente van je naaste` : ""}
-        gelezenIds={gelezenIds}
+      {/* Scheider: eerder gezien */}
+      {relevantNieuws.some(n => gelezenIds.includes(n.id)) && (
+        <div className="flex items-center gap-2 mt-2 mb-4">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+            <svg className="w-3.5 h-3.5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            Eerder gezien
+          </span>
+          <div className="h-px flex-1 bg-border" />
+        </div>
+      )}
+
+      {/* GEZIEN berichten — alle gemeenten */}
+      <NieuwsGroep
+        items={nieuwsMantelzorger.filter(n => gelezenIds.includes(n.id))}
+        label={gemeenteMantelzorger ? `📍 ${gemeenteMantelzorger} — jouw gemeente` : ""}
         favorieten={favorieten}
+        isGezien={true}
+        onGezien={markeerAlsGezien}
+        onNietGezien={markeerAlsNietGezien}
+      />
+      <NieuwsGroep
+        items={nieuwsZorgvrager.filter(n => gelezenIds.includes(n.id))}
+        label={gemeenteZorgvrager ? `📍 ${gemeenteZorgvrager} — gemeente van je naaste` : ""}
+        favorieten={favorieten}
+        isGezien={true}
         onGezien={markeerAlsGezien}
         onNietGezien={markeerAlsNietGezien}
       />
@@ -236,76 +268,40 @@ export default function GemeenteNieuwsPage() {
   )
 }
 
-function NieuwsSectie({
+function NieuwsGroep({
   items,
   label,
-  gelezenIds,
   favorieten,
+  isGezien,
   onGezien,
   onNietGezien,
 }: {
   items: GemeenteNieuws[]
   label: string
-  gelezenIds: string[]
   favorieten: Record<string, string>
+  isGezien: boolean
   onGezien: (id: string) => void
   onNietGezien: (id: string) => void
 }) {
   if (items.length === 0) return null
 
-  const nieuw = items.filter(item => !gelezenIds.includes(item.id))
-  const gezien = items.filter(item => gelezenIds.includes(item.id))
-
   return (
-    <div className="mb-6">
+    <div className="mb-4">
       <p className="text-sm font-semibold text-muted-foreground mb-3">
         {label}
       </p>
-
-      {/* Nieuwe items */}
-      {nieuw.length > 0 && (
-        <div className="space-y-3">
-          {nieuw.map(item => (
-            <NieuwsCard
-              key={item.id}
-              item={item}
-              favorieten={favorieten}
-              isGezien={false}
-              onGezien={() => onGezien(item.id)}
-              onNietGezien={() => onNietGezien(item.id)}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Gezien items */}
-      {gezien.length > 0 && (
-        <>
-          <div className="flex items-center gap-2 mt-4 mb-3">
-            <div className="h-px flex-1 bg-border" />
-            <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-              <svg className="w-3.5 h-3.5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-              Eerder gezien
-            </span>
-            <div className="h-px flex-1 bg-border" />
-          </div>
-          <div className="space-y-3">
-            {gezien.map(item => (
-              <NieuwsCard
-                key={item.id}
-                item={item}
-                favorieten={favorieten}
-                isGezien={true}
-                onGezien={() => onGezien(item.id)}
-                onNietGezien={() => onNietGezien(item.id)}
-              />
-            ))}
-          </div>
-        </>
-      )}
+      <div className="space-y-3">
+        {items.map(item => (
+          <NieuwsCard
+            key={item.id}
+            item={item}
+            favorieten={favorieten}
+            isGezien={isGezien}
+            onGezien={() => onGezien(item.id)}
+            onNietGezien={() => onNietGezien(item.id)}
+          />
+        ))}
+      </div>
     </div>
   )
 }
