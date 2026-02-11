@@ -94,6 +94,7 @@ model Caregiver {
   neighborhood              String?
   profileCompleted          Boolean                 @default(false)
   street                    String?
+  gelezenNieuws             Json?                   // Array van gelezen gemeente-nieuws IDs
   belastbaarheidTests       BelastbaarheidTest[]
   calendarEvents            CalendarEvent[]
   user                      User                    @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -45,19 +45,7 @@ export default function LerenPage() {
   const hasFetched = useRef(false)
   const gemeenteRef = useRef<{ mantelzorger: string | null; zorgvrager: string | null }>({ mantelzorger: null, zorgvrager: null })
 
-  // Eenmalige reset van oude auto-read-all data (v2.2.0 → v2.3.0 migratie)
-  useEffect(() => {
-    try {
-      const migrated = localStorage.getItem("gemeente-nieuws-v2.3-migrated")
-      if (!migrated) {
-        localStorage.removeItem("gemeente-nieuws-gelezen")
-        localStorage.removeItem("gemeente-nieuws-gelezen-datum")
-        localStorage.setItem("gemeente-nieuws-v2.3-migrated", "true")
-      }
-    } catch {
-      // Silently fail
-    }
-  }, [])
+  const gelezenRef = useRef<string[]>([])
 
   const berekenNieuwItems = useCallback((gMantelzorger: string | null, gZorgvrager: string | null) => {
     // Filter relevant nieuws
@@ -74,21 +62,9 @@ export default function LerenPage() {
       return
     }
 
-    // Check localStorage voor gelezen items
-    try {
-      const gelezenRaw = localStorage.getItem("gemeente-nieuws-gelezen")
-      if (!gelezenRaw) {
-        // Nog nooit gelezen - alles is nieuw
-        setAantalNieuwItems(relevant.length)
-        return
-      }
-
-      const gelezen = JSON.parse(gelezenRaw) as string[]
-      const nieuw = relevant.filter(n => !gelezen.includes(n.id))
-      setAantalNieuwItems(nieuw.length)
-    } catch {
-      setAantalNieuwItems(relevant.length)
-    }
+    const gelezen = gelezenRef.current
+    const nieuw = relevant.filter(n => !gelezen.includes(n.id))
+    setAantalNieuwItems(nieuw.length)
   }, [])
 
   // Laad gemeente data en favorieten PARALLEL
@@ -98,8 +74,8 @@ export default function LerenPage() {
 
     const loadAll = async () => {
       try {
-        // Beide API calls tegelijk starten
-        const [favRes, gemeenteRes] = await Promise.all([
+        // Alle API calls tegelijk starten
+        const [favRes, gemeenteRes, gelezenRes] = await Promise.all([
           // Favorieten check
           fetch("/api/favorieten/check", {
             method: "POST",
@@ -110,6 +86,8 @@ export default function LerenPage() {
           }).catch(() => null),
           // Lichtgewicht gemeente endpoint (ipv zwaar /api/dashboard)
           fetch("/api/user/gemeente").catch(() => null),
+          // Gelezen nieuws IDs uit database
+          fetch("/api/user/gelezen-nieuws").catch(() => null),
         ])
 
         // Verwerk favorieten
@@ -117,6 +95,18 @@ export default function LerenPage() {
           try {
             const data = await favRes.json()
             setFavorieten(data.favorited || {})
+          } catch {
+            // Silently fail
+          }
+        }
+
+        // Verwerk gelezen IDs uit database
+        if (gelezenRes?.ok) {
+          try {
+            const data = await gelezenRes.json()
+            if (Array.isArray(data.gelezenIds)) {
+              gelezenRef.current = data.gelezenIds
+            }
           } catch {
             // Silently fail
           }
@@ -146,14 +136,24 @@ export default function LerenPage() {
     loadAll()
   }, [berekenNieuwItems])
 
-  // Luister naar gelezen-event van gemeente-nieuws pagina
+  // Luister naar gezien-event van gemeente-nieuws pagina
   useEffect(() => {
-    const handleGelezen = () => {
-      // Herbereken op basis van actuele localStorage en opgeslagen gemeente
+    const handleGezien = async () => {
+      try {
+        const res = await fetch("/api/user/gelezen-nieuws").catch(() => null)
+        if (res?.ok) {
+          const data = await res.json()
+          if (Array.isArray(data.gelezenIds)) {
+            gelezenRef.current = data.gelezenIds
+          }
+        }
+      } catch {
+        // Silently fail
+      }
       berekenNieuwItems(gemeenteRef.current.mantelzorger, gemeenteRef.current.zorgvrager)
     }
-    window.addEventListener("gemeente-nieuws-gelezen", handleGelezen)
-    return () => window.removeEventListener("gemeente-nieuws-gelezen", handleGelezen)
+    window.addEventListener("gemeente-nieuws-gelezen", handleGezien)
+    return () => window.removeEventListener("gemeente-nieuws-gelezen", handleGezien)
   }, [berekenNieuwItems])
 
   // Tel artikelen per categorie

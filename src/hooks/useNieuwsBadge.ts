@@ -5,6 +5,7 @@ import { gemeenteNieuws } from "@/data/artikelen"
 
 /**
  * Hook die het aantal ongelezen gemeente-nieuwsitems berekent.
+ * Leest gezien-status uit de database.
  * Gebruikt door Navbar en MobileNav voor de badge op het Informatie tabblad.
  */
 export function useNieuwsBadge() {
@@ -14,6 +15,7 @@ export function useNieuwsBadge() {
     mantelzorger: null,
     zorgvrager: null,
   })
+  const gelezenRef = useRef<string[]>([])
 
   const berekenCount = useCallback(() => {
     const { mantelzorger, zorgvrager } = gemeenteRef.current
@@ -35,48 +37,65 @@ export function useNieuwsBadge() {
       return
     }
 
-    try {
-      const gelezenRaw = localStorage.getItem("gemeente-nieuws-gelezen")
-      if (!gelezenRaw) {
-        setCount(relevant.length)
-        return
-      }
-      const gelezen = JSON.parse(gelezenRaw) as string[]
-      setCount(relevant.filter(n => !gelezen.includes(n.id)).length)
-    } catch {
-      setCount(relevant.length)
-    }
+    const gelezen = gelezenRef.current
+    setCount(relevant.filter(n => !gelezen.includes(n.id)).length)
   }, [])
 
-  // Haal gemeente data op bij eerste mount
+  // Haal gemeente data + gelezen IDs op bij eerste mount
   useEffect(() => {
     if (hasFetched.current) return
     hasFetched.current = true
 
-    const loadGemeente = async () => {
+    const loadData = async () => {
       try {
-        const res = await fetch("/api/user/gemeente").catch(() => null)
-        if (res?.ok) {
-          const data = await res.json()
+        const [gemeenteRes, gelezenRes] = await Promise.all([
+          fetch("/api/user/gemeente").catch(() => null),
+          fetch("/api/user/gelezen-nieuws").catch(() => null),
+        ])
+
+        if (gemeenteRes?.ok) {
+          const data = await gemeenteRes.json()
           gemeenteRef.current = {
             mantelzorger: data.mantelzorger || null,
             zorgvrager: data.zorgvrager || null,
           }
-          berekenCount()
         }
+
+        if (gelezenRes?.ok) {
+          const data = await gelezenRes.json()
+          if (Array.isArray(data.gelezenIds)) {
+            gelezenRef.current = data.gelezenIds
+          }
+        }
+
+        berekenCount()
       } catch {
         // Silently fail
       }
     }
 
-    loadGemeente()
+    loadData()
   }, [berekenCount])
 
-  // Luister naar gelezen-event van gemeente-nieuws pagina
+  // Luister naar gezien-event van gemeente-nieuws pagina
+  // Bij event: haal verse data op uit database
   useEffect(() => {
-    const handleGelezen = () => berekenCount()
-    window.addEventListener("gemeente-nieuws-gelezen", handleGelezen)
-    return () => window.removeEventListener("gemeente-nieuws-gelezen", handleGelezen)
+    const handleGezien = async () => {
+      try {
+        const res = await fetch("/api/user/gelezen-nieuws").catch(() => null)
+        if (res?.ok) {
+          const data = await res.json()
+          if (Array.isArray(data.gelezenIds)) {
+            gelezenRef.current = data.gelezenIds
+          }
+        }
+      } catch {
+        // Silently fail
+      }
+      berekenCount()
+    }
+    window.addEventListener("gemeente-nieuws-gelezen", handleGezien)
+    return () => window.removeEventListener("gemeente-nieuws-gelezen", handleGezien)
   }, [berekenCount])
 
   return count
