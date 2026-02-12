@@ -9,6 +9,57 @@ import {
 import type { HandlerResult } from './types'
 import { HULP_CHOICE_BUTTONS } from './types'
 
+// Hierarchical location matching: hoe lokaler hoe beter
+// Returns hulpbronnen sorted by locality: woonplaats > gemeente > provincie > landelijk
+async function findHulpbronnenHierarchisch(
+  filters: { onderdeelTest?: string; soortHulp?: string },
+  gemeente?: string | null,
+  woonplaats?: string | null
+) {
+  const where: any = {
+    isActief: true,
+    ...filters,
+  }
+
+  const alleHulpbronnen = await prisma.zorgorganisatie.findMany({
+    where,
+    orderBy: { naam: 'asc' },
+  })
+
+  // Score each hulpbron by locality match (higher = more local = better)
+  const scored = alleHulpbronnen.map((h) => {
+    let score = 0
+    const niveau = h.dekkingNiveau || (h.gemeente ? 'GEMEENTE' : 'LANDELIJK')
+
+    if (niveau === 'WOONPLAATS' && gemeente && h.gemeente === gemeente) {
+      // Check if user's woonplaats is in the coverage
+      const wpList = (h.dekkingWoonplaatsen as string[] | null) || []
+      if (woonplaats && wpList.includes(woonplaats)) {
+        score = 4 // Best: exact woonplaats match
+      } else if (wpList.length > 0) {
+        score = 0 // Has specific woonplaatsen but user's woonplaats is not in it
+      } else {
+        score = 3 // Fallback: whole gemeente
+      }
+    } else if (niveau === 'GEMEENTE' && gemeente && h.gemeente === gemeente) {
+      score = 3 // Good: whole gemeente match
+    } else if (niveau === 'PROVINCIE' && h.provincie) {
+      // We don't currently store province on caregiver, so just include province-level
+      score = 2
+    } else if (niveau === 'LANDELIJK') {
+      score = 1 // Fallback: landelijk
+    }
+
+    return { hulpbron: h, score }
+  })
+
+  // Filter out non-matching (score 0) and sort by score descending
+  return scored
+    .filter((s) => s.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map((s) => s.hulpbron)
+}
+
 export async function handleHulpSession(
   phoneNumber: string,
   input: string,
@@ -65,28 +116,13 @@ export async function handleHulpSession(
       updateHulpSession(phoneNumber, 'results', { soortHulp: soortHulp.dbValue })
 
       const gemeente = caregiver?.municipality
+      const woonplaats = caregiver?.city
 
-      const lokaleHulp = gemeente ? await prisma.zorgorganisatie.findMany({
-        where: {
-          isActief: true,
-          onderdeelTest: 'Mantelzorgondersteuning',
-          soortHulp: soortHulp.dbValue,
-          gemeente,
-        },
-        orderBy: { naam: 'asc' },
-      }) : []
-
-      const landelijkeHulp = await prisma.zorgorganisatie.findMany({
-        where: {
-          isActief: true,
-          onderdeelTest: 'Mantelzorgondersteuning',
-          soortHulp: soortHulp.dbValue,
-          gemeente: null,
-        },
-        orderBy: { naam: 'asc' },
-      })
-
-      const hulpbronnen = [...lokaleHulp, ...landelijkeHulp]
+      const hulpbronnen = await findHulpbronnenHierarchisch(
+        { onderdeelTest: 'Mantelzorgondersteuning', soortHulp: soortHulp.dbValue },
+        gemeente,
+        woonplaats
+      )
 
       clearHulpSession(phoneNumber)
 
@@ -116,27 +152,15 @@ export async function handleHulpSession(
       const onderdeelTaak = HULP_BIJ_TAAK[num - 1]
       updateHulpSession(phoneNumber, 'results', { onderdeelTaak: onderdeelTaak.dbValue })
 
+      // For task help, use care recipient location (more relevant for local services)
       const gemeente = caregiver?.careRecipientMunicipality || caregiver?.municipality
+      const woonplaats = caregiver?.careRecipientCity || caregiver?.city
 
-      const lokaleHulp = gemeente ? await prisma.zorgorganisatie.findMany({
-        where: {
-          isActief: true,
-          onderdeelTest: onderdeelTaak.dbValue,
-          gemeente,
-        },
-        orderBy: { naam: 'asc' },
-      }) : []
-
-      const landelijkeHulp = await prisma.zorgorganisatie.findMany({
-        where: {
-          isActief: true,
-          onderdeelTest: onderdeelTaak.dbValue,
-          gemeente: null,
-        },
-        orderBy: { naam: 'asc' },
-      })
-
-      const hulpbronnen = [...lokaleHulp, ...landelijkeHulp]
+      const hulpbronnen = await findHulpbronnenHierarchisch(
+        { onderdeelTest: onderdeelTaak.dbValue },
+        gemeente,
+        woonplaats
+      )
 
       clearHulpSession(phoneNumber)
 
@@ -170,12 +194,16 @@ function formatHulpResults(
   gemeente?: string | null
 ): string {
   let response = `${emoji} *${titel}*\n`
-  if (gemeente) response += `_In ${gemeente}_\n`
+  if (gemeente) response += `_In ${gemeente} en omgeving_\n`
   response += `\n`
 
   for (const hulp of hulpbronnen) {
     const kortNaam = hulp.naam.length > 40 ? hulp.naam.substring(0, 40) + '...' : hulp.naam
-    response += `📍 *${kortNaam}*\n`
+    const niveau = hulp.dekkingNiveau || (hulp.gemeente ? 'GEMEENTE' : 'LANDELIJK')
+    const locatieLabel = niveau === 'LANDELIJK' ? '🇳🇱' :
+                         niveau === 'PROVINCIE' ? `🏛️ ${hulp.provincie || ''}` :
+                         `📍`
+    response += `${locatieLabel} *${kortNaam}*\n`
     if (hulp.beschrijving) {
       const kortBeschr = hulp.beschrijving.length > 80 ? hulp.beschrijving.substring(0, 80) + '...' : hulp.beschrijving
       response += `${kortBeschr}\n`

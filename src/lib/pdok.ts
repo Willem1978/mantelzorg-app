@@ -340,3 +340,95 @@ export async function lookupAddressByPostcodeHuisnummer(
     return null
   }
 }
+
+/**
+ * Zoek alle provincies (voor dropdown)
+ */
+export async function getAllProvinces(): Promise<{ code: string; name: string }[]> {
+  try {
+    const params = new URLSearchParams({
+      q: "*",
+      fq: "type:provincie",
+      rows: "20",
+      sort: "provincienaam asc",
+    })
+
+    const response = await fetch(`${PDOK_BASE_URL}/free?${params}`)
+
+    if (!response.ok) {
+      throw new Error(`PDOK API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    return (data.response?.docs || []).map((doc: any) => ({
+      code: doc.provinciecode,
+      name: doc.provincienaam,
+    }))
+  } catch (error) {
+    console.error("PDOK provinces error:", error)
+    return []
+  }
+}
+
+/**
+ * Zoek woonplaatsen binnen een gemeente
+ */
+export async function getWoonplaatsenByGemeente(gemeentenaam: string): Promise<string[]> {
+  try {
+    const params = new URLSearchParams({
+      q: `gemeentenaam:"${gemeentenaam}"`,
+      fq: "type:woonplaats",
+      rows: "100",
+      sort: "woonplaatsnaam asc",
+    })
+
+    const response = await fetch(`${PDOK_BASE_URL}/free?${params}`)
+
+    if (!response.ok) {
+      throw new Error(`PDOK API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    const woonplaatsen: string[] = (data.response?.docs || [])
+      .map((doc: any) => doc.woonplaatsnaam as string)
+      .filter(Boolean)
+
+    return [...new Set(woonplaatsen)].sort()
+  } catch (error) {
+    console.error("PDOK woonplaatsen error:", error)
+    return []
+  }
+}
+
+/**
+ * Zoek gemeenten binnen een provincie
+ */
+export async function getGemeentenByProvincie(provincienaam: string): Promise<string[]> {
+  try {
+    const params = new URLSearchParams({
+      q: `provincienaam:"${provincienaam}"`,
+      fq: "type:gemeente",
+      rows: "100",
+      sort: "gemeentenaam asc",
+    })
+
+    const response = await fetch(`${PDOK_BASE_URL}/free?${params}`)
+
+    if (!response.ok) {
+      throw new Error(`PDOK API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    const gemeenten: string[] = (data.response?.docs || [])
+      .map((doc: any) => doc.gemeentenaam as string)
+      .filter(Boolean)
+
+    return [...new Set(gemeenten)].sort()
+  } catch (error) {
+    console.error("PDOK gemeenten by province error:", error)
+    return []
+  }
+}
