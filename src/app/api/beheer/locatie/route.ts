@@ -5,6 +5,8 @@ import {
   getGemeentenByProvincie,
   getWoonplaatsenByGemeente,
   getWijkenByGemeente,
+  searchGemeenten,
+  searchProvincies,
 } from '@/lib/pdok'
 
 export const dynamic = 'force-dynamic'
@@ -15,13 +17,22 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get('type') // 'provincies', 'gemeenten', 'woonplaatsen', 'wijken'
   const provincie = searchParams.get('provincie')
   const gemeente = searchParams.get('gemeente')
+  const zoek = searchParams.get('zoek') // search query for autocomplete
 
   if (type === 'provincies') {
+    if (zoek) {
+      const results = await searchProvincies(zoek)
+      return NextResponse.json({ provincies: results.map((name) => ({ name })) })
+    }
     const provincies = await getAllProvinces()
     return NextResponse.json({ provincies })
   }
 
   if (type === 'gemeenten') {
+    if (zoek) {
+      const results = await searchGemeenten(zoek)
+      return NextResponse.json({ gemeenten: results })
+    }
     if (provincie) {
       const gemeenten = await getGemeentenByProvincie(provincie)
       return NextResponse.json({ gemeenten })

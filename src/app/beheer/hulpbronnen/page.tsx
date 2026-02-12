@@ -118,6 +118,8 @@ export default function BeheerHulpbronnenPage() {
   const [beheerGemeenteZoek, setBeheerGemeenteZoek] = useState("")
   const [beheerGemeenteResults, setBeheerGemeenteResults] = useState<string[]>([])
   const [beheerProvincie, setBeheerProvincie] = useState("")
+  const [beheerProvincieZoek, setBeheerProvincieZoek] = useState("")
+  const [beheerProvincieResults, setBeheerProvincieResults] = useState<string[]>([])
 
   // Data
   const [hulpbronnen, setHulpbronnen] = useState<Hulpbron[]>([])
@@ -257,29 +259,36 @@ export default function BeheerHulpbronnenPage() {
   useEffect(() => {
     if (beheerGemeenteZoek.length < 2) { setBeheerGemeenteResults([]); return }
     const timer = setTimeout(async () => {
-      const res = await fetch(`/api/beheer/locatie?type=gemeenten`)
+      const res = await fetch(`/api/beheer/locatie?type=gemeenten&zoek=${encodeURIComponent(beheerGemeenteZoek)}`)
       if (res.ok) {
         const data = await res.json()
-        const all = data.gemeenten || []
-        setBeheerGemeenteResults(
-          all.filter((g: string) => g.toLowerCase().includes(beheerGemeenteZoek.toLowerCase())).slice(0, 10)
-        )
+        setBeheerGemeenteResults((data.gemeenten || []).slice(0, 10))
       }
     }, 200)
     return () => clearTimeout(timer)
   }, [beheerGemeenteZoek])
 
+  // Search provincies for beheer modus
+  useEffect(() => {
+    if (beheerProvincieZoek.length < 2) { setBeheerProvincieResults([]); return }
+    const timer = setTimeout(async () => {
+      const res = await fetch(`/api/beheer/locatie?type=provincies&zoek=${encodeURIComponent(beheerProvincieZoek)}`)
+      if (res.ok) {
+        const data = await res.json()
+        setBeheerProvincieResults((data.provincies || []).map((p: any) => p.name || p).slice(0, 10))
+      }
+    }, 200)
+    return () => clearTimeout(timer)
+  }, [beheerProvincieZoek])
+
   // Search gemeenten by name (for form)
   useEffect(() => {
     if (gemeenteZoek.length < 2) { setGemeenteResults([]); return }
     const timer = setTimeout(async () => {
-      const res = await fetch(`/api/beheer/locatie?type=gemeenten`)
+      const res = await fetch(`/api/beheer/locatie?type=gemeenten&zoek=${encodeURIComponent(gemeenteZoek)}`)
       if (res.ok) {
         const data = await res.json()
-        const all = data.gemeenten || []
-        setGemeenteResults(
-          all.filter((g: string) => g.toLowerCase().includes(gemeenteZoek.toLowerCase())).slice(0, 10)
-        )
+        setGemeenteResults((data.gemeenten || []).slice(0, 10))
       }
     }, 200)
     return () => clearTimeout(timer)
@@ -289,13 +298,10 @@ export default function BeheerHulpbronnenPage() {
   useEffect(() => {
     if (scrapeGemeenteZoek.length < 2) { setScrapeGemeenteResults([]); return }
     const timer = setTimeout(async () => {
-      const res = await fetch(`/api/beheer/locatie?type=gemeenten`)
+      const res = await fetch(`/api/beheer/locatie?type=gemeenten&zoek=${encodeURIComponent(scrapeGemeenteZoek)}`)
       if (res.ok) {
         const data = await res.json()
-        const all = data.gemeenten || []
-        setScrapeGemeenteResults(
-          all.filter((g: string) => g.toLowerCase().includes(scrapeGemeenteZoek.toLowerCase())).slice(0, 10)
-        )
+        setScrapeGemeenteResults((data.gemeenten || []).slice(0, 10))
       }
     }, 200)
     return () => clearTimeout(timer)
@@ -530,17 +536,56 @@ export default function BeheerHulpbronnenPage() {
       {/* Landelijk: provincie filter */}
       {beheerModus === "landelijk" && (
         <div className="ker-card mb-4">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <select
-              value={beheerProvincie}
-              onChange={(e) => setBeheerProvincie(e.target.value)}
-              className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
-            >
-              <option value="">Alle provincies</option>
-              {filterProvincies.map((p) => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
+          <div className="flex flex-col gap-3">
+            {/* Provincie autocomplete */}
+            <div className="relative">
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
+                Filter op provincie (optioneel)
+              </label>
+              <input
+                type="text"
+                value={beheerProvincie || beheerProvincieZoek}
+                onChange={(e) => {
+                  setBeheerProvincieZoek(e.target.value)
+                  if (beheerProvincie) {
+                    setBeheerProvincie("")
+                  }
+                }}
+                placeholder="Typ om een provincie te zoeken..."
+                className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+              />
+              {beheerProvincie && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBeheerProvincie("")
+                    setBeheerProvincieZoek("")
+                  }}
+                  className="absolute right-2 top-[calc(50%+8px)] -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  ✕
+                </button>
+              )}
+              {beheerProvincieResults.length > 0 && !beheerProvincie && (
+                <div className="absolute z-50 w-full mt-1 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {beheerProvincieResults.map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => {
+                        setBeheerProvincie(p)
+                        setBeheerProvincieZoek("")
+                        setBeheerProvincieResults([])
+                      }}
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--muted)] transition"
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"
               placeholder="Zoek op naam..."
@@ -567,6 +612,7 @@ export default function BeheerHulpbronnenPage() {
               <option value="true">Actief</option>
               <option value="false">Inactief</option>
             </select>
+            </div>
           </div>
         </div>
       )}
