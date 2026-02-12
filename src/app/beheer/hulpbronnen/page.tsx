@@ -538,52 +538,79 @@ export default function BeheerHulpbronnenPage() {
         <div className="ker-card mb-4">
           <div className="flex flex-col gap-3">
             {/* Provincie autocomplete */}
-            <div className="relative">
+            <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1">
                 Filter op provincie (optioneel)
               </label>
-              <input
-                type="text"
-                value={beheerProvincie || beheerProvincieZoek}
-                onChange={(e) => {
-                  setBeheerProvincieZoek(e.target.value)
-                  if (beheerProvincie) {
-                    setBeheerProvincie("")
-                  }
-                }}
-                placeholder="Typ om een provincie te zoeken..."
-                className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
-              />
-              {beheerProvincie && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBeheerProvincie("")
-                    setBeheerProvincieZoek("")
-                  }}
-                  className="absolute right-2 top-[calc(50%+8px)] -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  ✕
-                </button>
-              )}
-              {beheerProvincieResults.length > 0 && !beheerProvincie && (
-                <div className="absolute z-50 w-full mt-1 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                  {beheerProvincieResults.map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => {
-                        setBeheerProvincie(p)
+              <div className="flex gap-2">
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    value={beheerProvincie || beheerProvincieZoek}
+                    onChange={(e) => {
+                      setBeheerProvincieZoek(e.target.value)
+                      if (beheerProvincie) {
+                        setBeheerProvincie("")
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && beheerProvincieZoek.length >= 2 && !beheerProvincie) {
+                        e.preventDefault()
+                        const val = beheerProvincieZoek.trim().replace(/\b\w/g, (c) => c.toUpperCase())
+                        setBeheerProvincie(val)
                         setBeheerProvincieZoek("")
                         setBeheerProvincieResults([])
+                      }
+                    }}
+                    placeholder="Typ om een provincie te zoeken..."
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+                  />
+                  {beheerProvincie && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBeheerProvincie("")
+                        setBeheerProvincieZoek("")
                       }}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--muted)] transition"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
-                      {p}
+                      ✕
                     </button>
-                  ))}
+                  )}
+                  {beheerProvincieResults.length > 0 && !beheerProvincie && (
+                    <div className="absolute z-50 w-full mt-1 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {beheerProvincieResults.map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => {
+                            setBeheerProvincie(p)
+                            setBeheerProvincieZoek("")
+                            setBeheerProvincieResults([])
+                          }}
+                          className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--muted)] transition"
+                        >
+                          {p}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
+                {beheerProvincieZoek.length >= 2 && !beheerProvincie && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const val = beheerProvincieZoek.trim().replace(/\b\w/g, (c) => c.toUpperCase())
+                      setBeheerProvincie(val)
+                      setBeheerProvincieZoek("")
+                      setBeheerProvincieResults([])
+                    }}
+                    className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--primary)] text-white hover:opacity-90 transition whitespace-nowrap min-h-[44px]"
+                  >
+                    Bevestig
+                  </button>
+                )}
+              </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
             <input
@@ -622,54 +649,81 @@ export default function BeheerHulpbronnenPage() {
         <div className="ker-card mb-4">
           <div className="flex flex-col gap-3">
             {/* Gemeente autocomplete */}
-            <div className="relative">
+            <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1">
                 Selecteer gemeente
               </label>
-              <input
-                type="text"
-                value={beheerGemeente || beheerGemeenteZoek}
-                onChange={(e) => {
-                  setBeheerGemeenteZoek(e.target.value)
-                  if (beheerGemeente) {
-                    setBeheerGemeente("")
-                    setHulpbronnen([])
-                  }
-                }}
-                placeholder="Typ om een gemeente te zoeken..."
-                className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
-              />
-              {beheerGemeente && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBeheerGemeente("")
-                    setBeheerGemeenteZoek("")
-                    setHulpbronnen([])
-                  }}
-                  className="absolute right-2 top-[calc(50%+8px)] -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  ✕
-                </button>
-              )}
-              {beheerGemeenteResults.length > 0 && !beheerGemeente && (
-                <div className="absolute z-50 w-full mt-1 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                  {beheerGemeenteResults.map((g) => (
-                    <button
-                      key={g}
-                      type="button"
-                      onClick={() => {
-                        setBeheerGemeente(g)
+              <div className="flex gap-2">
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    value={beheerGemeente || beheerGemeenteZoek}
+                    onChange={(e) => {
+                      setBeheerGemeenteZoek(e.target.value)
+                      if (beheerGemeente) {
+                        setBeheerGemeente("")
+                        setHulpbronnen([])
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && beheerGemeenteZoek.length >= 2 && !beheerGemeente) {
+                        e.preventDefault()
+                        const val = beheerGemeenteZoek.trim().replace(/\b\w/g, (c) => c.toUpperCase())
+                        setBeheerGemeente(val)
                         setBeheerGemeenteZoek("")
                         setBeheerGemeenteResults([])
+                      }
+                    }}
+                    placeholder="Typ om een gemeente te zoeken..."
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+                  />
+                  {beheerGemeente && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBeheerGemeente("")
+                        setBeheerGemeenteZoek("")
+                        setHulpbronnen([])
                       }}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--muted)] transition"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
-                      {g}
+                      ✕
                     </button>
-                  ))}
+                  )}
+                  {beheerGemeenteResults.length > 0 && !beheerGemeente && (
+                    <div className="absolute z-50 w-full mt-1 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {beheerGemeenteResults.map((g) => (
+                        <button
+                          key={g}
+                          type="button"
+                          onClick={() => {
+                            setBeheerGemeente(g)
+                            setBeheerGemeenteZoek("")
+                            setBeheerGemeenteResults([])
+                          }}
+                          className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--muted)] transition"
+                        >
+                          {g}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
+                {beheerGemeenteZoek.length >= 2 && !beheerGemeente && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const val = beheerGemeenteZoek.trim().replace(/\b\w/g, (c) => c.toUpperCase())
+                      setBeheerGemeente(val)
+                      setBeheerGemeenteZoek("")
+                      setBeheerGemeenteResults([])
+                    }}
+                    className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--primary)] text-white hover:opacity-90 transition whitespace-nowrap min-h-[44px]"
+                  >
+                    Bevestig
+                  </button>
+                )}
+              </div>
             </div>
             {/* Extra filters (alleen als gemeente geselecteerd) */}
             {beheerGemeente && (
@@ -765,59 +819,90 @@ export default function BeheerHulpbronnenPage() {
               <label className="block text-xs font-medium text-muted-foreground mb-1">
                 2. Gemeente
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={scrapeGemeente || scrapeGemeenteZoek}
-                  onChange={(e) => {
-                    setScrapeGemeenteZoek(e.target.value)
-                    if (scrapeGemeente) {
-                      setScrapeGemeente("")
-                      setScrapeWoonplaatsen([])
-                      setScrapeWijken([])
-                      setScrapeSelectedWoonplaatsen([])
-                      setScrapeSelectedWijken([])
-                    }
-                  }}
-                  placeholder="Typ om een gemeente te zoeken..."
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
-                />
-                {scrapeGemeente && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setScrapeGemeente("")
-                      setScrapeGemeenteZoek("")
-                      setScrapeWoonplaatsen([])
-                      setScrapeWijken([])
-                      setScrapeSelectedWoonplaatsen([])
-                      setScrapeSelectedWijken([])
+              <div className="flex gap-2">
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    value={scrapeGemeente || scrapeGemeenteZoek}
+                    onChange={(e) => {
+                      setScrapeGemeenteZoek(e.target.value)
+                      if (scrapeGemeente) {
+                        setScrapeGemeente("")
+                        setScrapeWoonplaatsen([])
+                        setScrapeWijken([])
+                        setScrapeSelectedWoonplaatsen([])
+                        setScrapeSelectedWijken([])
+                      }
                     }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    ✕
-                  </button>
-                )}
-                {scrapeGemeenteResults.length > 0 && !scrapeGemeente && (
-                  <div className="absolute z-50 w-full mt-1 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                    {scrapeGemeenteResults.map((g) => (
-                      <button
-                        key={g}
-                        type="button"
-                        onClick={() => {
-                          setScrapeGemeente(g)
-                          setScrapeGemeenteZoek("")
-                          setScrapeGemeenteResults([])
-                          setScrapeSelectedWoonplaatsen([])
-                          setScrapeSelectedWijken([])
-                          loadScrapeLocatie(g)
-                        }}
-                        className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--muted)] transition"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && scrapeGemeenteZoek.length >= 2 && !scrapeGemeente) {
+                        e.preventDefault()
+                        const val = scrapeGemeenteZoek.trim().replace(/\b\w/g, (c) => c.toUpperCase())
+                        setScrapeGemeente(val)
+                        setScrapeGemeenteZoek("")
+                        setScrapeGemeenteResults([])
+                        setScrapeSelectedWoonplaatsen([])
+                        setScrapeSelectedWijken([])
+                        loadScrapeLocatie(val)
+                      }
+                    }}
+                    placeholder="Typ om een gemeente te zoeken..."
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+                  />
+                  {scrapeGemeente && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setScrapeGemeente("")
+                        setScrapeGemeenteZoek("")
+                        setScrapeWoonplaatsen([])
+                        setScrapeWijken([])
+                        setScrapeSelectedWoonplaatsen([])
+                        setScrapeSelectedWijken([])
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      ✕
+                    </button>
+                  )}
+                  {scrapeGemeenteResults.length > 0 && !scrapeGemeente && (
+                    <div className="absolute z-50 w-full mt-1 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {scrapeGemeenteResults.map((g) => (
+                        <button
+                          key={g}
+                          type="button"
+                          onClick={() => {
+                            setScrapeGemeente(g)
+                            setScrapeGemeenteZoek("")
+                            setScrapeGemeenteResults([])
+                            setScrapeSelectedWoonplaatsen([])
+                            setScrapeSelectedWijken([])
+                            loadScrapeLocatie(g)
+                          }}
+                          className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--muted)] transition"
                       >
                         {g}
                       </button>
                     ))}
                   </div>
+                )}
+                </div>
+                {scrapeGemeenteZoek.length >= 2 && !scrapeGemeente && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const val = scrapeGemeenteZoek.trim().replace(/\b\w/g, (c) => c.toUpperCase())
+                      setScrapeGemeente(val)
+                      setScrapeGemeenteZoek("")
+                      setScrapeGemeenteResults([])
+                      setScrapeSelectedWoonplaatsen([])
+                      setScrapeSelectedWijken([])
+                      loadScrapeLocatie(val)
+                    }}
+                    className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--accent-amber)] text-white hover:opacity-90 transition whitespace-nowrap min-h-[44px]"
+                  >
+                    Bevestig
+                  </button>
                 )}
               </div>
             </div>
@@ -1216,56 +1301,85 @@ export default function BeheerHulpbronnenPage() {
                   <label className="block text-xs font-medium text-muted-foreground mb-1">
                     Gemeente
                   </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={editItem.gemeente || gemeenteZoek}
-                      onChange={(e) => {
-                        setGemeenteZoek(e.target.value)
-                        if (editItem.gemeente) {
-                          setEditItem({ ...editItem, gemeente: null, dekkingWoonplaatsen: null })
-                          setWoonplaatsen([])
-                        }
-                      }}
-                      placeholder="Typ om een gemeente te zoeken..."
-                      className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
-                    />
-                    {editItem.gemeente && (
+                  <div className="flex gap-2">
+                    <div className="flex-1 relative">
+                      <input
+                        type="text"
+                        value={editItem.gemeente || gemeenteZoek}
+                        onChange={(e) => {
+                          setGemeenteZoek(e.target.value)
+                          if (editItem.gemeente) {
+                            setEditItem({ ...editItem, gemeente: null, dekkingWoonplaatsen: null })
+                            setWoonplaatsen([])
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && gemeenteZoek.length >= 2 && !editItem.gemeente) {
+                            e.preventDefault()
+                            const val = gemeenteZoek.trim().replace(/\b\w/g, (c) => c.toUpperCase())
+                            setEditItem({ ...editItem, gemeente: val, dekkingWoonplaatsen: null, dekkingWijken: null })
+                            setGemeenteZoek("")
+                            setGemeenteResults([])
+                            if (editItem.dekkingNiveau === "WOONPLAATS") loadWoonplaatsen(val)
+                            if (editItem.dekkingNiveau === "WIJK") loadWijken(val)
+                          }
+                        }}
+                        placeholder="Typ om een gemeente te zoeken..."
+                        className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+                      />
+                      {editItem.gemeente && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditItem({ ...editItem, gemeente: null, dekkingWoonplaatsen: null })
+                            setGemeenteZoek("")
+                            setWoonplaatsen([])
+                          }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          ✕
+                        </button>
+                      )}
+                      {gemeenteResults.length > 0 && !editItem.gemeente && (
+                        <div className="absolute z-50 w-full mt-1 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                          {gemeenteResults.map((g) => (
+                            <button
+                              key={g}
+                              type="button"
+                              onClick={() => {
+                                setEditItem({ ...editItem, gemeente: g, dekkingWoonplaatsen: null, dekkingWijken: null })
+                                setGemeenteZoek("")
+                                setGemeenteResults([])
+                                if (editItem.dekkingNiveau === "WOONPLAATS") {
+                                  loadWoonplaatsen(g)
+                                }
+                                if (editItem.dekkingNiveau === "WIJK") {
+                                  loadWijken(g)
+                                }
+                              }}
+                              className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--muted)] transition"
+                            >
+                              {g}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {gemeenteZoek.length >= 2 && !editItem.gemeente && (
                       <button
                         type="button"
                         onClick={() => {
-                          setEditItem({ ...editItem, gemeente: null, dekkingWoonplaatsen: null })
+                          const val = gemeenteZoek.trim().replace(/\b\w/g, (c) => c.toUpperCase())
+                          setEditItem({ ...editItem, gemeente: val, dekkingWoonplaatsen: null, dekkingWijken: null })
                           setGemeenteZoek("")
-                          setWoonplaatsen([])
+                          setGemeenteResults([])
+                          if (editItem.dekkingNiveau === "WOONPLAATS") loadWoonplaatsen(val)
+                          if (editItem.dekkingNiveau === "WIJK") loadWijken(val)
                         }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--primary)] text-white hover:opacity-90 transition whitespace-nowrap min-h-[44px]"
                       >
-                        ✕
+                        Bevestig
                       </button>
-                    )}
-                    {gemeenteResults.length > 0 && !editItem.gemeente && (
-                      <div className="absolute z-50 w-full mt-1 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                        {gemeenteResults.map((g) => (
-                          <button
-                            key={g}
-                            type="button"
-                            onClick={() => {
-                              setEditItem({ ...editItem, gemeente: g, dekkingWoonplaatsen: null, dekkingWijken: null })
-                              setGemeenteZoek("")
-                              setGemeenteResults([])
-                              if (editItem.dekkingNiveau === "WOONPLAATS") {
-                                loadWoonplaatsen(g)
-                              }
-                              if (editItem.dekkingNiveau === "WIJK") {
-                                loadWijken(g)
-                              }
-                            }}
-                            className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--muted)] transition"
-                          >
-                            {g}
-                          </button>
-                        ))}
-                      </div>
                     )}
                   </div>
                 </div>
