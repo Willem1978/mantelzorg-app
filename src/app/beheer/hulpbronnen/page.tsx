@@ -121,6 +121,14 @@ export default function BeheerHulpbronnenPage() {
   const [beheerProvincieZoek, setBeheerProvincieZoek] = useState("")
   const [beheerProvincieResults, setBeheerProvincieResults] = useState<string[]>([])
 
+  // Beheer location filter (like scraper)
+  const [beheerDekkingFilter, setBeheerDekkingFilter] = useState("GEMEENTE")
+  const [beheerWoonplaatsen, setBeheerWoonplaatsen] = useState<string[]>([])
+  const [beheerWijken, setBeheerWijken] = useState<string[]>([])
+  const [beheerSelectedWoonplaatsen, setBeheerSelectedWoonplaatsen] = useState<string[]>([])
+  const [beheerSelectedWijken, setBeheerSelectedWijken] = useState<string[]>([])
+  const [beheerLoadingLocatie, setBeheerLoadingLocatie] = useState(false)
+
   // Data
   const [hulpbronnen, setHulpbronnen] = useState<Hulpbron[]>([])
   const [filterGemeenten, setFilterGemeenten] = useState<string[]>([])
@@ -231,38 +239,34 @@ export default function BeheerHulpbronnenPage() {
     setLoadingLocatie(false)
   }
 
-  // Load woonplaatsen when gemeente changes
+  // Load woonplaatsen when gemeente changes (direct PDOK call)
   const loadWoonplaatsen = async (gemeente: string) => {
     if (!gemeente) { setWoonplaatsen([]); return }
     setLoadingLocatie(true)
-    const res = await fetch(`/api/beheer/locatie?type=woonplaatsen&gemeente=${encodeURIComponent(gemeente)}`)
-    if (res.ok) {
-      const data = await res.json()
-      setWoonplaatsen(data.woonplaatsen || [])
-    }
+    const wp = await pdokWoonplaatsen(gemeente)
+    setWoonplaatsen(wp)
     setLoadingLocatie(false)
   }
 
-  // Load wijken when gemeente changes (for WIJK level)
+  // Load wijken when gemeente changes (direct PDOK call)
   const loadWijken = async (gemeente: string) => {
     if (!gemeente) { setWijken([]); return }
     setLoadingLocatie(true)
-    const res = await fetch(`/api/beheer/locatie?type=wijken&gemeente=${encodeURIComponent(gemeente)}`)
-    if (res.ok) {
-      const data = await res.json()
-      setWijken(data.wijken || [])
-    }
+    const wk = await pdokWijken(gemeente)
+    setWijken(wk)
     setLoadingLocatie(false)
   }
 
   // PDOK suggest helper: calls PDOK directly from browser (CORS supported)
+  const PDOK_URL = "https://api.pdok.nl/bzk/locatieserver/search/v3_1"
+
   const pdokSuggest = async (query: string, type: "gemeente" | "provincie"): Promise<string[]> => {
     const params = new URLSearchParams({
       q: query,
       fq: `type:${type}`,
       rows: "10",
     })
-    const res = await fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/suggest?${params}`)
+    const res = await fetch(`${PDOK_URL}/suggest?${params}`)
     if (!res.ok) return []
     const data = await res.json()
     const prefix = type === "gemeente" ? /^Gemeente\s+/i : /^Provincie\s+/i
@@ -270,6 +274,50 @@ export default function BeheerHulpbronnenPage() {
       .map((doc: any) => (doc.weergavenaam || "").replace(prefix, ""))
       .filter((n: string) => n.length > 0)
     return [...new Set(names)].slice(0, 10)
+  }
+
+  // PDOK woonplaatsen ophalen voor een gemeente (direct browser call)
+  const pdokWoonplaatsen = async (gemeente: string): Promise<string[]> => {
+    if (!gemeente) return []
+    try {
+      const params = new URLSearchParams({ q: "*", rows: "100" })
+      params.append("fq", "type:woonplaats")
+      params.append("fq", `gemeentenaam:${gemeente}`)
+      const res = await fetch(`${PDOK_URL}/free?${params}`)
+      if (!res.ok) return []
+      const data = await res.json()
+      const names: string[] = (data.response?.docs || [])
+        .map((doc: any) => doc.woonplaatsnaam || "")
+        .filter(Boolean)
+      return [...new Set(names)].sort()
+    } catch { return [] }
+  }
+
+  // PDOK wijken ophalen voor een gemeente (direct browser call)
+  const pdokWijken = async (gemeente: string): Promise<string[]> => {
+    if (!gemeente) return []
+    try {
+      const params = new URLSearchParams({ q: "*", rows: "200" })
+      params.append("fq", "type:wijk")
+      params.append("fq", `gemeentenaam:${gemeente}`)
+      const res = await fetch(`${PDOK_URL}/free?${params}`)
+      if (!res.ok) return []
+      const data = await res.json()
+      const names: string[] = (data.response?.docs || [])
+        .map((doc: any) => doc.wijknaam || "")
+        .filter(Boolean)
+      return [...new Set(names)].sort()
+    } catch { return [] }
+  }
+
+  // Load beheer locatie (woonplaatsen + wijken) when gemeente is selected
+  const loadBeheerLocatie = async (gemeente: string) => {
+    if (!gemeente) { setBeheerWoonplaatsen([]); setBeheerWijken([]); return }
+    setBeheerLoadingLocatie(true)
+    const [wp, wk] = await Promise.all([pdokWoonplaatsen(gemeente), pdokWijken(gemeente)])
+    setBeheerWoonplaatsen(wp)
+    setBeheerWijken(wk)
+    setBeheerLoadingLocatie(false)
   }
 
   // Search gemeenten for beheer modus (direct PDOK call from browser)
@@ -312,26 +360,13 @@ export default function BeheerHulpbronnenPage() {
     return () => clearTimeout(timer)
   }, [scrapeGemeenteZoek])
 
-  // Load woonplaatsen/wijken for scraper when gemeente is selected
+  // Load woonplaatsen/wijken for scraper when gemeente is selected (direct PDOK call)
   const loadScrapeLocatie = async (gemeente: string) => {
-    if (!gemeente) {
-      setScrapeWoonplaatsen([])
-      setScrapeWijken([])
-      return
-    }
+    if (!gemeente) { setScrapeWoonplaatsen([]); setScrapeWijken([]); return }
     setScrapeLoadingLocatie(true)
-    const [wpRes, wkRes] = await Promise.all([
-      fetch(`/api/beheer/locatie?type=woonplaatsen&gemeente=${encodeURIComponent(gemeente)}`),
-      fetch(`/api/beheer/locatie?type=wijken&gemeente=${encodeURIComponent(gemeente)}`),
-    ])
-    if (wpRes.ok) {
-      const data = await wpRes.json()
-      setScrapeWoonplaatsen(data.woonplaatsen || [])
-    }
-    if (wkRes.ok) {
-      const data = await wkRes.json()
-      setScrapeWijken(data.wijken || [])
-    }
+    const [wp, wk] = await Promise.all([pdokWoonplaatsen(gemeente), pdokWijken(gemeente)])
+    setScrapeWoonplaatsen(wp)
+    setScrapeWijken(wk)
     setScrapeLoadingLocatie(false)
   }
 
@@ -460,11 +495,13 @@ export default function BeheerHulpbronnenPage() {
             <button
               onClick={() => {
                 if (!showScraper) {
-                  // Pre-fill scraper with current modus context
+                  // Pre-fill scraper with current beheer location context
                   if (beheerModus === "gemeentelijk" && beheerGemeente) {
                     setScrapeGemeente(beheerGemeente)
-                    setScrapeDekkingNiveau("GEMEENTE")
+                    setScrapeDekkingNiveau(beheerDekkingFilter)
                     loadScrapeLocatie(beheerGemeente)
+                    setScrapeSelectedWoonplaatsen(beheerSelectedWoonplaatsen)
+                    setScrapeSelectedWijken(beheerSelectedWijken)
                   } else if (beheerModus === "landelijk") {
                     setScrapeDekkingNiveau("LANDELIJK")
                     setScrapeGemeente("")
@@ -478,11 +515,17 @@ export default function BeheerHulpbronnenPage() {
             </button>
             <button
               onClick={() => {
+                const dekkingNiveau = beheerModus === "landelijk" ? "LANDELIJK" : beheerDekkingFilter
                 setEditItem({
                   ...EMPTY_FORM,
-                  dekkingNiveau: beheerModus === "landelijk" ? "LANDELIJK" : "GEMEENTE",
+                  dekkingNiveau,
                   gemeente: beheerModus === "gemeentelijk" ? beheerGemeente : "",
+                  dekkingWoonplaatsen: beheerSelectedWoonplaatsen.length > 0 ? beheerSelectedWoonplaatsen : null,
+                  dekkingWijken: beheerSelectedWijken.length > 0 ? beheerSelectedWijken : null,
                 })
+                // Load woonplaatsen/wijken in form if needed
+                if (beheerGemeente && dekkingNiveau === "WOONPLAATS") loadWoonplaatsen(beheerGemeente)
+                if (beheerGemeente && dekkingNiveau === "WIJK") loadWijken(beheerGemeente)
                 setShowForm(true)
               }}
               className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--primary)] text-white hover:opacity-90 transition"
@@ -649,14 +692,53 @@ export default function BeheerHulpbronnenPage() {
         </div>
       )}
 
-      {/* Gemeentelijk: gemeente selectie + filters */}
+      {/* Gemeentelijk: locatie picker + filters (zoals scraper layout) */}
       {beheerModus === "gemeentelijk" && (
         <div className="ker-card mb-4">
           <div className="flex flex-col gap-3">
-            {/* Gemeente autocomplete */}
+            {/* Stap 1: Dekkingsniveau */}
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1">
-                Selecteer gemeente
+                1. Dekkingsgebied
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: "GEMEENTE", label: "Gemeente (hele gemeente)" },
+                  { value: "WOONPLAATS", label: "Specifieke woonplaatsen" },
+                  { value: "WIJK", label: "Specifieke wijken" },
+                ].map((n) => (
+                  <button
+                    key={n.value}
+                    type="button"
+                    onClick={() => {
+                      setBeheerDekkingFilter(n.value)
+                      if (n.value === "GEMEENTE") {
+                        setBeheerSelectedWoonplaatsen([])
+                        setBeheerSelectedWijken([])
+                      }
+                      if (n.value === "WOONPLAATS") {
+                        setBeheerSelectedWijken([])
+                      }
+                      if (n.value === "WIJK") {
+                        setBeheerSelectedWoonplaatsen([])
+                      }
+                    }}
+                    className={`px-3 py-2 rounded-lg text-xs font-medium transition ${
+                      beheerDekkingFilter === n.value
+                        ? "bg-[var(--primary)] text-white"
+                        : "bg-[var(--muted)] text-foreground hover:bg-[var(--border)]"
+                    }`}
+                  >
+                    {n.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Stap 2: Gemeente autocomplete */}
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
+                2. Gemeente
               </label>
               <div className="flex gap-2">
                 <div className="flex-1 relative">
@@ -668,6 +750,10 @@ export default function BeheerHulpbronnenPage() {
                       if (beheerGemeente) {
                         setBeheerGemeente("")
                         setHulpbronnen([])
+                        setBeheerWoonplaatsen([])
+                        setBeheerWijken([])
+                        setBeheerSelectedWoonplaatsen([])
+                        setBeheerSelectedWijken([])
                       }
                     }}
                     onKeyDown={(e) => {
@@ -677,6 +763,7 @@ export default function BeheerHulpbronnenPage() {
                         setBeheerGemeente(val)
                         setBeheerGemeenteZoek("")
                         setBeheerGemeenteResults([])
+                        loadBeheerLocatie(val)
                       }
                     }}
                     placeholder="Typ om een gemeente te zoeken..."
@@ -689,6 +776,10 @@ export default function BeheerHulpbronnenPage() {
                         setBeheerGemeente("")
                         setBeheerGemeenteZoek("")
                         setHulpbronnen([])
+                        setBeheerWoonplaatsen([])
+                        setBeheerWijken([])
+                        setBeheerSelectedWoonplaatsen([])
+                        setBeheerSelectedWijken([])
                       }}
                       className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
@@ -705,6 +796,7 @@ export default function BeheerHulpbronnenPage() {
                             setBeheerGemeente(g)
                             setBeheerGemeenteZoek("")
                             setBeheerGemeenteResults([])
+                            loadBeheerLocatie(g)
                           }}
                           className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--muted)] transition"
                         >
@@ -722,6 +814,7 @@ export default function BeheerHulpbronnenPage() {
                       setBeheerGemeente(val)
                       setBeheerGemeenteZoek("")
                       setBeheerGemeenteResults([])
+                      loadBeheerLocatie(val)
                     }}
                     className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--primary)] text-white hover:opacity-90 transition whitespace-nowrap min-h-[44px]"
                   >
@@ -730,6 +823,95 @@ export default function BeheerHulpbronnenPage() {
                 )}
               </div>
             </div>
+
+            {/* Stap 3: Woonplaatsen selectie (alleen bij WOONPLAATS niveau) */}
+            {beheerDekkingFilter === "WOONPLAATS" && beheerGemeente && (
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                  3. Woonplaatsen in {beheerGemeente}
+                  {beheerLoadingLocatie && <span className="ml-2 text-[10px]">laden...</span>}
+                  {beheerSelectedWoonplaatsen.length > 0 && (
+                    <span className="ml-2 text-[10px] text-[var(--primary)]">
+                      ({beheerSelectedWoonplaatsen.length} geselecteerd)
+                    </span>
+                  )}
+                </label>
+                {beheerWoonplaatsen.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)] max-h-36 overflow-y-auto">
+                    {beheerWoonplaatsen.map((wp) => {
+                      const selected = beheerSelectedWoonplaatsen.includes(wp)
+                      return (
+                        <button
+                          key={wp}
+                          type="button"
+                          onClick={() => {
+                            setBeheerSelectedWoonplaatsen((prev) =>
+                              selected ? prev.filter((w) => w !== wp) : [...prev, wp]
+                            )
+                          }}
+                          className={`px-2 py-1 rounded text-xs font-medium transition ${
+                            selected
+                              ? "bg-[var(--primary)] text-white"
+                              : "bg-[var(--muted)] text-foreground hover:bg-[var(--border)]"
+                          }`}
+                        >
+                          {wp}
+                        </button>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    {beheerLoadingLocatie ? "Woonplaatsen laden..." : "Geen woonplaatsen gevonden"}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Stap 3: Wijken selectie (alleen bij WIJK niveau) */}
+            {beheerDekkingFilter === "WIJK" && beheerGemeente && (
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                  3. Wijken in {beheerGemeente}
+                  {beheerLoadingLocatie && <span className="ml-2 text-[10px]">laden...</span>}
+                  {beheerSelectedWijken.length > 0 && (
+                    <span className="ml-2 text-[10px] text-[var(--primary)]">
+                      ({beheerSelectedWijken.length} geselecteerd)
+                    </span>
+                  )}
+                </label>
+                {beheerWijken.length > 0 ? (
+                  <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)] max-h-36 overflow-y-auto">
+                    {beheerWijken.map((wk) => {
+                      const selected = beheerSelectedWijken.includes(wk)
+                      return (
+                        <button
+                          key={wk}
+                          type="button"
+                          onClick={() => {
+                            setBeheerSelectedWijken((prev) =>
+                              selected ? prev.filter((w) => w !== wk) : [...prev, wk]
+                            )
+                          }}
+                          className={`px-2 py-1 rounded text-xs font-medium transition ${
+                            selected
+                              ? "bg-[var(--primary)] text-white"
+                              : "bg-[var(--muted)] text-foreground hover:bg-[var(--border)]"
+                          }`}
+                        >
+                          {wk}
+                        </button>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    {beheerLoadingLocatie ? "Wijken laden..." : "Geen wijken gevonden"}
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* Extra filters (alleen als gemeente geselecteerd) */}
             {beheerGemeente && (
               <div className="flex flex-col sm:flex-row gap-3">
