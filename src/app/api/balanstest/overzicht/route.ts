@@ -66,6 +66,11 @@ export async function GET() {
             return m === "MOEILIJK" || m === "ZEER_MOEILIJK" || m === "JA"
           }
         ).length,
+        taken: t.taakSelecties.map((ts) => ({
+          naam: ts.taakNaam,
+          uren: ts.urenPerWeek || 0,
+          moeilijkheid: ts.moeilijkheid as string | null,
+        })),
       })),
       needsNewTest,
       daysSinceLastTest,
