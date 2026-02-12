@@ -7,6 +7,12 @@ import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
 import { PdfDownloadButton } from "@/components/PdfDownloadButton"
 
+interface TaakDetail {
+  naam: string
+  uren: number
+  moeilijkheid: string | null
+}
+
 interface TestOverzicht {
   id: string
   score: number
@@ -15,6 +21,7 @@ interface TestOverzicht {
   datum: string
   aantalTaken: number
   zwareTaken: number
+  taken: TaakDetail[]
 }
 
 interface OverzichtData {
@@ -229,6 +236,168 @@ export default function BalanstestOverzichtPage() {
           </div>
         </section>
       )}
+
+      {/* Zorguren verloop - gestapelde staafdiagram */}
+      {tests.length > 0 && tests.some((t) => t.taken.length > 0) && (() => {
+        // Bereken per test de uren per moeilijkheidsgraad
+        const testsMetUren = [...tests].reverse().slice(-8).map((test) => {
+          let urenGroen = 0
+          let urenOranje = 0
+          let urenRood = 0
+
+          for (const taak of test.taken) {
+            const m = taak.moeilijkheid?.toUpperCase()
+            if (m === "JA" || m === "MOEILIJK" || m === "ZEER_MOEILIJK") {
+              urenRood += taak.uren
+            } else if (m === "SOMS" || m === "GEMIDDELD") {
+              urenOranje += taak.uren
+            } else {
+              urenGroen += taak.uren
+            }
+          }
+
+          return {
+            ...test,
+            urenGroen,
+            urenOranje,
+            urenRood,
+            totaalUren: urenGroen + urenOranje + urenRood,
+          }
+        })
+
+        const maxUren = Math.max(...testsMetUren.map((t) => t.totaalUren), 1)
+        // Bereken mooie Y-as schaal
+        const yStap = maxUren <= 12 ? 3 : maxUren <= 24 ? 6 : maxUren <= 48 ? 12 : 24
+        const yMax = Math.ceil(maxUren / yStap) * yStap
+        const yLabels: number[] = []
+        for (let i = yMax; i >= 0; i -= yStap) {
+          yLabels.push(i)
+        }
+
+        return (
+          <section className="mb-6">
+            <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+              <span className="text-2xl">⏱️</span> Zorguren verloop
+            </h2>
+            <div className="ker-card">
+              <div className="flex items-end gap-3 h-52">
+                {/* Y-as labels */}
+                <div className="flex flex-col justify-between h-full text-xs text-muted-foreground pr-1 min-w-[24px] text-right">
+                  {yLabels.map((val) => (
+                    <span key={val}>{val}</span>
+                  ))}
+                </div>
+
+                {/* Gestapelde balken */}
+                <div className="flex-1 flex items-end gap-2 h-full relative">
+                  {testsMetUren.map((test) => {
+                    const totaalHoogte = yMax > 0 ? (test.totaalUren / yMax) * 100 : 0
+                    const roodPct = test.totaalUren > 0 ? (test.urenRood / test.totaalUren) * 100 : 0
+                    const oranjePct = test.totaalUren > 0 ? (test.urenOranje / test.totaalUren) * 100 : 0
+                    const groenPct = test.totaalUren > 0 ? (test.urenGroen / test.totaalUren) * 100 : 0
+
+                    return (
+                      <div key={test.id} className="flex-1 flex flex-col items-center justify-end h-full">
+                        {/* Totaal label */}
+                        <span className="text-xs font-bold text-foreground mb-1">
+                          {test.totaalUren}
+                        </span>
+                        {/* Gestapelde balk */}
+                        <div
+                          className="w-full max-w-[40px] rounded-t-lg overflow-hidden flex flex-col"
+                          style={{ height: `${Math.max(totaalHoogte, 3)}%` }}
+                        >
+                          {/* Groen bovenaan */}
+                          {groenPct > 0 && (
+                            <div
+                              className="w-full bg-[var(--accent-green)]"
+                              style={{ flex: `${groenPct} 0 0%` }}
+                            />
+                          )}
+                          {/* Oranje midden */}
+                          {oranjePct > 0 && (
+                            <div
+                              className="w-full bg-[var(--accent-amber)]"
+                              style={{ flex: `${oranjePct} 0 0%` }}
+                            />
+                          )}
+                          {/* Rood onderaan */}
+                          {roodPct > 0 && (
+                            <div
+                              className="w-full bg-[var(--accent-red)]"
+                              style={{ flex: `${roodPct} 0 0%` }}
+                            />
+                          )}
+                          {/* Fallback als geen moeilijkheid data */}
+                          {roodPct === 0 && oranjePct === 0 && groenPct === 0 && test.totaalUren > 0 && (
+                            <div className="w-full bg-muted flex-1" />
+                          )}
+                        </div>
+                        {/* Datum label */}
+                        <span className="text-[10px] text-muted-foreground mt-2 whitespace-nowrap">
+                          {new Date(test.datum).toLocaleDateString("nl-NL", {
+                            day: "numeric",
+                            month: "short",
+                          })}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Legenda */}
+              <div className="flex justify-center gap-4 mt-4 pt-4 border-t border-border/50">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-[var(--accent-green)]" />
+                  <span className="text-xs text-muted-foreground">Niet zwaar</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-[var(--accent-amber)]" />
+                  <span className="text-xs text-muted-foreground">Soms zwaar</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-[var(--accent-red)]" />
+                  <span className="text-xs text-muted-foreground">Zwaar</span>
+                </div>
+              </div>
+
+              {/* Detail lijst laatste test */}
+              {laatsteTest && laatsteTest.taken.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-border/50">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Taken laatste test:</p>
+                  <div className="space-y-1">
+                    {laatsteTest.taken
+                      .filter((t) => t.uren > 0)
+                      .sort((a, b) => b.uren - a.uren)
+                      .map((taak, i) => {
+                        const m = taak.moeilijkheid?.toUpperCase()
+                        const isRood = m === "JA" || m === "MOEILIJK" || m === "ZEER_MOEILIJK"
+                        const isOranje = m === "SOMS" || m === "GEMIDDELD"
+                        return (
+                          <div key={i} className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={cn(
+                                  "w-2.5 h-2.5 rounded-full",
+                                  isRood && "bg-[var(--accent-red)]",
+                                  isOranje && "bg-[var(--accent-amber)]",
+                                  !isRood && !isOranje && "bg-[var(--accent-green)]"
+                                )}
+                              />
+                              <span className="text-foreground">{taak.naam}</span>
+                            </div>
+                            <span className="text-muted-foreground">{taak.uren} uur</span>
+                          </div>
+                        )
+                      })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+        )
+      })()}
 
       {/* Huidige score overzicht */}
       {laatsteTest && (
