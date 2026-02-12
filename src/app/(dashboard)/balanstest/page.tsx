@@ -303,36 +303,69 @@ export default function BalanstestOverzichtPage() {
                           {test.totaalUren}
                         </span>
                         {/* Gestapelde balk */}
-                        <div
-                          className="w-full max-w-[40px] rounded-t-lg overflow-hidden flex flex-col"
-                          style={{ height: `${Math.max(totaalHoogte, 3)}%` }}
-                        >
-                          {/* Groen bovenaan */}
-                          {groenPct > 0 && (
+                        {(() => {
+                          // Bepaal welk segment bovenaan staat voor rounded corners
+                          const topSegment = groenPct > 0 ? "groen" : oranjePct > 0 ? "oranje" : "rood"
+                          return (
                             <div
-                              className="w-full bg-[var(--accent-green)]"
-                              style={{ flex: `${groenPct} 0 0%` }}
-                            />
-                          )}
-                          {/* Oranje midden */}
-                          {oranjePct > 0 && (
-                            <div
-                              className="w-full bg-[var(--accent-amber)]"
-                              style={{ flex: `${oranjePct} 0 0%` }}
-                            />
-                          )}
-                          {/* Rood onderaan */}
-                          {roodPct > 0 && (
-                            <div
-                              className="w-full bg-[var(--accent-red)]"
-                              style={{ flex: `${roodPct} 0 0%` }}
-                            />
-                          )}
-                          {/* Fallback als geen moeilijkheid data */}
-                          {roodPct === 0 && oranjePct === 0 && groenPct === 0 && test.totaalUren > 0 && (
-                            <div className="w-full bg-muted flex-1" />
-                          )}
-                        </div>
+                              className="w-full max-w-[40px] flex flex-col"
+                              style={{ height: `${Math.max(totaalHoogte, 3)}%` }}
+                            >
+                              {/* Groen bovenaan */}
+                              {groenPct > 0 && (
+                                <div
+                                  className={cn(
+                                    "w-full bg-[var(--accent-green)] relative group/groen cursor-pointer",
+                                    topSegment === "groen" && "rounded-t-lg"
+                                  )}
+                                  style={{ flex: `${groenPct} 0 0%` }}
+                                >
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/groen:block z-20 pointer-events-none">
+                                    <div className="bg-foreground text-background text-[10px] font-medium px-2 py-1 rounded shadow-lg whitespace-nowrap">
+                                      {test.urenGroen} uur niet zwaar
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                              {/* Oranje midden */}
+                              {oranjePct > 0 && (
+                                <div
+                                  className={cn(
+                                    "w-full bg-[var(--accent-amber)] relative group/oranje cursor-pointer",
+                                    topSegment === "oranje" && "rounded-t-lg"
+                                  )}
+                                  style={{ flex: `${oranjePct} 0 0%` }}
+                                >
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/oranje:block z-20 pointer-events-none">
+                                    <div className="bg-foreground text-background text-[10px] font-medium px-2 py-1 rounded shadow-lg whitespace-nowrap">
+                                      {test.urenOranje} uur soms zwaar
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                              {/* Rood onderaan */}
+                              {roodPct > 0 && (
+                                <div
+                                  className={cn(
+                                    "w-full bg-[var(--accent-red)] relative group/rood cursor-pointer",
+                                    topSegment === "rood" && "rounded-t-lg"
+                                  )}
+                                  style={{ flex: `${roodPct} 0 0%` }}
+                                >
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/rood:block z-20 pointer-events-none">
+                                    <div className="bg-foreground text-background text-[10px] font-medium px-2 py-1 rounded shadow-lg whitespace-nowrap">
+                                      {test.urenRood} uur zwaar
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                              {/* Fallback als geen moeilijkheid data */}
+                              {roodPct === 0 && oranjePct === 0 && groenPct === 0 && test.totaalUren > 0 && (
+                                <div className="w-full bg-muted flex-1 rounded-t-lg" />
+                              )}
+                            </div>
+                          )
+                        })()}
                         {/* Datum label */}
                         <span className="text-[10px] text-muted-foreground mt-2 whitespace-nowrap">
                           {new Date(test.datum).toLocaleDateString("nl-NL", {
