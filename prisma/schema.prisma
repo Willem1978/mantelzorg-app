@@ -365,8 +365,12 @@ model Zorgorganisatie {
   website               String?
   adres                 String?
   postcode              String?
-  woonplaats            String?
-  gemeente              String?
+  woonplaats            String?             // Vestigingsplaats van de organisatie
+  gemeente              String?             // Dekkingsgebied gemeente (null bij landelijk/provincie)
+  provincie             String?             // Dekkingsgebied provincie
+  dekkingNiveau         String              @default("GEMEENTE") // LANDELIJK, PROVINCIE, GEMEENTE, WOONPLAATS, WIJK
+  dekkingWoonplaatsen   Json?               // Array van woonplaatsen binnen gemeente (null = hele gemeente)
+  dekkingWijken         Json?               // Array van wijknamen binnen gemeente (null = hele gemeente)
   isActief              Boolean             @default(true)
   createdAt             DateTime            @default(now())
   updatedAt             DateTime            @updatedAt

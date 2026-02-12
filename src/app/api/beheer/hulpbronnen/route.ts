@@ -4,13 +4,8 @@ import prisma from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
 
-// GET /api/beheer/hulpbronnen - List all hulpbronnen with filters
+// GET /api/beheer/hulpbronnen - List all hulpbronnen with filters (public endpoint)
 export async function GET(request: NextRequest) {
-  const session = await auth()
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Niet ingelogd' }, { status: 401 })
-  }
-
   const { searchParams } = new URL(request.url)
   const gemeente = searchParams.get('gemeente')
   const onderdeelTest = searchParams.get('onderdeelTest')
@@ -86,6 +81,10 @@ export async function POST(request: NextRequest) {
       postcode: body.postcode || null,
       woonplaats: body.woonplaats || null,
       gemeente: body.gemeente || null,
+      provincie: body.provincie || null,
+      dekkingNiveau: body.dekkingNiveau || 'GEMEENTE',
+      dekkingWoonplaatsen: body.dekkingWoonplaatsen || undefined,
+      dekkingWijken: body.dekkingWijken || undefined,
       isActief: body.isActief ?? false,
       onderdeelTest: body.onderdeelTest || null,
       soortHulp: body.soortHulp || null,

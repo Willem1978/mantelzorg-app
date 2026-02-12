@@ -263,6 +263,7 @@ export default function LandingPage() {
               <ul className="space-y-2 text-sm text-card/70">
                 <li>info@mantelbuddy.nl</li>
                 <li>Mantelzorglijn: 030 - 205 9 059</li>
+                <li className="pt-2"><Link href="/beheer/hulpbronnen" className="hover:text-card">Beheer hulpbronnen</Link></li>
               </ul>
             </div>
           </div>
