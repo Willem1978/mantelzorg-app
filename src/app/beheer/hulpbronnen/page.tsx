@@ -112,18 +112,24 @@ const EMPTY_FORM: Partial<Hulpbron> = {
 export default function BeheerHulpbronnenPage() {
   const { data: session, status } = useSession()
 
+  // Beheer modus: null = keuze, "landelijk" = landelijk/provincie, "gemeentelijk" = gemeente/woonplaats/wijk
+  const [beheerModus, setBeheerModus] = useState<"landelijk" | "gemeentelijk" | null>(null)
+  const [beheerGemeente, setBeheerGemeente] = useState("")
+  const [beheerGemeenteZoek, setBeheerGemeenteZoek] = useState("")
+  const [beheerGemeenteResults, setBeheerGemeenteResults] = useState<string[]>([])
+  const [beheerProvincie, setBeheerProvincie] = useState("")
+
   // Data
   const [hulpbronnen, setHulpbronnen] = useState<Hulpbron[]>([])
   const [filterGemeenten, setFilterGemeenten] = useState<string[]>([])
+  const [filterProvincies, setFilterProvincies] = useState<string[]>([])
   const [filterOnderdelen, setFilterOnderdelen] = useState<string[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   // Filters
   const [zoek, setZoek] = useState("")
-  const [filterGemeente, setFilterGemeente] = useState("")
   const [filterOnderdeel, setFilterOnderdeel] = useState("")
   const [filterActief, setFilterActief] = useState<string>("")
-  const [filterLandelijk, setFilterLandelijk] = useState(false)
 
   // Edit modal
   const [showForm, setShowForm] = useState(false)
@@ -160,13 +166,21 @@ export default function BeheerHulpbronnenPage() {
   const [loadingLocatie, setLoadingLocatie] = useState(false)
 
   const fetchData = useCallback(async () => {
+    if (!beheerModus) return
+    // For gemeentelijk, require a gemeente to be selected
+    if (beheerModus === "gemeentelijk" && !beheerGemeente) {
+      setHulpbronnen([])
+      setLoading(false)
+      return
+    }
     setLoading(true)
     const params = new URLSearchParams()
+    params.set("modus", beheerModus)
+    if (beheerModus === "gemeentelijk" && beheerGemeente) params.set("gemeente", beheerGemeente)
+    if (beheerModus === "landelijk" && beheerProvincie) params.set("provincie", beheerProvincie)
     if (zoek) params.set("zoek", zoek)
-    if (filterGemeente) params.set("gemeente", filterGemeente)
     if (filterOnderdeel) params.set("onderdeelTest", filterOnderdeel)
     if (filterActief) params.set("actief", filterActief)
-    if (filterLandelijk) params.set("landelijk", "true")
 
     const res = await fetch(`/api/beheer/hulpbronnen?${params}&t=${Date.now()}`, {
       cache: "no-store",
@@ -175,16 +189,17 @@ export default function BeheerHulpbronnenPage() {
       const data = await res.json()
       setHulpbronnen(data.hulpbronnen)
       setFilterGemeenten(data.filters.gemeenten)
+      setFilterProvincies(data.filters.provincies || [])
       setFilterOnderdelen(data.filters.onderdelen)
     }
     setLoading(false)
-  }, [zoek, filterGemeente, filterOnderdeel, filterActief, filterLandelijk])
+  }, [beheerModus, beheerGemeente, beheerProvincie, zoek, filterOnderdeel, filterActief])
 
   useEffect(() => {
-    if (status !== "loading") {
+    if (status !== "loading" && beheerModus) {
       fetchData()
     }
-  }, [status, fetchData])
+  }, [status, fetchData, beheerModus])
 
   // Debounced search
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null)
@@ -238,7 +253,23 @@ export default function BeheerHulpbronnenPage() {
     setLoadingLocatie(false)
   }
 
-  // Search gemeenten by name
+  // Search gemeenten for beheer modus
+  useEffect(() => {
+    if (beheerGemeenteZoek.length < 2) { setBeheerGemeenteResults([]); return }
+    const timer = setTimeout(async () => {
+      const res = await fetch(`/api/beheer/locatie?type=gemeenten`)
+      if (res.ok) {
+        const data = await res.json()
+        const all = data.gemeenten || []
+        setBeheerGemeenteResults(
+          all.filter((g: string) => g.toLowerCase().includes(beheerGemeenteZoek.toLowerCase())).slice(0, 10)
+        )
+      }
+    }, 200)
+    return () => clearTimeout(timer)
+  }, [beheerGemeenteZoek])
+
+  // Search gemeenten by name (for form)
   useEffect(() => {
     if (gemeenteZoek.length < 2) { setGemeenteResults([]); return }
     const timer = setTimeout(async () => {
@@ -407,21 +438,40 @@ export default function BeheerHulpbronnenPage() {
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <span className="text-2xl">🗂️</span> Hulpbronnen Beheer
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {hulpbronnen.length} hulpbronnen ({actiefCount} actief, {inactiefCount} inactief)
-          </p>
+          {beheerModus && (
+            <p className="text-sm text-muted-foreground mt-1">
+              {hulpbronnen.length} hulpbronnen ({actiefCount} actief, {inactiefCount} inactief)
+            </p>
+          )}
         </div>
-        {isLoggedIn && (
+        {isLoggedIn && beheerModus && (
           <div className="flex gap-2">
             <button
-              onClick={() => setShowScraper(!showScraper)}
+              onClick={() => {
+                if (!showScraper) {
+                  // Pre-fill scraper with current modus context
+                  if (beheerModus === "gemeentelijk" && beheerGemeente) {
+                    setScrapeGemeente(beheerGemeente)
+                    setScrapeDekkingNiveau("GEMEENTE")
+                    loadScrapeLocatie(beheerGemeente)
+                  } else if (beheerModus === "landelijk") {
+                    setScrapeDekkingNiveau("LANDELIJK")
+                    setScrapeGemeente("")
+                  }
+                }
+                setShowScraper(!showScraper)
+              }}
               className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--accent-amber)] text-white hover:opacity-90 transition"
             >
               🔍 Web zoeken
             </button>
             <button
               onClick={() => {
-                setEditItem(EMPTY_FORM)
+                setEditItem({
+                  ...EMPTY_FORM,
+                  dekkingNiveau: beheerModus === "landelijk" ? "LANDELIJK" : "GEMEENTE",
+                  gemeente: beheerModus === "gemeentelijk" ? beheerGemeente : "",
+                })
                 setShowForm(true)
               }}
               className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--primary)] text-white hover:opacity-90 transition"
@@ -432,8 +482,186 @@ export default function BeheerHulpbronnenPage() {
         )}
       </div>
 
+      {/* Stap 1: Keuze Landelijk of Gemeentelijk */}
+      <div className="ker-card mb-6">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              setBeheerModus("landelijk")
+              setBeheerGemeente("")
+              setBeheerGemeenteZoek("")
+              setHulpbronnen([])
+              setZoek("")
+              setFilterOnderdeel("")
+              setFilterActief("")
+            }}
+            className={`flex-1 py-4 px-4 rounded-lg text-center font-medium transition border-2 ${
+              beheerModus === "landelijk"
+                ? "border-[var(--primary)] bg-[var(--primary)] text-white"
+                : "border-[var(--border)] bg-[var(--background)] text-foreground hover:border-[var(--primary)] hover:bg-[var(--muted)]"
+            }`}
+          >
+            <div className="text-lg mb-1">🌍</div>
+            <div className="text-sm">Landelijk</div>
+            <div className="text-[10px] opacity-70 mt-0.5">incl. provincie</div>
+          </button>
+          <button
+            onClick={() => {
+              setBeheerModus("gemeentelijk")
+              setBeheerProvincie("")
+              setHulpbronnen([])
+              setZoek("")
+              setFilterOnderdeel("")
+              setFilterActief("")
+            }}
+            className={`flex-1 py-4 px-4 rounded-lg text-center font-medium transition border-2 ${
+              beheerModus === "gemeentelijk"
+                ? "border-[var(--primary)] bg-[var(--primary)] text-white"
+                : "border-[var(--border)] bg-[var(--background)] text-foreground hover:border-[var(--primary)] hover:bg-[var(--muted)]"
+            }`}
+          >
+            <div className="text-lg mb-1">🏘️</div>
+            <div className="text-sm">Gemeentelijk</div>
+            <div className="text-[10px] opacity-70 mt-0.5">incl. woonplaats &amp; wijk</div>
+          </button>
+        </div>
+      </div>
+
+      {/* Landelijk: provincie filter */}
+      {beheerModus === "landelijk" && (
+        <div className="ker-card mb-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <select
+              value={beheerProvincie}
+              onChange={(e) => setBeheerProvincie(e.target.value)}
+              className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+            >
+              <option value="">Alle provincies</option>
+              {filterProvincies.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+            <input
+              type="text"
+              placeholder="Zoek op naam..."
+              value={zoek}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="flex-1 px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+            />
+            <select
+              value={filterOnderdeel}
+              onChange={(e) => setFilterOnderdeel(e.target.value)}
+              className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+            >
+              <option value="">Alle categorieën</option>
+              {filterOnderdelen.map((o) => (
+                <option key={o} value={o}>{o}</option>
+              ))}
+            </select>
+            <select
+              value={filterActief}
+              onChange={(e) => setFilterActief(e.target.value)}
+              className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+            >
+              <option value="">Alles</option>
+              <option value="true">Actief</option>
+              <option value="false">Inactief</option>
+            </select>
+          </div>
+        </div>
+      )}
+
+      {/* Gemeentelijk: gemeente selectie + filters */}
+      {beheerModus === "gemeentelijk" && (
+        <div className="ker-card mb-4">
+          <div className="flex flex-col gap-3">
+            {/* Gemeente autocomplete */}
+            <div className="relative">
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
+                Selecteer gemeente
+              </label>
+              <input
+                type="text"
+                value={beheerGemeente || beheerGemeenteZoek}
+                onChange={(e) => {
+                  setBeheerGemeenteZoek(e.target.value)
+                  if (beheerGemeente) {
+                    setBeheerGemeente("")
+                    setHulpbronnen([])
+                  }
+                }}
+                placeholder="Typ om een gemeente te zoeken..."
+                className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+              />
+              {beheerGemeente && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBeheerGemeente("")
+                    setBeheerGemeenteZoek("")
+                    setHulpbronnen([])
+                  }}
+                  className="absolute right-2 top-[calc(50%+8px)] -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  ✕
+                </button>
+              )}
+              {beheerGemeenteResults.length > 0 && !beheerGemeente && (
+                <div className="absolute z-50 w-full mt-1 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {beheerGemeenteResults.map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => {
+                        setBeheerGemeente(g)
+                        setBeheerGemeenteZoek("")
+                        setBeheerGemeenteResults([])
+                      }}
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--muted)] transition"
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* Extra filters (alleen als gemeente geselecteerd) */}
+            {beheerGemeente && (
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="text"
+                  placeholder="Zoek op naam..."
+                  value={zoek}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="flex-1 px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+                />
+                <select
+                  value={filterOnderdeel}
+                  onChange={(e) => setFilterOnderdeel(e.target.value)}
+                  className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+                >
+                  <option value="">Alle categorieën</option>
+                  {filterOnderdelen.map((o) => (
+                    <option key={o} value={o}>{o}</option>
+                  ))}
+                </select>
+                <select
+                  value={filterActief}
+                  onChange={(e) => setFilterActief(e.target.value)}
+                  className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+                >
+                  <option value="">Alles</option>
+                  <option value="true">Actief</option>
+                  <option value="false">Inactief</option>
+                </select>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Scraper Section */}
-      {showScraper && (
+      {showScraper && beheerModus && (
         <div className="ker-card mb-6 border-2 border-[var(--accent-amber)]">
           <h2 className="font-bold text-lg mb-3 flex items-center gap-2">
             🔍 Hulpbronnen zoeken op het web
@@ -697,69 +925,22 @@ export default function BeheerHulpbronnenPage() {
         </div>
       )}
 
-      {/* Filters */}
-      <div className="ker-card mb-4">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="text"
-            placeholder="Zoek op naam, beschrijving of gemeente..."
-            value={zoek}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="flex-1 px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
-          />
-          <select
-            value={filterGemeente}
-            onChange={(e) => {
-              setFilterGemeente(e.target.value)
-              setFilterLandelijk(false)
-            }}
-            className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
-          >
-            <option value="">Alle gemeenten</option>
-            {filterGemeenten.map((g) => (
-              <option key={g} value={g}>
-                {g}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filterOnderdeel}
-            onChange={(e) => setFilterOnderdeel(e.target.value)}
-            className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
-          >
-            <option value="">Alle categorieën</option>
-            {filterOnderdelen.map((o) => (
-              <option key={o} value={o}>
-                {o}
-              </option>
-            ))}
-          </select>
-          <select
-            value={filterActief}
-            onChange={(e) => setFilterActief(e.target.value)}
-            className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
-          >
-            <option value="">Alles</option>
-            <option value="true">Actief</option>
-            <option value="false">Inactief</option>
-          </select>
-          <label className="flex items-center gap-2 text-sm text-foreground whitespace-nowrap min-h-[44px]">
-            <input
-              type="checkbox"
-              checked={filterLandelijk}
-              onChange={(e) => {
-                setFilterLandelijk(e.target.checked)
-                if (e.target.checked) setFilterGemeente("")
-              }}
-              className="w-4 h-4"
-            />
-            Landelijk
-          </label>
+      {/* Geen modus geselecteerd */}
+      {!beheerModus && (
+        <div className="ker-card text-center py-12">
+          <p className="text-muted-foreground">Kies hierboven of je landelijke of gemeentelijke hulpbronnen wilt beheren.</p>
         </div>
-      </div>
+      )}
+
+      {/* Gemeentelijk maar nog geen gemeente */}
+      {beheerModus === "gemeentelijk" && !beheerGemeente && (
+        <div className="ker-card text-center py-12">
+          <p className="text-muted-foreground">Selecteer hierboven een gemeente om de hulpbronnen te bekijken.</p>
+        </div>
+      )}
 
       {/* Table */}
-      {loading ? (
+      {beheerModus && (beheerModus === "landelijk" || beheerGemeente) && (loading ? (
         <div className="text-center py-12 text-muted-foreground">Laden...</div>
       ) : hulpbronnen.length === 0 ? (
         <div className="ker-card text-center py-12">
@@ -884,7 +1065,7 @@ export default function BeheerHulpbronnenPage() {
             </div>
           ))}
         </div>
-      )}
+      ))}
 
       {/* Delete Confirmation */}
       {deleteId && (
