@@ -138,6 +138,7 @@ export default function BeheerHulpbronnenPage() {
   const [scraping, setScraping] = useState(false)
 
   // Scraper location picker (separate from form location)
+  const [scrapeDekkingNiveau, setScrapeDekkingNiveau] = useState("GEMEENTE")
   const [scrapeGemeenteZoek, setScrapeGemeenteZoek] = useState("")
   const [scrapeGemeenteResults, setScrapeGemeenteResults] = useState<string[]>([])
   const [scrapeWoonplaatsen, setScrapeWoonplaatsen] = useState<string[]>([])
@@ -361,20 +362,10 @@ export default function BeheerHulpbronnenPage() {
   }
 
   const handleAddFromScrape = (result: ScrapedResult) => {
-    // Determine dekkingNiveau based on scraper selections
-    let dekkingNiveau = "GEMEENTE"
-    let dekkingWoonplaatsen: string[] | null = null
-    let dekkingWijken: string[] | null = null
-
-    if (scrapeSelectedWijken.length > 0) {
-      dekkingNiveau = "WIJK"
-      dekkingWijken = scrapeSelectedWijken
-    } else if (scrapeSelectedWoonplaatsen.length > 0) {
-      dekkingNiveau = "WOONPLAATS"
-      dekkingWoonplaatsen = scrapeSelectedWoonplaatsen
-    }
-
-    const gemeente = result.gemeente || scrapeGemeente || ""
+    const dekkingNiveau = scrapeDekkingNiveau
+    const dekkingWoonplaatsen = scrapeSelectedWoonplaatsen.length > 0 ? scrapeSelectedWoonplaatsen : null
+    const dekkingWijken = scrapeSelectedWijken.length > 0 ? scrapeSelectedWijken : null
+    const gemeente = scrapeGemeente || result.gemeente || ""
 
     setEditItem({
       ...EMPTY_FORM,
@@ -382,7 +373,7 @@ export default function BeheerHulpbronnenPage() {
       beschrijving: result.beschrijving,
       website: result.website,
       telefoon: result.telefoon || "",
-      gemeente,
+      gemeente: dekkingNiveau === "LANDELIJK" ? null : gemeente,
       dekkingNiveau,
       dekkingWoonplaatsen,
       dekkingWijken,
@@ -390,7 +381,7 @@ export default function BeheerHulpbronnenPage() {
     })
 
     // Load woonplaatsen/wijken in the form if gemeente is set
-    if (gemeente) {
+    if (gemeente && dekkingNiveau !== "LANDELIJK") {
       if (dekkingNiveau === "WOONPLAATS") loadWoonplaatsen(gemeente)
       if (dekkingNiveau === "WIJK") loadWijken(gemeente)
     }
@@ -448,75 +439,121 @@ export default function BeheerHulpbronnenPage() {
             🔍 Hulpbronnen zoeken op het web
           </h2>
           <p className="text-sm text-muted-foreground mb-4">
-            Zoek automatisch naar mantelzorgorganisaties per gemeente. Resultaten kun je beoordelen en toevoegen.
+            Kies eerst het dekkingsgebied en de locatie. Zoek daarna naar mantelzorgorganisaties.
           </p>
-          {/* Gemeente autocomplete */}
+
+          {/* Stap 1: Dekkingsniveau */}
           <div className="mb-3">
             <label className="block text-xs font-medium text-muted-foreground mb-1">
-              Gemeente
+              1. Dekkingsgebied
             </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={scrapeGemeente || scrapeGemeenteZoek}
-                onChange={(e) => {
-                  setScrapeGemeenteZoek(e.target.value)
-                  if (scrapeGemeente) {
-                    setScrapeGemeente("")
-                    setScrapeWoonplaatsen([])
-                    setScrapeWijken([])
-                    setScrapeSelectedWoonplaatsen([])
-                    setScrapeSelectedWijken([])
-                  }
-                }}
-                placeholder="Typ om een gemeente te zoeken..."
-                className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
-              />
-              {scrapeGemeente && (
+            <div className="flex flex-wrap gap-2">
+              {DEKKING_NIVEAUS.map((n) => (
                 <button
+                  key={n.value}
                   type="button"
                   onClick={() => {
-                    setScrapeGemeente("")
-                    setScrapeGemeenteZoek("")
-                    setScrapeWoonplaatsen([])
-                    setScrapeWijken([])
-                    setScrapeSelectedWoonplaatsen([])
-                    setScrapeSelectedWijken([])
+                    setScrapeDekkingNiveau(n.value)
+                    if (n.value === "LANDELIJK") {
+                      setScrapeGemeente("")
+                      setScrapeGemeenteZoek("")
+                      setScrapeWoonplaatsen([])
+                      setScrapeWijken([])
+                      setScrapeSelectedWoonplaatsen([])
+                      setScrapeSelectedWijken([])
+                    }
+                    if (n.value === "GEMEENTE") {
+                      setScrapeSelectedWoonplaatsen([])
+                      setScrapeSelectedWijken([])
+                    }
+                    if (n.value === "WOONPLAATS") {
+                      setScrapeSelectedWijken([])
+                    }
+                    if (n.value === "WIJK") {
+                      setScrapeSelectedWoonplaatsen([])
+                    }
                   }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className={`px-3 py-2 rounded-lg text-xs font-medium transition ${
+                    scrapeDekkingNiveau === n.value
+                      ? "bg-[var(--accent-amber)] text-white"
+                      : "bg-[var(--muted)] text-foreground hover:bg-[var(--border)]"
+                  }`}
                 >
-                  ✕
+                  {n.label}
                 </button>
-              )}
-              {scrapeGemeenteResults.length > 0 && !scrapeGemeente && (
-                <div className="absolute z-50 w-full mt-1 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                  {scrapeGemeenteResults.map((g) => (
-                    <button
-                      key={g}
-                      type="button"
-                      onClick={() => {
-                        setScrapeGemeente(g)
-                        setScrapeGemeenteZoek("")
-                        setScrapeGemeenteResults([])
-                        setScrapeSelectedWoonplaatsen([])
-                        setScrapeSelectedWijken([])
-                        loadScrapeLocatie(g)
-                      }}
-                      className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--muted)] transition"
-                    >
-                      {g}
-                    </button>
-                  ))}
-                </div>
-              )}
+              ))}
             </div>
           </div>
 
-          {/* Woonplaatsen in scraper */}
-          {scrapeGemeente && scrapeWoonplaatsen.length > 0 && (
+          {/* Stap 2: Gemeente autocomplete (niet voor LANDELIJK/PROVINCIE) */}
+          {(scrapeDekkingNiveau === "GEMEENTE" || scrapeDekkingNiveau === "WOONPLAATS" || scrapeDekkingNiveau === "WIJK") && (
             <div className="mb-3">
               <label className="block text-xs font-medium text-muted-foreground mb-1">
-                Woonplaatsen in {scrapeGemeente}
+                2. Gemeente
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={scrapeGemeente || scrapeGemeenteZoek}
+                  onChange={(e) => {
+                    setScrapeGemeenteZoek(e.target.value)
+                    if (scrapeGemeente) {
+                      setScrapeGemeente("")
+                      setScrapeWoonplaatsen([])
+                      setScrapeWijken([])
+                      setScrapeSelectedWoonplaatsen([])
+                      setScrapeSelectedWijken([])
+                    }
+                  }}
+                  placeholder="Typ om een gemeente te zoeken..."
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+                />
+                {scrapeGemeente && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setScrapeGemeente("")
+                      setScrapeGemeenteZoek("")
+                      setScrapeWoonplaatsen([])
+                      setScrapeWijken([])
+                      setScrapeSelectedWoonplaatsen([])
+                      setScrapeSelectedWijken([])
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    ✕
+                  </button>
+                )}
+                {scrapeGemeenteResults.length > 0 && !scrapeGemeente && (
+                  <div className="absolute z-50 w-full mt-1 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    {scrapeGemeenteResults.map((g) => (
+                      <button
+                        key={g}
+                        type="button"
+                        onClick={() => {
+                          setScrapeGemeente(g)
+                          setScrapeGemeenteZoek("")
+                          setScrapeGemeenteResults([])
+                          setScrapeSelectedWoonplaatsen([])
+                          setScrapeSelectedWijken([])
+                          loadScrapeLocatie(g)
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--muted)] transition"
+                      >
+                        {g}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Stap 2b: Woonplaatsen selectie (alleen bij WOONPLAATS niveau) */}
+          {scrapeDekkingNiveau === "WOONPLAATS" && scrapeGemeente && (
+            <div className="mb-3">
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
+                3. Woonplaatsen in {scrapeGemeente}
                 {scrapeLoadingLocatie && <span className="ml-2 text-[10px]">laden...</span>}
                 {scrapeSelectedWoonplaatsen.length > 0 && (
                   <span className="ml-2 text-[10px] text-[var(--primary)]">
@@ -524,37 +561,43 @@ export default function BeheerHulpbronnenPage() {
                   </span>
                 )}
               </label>
-              <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)] max-h-36 overflow-y-auto">
-                {scrapeWoonplaatsen.map((wp) => {
-                  const selected = scrapeSelectedWoonplaatsen.includes(wp)
-                  return (
-                    <button
-                      key={wp}
-                      type="button"
-                      onClick={() => {
-                        setScrapeSelectedWoonplaatsen((prev) =>
-                          selected ? prev.filter((w) => w !== wp) : [...prev, wp]
-                        )
-                      }}
-                      className={`px-2 py-1 rounded text-xs font-medium transition ${
-                        selected
-                          ? "bg-[var(--primary)] text-white"
-                          : "bg-[var(--muted)] text-foreground hover:bg-[var(--border)]"
-                      }`}
-                    >
-                      {wp}
-                    </button>
-                  )
-                })}
-              </div>
+              {scrapeWoonplaatsen.length > 0 ? (
+                <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)] max-h-36 overflow-y-auto">
+                  {scrapeWoonplaatsen.map((wp) => {
+                    const selected = scrapeSelectedWoonplaatsen.includes(wp)
+                    return (
+                      <button
+                        key={wp}
+                        type="button"
+                        onClick={() => {
+                          setScrapeSelectedWoonplaatsen((prev) =>
+                            selected ? prev.filter((w) => w !== wp) : [...prev, wp]
+                          )
+                        }}
+                        className={`px-2 py-1 rounded text-xs font-medium transition ${
+                          selected
+                            ? "bg-[var(--primary)] text-white"
+                            : "bg-[var(--muted)] text-foreground hover:bg-[var(--border)]"
+                        }`}
+                      >
+                        {wp}
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  {scrapeLoadingLocatie ? "Woonplaatsen laden..." : "Geen woonplaatsen gevonden"}
+                </p>
+              )}
             </div>
           )}
 
-          {/* Wijken in scraper */}
-          {scrapeGemeente && scrapeWijken.length > 0 && (
+          {/* Stap 2b: Wijken selectie (alleen bij WIJK niveau) */}
+          {scrapeDekkingNiveau === "WIJK" && scrapeGemeente && (
             <div className="mb-3">
               <label className="block text-xs font-medium text-muted-foreground mb-1">
-                Wijken in {scrapeGemeente}
+                3. Wijken in {scrapeGemeente}
                 {scrapeLoadingLocatie && <span className="ml-2 text-[10px]">laden...</span>}
                 {scrapeSelectedWijken.length > 0 && (
                   <span className="ml-2 text-[10px] text-[var(--primary)]">
@@ -562,29 +605,35 @@ export default function BeheerHulpbronnenPage() {
                   </span>
                 )}
               </label>
-              <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)] max-h-36 overflow-y-auto">
-                {scrapeWijken.map((wk) => {
-                  const selected = scrapeSelectedWijken.includes(wk)
-                  return (
-                    <button
-                      key={wk}
-                      type="button"
-                      onClick={() => {
-                        setScrapeSelectedWijken((prev) =>
-                          selected ? prev.filter((w) => w !== wk) : [...prev, wk]
-                        )
-                      }}
-                      className={`px-2 py-1 rounded text-xs font-medium transition ${
-                        selected
-                          ? "bg-[var(--primary)] text-white"
-                          : "bg-[var(--muted)] text-foreground hover:bg-[var(--border)]"
-                      }`}
-                    >
-                      {wk}
-                    </button>
-                  )
-                })}
-              </div>
+              {scrapeWijken.length > 0 ? (
+                <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)] max-h-36 overflow-y-auto">
+                  {scrapeWijken.map((wk) => {
+                    const selected = scrapeSelectedWijken.includes(wk)
+                    return (
+                      <button
+                        key={wk}
+                        type="button"
+                        onClick={() => {
+                          setScrapeSelectedWijken((prev) =>
+                            selected ? prev.filter((w) => w !== wk) : [...prev, wk]
+                          )
+                        }}
+                        className={`px-2 py-1 rounded text-xs font-medium transition ${
+                          selected
+                            ? "bg-[var(--primary)] text-white"
+                            : "bg-[var(--muted)] text-foreground hover:bg-[var(--border)]"
+                        }`}
+                      >
+                        {wk}
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  {scrapeLoadingLocatie ? "Wijken laden..." : "Geen wijken gevonden (CBS data niet beschikbaar)"}
+                </p>
+              )}
             </div>
           )}
 
@@ -871,36 +920,11 @@ export default function BeheerHulpbronnenPage() {
               {editItem.id ? "Hulpbron bewerken" : "Nieuwe hulpbron"}
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Naam */}
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-muted-foreground mb-1">
-                  Naam *
-                </label>
-                <input
-                  type="text"
-                  value={editItem.naam || ""}
-                  onChange={(e) =>
-                    setEditItem({ ...editItem, naam: e.target.value })
-                  }
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
-                />
-              </div>
-
-              {/* Beschrijving */}
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-muted-foreground mb-1">
-                  Beschrijving
-                </label>
-                <textarea
-                  value={editItem.beschrijving || ""}
-                  onChange={(e) =>
-                    setEditItem({ ...editItem, beschrijving: e.target.value })
-                  }
-                  rows={2}
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm"
-                />
-              </div>
+            {/* Locatie sectie - eerst kiezen */}
+            <div className="p-4 rounded-lg border-2 border-[var(--primary)] bg-[var(--primary)]/5 mb-4">
+              <h4 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+                📍 Locatie (eerst kiezen)
+              </h4>
 
               {/* Dekking Niveau */}
               <div className="sm:col-span-2">
@@ -1101,6 +1125,39 @@ export default function BeheerHulpbronnenPage() {
                   )}
                 </div>
               )}
+            </div>
+            {/* Einde locatie sectie */}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Naam */}
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                  Naam *
+                </label>
+                <input
+                  type="text"
+                  value={editItem.naam || ""}
+                  onChange={(e) =>
+                    setEditItem({ ...editItem, naam: e.target.value })
+                  }
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+                />
+              </div>
+
+              {/* Beschrijving */}
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                  Beschrijving
+                </label>
+                <textarea
+                  value={editItem.beschrijving || ""}
+                  onChange={(e) =>
+                    setEditItem({ ...editItem, beschrijving: e.target.value })
+                  }
+                  rows={2}
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm"
+                />
+              </div>
 
               {/* Type */}
               <div>
