@@ -19,6 +19,7 @@ interface Hulpbron {
   provincie: string | null
   dekkingNiveau: string
   dekkingWoonplaatsen: string[] | null
+  dekkingWijken: string[] | null
   isActief: boolean
   onderdeelTest: string | null
   soortHulp: string | null
@@ -78,6 +79,7 @@ const DEKKING_NIVEAUS = [
   { value: "PROVINCIE", label: "Provincie" },
   { value: "GEMEENTE", label: "Gemeente (hele gemeente)" },
   { value: "WOONPLAATS", label: "Specifieke woonplaatsen" },
+  { value: "WIJK", label: "Specifieke wijken" },
 ]
 
 const EMPTY_FORM: Partial<Hulpbron> = {
@@ -94,6 +96,7 @@ const EMPTY_FORM: Partial<Hulpbron> = {
   provincie: "",
   dekkingNiveau: "GEMEENTE",
   dekkingWoonplaatsen: null,
+  dekkingWijken: null,
   isActief: false,
   onderdeelTest: "",
   soortHulp: "",
@@ -141,6 +144,7 @@ export default function BeheerHulpbronnenPage() {
   const [provincies, setProvincies] = useState<string[]>([])
   const [gemeenten, setGemeenten] = useState<string[]>([])
   const [woonplaatsen, setWoonplaatsen] = useState<string[]>([])
+  const [wijken, setWijken] = useState<string[]>([])
   const [gemeenteZoek, setGemeenteZoek] = useState("")
   const [gemeenteResults, setGemeenteResults] = useState<string[]>([])
   const [loadingLocatie, setLoadingLocatie] = useState(false)
@@ -167,7 +171,7 @@ export default function BeheerHulpbronnenPage() {
   }, [zoek, filterGemeente, filterOnderdeel, filterActief, filterLandelijk])
 
   useEffect(() => {
-    if (status === "authenticated") {
+    if (status !== "loading") {
       fetchData()
     }
   }, [status, fetchData])
@@ -212,6 +216,18 @@ export default function BeheerHulpbronnenPage() {
     setLoadingLocatie(false)
   }
 
+  // Load wijken when gemeente changes (for WIJK level)
+  const loadWijken = async (gemeente: string) => {
+    if (!gemeente) { setWijken([]); return }
+    setLoadingLocatie(true)
+    const res = await fetch(`/api/beheer/locatie?type=wijken&gemeente=${encodeURIComponent(gemeente)}`)
+    if (res.ok) {
+      const data = await res.json()
+      setWijken(data.wijken || [])
+    }
+    setLoadingLocatie(false)
+  }
+
   // Search gemeenten by name
   useEffect(() => {
     if (gemeenteZoek.length < 2) { setGemeenteResults([]); return }
@@ -243,6 +259,9 @@ export default function BeheerHulpbronnenPage() {
       dekkingNiveau: editItem.dekkingNiveau || "GEMEENTE",
       dekkingWoonplaatsen: editItem.dekkingWoonplaatsen && editItem.dekkingWoonplaatsen.length > 0
         ? editItem.dekkingWoonplaatsen
+        : null,
+      dekkingWijken: editItem.dekkingWijken && editItem.dekkingWijken.length > 0
+        ? editItem.dekkingWijken
         : null,
       onderdeelTest: editItem.onderdeelTest || null,
       soortHulp: editItem.soortHulp || null,
@@ -312,6 +331,7 @@ export default function BeheerHulpbronnenPage() {
     )
   }
 
+  const isLoggedIn = status === "authenticated"
   const actiefCount = hulpbronnen.filter((h) => h.isActief).length
   const inactiefCount = hulpbronnen.filter((h) => !h.isActief).length
 
@@ -327,23 +347,25 @@ export default function BeheerHulpbronnenPage() {
             {hulpbronnen.length} hulpbronnen ({actiefCount} actief, {inactiefCount} inactief)
           </p>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowScraper(!showScraper)}
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--accent-amber)] text-white hover:opacity-90 transition"
-          >
-            🔍 Web zoeken
-          </button>
-          <button
-            onClick={() => {
-              setEditItem(EMPTY_FORM)
-              setShowForm(true)
-            }}
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--primary)] text-white hover:opacity-90 transition"
-          >
-            + Toevoegen
-          </button>
-        </div>
+        {isLoggedIn && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowScraper(!showScraper)}
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--accent-amber)] text-white hover:opacity-90 transition"
+            >
+              🔍 Web zoeken
+            </button>
+            <button
+              onClick={() => {
+                setEditItem(EMPTY_FORM)
+                setShowForm(true)
+              }}
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--primary)] text-white hover:opacity-90 transition"
+            >
+              + Toevoegen
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Scraper Section */}
@@ -526,6 +548,11 @@ export default function BeheerHulpbronnenPage() {
                       {item.gemeente}{item.dekkingWoonplaatsen ? ` (${item.dekkingWoonplaatsen.length} wp)` : ""}
                     </span>
                   )}
+                  {item.dekkingNiveau === "WIJK" && item.gemeente && (
+                    <span className="ker-badge text-[10px]">
+                      {item.gemeente}{item.dekkingWijken ? ` (${item.dekkingWijken.length} wk)` : ""}
+                    </span>
+                  )}
                   {!item.dekkingNiveau && !item.gemeente && (
                     <span className="ker-badge ker-badge-amber text-[10px]">Landelijk</span>
                   )}
@@ -571,6 +598,7 @@ export default function BeheerHulpbronnenPage() {
               </div>
 
               {/* Actions */}
+              {isLoggedIn && (
               <div className="flex gap-2 shrink-0">
                 <button
                   onClick={() => handleToggleActief(item)}
@@ -598,6 +626,7 @@ export default function BeheerHulpbronnenPage() {
                   Verwijder
                 </button>
               </div>
+              )}
             </div>
           ))}
         </div>
@@ -682,9 +711,11 @@ export default function BeheerHulpbronnenPage() {
                         setEditItem({
                           ...editItem,
                           dekkingNiveau: n.value,
-                          ...(n.value === "LANDELIJK" ? { gemeente: null, provincie: null, dekkingWoonplaatsen: null } : {}),
-                          ...(n.value === "PROVINCIE" ? { gemeente: null, dekkingWoonplaatsen: null } : {}),
-                          ...(n.value === "GEMEENTE" ? { dekkingWoonplaatsen: null } : {}),
+                          ...(n.value === "LANDELIJK" ? { gemeente: null, provincie: null, dekkingWoonplaatsen: null, dekkingWijken: null } : {}),
+                          ...(n.value === "PROVINCIE" ? { gemeente: null, dekkingWoonplaatsen: null, dekkingWijken: null } : {}),
+                          ...(n.value === "GEMEENTE" ? { dekkingWoonplaatsen: null, dekkingWijken: null } : {}),
+                          ...(n.value === "WOONPLAATS" ? { dekkingWijken: null } : {}),
+                          ...(n.value === "WIJK" ? { dekkingWoonplaatsen: null } : {}),
                         })
                         if (n.value === "PROVINCIE" && editItem.provincie) {
                           loadGemeenten(editItem.provincie)
@@ -723,8 +754,8 @@ export default function BeheerHulpbronnenPage() {
                 </div>
               )}
 
-              {/* Gemeente selector (for GEMEENTE and WOONPLAATS levels) */}
-              {(editItem.dekkingNiveau === "GEMEENTE" || editItem.dekkingNiveau === "WOONPLAATS") && (
+              {/* Gemeente selector (for GEMEENTE, WOONPLAATS and WIJK levels) */}
+              {(editItem.dekkingNiveau === "GEMEENTE" || editItem.dekkingNiveau === "WOONPLAATS" || editItem.dekkingNiveau === "WIJK") && (
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-medium text-muted-foreground mb-1">
                     Gemeente
@@ -763,11 +794,14 @@ export default function BeheerHulpbronnenPage() {
                             key={g}
                             type="button"
                             onClick={() => {
-                              setEditItem({ ...editItem, gemeente: g, dekkingWoonplaatsen: null })
+                              setEditItem({ ...editItem, gemeente: g, dekkingWoonplaatsen: null, dekkingWijken: null })
                               setGemeenteZoek("")
                               setGemeenteResults([])
                               if (editItem.dekkingNiveau === "WOONPLAATS") {
                                 loadWoonplaatsen(g)
+                              }
+                              if (editItem.dekkingNiveau === "WIJK") {
+                                loadWijken(g)
                               }
                             }}
                             className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--muted)] transition"
@@ -817,6 +851,47 @@ export default function BeheerHulpbronnenPage() {
                   ) : (
                     <p className="text-xs text-muted-foreground">
                       {loadingLocatie ? "Woonplaatsen laden..." : "Geen woonplaatsen gevonden"}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Wijken multiselect */}
+              {editItem.dekkingNiveau === "WIJK" && editItem.gemeente && (
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">
+                    Wijken in {editItem.gemeente}
+                    {loadingLocatie && <span className="ml-2 text-[10px]">laden...</span>}
+                  </label>
+                  {wijken.length > 0 ? (
+                    <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)] max-h-48 overflow-y-auto">
+                      {wijken.map((wk) => {
+                        const selected = (editItem.dekkingWijken || []).includes(wk)
+                        return (
+                          <button
+                            key={wk}
+                            type="button"
+                            onClick={() => {
+                              const current = editItem.dekkingWijken || []
+                              const updated = selected
+                                ? current.filter((w) => w !== wk)
+                                : [...current, wk]
+                              setEditItem({ ...editItem, dekkingWijken: updated.length > 0 ? updated : null })
+                            }}
+                            className={`px-2 py-1 rounded text-xs font-medium transition ${
+                              selected
+                                ? "bg-[var(--primary)] text-white"
+                                : "bg-[var(--muted)] text-foreground hover:bg-[var(--border)]"
+                            }`}
+                          >
+                            {wk}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      {loadingLocatie ? "Wijken laden..." : "Geen wijken gevonden (CBS data niet beschikbaar)"}
                     </p>
                   )}
                 </div>

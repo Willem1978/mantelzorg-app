@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server"
 import { auth } from "@/lib/auth"
 
 // Routes die authenticatie vereisen
-const protectedRoutes = ["/dashboard", "/intake", "/rapport", "/agenda", "/profiel", "/organisatie", "/beheer"]
+const protectedRoutes = ["/dashboard", "/intake", "/rapport", "/agenda", "/profiel", "/organisatie"]
 
 // Routes die alleen voor niet-ingelogde gebruikers zijn
 // Let op: /register-whatsapp en /login-whatsapp zijn NIET in deze lijst - die moeten altijd toegankelijk zijn

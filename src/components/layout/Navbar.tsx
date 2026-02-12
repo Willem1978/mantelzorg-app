@@ -48,7 +48,6 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
     { href: "/hulpvragen", label: "Hulp", hasBadge: true },
     // { href: "/agenda", label: "Agenda", hasBadge: false }, // Tijdelijk verborgen
     { href: "/balanstest", label: "Balanstest", hasBadge: false },
-    { href: "/beheer/hulpbronnen", label: "Beheer", hasBadge: false },
   ]
 
   const orgLinks: { href: string; label: string; hasBadge: boolean; nieuwsBadge?: boolean }[] = [

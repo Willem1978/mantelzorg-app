@@ -10,11 +10,12 @@ import type { HandlerResult } from './types'
 import { HULP_CHOICE_BUTTONS } from './types'
 
 // Hierarchical location matching: hoe lokaler hoe beter
-// Returns hulpbronnen sorted by locality: woonplaats > gemeente > provincie > landelijk
+// Returns hulpbronnen sorted by locality: wijk > woonplaats > gemeente > provincie > landelijk
 async function findHulpbronnenHierarchisch(
   filters: { onderdeelTest?: string; soortHulp?: string },
   gemeente?: string | null,
-  woonplaats?: string | null
+  woonplaats?: string | null,
+  wijk?: string | null
 ) {
   const where: any = {
     isActief: true,
@@ -31,11 +32,21 @@ async function findHulpbronnenHierarchisch(
     let score = 0
     const niveau = h.dekkingNiveau || (h.gemeente ? 'GEMEENTE' : 'LANDELIJK')
 
-    if (niveau === 'WOONPLAATS' && gemeente && h.gemeente === gemeente) {
+    if (niveau === 'WIJK' && gemeente && h.gemeente === gemeente) {
+      // Check if user's wijk is in the coverage
+      const wkList = (h.dekkingWijken as string[] | null) || []
+      if (wijk && wkList.includes(wijk)) {
+        score = 5 // Best: exact wijk match
+      } else if (wkList.length > 0) {
+        score = 0 // Has specific wijken but user's wijk is not in it
+      } else {
+        score = 3 // Fallback: whole gemeente
+      }
+    } else if (niveau === 'WOONPLAATS' && gemeente && h.gemeente === gemeente) {
       // Check if user's woonplaats is in the coverage
       const wpList = (h.dekkingWoonplaatsen as string[] | null) || []
       if (woonplaats && wpList.includes(woonplaats)) {
-        score = 4 // Best: exact woonplaats match
+        score = 4 // Great: exact woonplaats match
       } else if (wpList.length > 0) {
         score = 0 // Has specific woonplaatsen but user's woonplaats is not in it
       } else {
@@ -117,11 +128,13 @@ export async function handleHulpSession(
 
       const gemeente = caregiver?.municipality
       const woonplaats = caregiver?.city
+      const wijk = caregiver?.neighborhood
 
       const hulpbronnen = await findHulpbronnenHierarchisch(
         { onderdeelTest: 'Mantelzorgondersteuning', soortHulp: soortHulp.dbValue },
         gemeente,
-        woonplaats
+        woonplaats,
+        wijk
       )
 
       clearHulpSession(phoneNumber)
@@ -155,11 +168,13 @@ export async function handleHulpSession(
       // For task help, use care recipient location (more relevant for local services)
       const gemeente = caregiver?.careRecipientMunicipality || caregiver?.municipality
       const woonplaats = caregiver?.careRecipientCity || caregiver?.city
+      const wijk = caregiver?.careRecipientNeighborhood || caregiver?.neighborhood
 
       const hulpbronnen = await findHulpbronnenHierarchisch(
         { onderdeelTest: onderdeelTaak.dbValue },
         gemeente,
-        woonplaats
+        woonplaats,
+        wijk
       )
 
       clearHulpSession(phoneNumber)

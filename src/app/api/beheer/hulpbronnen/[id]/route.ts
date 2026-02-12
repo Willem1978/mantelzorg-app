@@ -31,6 +31,7 @@ export async function PUT(
       provincie: body.provincie ?? null,
       dekkingNiveau: body.dekkingNiveau || 'GEMEENTE',
       dekkingWoonplaatsen: body.dekkingWoonplaatsen !== undefined ? body.dekkingWoonplaatsen : undefined,
+      dekkingWijken: body.dekkingWijken !== undefined ? body.dekkingWijken : undefined,
       isActief: body.isActief,
       onderdeelTest: body.onderdeelTest ?? null,
       soortHulp: body.soortHulp ?? null,

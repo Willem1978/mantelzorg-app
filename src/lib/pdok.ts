@@ -432,3 +432,69 @@ export async function getGemeentenByProvincie(provincienaam: string): Promise<st
     return []
   }
 }
+
+/**
+ * Zoek wijken binnen een gemeente via CBS Wijken en Buurten API (PDOK)
+ * Uses the CBS WFS service for neighborhood data
+ */
+const CBS_WFS_BASE = "https://service.pdok.nl/cbs/wijkenbuurten/2024/wfs/v1_0"
+
+export async function getWijkenByGemeente(gemeentenaam: string): Promise<string[]> {
+  try {
+    // CBS WFS service for wijken
+    const params = new URLSearchParams({
+      service: "WFS",
+      version: "2.0.0",
+      request: "GetFeature",
+      typeName: "wijkenbuurten:cbs_wijken_2024",
+      outputFormat: "json",
+      propertyName: "wijknaam",
+      CQL_FILTER: `statnaam='${gemeentenaam}'`,
+      sortBy: "wijknaam",
+      count: "200",
+    })
+
+    const response = await fetch(`${CBS_WFS_BASE}?${params}`, {
+      signal: AbortSignal.timeout(10000),
+    })
+
+    if (!response.ok) {
+      // Fallback: try alternative type name
+      const params2 = new URLSearchParams({
+        service: "WFS",
+        version: "2.0.0",
+        request: "GetFeature",
+        typeName: "cbs_wijken_2024",
+        outputFormat: "json",
+        propertyName: "wijknaam,statnaam",
+        CQL_FILTER: `statnaam='${gemeentenaam}'`,
+        sortBy: "wijknaam",
+        count: "200",
+      })
+
+      const response2 = await fetch(`${CBS_WFS_BASE}?${params2}`, {
+        signal: AbortSignal.timeout(10000),
+      })
+
+      if (!response2.ok) {
+        throw new Error(`CBS WFS error: ${response2.status}`)
+      }
+
+      const data2 = await response2.json()
+      const wijken2: string[] = (data2.features || [])
+        .map((f: any) => f.properties?.wijknaam as string)
+        .filter(Boolean)
+      return [...new Set(wijken2)].sort()
+    }
+
+    const data = await response.json()
+    const wijken: string[] = (data.features || [])
+      .map((f: any) => f.properties?.wijknaam as string)
+      .filter(Boolean)
+
+    return [...new Set(wijken)].sort()
+  } catch (error) {
+    console.error("CBS wijken error:", error)
+    return []
+  }
+}
