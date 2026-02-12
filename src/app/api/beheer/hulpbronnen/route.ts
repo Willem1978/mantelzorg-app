@@ -16,30 +16,40 @@ export async function GET(request: NextRequest) {
   const modus = searchParams.get('modus') // 'landelijk' or 'gemeentelijk'
   const provincie = searchParams.get('provincie')
 
-  const where: any = {}
+  const conditions: any[] = []
 
   if (modus === 'landelijk') {
-    where.dekkingNiveau = { in: ['LANDELIJK', 'PROVINCIE'] }
-    if (provincie) where.provincie = { equals: provincie, mode: 'insensitive' }
+    // Landelijk: hulpbronnen zonder gemeente, of met dekkingNiveau LANDELIJK/PROVINCIE
+    conditions.push({
+      OR: [
+        { dekkingNiveau: { in: ['LANDELIJK', 'PROVINCIE'] } },
+        { gemeente: null },
+      ],
+    })
+    if (provincie) conditions.push({ provincie: { equals: provincie, mode: 'insensitive' } })
   } else if (modus === 'gemeentelijk') {
-    where.dekkingNiveau = { in: ['GEMEENTE', 'WOONPLAATS', 'WIJK'] }
-    if (gemeente) where.gemeente = { equals: gemeente, mode: 'insensitive' }
+    // Gemeentelijk: alle hulpbronnen die bij deze gemeente horen (ongeacht dekkingNiveau)
+    if (gemeente) conditions.push({ gemeente: { equals: gemeente, mode: 'insensitive' } })
   } else {
-    if (gemeente) where.gemeente = { equals: gemeente, mode: 'insensitive' }
-    if (landelijk === 'true') where.gemeente = null
+    if (gemeente) conditions.push({ gemeente: { equals: gemeente, mode: 'insensitive' } })
+    if (landelijk === 'true') conditions.push({ gemeente: null })
   }
-  if (onderdeelTest) where.onderdeelTest = onderdeelTest
-  if (soortHulp) where.soortHulp = soortHulp
-  if (actief === 'true') where.isActief = true
-  if (actief === 'false') where.isActief = false
+  if (onderdeelTest) conditions.push({ onderdeelTest })
+  if (soortHulp) conditions.push({ soortHulp })
+  if (actief === 'true') conditions.push({ isActief: true })
+  if (actief === 'false') conditions.push({ isActief: false })
 
   if (zoek) {
-    where.OR = [
-      { naam: { contains: zoek, mode: 'insensitive' } },
-      { beschrijving: { contains: zoek, mode: 'insensitive' } },
-      { gemeente: { contains: zoek, mode: 'insensitive' } },
-    ]
+    conditions.push({
+      OR: [
+        { naam: { contains: zoek, mode: 'insensitive' } },
+        { beschrijving: { contains: zoek, mode: 'insensitive' } },
+        { gemeente: { contains: zoek, mode: 'insensitive' } },
+      ],
+    })
   }
+
+  const where = conditions.length > 0 ? { AND: conditions } : {}
 
   const hulpbronnen = await prisma.zorgorganisatie.findMany({
     where,
