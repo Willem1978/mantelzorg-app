@@ -137,6 +137,15 @@ export default function BeheerHulpbronnenPage() {
   const [scrapeResults, setScrapeResults] = useState<ScrapedResult[]>([])
   const [scraping, setScraping] = useState(false)
 
+  // Scraper location picker (separate from form location)
+  const [scrapeGemeenteZoek, setScrapeGemeenteZoek] = useState("")
+  const [scrapeGemeenteResults, setScrapeGemeenteResults] = useState<string[]>([])
+  const [scrapeWoonplaatsen, setScrapeWoonplaatsen] = useState<string[]>([])
+  const [scrapeWijken, setScrapeWijken] = useState<string[]>([])
+  const [scrapeSelectedWoonplaatsen, setScrapeSelectedWoonplaatsen] = useState<string[]>([])
+  const [scrapeSelectedWijken, setScrapeSelectedWijken] = useState<string[]>([])
+  const [scrapeLoadingLocatie, setScrapeLoadingLocatie] = useState(false)
+
   // Delete confirm
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
@@ -244,6 +253,45 @@ export default function BeheerHulpbronnenPage() {
     return () => clearTimeout(timer)
   }, [gemeenteZoek])
 
+  // Search gemeenten for scraper
+  useEffect(() => {
+    if (scrapeGemeenteZoek.length < 2) { setScrapeGemeenteResults([]); return }
+    const timer = setTimeout(async () => {
+      const res = await fetch(`/api/beheer/locatie?type=gemeenten`)
+      if (res.ok) {
+        const data = await res.json()
+        const all = data.gemeenten || []
+        setScrapeGemeenteResults(
+          all.filter((g: string) => g.toLowerCase().includes(scrapeGemeenteZoek.toLowerCase())).slice(0, 10)
+        )
+      }
+    }, 200)
+    return () => clearTimeout(timer)
+  }, [scrapeGemeenteZoek])
+
+  // Load woonplaatsen/wijken for scraper when gemeente is selected
+  const loadScrapeLocatie = async (gemeente: string) => {
+    if (!gemeente) {
+      setScrapeWoonplaatsen([])
+      setScrapeWijken([])
+      return
+    }
+    setScrapeLoadingLocatie(true)
+    const [wpRes, wkRes] = await Promise.all([
+      fetch(`/api/beheer/locatie?type=woonplaatsen&gemeente=${encodeURIComponent(gemeente)}`),
+      fetch(`/api/beheer/locatie?type=wijken&gemeente=${encodeURIComponent(gemeente)}`),
+    ])
+    if (wpRes.ok) {
+      const data = await wpRes.json()
+      setScrapeWoonplaatsen(data.woonplaatsen || [])
+    }
+    if (wkRes.ok) {
+      const data = await wkRes.json()
+      setScrapeWijken(data.wijken || [])
+    }
+    setScrapeLoadingLocatie(false)
+  }
+
   // CRUD
   const handleSave = async () => {
     setSaving(true)
@@ -313,15 +361,40 @@ export default function BeheerHulpbronnenPage() {
   }
 
   const handleAddFromScrape = (result: ScrapedResult) => {
+    // Determine dekkingNiveau based on scraper selections
+    let dekkingNiveau = "GEMEENTE"
+    let dekkingWoonplaatsen: string[] | null = null
+    let dekkingWijken: string[] | null = null
+
+    if (scrapeSelectedWijken.length > 0) {
+      dekkingNiveau = "WIJK"
+      dekkingWijken = scrapeSelectedWijken
+    } else if (scrapeSelectedWoonplaatsen.length > 0) {
+      dekkingNiveau = "WOONPLAATS"
+      dekkingWoonplaatsen = scrapeSelectedWoonplaatsen
+    }
+
+    const gemeente = result.gemeente || scrapeGemeente || ""
+
     setEditItem({
       ...EMPTY_FORM,
       naam: result.naam,
       beschrijving: result.beschrijving,
       website: result.website,
       telefoon: result.telefoon || "",
-      gemeente: result.gemeente || scrapeGemeente || "",
-      isActief: false, // Pending review
+      gemeente,
+      dekkingNiveau,
+      dekkingWoonplaatsen,
+      dekkingWijken,
+      isActief: false,
     })
+
+    // Load woonplaatsen/wijken in the form if gemeente is set
+    if (gemeente) {
+      if (dekkingNiveau === "WOONPLAATS") loadWoonplaatsen(gemeente)
+      if (dekkingNiveau === "WIJK") loadWijken(gemeente)
+    }
+
     setShowForm(true)
   }
 
@@ -377,14 +450,146 @@ export default function BeheerHulpbronnenPage() {
           <p className="text-sm text-muted-foreground mb-4">
             Zoek automatisch naar mantelzorgorganisaties per gemeente. Resultaten kun je beoordelen en toevoegen.
           </p>
+          {/* Gemeente autocomplete */}
+          <div className="mb-3">
+            <label className="block text-xs font-medium text-muted-foreground mb-1">
+              Gemeente
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={scrapeGemeente || scrapeGemeenteZoek}
+                onChange={(e) => {
+                  setScrapeGemeenteZoek(e.target.value)
+                  if (scrapeGemeente) {
+                    setScrapeGemeente("")
+                    setScrapeWoonplaatsen([])
+                    setScrapeWijken([])
+                    setScrapeSelectedWoonplaatsen([])
+                    setScrapeSelectedWijken([])
+                  }
+                }}
+                placeholder="Typ om een gemeente te zoeken..."
+                className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+              />
+              {scrapeGemeente && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setScrapeGemeente("")
+                    setScrapeGemeenteZoek("")
+                    setScrapeWoonplaatsen([])
+                    setScrapeWijken([])
+                    setScrapeSelectedWoonplaatsen([])
+                    setScrapeSelectedWijken([])
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  ✕
+                </button>
+              )}
+              {scrapeGemeenteResults.length > 0 && !scrapeGemeente && (
+                <div className="absolute z-50 w-full mt-1 bg-[var(--card)] border border-[var(--border)] rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  {scrapeGemeenteResults.map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => {
+                        setScrapeGemeente(g)
+                        setScrapeGemeenteZoek("")
+                        setScrapeGemeenteResults([])
+                        setScrapeSelectedWoonplaatsen([])
+                        setScrapeSelectedWijken([])
+                        loadScrapeLocatie(g)
+                      }}
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--muted)] transition"
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Woonplaatsen in scraper */}
+          {scrapeGemeente && scrapeWoonplaatsen.length > 0 && (
+            <div className="mb-3">
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
+                Woonplaatsen in {scrapeGemeente}
+                {scrapeLoadingLocatie && <span className="ml-2 text-[10px]">laden...</span>}
+                {scrapeSelectedWoonplaatsen.length > 0 && (
+                  <span className="ml-2 text-[10px] text-[var(--primary)]">
+                    ({scrapeSelectedWoonplaatsen.length} geselecteerd)
+                  </span>
+                )}
+              </label>
+              <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)] max-h-36 overflow-y-auto">
+                {scrapeWoonplaatsen.map((wp) => {
+                  const selected = scrapeSelectedWoonplaatsen.includes(wp)
+                  return (
+                    <button
+                      key={wp}
+                      type="button"
+                      onClick={() => {
+                        setScrapeSelectedWoonplaatsen((prev) =>
+                          selected ? prev.filter((w) => w !== wp) : [...prev, wp]
+                        )
+                      }}
+                      className={`px-2 py-1 rounded text-xs font-medium transition ${
+                        selected
+                          ? "bg-[var(--primary)] text-white"
+                          : "bg-[var(--muted)] text-foreground hover:bg-[var(--border)]"
+                      }`}
+                    >
+                      {wp}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Wijken in scraper */}
+          {scrapeGemeente && scrapeWijken.length > 0 && (
+            <div className="mb-3">
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
+                Wijken in {scrapeGemeente}
+                {scrapeLoadingLocatie && <span className="ml-2 text-[10px]">laden...</span>}
+                {scrapeSelectedWijken.length > 0 && (
+                  <span className="ml-2 text-[10px] text-[var(--primary)]">
+                    ({scrapeSelectedWijken.length} geselecteerd)
+                  </span>
+                )}
+              </label>
+              <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)] max-h-36 overflow-y-auto">
+                {scrapeWijken.map((wk) => {
+                  const selected = scrapeSelectedWijken.includes(wk)
+                  return (
+                    <button
+                      key={wk}
+                      type="button"
+                      onClick={() => {
+                        setScrapeSelectedWijken((prev) =>
+                          selected ? prev.filter((w) => w !== wk) : [...prev, wk]
+                        )
+                      }}
+                      className={`px-2 py-1 rounded text-xs font-medium transition ${
+                        selected
+                          ? "bg-[var(--primary)] text-white"
+                          : "bg-[var(--muted)] text-foreground hover:bg-[var(--border)]"
+                      }`}
+                    >
+                      {wk}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Zoekterm + Zoeken button */}
           <div className="flex flex-col sm:flex-row gap-3 mb-4">
-            <input
-              type="text"
-              placeholder="Gemeente (bijv. Amsterdam)"
-              value={scrapeGemeente}
-              onChange={(e) => setScrapeGemeente(e.target.value)}
-              className="flex-1 px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
-            />
             <input
               type="text"
               placeholder="Zoekterm (bijv. respijtzorg, dagbesteding)"
