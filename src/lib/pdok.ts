@@ -342,6 +342,71 @@ export async function lookupAddressByPostcodeHuisnummer(
 }
 
 /**
+ * Zoek gemeenten op basis van vrije tekst (voor autocomplete)
+ */
+export async function searchGemeenten(query: string): Promise<string[]> {
+  if (!query || query.length < 2) return []
+
+  try {
+    const params = new URLSearchParams({
+      q: query,
+      fq: "type:gemeente",
+      rows: "10",
+      sort: "score desc,gemeentenaam asc",
+    })
+
+    const response = await fetch(`${PDOK_BASE_URL}/free?${params}`)
+
+    if (!response.ok) {
+      throw new Error(`PDOK API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    const gemeenten: string[] = (data.response?.docs || [])
+      .map((doc: any) => doc.gemeentenaam as string)
+      .filter(Boolean)
+
+    return [...new Set(gemeenten)]
+  } catch (error) {
+    console.error("PDOK gemeente search error:", error)
+    return []
+  }
+}
+
+/**
+ * Zoek provincies op basis van vrije tekst (voor autocomplete)
+ */
+export async function searchProvincies(query: string): Promise<string[]> {
+  if (!query || query.length < 2) return []
+
+  try {
+    const params = new URLSearchParams({
+      q: query,
+      fq: "type:provincie",
+      rows: "10",
+    })
+
+    const response = await fetch(`${PDOK_BASE_URL}/free?${params}`)
+
+    if (!response.ok) {
+      throw new Error(`PDOK API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    const provincies: string[] = (data.response?.docs || [])
+      .map((doc: any) => doc.provincienaam as string)
+      .filter(Boolean)
+
+    return [...new Set(provincies)]
+  } catch (error) {
+    console.error("PDOK provincie search error:", error)
+    return []
+  }
+}
+
+/**
  * Zoek alle provincies (voor dropdown)
  */
 export async function getAllProvinces(): Promise<{ code: string; name: string }[]> {
