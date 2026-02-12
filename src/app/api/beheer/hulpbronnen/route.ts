@@ -20,12 +20,12 @@ export async function GET(request: NextRequest) {
 
   if (modus === 'landelijk') {
     where.dekkingNiveau = { in: ['LANDELIJK', 'PROVINCIE'] }
-    if (provincie) where.provincie = provincie
+    if (provincie) where.provincie = { equals: provincie, mode: 'insensitive' }
   } else if (modus === 'gemeentelijk') {
     where.dekkingNiveau = { in: ['GEMEENTE', 'WOONPLAATS', 'WIJK'] }
-    if (gemeente) where.gemeente = gemeente
+    if (gemeente) where.gemeente = { equals: gemeente, mode: 'insensitive' }
   } else {
-    if (gemeente) where.gemeente = gemeente
+    if (gemeente) where.gemeente = { equals: gemeente, mode: 'insensitive' }
     if (landelijk === 'true') where.gemeente = null
   }
   if (onderdeelTest) where.onderdeelTest = onderdeelTest
