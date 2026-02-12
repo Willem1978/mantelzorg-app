@@ -1,5 +1,5 @@
 import jsPDF from "jspdf"
-import autoTable from "jspdf-autotable"
+import autoTable, { type CellHookData } from "jspdf-autotable"
 
 // ==========================================
 // KLEUREN
@@ -484,7 +484,7 @@ export function generatePdfRapport(data: PdfRapportData): void {
       alternateRowStyles: {
         fillColor: [C.lichtgrijs[0], C.lichtgrijs[1], C.lichtgrijs[2]],
       },
-      didParseCell: (data) => {
+      didParseCell: (data: CellHookData) => {
         if (data.section === "body" && data.column.index === 2) {
           const val = data.cell.raw as string
           if (val === "Zwaar") data.cell.styles.textColor = [C.rood[0], C.rood[1], C.rood[2]]
@@ -534,7 +534,7 @@ export function generatePdfRapport(data: PdfRapportData): void {
     alternateRowStyles: {
       fillColor: [C.lichtgrijs[0], C.lichtgrijs[1], C.lichtgrijs[2]],
     },
-    didParseCell: (data) => {
+    didParseCell: (data: CellHookData) => {
       if (data.section === "body" && data.column.index === 2) {
         const val = data.cell.raw as string
         if (val === "Ja") data.cell.styles.textColor = [C.rood[0], C.rood[1], C.rood[2]]
