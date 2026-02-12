@@ -9,7 +9,7 @@ import {
 } from '@/lib/whatsapp-session'
 import type { HandlerResult } from './types'
 import { ONBOARDING_CHOICE_BUTTONS } from './types'
-import { savePendingTestResults } from './test-session'
+import { savePendingTestResults } from './belastbaarheidstest'
 import { getLoggedInMenu } from './logged-in-menu'
 
 export async function handleOnboardingSession(

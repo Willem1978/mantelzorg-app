@@ -7,7 +7,7 @@ import {
   getOnboardingSession,
 } from '@/lib/whatsapp-session'
 
-import { handleTestSession } from './handlers/test-session'
+import { handleTestSession } from './handlers/belastbaarheidstest'
 import { handleHulpSession } from './handlers/hulp-session'
 import { handleOnboardingSession } from './handlers/onboarding-session'
 import { handleLoggedInUser } from './handlers/logged-in-menu'
