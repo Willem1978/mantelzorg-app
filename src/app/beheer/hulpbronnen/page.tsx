@@ -255,54 +255,59 @@ export default function BeheerHulpbronnenPage() {
     setLoadingLocatie(false)
   }
 
-  // Search gemeenten for beheer modus
+  // PDOK suggest helper: calls PDOK directly from browser (CORS supported)
+  const pdokSuggest = async (query: string, type: "gemeente" | "provincie"): Promise<string[]> => {
+    const params = new URLSearchParams({
+      q: query,
+      fq: `type:${type}`,
+      rows: "10",
+    })
+    const res = await fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/suggest?${params}`)
+    if (!res.ok) return []
+    const data = await res.json()
+    const prefix = type === "gemeente" ? /^Gemeente\s+/i : /^Provincie\s+/i
+    const names: string[] = (data.response?.docs || [])
+      .map((doc: any) => (doc.weergavenaam || "").replace(prefix, ""))
+      .filter((n: string) => n.length > 0)
+    return [...new Set(names)].slice(0, 10)
+  }
+
+  // Search gemeenten for beheer modus (direct PDOK call from browser)
   useEffect(() => {
     if (beheerGemeenteZoek.length < 2) { setBeheerGemeenteResults([]); return }
     const timer = setTimeout(async () => {
-      const res = await fetch(`/api/beheer/locatie?type=gemeenten&zoek=${encodeURIComponent(beheerGemeenteZoek)}`)
-      if (res.ok) {
-        const data = await res.json()
-        setBeheerGemeenteResults((data.gemeenten || []).slice(0, 10))
-      }
+      const results = await pdokSuggest(beheerGemeenteZoek, "gemeente")
+      setBeheerGemeenteResults(results)
     }, 200)
     return () => clearTimeout(timer)
   }, [beheerGemeenteZoek])
 
-  // Search provincies for beheer modus
+  // Search provincies for beheer modus (direct PDOK call from browser)
   useEffect(() => {
     if (beheerProvincieZoek.length < 2) { setBeheerProvincieResults([]); return }
     const timer = setTimeout(async () => {
-      const res = await fetch(`/api/beheer/locatie?type=provincies&zoek=${encodeURIComponent(beheerProvincieZoek)}`)
-      if (res.ok) {
-        const data = await res.json()
-        setBeheerProvincieResults((data.provincies || []).map((p: any) => p.name || p).slice(0, 10))
-      }
+      const results = await pdokSuggest(beheerProvincieZoek, "provincie")
+      setBeheerProvincieResults(results)
     }, 200)
     return () => clearTimeout(timer)
   }, [beheerProvincieZoek])
 
-  // Search gemeenten by name (for form)
+  // Search gemeenten by name (for form, direct PDOK call from browser)
   useEffect(() => {
     if (gemeenteZoek.length < 2) { setGemeenteResults([]); return }
     const timer = setTimeout(async () => {
-      const res = await fetch(`/api/beheer/locatie?type=gemeenten&zoek=${encodeURIComponent(gemeenteZoek)}`)
-      if (res.ok) {
-        const data = await res.json()
-        setGemeenteResults((data.gemeenten || []).slice(0, 10))
-      }
+      const results = await pdokSuggest(gemeenteZoek, "gemeente")
+      setGemeenteResults(results)
     }, 200)
     return () => clearTimeout(timer)
   }, [gemeenteZoek])
 
-  // Search gemeenten for scraper
+  // Search gemeenten for scraper (direct PDOK call from browser)
   useEffect(() => {
     if (scrapeGemeenteZoek.length < 2) { setScrapeGemeenteResults([]); return }
     const timer = setTimeout(async () => {
-      const res = await fetch(`/api/beheer/locatie?type=gemeenten&zoek=${encodeURIComponent(scrapeGemeenteZoek)}`)
-      if (res.ok) {
-        const data = await res.json()
-        setScrapeGemeenteResults((data.gemeenten || []).slice(0, 10))
-      }
+      const results = await pdokSuggest(scrapeGemeenteZoek, "gemeente")
+      setScrapeGemeenteResults(results)
     }, 200)
     return () => clearTimeout(timer)
   }, [scrapeGemeenteZoek])
