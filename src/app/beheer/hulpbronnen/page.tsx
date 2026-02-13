@@ -1,7 +1,7 @@
 "use client"
 
 import { useSession } from "next-auth/react"
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useMemo } from "react"
 
 // Types
 interface Hulpbron {
@@ -514,8 +514,42 @@ export default function BeheerHulpbronnenPage() {
   }
 
   const isLoggedIn = status === "authenticated"
-  const actiefCount = hulpbronnen.filter((h) => h.isActief).length
-  const inactiefCount = hulpbronnen.filter((h) => !h.isActief).length
+
+  // Filter hulpbronnen op geselecteerde woonplaatsen/wijken
+  const gefilterdeHulpbronnen = useMemo(() => {
+    if (beheerModus !== "gemeentelijk") return hulpbronnen
+
+    if (beheerDekkingFilter === "WOONPLAATS" && beheerSelectedWoonplaatsen.length > 0) {
+      return hulpbronnen.filter((h) => {
+        // Breed dekkende niveaus altijd tonen
+        if (!h.dekkingNiveau || h.dekkingNiveau === "LANDELIJK" || h.dekkingNiveau === "PROVINCIE" || h.dekkingNiveau === "GEMEENTE") return true
+        // WOONPLAATS: alleen als er overlap is met geselecteerde woonplaatsen
+        if (h.dekkingNiveau === "WOONPLAATS" && h.dekkingWoonplaatsen) {
+          return (h.dekkingWoonplaatsen as string[]).some((wp: string) => beheerSelectedWoonplaatsen.includes(wp))
+        }
+        // WIJK: tonen (zit in dezelfde gemeente)
+        return true
+      })
+    }
+
+    if (beheerDekkingFilter === "WIJK" && beheerSelectedWijken.length > 0) {
+      return hulpbronnen.filter((h) => {
+        if (!h.dekkingNiveau || h.dekkingNiveau === "LANDELIJK" || h.dekkingNiveau === "PROVINCIE" || h.dekkingNiveau === "GEMEENTE") return true
+        // WOONPLAATS: tonen (breder dan wijk)
+        if (h.dekkingNiveau === "WOONPLAATS") return true
+        // WIJK: alleen als er overlap is met geselecteerde wijken
+        if (h.dekkingNiveau === "WIJK" && h.dekkingWijken) {
+          return (h.dekkingWijken as string[]).some((wk: string) => beheerSelectedWijken.includes(wk))
+        }
+        return true
+      })
+    }
+
+    return hulpbronnen
+  }, [hulpbronnen, beheerDekkingFilter, beheerSelectedWoonplaatsen, beheerSelectedWijken, beheerModus])
+
+  const actiefCount = gefilterdeHulpbronnen.filter((h) => h.isActief).length
+  const inactiefCount = gefilterdeHulpbronnen.filter((h) => !h.isActief).length
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 pb-24">
@@ -527,7 +561,7 @@ export default function BeheerHulpbronnenPage() {
           </h1>
           {beheerModus && (
             <p className="text-sm text-muted-foreground mt-1">
-              {hulpbronnen.length} hulpbronnen ({actiefCount} actief, {inactiefCount} inactief)
+              {gefilterdeHulpbronnen.length} hulpbronnen ({actiefCount} actief, {inactiefCount} inactief)
             </p>
           )}
           {!isLoggedIn && beheerModus && (
@@ -1527,7 +1561,7 @@ export default function BeheerHulpbronnenPage() {
       {/* Table */}
       {beheerModus && (beheerModus === "landelijk" || beheerGemeente) && (loading ? (
         <div className="text-center py-12 text-muted-foreground">Laden...</div>
-      ) : hulpbronnen.length === 0 ? (
+      ) : gefilterdeHulpbronnen.length === 0 ? (
         <div className="ker-card text-center py-12">
           <p className="text-muted-foreground">Geen hulpbronnen gevonden</p>
           <p className="text-sm text-muted-foreground mt-1">
@@ -1536,7 +1570,7 @@ export default function BeheerHulpbronnenPage() {
         </div>
       ) : (
         <div className="space-y-2">
-          {hulpbronnen.map((item) => (
+          {gefilterdeHulpbronnen.map((item) => (
             <div
               key={item.id}
               className={`ker-card p-4 flex flex-col sm:flex-row sm:items-center gap-3 ${
