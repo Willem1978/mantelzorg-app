@@ -166,6 +166,10 @@ export default function BeheerHulpbronnenPage() {
   // Delete confirm
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
+  // Data enrichment
+  const [verrijking, setVerrijking] = useState(false)
+  const [verrijkResult, setVerrijkResult] = useState<{ updated: number; total: number; log: string[] } | null>(null)
+
   // Location hierarchy (PDOK)
   const [provincies, setProvincies] = useState<string[]>([])
   const [gemeenten, setGemeenten] = useState<string[]>([])
@@ -422,6 +426,29 @@ export default function BeheerHulpbronnenPage() {
     fetchData()
   }
 
+  // Data enrichment
+  const handleVerrijk = async () => {
+    setVerrijking(true)
+    setVerrijkResult(null)
+    try {
+      const res = await fetch("/api/beheer/hulpbronnen/verrijk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setVerrijkResult({ updated: data.updated, total: data.total, log: data.log || [] })
+        fetchData() // Refresh the list
+      } else {
+        const err = await res.json()
+        alert(`Fout bij verrijken: ${err.error || "Onbekende fout"}`)
+      }
+    } catch (e: any) {
+      alert(`Fout: ${e.message}`)
+    }
+    setVerrijking(false)
+  }
+
   // Scraper
   const handleScrape = async () => {
     setScraping(true)
@@ -491,11 +518,17 @@ export default function BeheerHulpbronnenPage() {
           )}
         </div>
         {isLoggedIn && beheerModus && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={handleVerrijk}
+              disabled={verrijking}
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--accent-green)] text-white hover:opacity-90 transition disabled:opacity-50"
+            >
+              {verrijking ? "Verrijken..." : "📍 Data verrijken"}
+            </button>
             <button
               onClick={() => {
                 if (!showScraper) {
-                  // Pre-fill scraper with current beheer location context
                   if (beheerModus === "gemeentelijk" && beheerGemeente) {
                     setScrapeGemeente(beheerGemeente)
                     setScrapeDekkingNiveau(beheerDekkingFilter)
@@ -523,7 +556,6 @@ export default function BeheerHulpbronnenPage() {
                   dekkingWoonplaatsen: beheerSelectedWoonplaatsen.length > 0 ? beheerSelectedWoonplaatsen : null,
                   dekkingWijken: beheerSelectedWijken.length > 0 ? beheerSelectedWijken : null,
                 })
-                // Load woonplaatsen/wijken in form if needed
                 if (beheerGemeente && dekkingNiveau === "WOONPLAATS") loadWoonplaatsen(beheerGemeente)
                 if (beheerGemeente && dekkingNiveau === "WIJK") loadWijken(beheerGemeente)
                 setShowForm(true)
@@ -535,6 +567,30 @@ export default function BeheerHulpbronnenPage() {
           </div>
         )}
       </div>
+
+      {/* Verrijk resultaat banner */}
+      {verrijkResult && (
+        <div className="ker-card mb-4 border-l-4 border-[var(--accent-green)]">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="font-medium text-foreground">
+                Data verrijkt: {verrijkResult.updated} van {verrijkResult.total} records bijgewerkt
+              </p>
+              {verrijkResult.log.length > 0 && (
+                <details className="mt-2">
+                  <summary className="text-sm text-muted-foreground cursor-pointer">
+                    Bekijk wijzigingen ({verrijkResult.log.length})
+                  </summary>
+                  <ul className="mt-1 text-xs text-muted-foreground space-y-0.5 max-h-40 overflow-y-auto">
+                    {verrijkResult.log.map((l, i) => <li key={i}>{l}</li>)}
+                  </ul>
+                </details>
+              )}
+            </div>
+            <button onClick={() => setVerrijkResult(null)} className="text-muted-foreground hover:text-foreground text-lg leading-none">&times;</button>
+          </div>
+        </div>
+      )}
 
       {/* Stap 1: Keuze Landelijk of Gemeentelijk */}
       <div className="ker-card mb-6">

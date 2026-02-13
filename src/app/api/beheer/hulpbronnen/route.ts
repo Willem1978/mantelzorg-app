@@ -25,10 +25,8 @@ export async function GET(request: NextRequest) {
         { dekkingNiveau: { in: ['LANDELIJK', 'PROVINCIE'] } },
         { gemeente: null },
       ]
-      if (provincie) where.provincie = provincie
     } else if (modus === 'gemeentelijk') {
       if (gemeente) {
-        // Match gemeente exact, OR records without gemeente but with matching woonplaats
         where.OR = [
           { gemeente },
           { gemeente: null, woonplaats: { contains: gemeente, mode: 'insensitive' as const } },
@@ -53,7 +51,6 @@ export async function GET(request: NextRequest) {
         ],
       }
       if (where.OR) {
-        // Combine existing OR (landelijk) with zoek OR via AND
         const existingOR = where.OR
         delete where.OR
         where.AND = [{ OR: existingOR }, zoekCondition]
@@ -82,23 +79,29 @@ export async function GET(request: NextRequest) {
       orderBy: { onderdeelTest: 'asc' },
     })
 
-    const provincies = await prisma.zorgorganisatie.findMany({
-      where: { provincie: { not: null } },
-      select: { provincie: true },
-      distinct: ['provincie'],
-      orderBy: { provincie: 'asc' },
-    })
+    // Provincie column may not exist yet in DB - fetch safely
+    let provinciesList: string[] = []
+    try {
+      const provincies = await prisma.zorgorganisatie.findMany({
+        where: { provincie: { not: null } },
+        select: { provincie: true },
+        distinct: ['provincie'],
+        orderBy: { provincie: 'asc' },
+      })
+      provinciesList = provincies.map((p) => p.provincie).filter(Boolean) as string[]
+    } catch {
+      // provincie column not yet in database - will be added on next deploy
+    }
 
     const response: any = {
       hulpbronnen,
       filters: {
         gemeenten: gemeenten.map((g) => g.gemeente).filter(Boolean),
         onderdelen: onderdelen.map((o) => o.onderdeelTest).filter(Boolean),
-        provincies: provincies.map((p) => p.provincie).filter(Boolean),
+        provincies: provinciesList,
       },
     }
 
-    // Debug: return query info
     if (debug === 'true') {
       const totalCount = await prisma.zorgorganisatie.count()
       response.debug = {
@@ -126,36 +129,45 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json()
 
-  const hulpbron = await prisma.zorgorganisatie.create({
-    data: {
-      naam: body.naam,
-      beschrijving: body.beschrijving || null,
-      type: body.type || 'OVERIG',
-      telefoon: body.telefoon || null,
-      email: body.email || null,
-      website: body.website || null,
-      adres: body.adres || null,
-      postcode: body.postcode || null,
-      woonplaats: body.woonplaats || null,
-      gemeente: body.gemeente || null,
-      provincie: body.provincie || null,
-      dekkingNiveau: body.dekkingNiveau || 'GEMEENTE',
-      dekkingWoonplaatsen: body.dekkingWoonplaatsen || undefined,
-      dekkingWijken: body.dekkingWijken || undefined,
-      isActief: body.isActief ?? false,
-      onderdeelTest: body.onderdeelTest || null,
-      soortHulp: body.soortHulp || null,
-      openingstijden: body.openingstijden || null,
-      zichtbaarBijLaag: body.zichtbaarBijLaag ?? false,
-      zichtbaarBijGemiddeld: body.zichtbaarBijGemiddeld ?? false,
-      zichtbaarBijHoog: body.zichtbaarBijHoog ?? true,
-      kosten: body.kosten || null,
-      doelgroep: body.doelgroep || null,
-      aanmeldprocedure: body.aanmeldprocedure || null,
-    },
-  })
+  const data: any = {
+    naam: body.naam,
+    beschrijving: body.beschrijving || null,
+    type: body.type || 'OVERIG',
+    telefoon: body.telefoon || null,
+    email: body.email || null,
+    website: body.website || null,
+    adres: body.adres || null,
+    postcode: body.postcode || null,
+    woonplaats: body.woonplaats || null,
+    gemeente: body.gemeente || null,
+    provincie: body.provincie || null,
+    dekkingNiveau: body.dekkingNiveau || 'GEMEENTE',
+    dekkingWoonplaatsen: body.dekkingWoonplaatsen || undefined,
+    dekkingWijken: body.dekkingWijken || undefined,
+    isActief: body.isActief ?? false,
+    onderdeelTest: body.onderdeelTest || null,
+    soortHulp: body.soortHulp || null,
+    openingstijden: body.openingstijden || null,
+    zichtbaarBijLaag: body.zichtbaarBijLaag ?? false,
+    zichtbaarBijGemiddeld: body.zichtbaarBijGemiddeld ?? false,
+    zichtbaarBijHoog: body.zichtbaarBijHoog ?? true,
+    kosten: body.kosten || null,
+    doelgroep: body.doelgroep || null,
+    aanmeldprocedure: body.aanmeldprocedure || null,
+  }
 
-  return NextResponse.json(hulpbron, { status: 201 })
+  try {
+    const hulpbron = await prisma.zorgorganisatie.create({ data })
+    return NextResponse.json(hulpbron, { status: 201 })
+  } catch (error: any) {
+    // If provincie column doesn't exist yet, retry without it
+    if (error.message?.includes('provincie')) {
+      delete data.provincie
+      const hulpbron = await prisma.zorgorganisatie.create({ data })
+      return NextResponse.json(hulpbron, { status: 201 })
+    }
+    throw error
+  }
 }
 
 // PATCH /api/beheer/hulpbronnen - Batch fix: set gemeente on records where it's missing
