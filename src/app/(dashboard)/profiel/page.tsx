@@ -201,6 +201,9 @@ export default function ProfielPage() {
     confirm: "",
   })
   const [passwordError, setPasswordError] = useState("")
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState("")
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     // Laad profiel uit API
@@ -362,6 +365,26 @@ export default function ProfielPage() {
       router.push("/")
     } catch {
       router.push("/")
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true)
+    try {
+      const res = await fetch("/api/user/delete", { method: "DELETE" })
+      if (res.ok) {
+        // Wis lokale data
+        localStorage.clear()
+        await signOut({ redirect: false })
+        router.push("/")
+      } else {
+        const data = await res.json()
+        alert(data.error || "Er is iets misgegaan")
+        setIsDeleting(false)
+      }
+    } catch {
+      alert("Er is iets misgegaan bij het verwijderen")
+      setIsDeleting(false)
     }
   }
 
@@ -1099,8 +1122,101 @@ export default function ProfielPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
+
+            <Link
+              href="/privacy"
+              className="w-full flex items-center gap-3 p-3 rounded-xl border-2 border-border hover:border-primary/50 transition-colors text-left"
+            >
+              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-foreground">Privacy & AVG</p>
+                <p className="text-xs text-muted-foreground">Bekijk welke gegevens we bewaren</p>
+              </div>
+              <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="w-full flex items-center gap-3 p-3 rounded-xl border-2 border-red-200 hover:border-red-400 transition-colors text-left"
+            >
+              <div className="w-10 h-10 bg-[var(--accent-red-bg)] rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 text-[var(--accent-red)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-[var(--accent-red)]">Account verwijderen</p>
+                <p className="text-xs text-muted-foreground">Verwijder je account en alle gegevens permanent</p>
+              </div>
+              <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
           </div>
         </div>
+
+        {/* Account verwijderen bevestiging */}
+        {showDeleteConfirm && (
+          <div className="ker-card border-2 border-red-300 bg-red-50">
+            <h2 className="font-bold text-[var(--accent-red)] mb-2 flex items-center gap-2">
+              <span className="text-xl">⚠️</span>
+              Account permanent verwijderen
+            </h2>
+            <p className="text-sm text-foreground mb-3">
+              <strong>Let op:</strong> dit kan niet ongedaan gemaakt worden. Alle gegevens worden permanent verwijderd:
+            </p>
+            <ul className="text-sm text-muted-foreground space-y-1 ml-4 list-disc mb-4">
+              <li>Je profiel en accountgegevens</li>
+              <li>Alle Balanstest resultaten en rapporten</li>
+              <li>Je agenda, taken en hulpvragen</li>
+              <li>Opgeslagen favorieten</li>
+              <li>WhatsApp koppeling</li>
+            </ul>
+
+            <p className="text-sm text-foreground mb-2">
+              Typ <strong>VERWIJDEREN</strong> om te bevestigen:
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="VERWIJDEREN"
+              className="w-full p-3 border-2 border-red-200 rounded-xl text-center font-mono text-lg mb-3 focus:outline-none focus:border-red-400"
+            />
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false)
+                  setDeleteConfirmText("")
+                }}
+                className="flex-1 ker-btn ker-btn-secondary"
+              >
+                Annuleren
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmText !== "VERWIJDEREN" || isDeleting}
+                className="flex-1 ker-btn bg-[var(--accent-red)] text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Verwijderen...
+                  </>
+                ) : (
+                  "Definitief verwijderen"
+                )}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Hulp */}
         <div className="ker-card bg-muted">
