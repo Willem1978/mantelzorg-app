@@ -834,7 +834,7 @@ export default function ProfielPage() {
               </div>
             </div>
 
-            <div className="py-2 border-b border-border">
+            <div className="py-2">
               <span className="text-muted-foreground block mb-1">Adres</span>
               {profile.adres ? (
                 <div>
@@ -842,18 +842,16 @@ export default function ProfielPage() {
                   <span className="text-muted-foreground block text-sm">
                     {profile.adres.postcode && `${profile.adres.postcode}, `}{profile.adres.woonplaats}
                   </span>
+                  {profile.adres.gemeente && profile.adres.gemeente !== profile.adres.woonplaats && (
+                    <span className="text-muted-foreground block text-sm">Gemeente {profile.adres.gemeente}</span>
+                  )}
                   {profile.adres.wijknaam && (
-                    <span className="text-primary text-xs">Wijk: {profile.adres.wijknaam}</span>
+                    <span className="text-primary block text-xs">Wijk: {profile.adres.wijknaam}</span>
                   )}
                 </div>
               ) : (
                 <span className="text-muted-foreground">-</span>
               )}
-            </div>
-
-            <div className="flex justify-between items-center py-2">
-              <span className="text-muted-foreground">Gemeente</span>
-              <span className="font-medium text-foreground">{profile.adres?.gemeente || "-"}</span>
             </div>
           </div>
         </div>
@@ -902,8 +900,11 @@ export default function ProfielPage() {
                   <span className="text-muted-foreground block text-sm">
                     {profile.naasteAdres.postcode && `${profile.naasteAdres.postcode}, `}{profile.naasteAdres.woonplaats}
                   </span>
+                  {profile.naasteAdres.gemeente && profile.naasteAdres.gemeente !== profile.naasteAdres.woonplaats && (
+                    <span className="text-muted-foreground block text-sm">Gemeente {profile.naasteAdres.gemeente}</span>
+                  )}
                   {profile.naasteAdres.wijknaam && (
-                    <span className="text-primary text-xs">Wijk: {profile.naasteAdres.wijknaam}</span>
+                    <span className="text-primary block text-xs">Wijk: {profile.naasteAdres.wijknaam}</span>
                   )}
                 </div>
               ) : (
