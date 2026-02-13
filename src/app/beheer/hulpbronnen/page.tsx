@@ -517,35 +517,38 @@ export default function BeheerHulpbronnenPage() {
 
   // Filter hulpbronnen op geselecteerde woonplaatsen/wijken
   const gefilterdeHulpbronnen = useMemo(() => {
-    if (beheerModus !== "gemeentelijk") return hulpbronnen
+    try {
+      if (beheerModus !== "gemeentelijk") return hulpbronnen
 
-    if (beheerDekkingFilter === "WOONPLAATS" && beheerSelectedWoonplaatsen.length > 0) {
-      return hulpbronnen.filter((h) => {
-        // Breed dekkende niveaus altijd tonen
-        if (!h.dekkingNiveau || h.dekkingNiveau === "LANDELIJK" || h.dekkingNiveau === "PROVINCIE" || h.dekkingNiveau === "GEMEENTE") return true
-        // WOONPLAATS: alleen als er overlap is met geselecteerde woonplaatsen
-        if (h.dekkingNiveau === "WOONPLAATS" && h.dekkingWoonplaatsen) {
-          return (h.dekkingWoonplaatsen as string[]).some((wp: string) => beheerSelectedWoonplaatsen.includes(wp))
-        }
-        // WIJK: tonen (zit in dezelfde gemeente)
-        return true
-      })
+      if (beheerDekkingFilter === "WOONPLAATS" && beheerSelectedWoonplaatsen.length > 0) {
+        return hulpbronnen.filter((h) => {
+          // Breed dekkende niveaus altijd tonen
+          if (!h.dekkingNiveau || h.dekkingNiveau === "LANDELIJK" || h.dekkingNiveau === "PROVINCIE" || h.dekkingNiveau === "GEMEENTE") return true
+          // WOONPLAATS: alleen als er overlap is met geselecteerde woonplaatsen
+          if (h.dekkingNiveau === "WOONPLAATS" && Array.isArray(h.dekkingWoonplaatsen)) {
+            return h.dekkingWoonplaatsen.some((wp) => beheerSelectedWoonplaatsen.includes(wp))
+          }
+          // WIJK: tonen (zit in dezelfde gemeente)
+          return true
+        })
+      }
+
+      if (beheerDekkingFilter === "WIJK" && beheerSelectedWijken.length > 0) {
+        return hulpbronnen.filter((h) => {
+          if (!h.dekkingNiveau || h.dekkingNiveau === "LANDELIJK" || h.dekkingNiveau === "PROVINCIE" || h.dekkingNiveau === "GEMEENTE") return true
+          if (h.dekkingNiveau === "WOONPLAATS") return true
+          // WIJK: alleen als er overlap is met geselecteerde wijken
+          if (h.dekkingNiveau === "WIJK" && Array.isArray(h.dekkingWijken)) {
+            return h.dekkingWijken.some((wk) => beheerSelectedWijken.includes(wk))
+          }
+          return true
+        })
+      }
+
+      return hulpbronnen
+    } catch {
+      return hulpbronnen
     }
-
-    if (beheerDekkingFilter === "WIJK" && beheerSelectedWijken.length > 0) {
-      return hulpbronnen.filter((h) => {
-        if (!h.dekkingNiveau || h.dekkingNiveau === "LANDELIJK" || h.dekkingNiveau === "PROVINCIE" || h.dekkingNiveau === "GEMEENTE") return true
-        // WOONPLAATS: tonen (breder dan wijk)
-        if (h.dekkingNiveau === "WOONPLAATS") return true
-        // WIJK: alleen als er overlap is met geselecteerde wijken
-        if (h.dekkingNiveau === "WIJK" && h.dekkingWijken) {
-          return (h.dekkingWijken as string[]).some((wk: string) => beheerSelectedWijken.includes(wk))
-        }
-        return true
-      })
-    }
-
-    return hulpbronnen
   }, [hulpbronnen, beheerDekkingFilter, beheerSelectedWoonplaatsen, beheerSelectedWijken, beheerModus])
 
   const actiefCount = gefilterdeHulpbronnen.filter((h) => h.isActief).length
@@ -1744,16 +1747,16 @@ export default function BeheerHulpbronnenPage() {
                   {editItem.dekkingNiveau === "WOONPLAATS" && (
                     <>
                       Gemeente {editItem.gemeente || "—"}
-                      {(editItem.dekkingWoonplaatsen || []).length > 0
-                        ? ` — ${(editItem.dekkingWoonplaatsen as string[]).length} woonplaats(en): ${(editItem.dekkingWoonplaatsen as string[]).join(", ")}`
+                      {Array.isArray(editItem.dekkingWoonplaatsen) && editItem.dekkingWoonplaatsen.length > 0
+                        ? ` — ${editItem.dekkingWoonplaatsen.length} woonplaats(en): ${editItem.dekkingWoonplaatsen.join(", ")}`
                         : " — alle woonplaatsen"}
                     </>
                   )}
                   {editItem.dekkingNiveau === "WIJK" && (
                     <>
                       Gemeente {editItem.gemeente || "—"}
-                      {(editItem.dekkingWijken || []).length > 0
-                        ? ` — ${(editItem.dekkingWijken as string[]).length} wijk(en): ${(editItem.dekkingWijken as string[]).slice(0, 5).join(", ")}${(editItem.dekkingWijken as string[]).length > 5 ? ` +${(editItem.dekkingWijken as string[]).length - 5} meer` : ""}`
+                      {Array.isArray(editItem.dekkingWijken) && editItem.dekkingWijken.length > 0
+                        ? ` — ${editItem.dekkingWijken.length} wijk(en): ${editItem.dekkingWijken.slice(0, 5).join(", ")}${editItem.dekkingWijken.length > 5 ? ` +${editItem.dekkingWijken.length - 5} meer` : ""}`
                         : " — alle wijken"}
                     </>
                   )}
