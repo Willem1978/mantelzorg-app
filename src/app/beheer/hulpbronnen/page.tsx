@@ -127,7 +127,6 @@ export default function BeheerHulpbronnenPage() {
   const [beheerWijken, setBeheerWijken] = useState<string[]>([])
   const [beheerSelectedWoonplaatsen, setBeheerSelectedWoonplaatsen] = useState<string[]>([])
   const [beheerSelectedWijken, setBeheerSelectedWijken] = useState<string[]>([])
-  const [beheerWijkWoonplaats, setBeheerWijkWoonplaats] = useState("") // intermediate woonplaats for wijk cascade
   const [beheerLoadingLocatie, setBeheerLoadingLocatie] = useState(false)
 
   // Data
@@ -162,7 +161,6 @@ export default function BeheerHulpbronnenPage() {
   const [scrapeWijken, setScrapeWijken] = useState<string[]>([])
   const [scrapeSelectedWoonplaatsen, setScrapeSelectedWoonplaatsen] = useState<string[]>([])
   const [scrapeSelectedWijken, setScrapeSelectedWijken] = useState<string[]>([])
-  const [scrapeWijkWoonplaats, setScrapeWijkWoonplaats] = useState("") // intermediate woonplaats for wijk cascade
   const [scrapeLoadingLocatie, setScrapeLoadingLocatie] = useState(false)
 
   // Delete confirm
@@ -180,7 +178,6 @@ export default function BeheerHulpbronnenPage() {
   const [gemeenteZoek, setGemeenteZoek] = useState("")
   const [gemeenteResults, setGemeenteResults] = useState<string[]>([])
   const [loadingLocatie, setLoadingLocatie] = useState(false)
-  const [formWijkWoonplaats, setFormWijkWoonplaats] = useState("") // intermediate woonplaats for form wijk cascade
 
   const fetchData = useCallback(async () => {
     if (!beheerModus) return
@@ -264,6 +261,26 @@ export default function BeheerHulpbronnenPage() {
     setLoadingLocatie(false)
   }
 
+  // Load form locatie (woonplaatsen + wijken) and pre-select based on dekkingNiveau
+  const loadFormLocatie = async (gemeente: string, niveau: string) => {
+    if (!gemeente) { setWoonplaatsen([]); setWijken([]); return }
+    setLoadingLocatie(true)
+    const [wp, wk] = await Promise.all([pdokWoonplaatsen(gemeente), pdokWijken(gemeente)])
+    setWoonplaatsen(wp)
+    setWijken(wk)
+    if (niveau === "WOONPLAATS") {
+      setEditItem(prev => ({ ...prev, dekkingWoonplaatsen: wp.length > 0 ? [...wp] : null }))
+    }
+    if (niveau === "WIJK") {
+      setEditItem(prev => ({
+        ...prev,
+        dekkingWoonplaatsen: wp.length > 0 ? [...wp] : null,
+        dekkingWijken: wk.length > 0 ? [...wk] : null,
+      }))
+    }
+    setLoadingLocatie(false)
+  }
+
   // PDOK suggest helper: calls PDOK directly from browser (CORS supported)
   const PDOK_URL = "https://api.pdok.nl/bzk/locatieserver/search/v3_1"
 
@@ -324,10 +341,6 @@ export default function BeheerHulpbronnenPage() {
     const [wp, wk] = await Promise.all([pdokWoonplaatsen(gemeente), pdokWijken(gemeente)])
     setBeheerWoonplaatsen(wp)
     setBeheerWijken(wk)
-    // Auto-select woonplaats if only 1 (for WIJK cascade)
-    if (wp.length === 1) {
-      setBeheerWijkWoonplaats(wp[0])
-    }
     setBeheerLoadingLocatie(false)
   }
 
@@ -378,10 +391,6 @@ export default function BeheerHulpbronnenPage() {
     const [wp, wk] = await Promise.all([pdokWoonplaatsen(gemeente), pdokWijken(gemeente)])
     setScrapeWoonplaatsen(wp)
     setScrapeWijken(wk)
-    // Auto-select woonplaats if only 1 (for WIJK cascade)
-    if (wp.length === 1) {
-      setScrapeWijkWoonplaats(wp[0])
-    }
     setScrapeLoadingLocatie(false)
   }
 
@@ -489,22 +498,16 @@ export default function BeheerHulpbronnenPage() {
       website: result.website,
       telefoon: result.telefoon || "",
       gemeente: dekkingNiveau === "LANDELIJK" ? null : gemeente,
-      woonplaats: dekkingNiveau === "WIJK" ? scrapeWijkWoonplaats : "",
+      woonplaats: "",
       dekkingNiveau,
       dekkingWoonplaatsen,
       dekkingWijken,
       isActief: false,
     })
 
-    setFormWijkWoonplaats(dekkingNiveau === "WIJK" ? scrapeWijkWoonplaats : "")
-
     // Load woonplaatsen/wijken in the form if gemeente is set
-    if (gemeente && dekkingNiveau !== "LANDELIJK") {
-      if (dekkingNiveau === "WOONPLAATS") loadWoonplaatsen(gemeente)
-      if (dekkingNiveau === "WIJK") {
-        loadWoonplaatsen(gemeente)
-        if (scrapeWijkWoonplaats) loadWijken(gemeente)
-      }
+    if (gemeente && (dekkingNiveau === "WOONPLAATS" || dekkingNiveau === "WIJK")) {
+      loadFormLocatie(gemeente, dekkingNiveau)
     }
 
     setShowForm(true)
@@ -570,15 +573,12 @@ export default function BeheerHulpbronnenPage() {
                   ...EMPTY_FORM,
                   dekkingNiveau,
                   gemeente: beheerModus === "gemeentelijk" ? beheerGemeente : "",
-                  woonplaats: dekkingNiveau === "WIJK" ? beheerWijkWoonplaats : "",
+                  woonplaats: "",
                   dekkingWoonplaatsen: beheerSelectedWoonplaatsen.length > 0 ? beheerSelectedWoonplaatsen : null,
                   dekkingWijken: beheerSelectedWijken.length > 0 ? beheerSelectedWijken : null,
                 })
-                setFormWijkWoonplaats(dekkingNiveau === "WIJK" ? beheerWijkWoonplaats : "")
-                if (beheerGemeente && dekkingNiveau === "WOONPLAATS") loadWoonplaatsen(beheerGemeente)
-                if (beheerGemeente && dekkingNiveau === "WIJK") {
-                  loadWoonplaatsen(beheerGemeente)
-                  if (beheerWijkWoonplaats) loadWijken(beheerGemeente)
+                if (beheerGemeente && (dekkingNiveau === "WOONPLAATS" || dekkingNiveau === "WIJK")) {
+                  loadFormLocatie(beheerGemeente, dekkingNiveau)
                 }
                 setShowForm(true)
               }}
@@ -793,16 +793,16 @@ export default function BeheerHulpbronnenPage() {
                       if (n.value === "GEMEENTE") {
                         setBeheerSelectedWoonplaatsen([])
                         setBeheerSelectedWijken([])
-                        setBeheerWijkWoonplaats("")
                       }
                       if (n.value === "WOONPLAATS") {
+                        // Pre-select all woonplaatsen
+                        setBeheerSelectedWoonplaatsen([...beheerWoonplaatsen])
                         setBeheerSelectedWijken([])
-                        setBeheerWijkWoonplaats("")
                       }
                       if (n.value === "WIJK") {
-                        setBeheerSelectedWoonplaatsen([])
-                        setBeheerWijkWoonplaats("")
-                        setBeheerSelectedWijken([])
+                        // Pre-select all woonplaatsen + all wijken
+                        setBeheerSelectedWoonplaatsen([...beheerWoonplaatsen])
+                        setBeheerSelectedWijken([...beheerWijken])
                       }
                     }}
                     className={`px-3 py-2 rounded-lg text-xs font-medium transition ${
@@ -836,7 +836,7 @@ export default function BeheerHulpbronnenPage() {
                         setBeheerWijken([])
                         setBeheerSelectedWoonplaatsen([])
                         setBeheerSelectedWijken([])
-                        setBeheerWijkWoonplaats("")
+
                       }
                     }}
                     onKeyDown={(e) => {
@@ -863,7 +863,7 @@ export default function BeheerHulpbronnenPage() {
                         setBeheerWijken([])
                         setBeheerSelectedWoonplaatsen([])
                         setBeheerSelectedWijken([])
-                        setBeheerWijkWoonplaats("")
+
                       }}
                       className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
@@ -967,38 +967,56 @@ export default function BeheerHulpbronnenPage() {
               </div>
             )}
 
-            {/* Stap 3 (WIJK): Kies eerst woonplaats */}
+            {/* Stap 3 (WIJK): Woonplaatsen (alle pre-selected) */}
             {beheerDekkingFilter === "WIJK" && beheerGemeente && (
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1">
-                  3. Kies woonplaats in {beheerGemeente}
+                  3. Woonplaatsen in {beheerGemeente}
                   {beheerLoadingLocatie && <span className="ml-2 text-[10px]">laden...</span>}
-                  {!beheerWijkWoonplaats && beheerWoonplaatsen.length > 1 && (
-                    <span className="ml-2 text-[10px] text-[var(--accent-amber)]">klik om wijken te zien</span>
+                  {beheerSelectedWoonplaatsen.length > 0 && (
+                    <span className="ml-2 text-[10px] text-[var(--primary)]">
+                      ({beheerSelectedWoonplaatsen.length}/{beheerWoonplaatsen.length})
+                    </span>
                   )}
-                  {beheerWijkWoonplaats && (
-                    <span className="ml-2 text-[10px] text-[var(--primary)]">{beheerWijkWoonplaats}</span>
+                  {beheerWoonplaatsen.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (beheerSelectedWoonplaatsen.length === beheerWoonplaatsen.length) {
+                          setBeheerSelectedWoonplaatsen([])
+                        } else {
+                          setBeheerSelectedWoonplaatsen([...beheerWoonplaatsen])
+                        }
+                      }}
+                      className="ml-2 text-[10px] text-[var(--primary)] hover:underline"
+                    >
+                      {beheerSelectedWoonplaatsen.length === beheerWoonplaatsen.length ? "Alles deselecteren" : "Alles selecteren"}
+                    </button>
                   )}
                 </label>
                 {beheerWoonplaatsen.length > 0 ? (
                   <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)] max-h-36 overflow-y-auto">
-                    {beheerWoonplaatsen.map((wp) => (
-                      <button
-                        key={wp}
-                        type="button"
-                        onClick={() => {
-                          setBeheerWijkWoonplaats(wp)
-                          setBeheerSelectedWijken([])
-                        }}
-                        className={`px-2 py-1 rounded text-xs font-medium transition ${
-                          beheerWijkWoonplaats === wp
-                            ? "bg-[var(--primary)] text-white"
-                            : "bg-[var(--muted)] text-foreground hover:bg-[var(--border)]"
-                        }`}
-                      >
-                        {wp}
-                      </button>
-                    ))}
+                    {beheerWoonplaatsen.map((wp) => {
+                      const selected = beheerSelectedWoonplaatsen.includes(wp)
+                      return (
+                        <button
+                          key={wp}
+                          type="button"
+                          onClick={() => {
+                            setBeheerSelectedWoonplaatsen((prev) =>
+                              selected ? prev.filter((w) => w !== wp) : [...prev, wp]
+                            )
+                          }}
+                          className={`px-2 py-1 rounded text-xs font-medium transition ${
+                            selected
+                              ? "bg-[var(--primary)] text-white"
+                              : "bg-[var(--muted)] text-foreground hover:bg-[var(--border)]"
+                          }`}
+                        >
+                          {wp}
+                        </button>
+                      )
+                    })}
                   </div>
                 ) : (
                   <p className="text-xs text-muted-foreground">
@@ -1008,29 +1026,32 @@ export default function BeheerHulpbronnenPage() {
               </div>
             )}
 
-            {/* Stap 4 (WIJK): Wijken selectie na woonplaats */}
-            {beheerDekkingFilter === "WIJK" && beheerGemeente && beheerWijkWoonplaats && (
+            {/* Stap 4 (WIJK): Wijken (alle pre-selected) */}
+            {beheerDekkingFilter === "WIJK" && beheerGemeente && (
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1">
                   4. Wijken in {beheerGemeente}
+                  {beheerLoadingLocatie && <span className="ml-2 text-[10px]">laden...</span>}
                   {beheerSelectedWijken.length > 0 && (
                     <span className="ml-2 text-[10px] text-[var(--primary)]">
-                      ({beheerSelectedWijken.length} geselecteerd)
+                      ({beheerSelectedWijken.length}/{beheerWijken.length})
                     </span>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (beheerSelectedWijken.length === beheerWijken.length) {
-                        setBeheerSelectedWijken([])
-                      } else {
-                        setBeheerSelectedWijken([...beheerWijken])
-                      }
-                    }}
-                    className="ml-2 text-[10px] text-[var(--primary)] hover:underline"
-                  >
-                    {beheerSelectedWijken.length === beheerWijken.length ? "Alles deselecteren" : "Alles selecteren"}
-                  </button>
+                  {beheerWijken.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (beheerSelectedWijken.length === beheerWijken.length) {
+                          setBeheerSelectedWijken([])
+                        } else {
+                          setBeheerSelectedWijken([...beheerWijken])
+                        }
+                      }}
+                      className="ml-2 text-[10px] text-[var(--primary)] hover:underline"
+                    >
+                      {beheerSelectedWijken.length === beheerWijken.length ? "Alles deselecteren" : "Alles selecteren"}
+                    </button>
+                  )}
                 </label>
                 {beheerWijken.length > 0 ? (
                   <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)] max-h-36 overflow-y-auto">
@@ -1128,21 +1149,18 @@ export default function BeheerHulpbronnenPage() {
                       setScrapeWijken([])
                       setScrapeSelectedWoonplaatsen([])
                       setScrapeSelectedWijken([])
-                      setScrapeWijkWoonplaats("")
                     }
-                    if (n.value === "GEMEENTE") {
+                    if (n.value === "GEMEENTE" || n.value === "PROVINCIE") {
                       setScrapeSelectedWoonplaatsen([])
                       setScrapeSelectedWijken([])
-                      setScrapeWijkWoonplaats("")
                     }
                     if (n.value === "WOONPLAATS") {
+                      setScrapeSelectedWoonplaatsen([...scrapeWoonplaatsen])
                       setScrapeSelectedWijken([])
-                      setScrapeWijkWoonplaats("")
                     }
                     if (n.value === "WIJK") {
-                      setScrapeSelectedWoonplaatsen([])
-                      setScrapeWijkWoonplaats("")
-                      setScrapeSelectedWijken([])
+                      setScrapeSelectedWoonplaatsen([...scrapeWoonplaatsen])
+                      setScrapeSelectedWijken([...scrapeWijken])
                     }
                   }}
                   className={`px-3 py-2 rounded-lg text-xs font-medium transition ${
@@ -1176,7 +1194,7 @@ export default function BeheerHulpbronnenPage() {
                         setScrapeWijken([])
                         setScrapeSelectedWoonplaatsen([])
                         setScrapeSelectedWijken([])
-                        setScrapeWijkWoonplaats("")
+
                       }
                     }}
                     onKeyDown={(e) => {
@@ -1188,7 +1206,7 @@ export default function BeheerHulpbronnenPage() {
                         setScrapeGemeenteResults([])
                         setScrapeSelectedWoonplaatsen([])
                         setScrapeSelectedWijken([])
-                        setScrapeWijkWoonplaats("")
+
                         loadScrapeLocatie(val)
                       }
                     }}
@@ -1205,7 +1223,7 @@ export default function BeheerHulpbronnenPage() {
                         setScrapeWijken([])
                         setScrapeSelectedWoonplaatsen([])
                         setScrapeSelectedWijken([])
-                        setScrapeWijkWoonplaats("")
+
                       }}
                       className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
@@ -1224,7 +1242,7 @@ export default function BeheerHulpbronnenPage() {
                             setScrapeGemeenteResults([])
                             setScrapeSelectedWoonplaatsen([])
                             setScrapeSelectedWijken([])
-                            setScrapeWijkWoonplaats("")
+    
                             loadScrapeLocatie(g)
                           }}
                           className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--muted)] transition"
@@ -1245,7 +1263,6 @@ export default function BeheerHulpbronnenPage() {
                       setScrapeGemeenteResults([])
                       setScrapeSelectedWoonplaatsen([])
                       setScrapeSelectedWijken([])
-                      setScrapeWijkWoonplaats("")
                       loadScrapeLocatie(val)
                     }}
                     className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--accent-amber)] text-white hover:opacity-90 transition whitespace-nowrap min-h-[44px]"
@@ -1316,38 +1333,56 @@ export default function BeheerHulpbronnenPage() {
             </div>
           )}
 
-          {/* Stap 2b (WIJK): Kies eerst woonplaats */}
+          {/* Stap 2b (WIJK): Woonplaatsen (alle pre-selected) */}
           {scrapeDekkingNiveau === "WIJK" && scrapeGemeente && (
             <div className="mb-3">
               <label className="block text-xs font-medium text-muted-foreground mb-1">
-                3. Kies woonplaats in {scrapeGemeente}
+                3. Woonplaatsen in {scrapeGemeente}
                 {scrapeLoadingLocatie && <span className="ml-2 text-[10px]">laden...</span>}
-                {!scrapeWijkWoonplaats && scrapeWoonplaatsen.length > 1 && (
-                  <span className="ml-2 text-[10px] text-[var(--accent-amber)]">klik om wijken te zien</span>
+                {scrapeSelectedWoonplaatsen.length > 0 && (
+                  <span className="ml-2 text-[10px] text-[var(--primary)]">
+                    ({scrapeSelectedWoonplaatsen.length}/{scrapeWoonplaatsen.length})
+                  </span>
                 )}
-                {scrapeWijkWoonplaats && (
-                  <span className="ml-2 text-[10px] text-[var(--primary)]">{scrapeWijkWoonplaats}</span>
+                {scrapeWoonplaatsen.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (scrapeSelectedWoonplaatsen.length === scrapeWoonplaatsen.length) {
+                        setScrapeSelectedWoonplaatsen([])
+                      } else {
+                        setScrapeSelectedWoonplaatsen([...scrapeWoonplaatsen])
+                      }
+                    }}
+                    className="ml-2 text-[10px] text-[var(--primary)] hover:underline"
+                  >
+                    {scrapeSelectedWoonplaatsen.length === scrapeWoonplaatsen.length ? "Alles deselecteren" : "Alles selecteren"}
+                  </button>
                 )}
               </label>
               {scrapeWoonplaatsen.length > 0 ? (
                 <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)] max-h-36 overflow-y-auto">
-                  {scrapeWoonplaatsen.map((wp) => (
-                    <button
-                      key={wp}
-                      type="button"
-                      onClick={() => {
-                        setScrapeWijkWoonplaats(wp)
-                        setScrapeSelectedWijken([])
-                      }}
-                      className={`px-2 py-1 rounded text-xs font-medium transition ${
-                        scrapeWijkWoonplaats === wp
-                          ? "bg-[var(--accent-amber)] text-white"
-                          : "bg-[var(--muted)] text-foreground hover:bg-[var(--border)]"
-                      }`}
-                    >
-                      {wp}
-                    </button>
-                  ))}
+                  {scrapeWoonplaatsen.map((wp) => {
+                    const selected = scrapeSelectedWoonplaatsen.includes(wp)
+                    return (
+                      <button
+                        key={wp}
+                        type="button"
+                        onClick={() => {
+                          setScrapeSelectedWoonplaatsen((prev) =>
+                            selected ? prev.filter((w) => w !== wp) : [...prev, wp]
+                          )
+                        }}
+                        className={`px-2 py-1 rounded text-xs font-medium transition ${
+                          selected
+                            ? "bg-[var(--accent-amber)] text-white"
+                            : "bg-[var(--muted)] text-foreground hover:bg-[var(--border)]"
+                        }`}
+                      >
+                        {wp}
+                      </button>
+                    )
+                  })}
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground">
@@ -1357,14 +1392,15 @@ export default function BeheerHulpbronnenPage() {
             </div>
           )}
 
-          {/* Stap 2c (WIJK): Wijken na woonplaats selectie */}
-          {scrapeDekkingNiveau === "WIJK" && scrapeGemeente && scrapeWijkWoonplaats && (
+          {/* Stap 2c (WIJK): Wijken (alle pre-selected) */}
+          {scrapeDekkingNiveau === "WIJK" && scrapeGemeente && (
             <div className="mb-3">
               <label className="block text-xs font-medium text-muted-foreground mb-1">
                 4. Wijken in {scrapeGemeente}
+                {scrapeLoadingLocatie && <span className="ml-2 text-[10px]">laden...</span>}
                 {scrapeSelectedWijken.length > 0 && (
                   <span className="ml-2 text-[10px] text-[var(--primary)]">
-                    ({scrapeSelectedWijken.length} geselecteerd)
+                    ({scrapeSelectedWijken.length}/{scrapeWijken.length})
                   </span>
                 )}
                 {scrapeWijken.length > 0 && (
@@ -1596,8 +1632,16 @@ export default function BeheerHulpbronnenPage() {
                   {item.isActief ? "Deactiveer" : "Activeer"}
                 </button>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setEditItem(item)
+                    if (item.gemeente && (item.dekkingNiveau === "WOONPLAATS" || item.dekkingNiveau === "WIJK")) {
+                      // Load available woonplaatsen/wijken without pre-selecting (preserve existing selections)
+                      setLoadingLocatie(true)
+                      const [wp, wk] = await Promise.all([pdokWoonplaatsen(item.gemeente), pdokWijken(item.gemeente)])
+                      setWoonplaatsen(wp)
+                      setWijken(wk)
+                      setLoadingLocatie(false)
+                    }
                     setShowForm(true)
                   }}
                   className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--muted)] text-foreground hover:bg-[var(--border)] transition"
@@ -1674,11 +1718,20 @@ export default function BeheerHulpbronnenPage() {
                           ...(n.value === "LANDELIJK" ? { gemeente: null, provincie: null, dekkingWoonplaatsen: null, dekkingWijken: null } : {}),
                           ...(n.value === "PROVINCIE" ? { gemeente: null, dekkingWoonplaatsen: null, dekkingWijken: null } : {}),
                           ...(n.value === "GEMEENTE" ? { dekkingWoonplaatsen: null, dekkingWijken: null } : {}),
-                          ...(n.value === "WOONPLAATS" ? { dekkingWijken: null } : {}),
-                          ...(n.value === "WIJK" ? { dekkingWoonplaatsen: null } : {}),
+                          ...(n.value === "WOONPLAATS" ? {
+                            dekkingWijken: null,
+                            dekkingWoonplaatsen: woonplaatsen.length > 0 ? [...woonplaatsen] : null,
+                          } : {}),
+                          ...(n.value === "WIJK" ? {
+                            dekkingWoonplaatsen: woonplaatsen.length > 0 ? [...woonplaatsen] : null,
+                            dekkingWijken: wijken.length > 0 ? [...wijken] : null,
+                          } : {}),
                         })
                         if (n.value === "PROVINCIE" && editItem.provincie) {
                           loadGemeenten(editItem.provincie)
+                        }
+                        if ((n.value === "WOONPLAATS" || n.value === "WIJK") && editItem.gemeente) {
+                          loadFormLocatie(editItem.gemeente, n.value)
                         }
                       }}
                       className={`px-3 py-2 rounded-lg text-xs font-medium transition ${
@@ -1739,9 +1792,9 @@ export default function BeheerHulpbronnenPage() {
                             setEditItem({ ...editItem, gemeente: val, dekkingWoonplaatsen: null, dekkingWijken: null })
                             setGemeenteZoek("")
                             setGemeenteResults([])
-                            setFormWijkWoonplaats("")
-                            if (editItem.dekkingNiveau === "WOONPLAATS") loadWoonplaatsen(val)
-                            if (editItem.dekkingNiveau === "WIJK") loadWoonplaatsen(val)
+                            if (editItem.dekkingNiveau === "WOONPLAATS" || editItem.dekkingNiveau === "WIJK") {
+                              loadFormLocatie(val, editItem.dekkingNiveau)
+                            }
                           }
                         }}
                         placeholder="Typ om een gemeente te zoeken..."
@@ -1770,12 +1823,8 @@ export default function BeheerHulpbronnenPage() {
                                 setEditItem({ ...editItem, gemeente: g, dekkingWoonplaatsen: null, dekkingWijken: null })
                                 setGemeenteZoek("")
                                 setGemeenteResults([])
-                                setFormWijkWoonplaats("")
-                                if (editItem.dekkingNiveau === "WOONPLAATS") {
-                                  loadWoonplaatsen(g)
-                                }
-                                if (editItem.dekkingNiveau === "WIJK") {
-                                  loadWoonplaatsen(g)
+                                if (editItem.dekkingNiveau === "WOONPLAATS" || editItem.dekkingNiveau === "WIJK") {
+                                  loadFormLocatie(g, editItem.dekkingNiveau)
                                 }
                               }}
                               className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--muted)] transition"
@@ -1794,9 +1843,9 @@ export default function BeheerHulpbronnenPage() {
                           setEditItem({ ...editItem, gemeente: val, dekkingWoonplaatsen: null, dekkingWijken: null })
                           setGemeenteZoek("")
                           setGemeenteResults([])
-                          setFormWijkWoonplaats("")
-                          if (editItem.dekkingNiveau === "WOONPLAATS") loadWoonplaatsen(val)
-                          if (editItem.dekkingNiveau === "WIJK") loadWoonplaatsen(val)
+                          if (editItem.dekkingNiveau === "WOONPLAATS" || editItem.dekkingNiveau === "WIJK") {
+                            loadFormLocatie(val, editItem.dekkingNiveau)
+                          }
                         }}
                         className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--primary)] text-white hover:opacity-90 transition whitespace-nowrap min-h-[44px]"
                       >
@@ -1868,33 +1917,58 @@ export default function BeheerHulpbronnenPage() {
                 </div>
               )}
 
-              {/* Woonplaats keuze voor WIJK niveau */}
+              {/* Woonplaatsen voor WIJK niveau (alle pre-selected) */}
               {editItem.dekkingNiveau === "WIJK" && editItem.gemeente && (
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-medium text-muted-foreground mb-1">
-                    Woonplaats in {editItem.gemeente}
+                    Woonplaatsen in {editItem.gemeente}
                     {loadingLocatie && <span className="ml-2 text-[10px]">laden...</span>}
+                    {(editItem.dekkingWoonplaatsen || []).length > 0 && (
+                      <span className="ml-2 text-[10px] text-[var(--primary)]">
+                        ({(editItem.dekkingWoonplaatsen || []).length}/{woonplaatsen.length})
+                      </span>
+                    )}
+                    {woonplaatsen.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if ((editItem.dekkingWoonplaatsen || []).length === woonplaatsen.length) {
+                            setEditItem({ ...editItem, dekkingWoonplaatsen: null })
+                          } else {
+                            setEditItem({ ...editItem, dekkingWoonplaatsen: [...woonplaatsen] })
+                          }
+                        }}
+                        className="ml-2 text-[10px] text-[var(--primary)] hover:underline"
+                      >
+                        {(editItem.dekkingWoonplaatsen || []).length === woonplaatsen.length ? "Alles deselecteren" : "Alles selecteren"}
+                      </button>
+                    )}
                   </label>
                   {woonplaatsen.length > 0 ? (
                     <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)] max-h-36 overflow-y-auto">
-                      {woonplaatsen.map((wp) => (
-                        <button
-                          key={wp}
-                          type="button"
-                          onClick={() => {
-                            setFormWijkWoonplaats(wp)
-                            setEditItem({ ...editItem, woonplaats: wp, dekkingWijken: null })
-                            loadWijken(editItem.gemeente!)
-                          }}
-                          className={`px-2 py-1 rounded text-xs font-medium transition ${
-                            formWijkWoonplaats === wp
-                              ? "bg-[var(--primary)] text-white"
-                              : "bg-[var(--muted)] text-foreground hover:bg-[var(--border)]"
-                          }`}
-                        >
-                          {wp}
-                        </button>
-                      ))}
+                      {woonplaatsen.map((wp) => {
+                        const selected = (editItem.dekkingWoonplaatsen || []).includes(wp)
+                        return (
+                          <button
+                            key={wp}
+                            type="button"
+                            onClick={() => {
+                              const current = editItem.dekkingWoonplaatsen || []
+                              const updated = selected
+                                ? current.filter((w) => w !== wp)
+                                : [...current, wp]
+                              setEditItem({ ...editItem, dekkingWoonplaatsen: updated.length > 0 ? updated : null })
+                            }}
+                            className={`px-2 py-1 rounded text-xs font-medium transition ${
+                              selected
+                                ? "bg-[var(--primary)] text-white"
+                                : "bg-[var(--muted)] text-foreground hover:bg-[var(--border)]"
+                            }`}
+                          >
+                            {wp}
+                          </button>
+                        )
+                      })}
                     </div>
                   ) : (
                     <p className="text-xs text-muted-foreground">
@@ -1904,15 +1978,15 @@ export default function BeheerHulpbronnenPage() {
                 </div>
               )}
 
-              {/* Wijken multiselect (na woonplaats keuze) */}
-              {editItem.dekkingNiveau === "WIJK" && editItem.gemeente && formWijkWoonplaats && (
+              {/* Wijken voor WIJK niveau (alle pre-selected) */}
+              {editItem.dekkingNiveau === "WIJK" && editItem.gemeente && (
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-medium text-muted-foreground mb-1">
                     Wijken in {editItem.gemeente}
                     {loadingLocatie && <span className="ml-2 text-[10px]">laden...</span>}
                     {(editItem.dekkingWijken || []).length > 0 && (
                       <span className="ml-2 text-[10px] text-[var(--primary)]">
-                        ({(editItem.dekkingWijken || []).length} geselecteerd)
+                        ({(editItem.dekkingWijken || []).length}/{wijken.length})
                       </span>
                     )}
                     {wijken.length > 0 && (
@@ -2199,7 +2273,6 @@ export default function BeheerHulpbronnenPage() {
                 onClick={() => {
                   setShowForm(false)
                   setEditItem(EMPTY_FORM)
-                  setFormWijkWoonplaats("")
                 }}
                 className="px-4 py-2 rounded-lg text-sm bg-[var(--muted)] text-foreground hover:bg-[var(--border)] transition min-h-[44px]"
               >
