@@ -834,25 +834,27 @@ export default function ProfielPage() {
               </div>
             </div>
 
-            <div className="py-2">
-              <span className="text-muted-foreground block mb-1">Adres</span>
-              {profile.adres ? (
-                <div>
-                  <span className="font-medium text-foreground">{profile.adres.straat}</span>
-                  <span className="text-muted-foreground block text-sm">
-                    {profile.adres.postcode && `${profile.adres.postcode}, `}{profile.adres.woonplaats}
-                  </span>
-                  {profile.adres.gemeente && profile.adres.gemeente !== profile.adres.woonplaats && (
-                    <span className="text-muted-foreground block text-sm">Gemeente {profile.adres.gemeente}</span>
-                  )}
-                  {profile.adres.wijknaam && (
-                    <span className="text-primary block text-xs">Wijk: {profile.adres.wijknaam}</span>
-                  )}
-                </div>
-              ) : (
-                <span className="text-muted-foreground">-</span>
-              )}
+            <div className="flex justify-between items-center py-2 border-b border-border">
+              <span className="text-muted-foreground">Straat</span>
+              <span className="font-medium text-foreground">{profile.adres?.straat || "-"}</span>
             </div>
+
+            <div className="flex justify-between items-center py-2 border-b border-border">
+              <span className="text-muted-foreground">Woonplaats</span>
+              <span className="font-medium text-foreground">{profile.adres?.woonplaats || "-"}</span>
+            </div>
+
+            <div className="flex justify-between items-center py-2 border-b border-border">
+              <span className="text-muted-foreground">Gemeente</span>
+              <span className="font-medium text-foreground">{profile.adres?.gemeente || "-"}</span>
+            </div>
+
+            {profile.adres?.wijknaam && (
+              <div className="flex justify-between items-center py-2 border-b border-border">
+                <span className="text-muted-foreground">Wijk</span>
+                <span className="font-medium text-primary">{profile.adres.wijknaam}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -892,25 +894,27 @@ export default function ProfielPage() {
               </span>
             </div>
 
-            <div className="py-2">
-              <span className="text-muted-foreground block mb-1">Adres</span>
-              {profile.naasteAdres ? (
-                <div>
-                  <span className="font-medium text-foreground">{profile.naasteAdres.straat}</span>
-                  <span className="text-muted-foreground block text-sm">
-                    {profile.naasteAdres.postcode && `${profile.naasteAdres.postcode}, `}{profile.naasteAdres.woonplaats}
-                  </span>
-                  {profile.naasteAdres.gemeente && profile.naasteAdres.gemeente !== profile.naasteAdres.woonplaats && (
-                    <span className="text-muted-foreground block text-sm">Gemeente {profile.naasteAdres.gemeente}</span>
-                  )}
-                  {profile.naasteAdres.wijknaam && (
-                    <span className="text-primary block text-xs">Wijk: {profile.naasteAdres.wijknaam}</span>
-                  )}
-                </div>
-              ) : (
-                <span className="text-muted-foreground">-</span>
-              )}
+            <div className="flex justify-between items-center py-2 border-b border-border">
+              <span className="text-muted-foreground">Straat</span>
+              <span className="font-medium text-foreground">{profile.naasteAdres?.straat || "-"}</span>
             </div>
+
+            <div className="flex justify-between items-center py-2 border-b border-border">
+              <span className="text-muted-foreground">Woonplaats</span>
+              <span className="font-medium text-foreground">{profile.naasteAdres?.woonplaats || "-"}</span>
+            </div>
+
+            <div className="flex justify-between items-center py-2 border-b border-border">
+              <span className="text-muted-foreground">Gemeente</span>
+              <span className="font-medium text-foreground">{profile.naasteAdres?.gemeente || "-"}</span>
+            </div>
+
+            {profile.naasteAdres?.wijknaam && (
+              <div className="flex justify-between items-center py-2 border-b border-border">
+                <span className="text-muted-foreground">Wijk</span>
+                <span className="font-medium text-primary">{profile.naasteAdres.wijknaam}</span>
+              </div>
+            )}
           </div>
         </div>
 
