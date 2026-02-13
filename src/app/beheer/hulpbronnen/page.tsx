@@ -317,20 +317,14 @@ export default function BeheerHulpbronnenPage() {
     } catch { return [] }
   }
 
-  // PDOK wijken ophalen voor een gemeente (direct browser call)
+  // Wijken ophalen via CBS WFS API endpoint (server-side, correct API)
   const pdokWijken = async (gemeente: string): Promise<string[]> => {
     if (!gemeente) return []
     try {
-      const params = new URLSearchParams({ q: "*", rows: "200" })
-      params.append("fq", "type:wijk")
-      params.append("fq", `gemeentenaam:${gemeente}`)
-      const res = await fetch(`${PDOK_URL}/free?${params}`)
+      const res = await fetch(`/api/beheer/locatie?type=wijken&gemeente=${encodeURIComponent(gemeente)}`)
       if (!res.ok) return []
       const data = await res.json()
-      const names: string[] = (data.response?.docs || [])
-        .map((doc: any) => doc.wijknaam || "")
-        .filter(Boolean)
-      return [...new Set(names)].sort()
+      return (data.wijken || []) as string[]
     } catch { return [] }
   }
 
@@ -534,6 +528,11 @@ export default function BeheerHulpbronnenPage() {
           {beheerModus && (
             <p className="text-sm text-muted-foreground mt-1">
               {hulpbronnen.length} hulpbronnen ({actiefCount} actief, {inactiefCount} inactief)
+            </p>
+          )}
+          {!isLoggedIn && beheerModus && (
+            <p className="text-sm text-[var(--accent-red)] mt-1">
+              Niet ingelogd — <a href="/api/auth/signin" className="underline font-medium">inloggen</a> om te bewerken
             </p>
           )}
         </div>
