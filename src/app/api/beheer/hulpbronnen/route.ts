@@ -15,77 +15,100 @@ export async function GET(request: NextRequest) {
   const landelijk = searchParams.get('landelijk') // 'true' for gemeente IS NULL
   const modus = searchParams.get('modus') // 'landelijk' or 'gemeentelijk'
   const provincie = searchParams.get('provincie')
+  const debug = searchParams.get('debug')
 
-  const conditions: any[] = []
+  try {
+    const where: any = {}
 
-  if (modus === 'landelijk') {
-    // Landelijk: hulpbronnen zonder gemeente, of met dekkingNiveau LANDELIJK/PROVINCIE
-    conditions.push({
-      OR: [
+    if (modus === 'landelijk') {
+      where.OR = [
         { dekkingNiveau: { in: ['LANDELIJK', 'PROVINCIE'] } },
         { gemeente: null },
-      ],
+      ]
+      if (provincie) where.provincie = provincie
+    } else if (modus === 'gemeentelijk') {
+      if (gemeente) where.gemeente = gemeente
+    } else {
+      if (gemeente) where.gemeente = gemeente
+      if (landelijk === 'true') where.gemeente = null
+    }
+
+    if (onderdeelTest) where.onderdeelTest = onderdeelTest
+    if (soortHulp) where.soortHulp = soortHulp
+    if (actief === 'true') where.isActief = true
+    if (actief === 'false') where.isActief = false
+
+    if (zoek) {
+      const zoekCondition = {
+        OR: [
+          { naam: { contains: zoek, mode: 'insensitive' as const } },
+          { beschrijving: { contains: zoek, mode: 'insensitive' as const } },
+          { gemeente: { contains: zoek, mode: 'insensitive' as const } },
+        ],
+      }
+      if (where.OR) {
+        // Combine existing OR (landelijk) with zoek OR via AND
+        const existingOR = where.OR
+        delete where.OR
+        where.AND = [{ OR: existingOR }, zoekCondition]
+      } else {
+        where.OR = zoekCondition.OR
+      }
+    }
+
+    const hulpbronnen = await prisma.zorgorganisatie.findMany({
+      where,
+      orderBy: [{ gemeente: 'asc' }, { naam: 'asc' }],
     })
-    if (provincie) conditions.push({ provincie: { equals: provincie, mode: 'insensitive' } })
-  } else if (modus === 'gemeentelijk') {
-    // Gemeentelijk: alle hulpbronnen die bij deze gemeente horen (ongeacht dekkingNiveau)
-    if (gemeente) conditions.push({ gemeente: { equals: gemeente, mode: 'insensitive' } })
-  } else {
-    if (gemeente) conditions.push({ gemeente: { equals: gemeente, mode: 'insensitive' } })
-    if (landelijk === 'true') conditions.push({ gemeente: null })
-  }
-  if (onderdeelTest) conditions.push({ onderdeelTest })
-  if (soortHulp) conditions.push({ soortHulp })
-  if (actief === 'true') conditions.push({ isActief: true })
-  if (actief === 'false') conditions.push({ isActief: false })
 
-  if (zoek) {
-    conditions.push({
-      OR: [
-        { naam: { contains: zoek, mode: 'insensitive' } },
-        { beschrijving: { contains: zoek, mode: 'insensitive' } },
-        { gemeente: { contains: zoek, mode: 'insensitive' } },
-      ],
+    // Get distinct values for filter dropdowns
+    const gemeenten = await prisma.zorgorganisatie.findMany({
+      where: { gemeente: { not: null } },
+      select: { gemeente: true },
+      distinct: ['gemeente'],
+      orderBy: { gemeente: 'asc' },
     })
+
+    const onderdelen = await prisma.zorgorganisatie.findMany({
+      where: { onderdeelTest: { not: null } },
+      select: { onderdeelTest: true },
+      distinct: ['onderdeelTest'],
+      orderBy: { onderdeelTest: 'asc' },
+    })
+
+    const provincies = await prisma.zorgorganisatie.findMany({
+      where: { provincie: { not: null } },
+      select: { provincie: true },
+      distinct: ['provincie'],
+      orderBy: { provincie: 'asc' },
+    })
+
+    const response: any = {
+      hulpbronnen,
+      filters: {
+        gemeenten: gemeenten.map((g) => g.gemeente).filter(Boolean),
+        onderdelen: onderdelen.map((o) => o.onderdeelTest).filter(Boolean),
+        provincies: provincies.map((p) => p.provincie).filter(Boolean),
+      },
+    }
+
+    // Debug: return query info
+    if (debug === 'true') {
+      const totalCount = await prisma.zorgorganisatie.count()
+      response.debug = {
+        query: where,
+        params: { modus, gemeente, provincie, zoek, actief },
+        resultCount: hulpbronnen.length,
+        totalInDb: totalCount,
+        allGemeenten: gemeenten.map((g) => g.gemeente),
+      }
+    }
+
+    return NextResponse.json(response)
+  } catch (error: any) {
+    console.error('Hulpbronnen API error:', error)
+    return NextResponse.json({ error: error.message, hulpbronnen: [], filters: { gemeenten: [], onderdelen: [], provincies: [] } }, { status: 500 })
   }
-
-  const where = conditions.length > 0 ? { AND: conditions } : {}
-
-  const hulpbronnen = await prisma.zorgorganisatie.findMany({
-    where,
-    orderBy: [{ gemeente: 'asc' }, { naam: 'asc' }],
-  })
-
-  // Get distinct values for filter dropdowns
-  const gemeenten = await prisma.zorgorganisatie.findMany({
-    where: { gemeente: { not: null } },
-    select: { gemeente: true },
-    distinct: ['gemeente'],
-    orderBy: { gemeente: 'asc' },
-  })
-
-  const onderdelen = await prisma.zorgorganisatie.findMany({
-    where: { onderdeelTest: { not: null } },
-    select: { onderdeelTest: true },
-    distinct: ['onderdeelTest'],
-    orderBy: { onderdeelTest: 'asc' },
-  })
-
-  const provincies = await prisma.zorgorganisatie.findMany({
-    where: { provincie: { not: null } },
-    select: { provincie: true },
-    distinct: ['provincie'],
-    orderBy: { provincie: 'asc' },
-  })
-
-  return NextResponse.json({
-    hulpbronnen,
-    filters: {
-      gemeenten: gemeenten.map((g) => g.gemeente).filter(Boolean),
-      onderdelen: onderdelen.map((o) => o.onderdeelTest).filter(Boolean),
-      provincies: provincies.map((p) => p.provincie).filter(Boolean),
-    },
-  })
 }
 
 // POST /api/beheer/hulpbronnen - Create new hulpbron
