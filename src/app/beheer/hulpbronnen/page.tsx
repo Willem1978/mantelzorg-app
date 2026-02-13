@@ -1633,8 +1633,8 @@ export default function BeheerHulpbronnenPage() {
                 <button
                   onClick={async () => {
                     setEditItem(item)
-                    if (item.gemeente && (item.dekkingNiveau === "WOONPLAATS" || item.dekkingNiveau === "WIJK")) {
-                      // Load available woonplaatsen/wijken without pre-selecting (preserve existing selections)
+                    if (item.gemeente) {
+                      // Always load available woonplaatsen/wijken so user can switch dekkingNiveau
                       setLoadingLocatie(true)
                       const [wp, wk] = await Promise.all([pdokWoonplaatsen(item.gemeente), pdokWijken(item.gemeente)])
                       setWoonplaatsen(wp)
@@ -1697,8 +1697,34 @@ export default function BeheerHulpbronnenPage() {
             {/* Locatie sectie - eerst kiezen */}
             <div className="p-4 rounded-lg border-2 border-[var(--primary)] bg-[var(--primary)]/5 mb-4">
               <h4 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-                📍 Locatie (eerst kiezen)
+                📍 Locatie
               </h4>
+
+              {/* Huidige locatie-samenvatting bij bewerken */}
+              {editItem.id && (
+                <div className="mb-3 p-2 rounded-lg bg-[var(--background)] border border-[var(--border)] text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground">Huidige koppeling: </span>
+                  {editItem.dekkingNiveau === "LANDELIJK" && "Heel Nederland"}
+                  {editItem.dekkingNiveau === "PROVINCIE" && `Provincie ${editItem.provincie || "—"}`}
+                  {editItem.dekkingNiveau === "GEMEENTE" && `Gemeente ${editItem.gemeente || "—"} (hele gemeente)`}
+                  {editItem.dekkingNiveau === "WOONPLAATS" && (
+                    <>
+                      Gemeente {editItem.gemeente || "—"}
+                      {(editItem.dekkingWoonplaatsen || []).length > 0
+                        ? ` — ${(editItem.dekkingWoonplaatsen as string[]).length} woonplaats(en): ${(editItem.dekkingWoonplaatsen as string[]).join(", ")}`
+                        : " — alle woonplaatsen"}
+                    </>
+                  )}
+                  {editItem.dekkingNiveau === "WIJK" && (
+                    <>
+                      Gemeente {editItem.gemeente || "—"}
+                      {(editItem.dekkingWijken || []).length > 0
+                        ? ` — ${(editItem.dekkingWijken as string[]).length} wijk(en): ${(editItem.dekkingWijken as string[]).slice(0, 5).join(", ")}${(editItem.dekkingWijken as string[]).length > 5 ? ` +${(editItem.dekkingWijken as string[]).length - 5} meer` : ""}`
+                        : " — alle wijken"}
+                    </>
+                  )}
+                </div>
+              )}
 
               {/* Dekking Niveau */}
               <div className="sm:col-span-2">
