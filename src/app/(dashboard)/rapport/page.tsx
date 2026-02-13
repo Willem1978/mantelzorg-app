@@ -228,9 +228,8 @@ export default function RapportPage() {
 
             <div className="space-y-3">
               {/* Huisarts */}
-              <a
-                href="tel:"
-                className="flex items-center gap-4 p-4 bg-[var(--accent-red-bg)] rounded-xl hover:bg-red-100 transition-colors"
+              <div
+                className="flex items-center gap-4 p-4 bg-[var(--accent-red-bg)] rounded-xl"
               >
                 <div className="w-12 h-12 bg-[var(--emoticon-red)] rounded-full flex items-center justify-center flex-shrink-0">
                   <span className="text-white text-xl">🏥</span>
@@ -241,7 +240,7 @@ export default function RapportPage() {
                     Maak een afspraak om je situatie te bespreken
                   </p>
                 </div>
-              </a>
+              </div>
 
               {/* Gemeente mantelzorgondersteuner */}
               <a
@@ -265,7 +264,7 @@ export default function RapportPage() {
 
               {/* Mantelzorglijn */}
               <a
-                href="tel:0307606055"
+                href="tel:0302059059"
                 className="flex items-center gap-4 p-4 bg-[var(--accent-red-bg)] rounded-xl hover:bg-red-100 transition-colors"
               >
                 <div className="w-12 h-12 bg-[var(--emoticon-red)] rounded-full flex items-center justify-center flex-shrink-0">
@@ -274,7 +273,7 @@ export default function RapportPage() {
                 <div className="flex-1">
                   <p className="font-bold text-foreground">Mantelzorglijn</p>
                   <p className="text-sm text-muted-foreground">
-                    030 - 760 60 55 (ma-vr 9-17u)
+                    030 - 205 90 59 (ma-vr, gratis)
                   </p>
                 </div>
               </a>

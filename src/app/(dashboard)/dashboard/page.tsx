@@ -196,6 +196,26 @@ function DashboardContent() {
     )
   }
 
+  if (!data && status === "unauthenticated") {
+    return (
+      <div className="ker-page-content">
+        <div className="flex items-center gap-4 mb-6">
+          <GerAvatar size="lg" />
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Welkom!</h1>
+            <p className="text-muted-foreground mt-1">Log in om je dashboard te zien.</p>
+          </div>
+        </div>
+        <Link
+          href="/api/auth/signin"
+          className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:opacity-90 transition-opacity"
+        >
+          Inloggen
+        </Link>
+      </div>
+    )
+  }
+
   // Bereken zware taken
   // Database kan twee formats hebben:
   // 1. Web test: MOEILIJK/ZEER_MOEILIJK/GEMIDDELD/MAKKELIJK
@@ -279,7 +299,7 @@ function DashboardContent() {
           icon: "🏛️",
           titel: "Neem contact op met de mantelzorg ondersteuner in de gemeente",
           beschrijving: "Zij kunnen je helpen met het vinden van de juiste hulp",
-          href: "/hulpvragen?tab=voor-mij",
+          href: "/hulpvragen?tab=voor-jou",
         },
         {
           icon: "🤝",
@@ -308,7 +328,7 @@ function DashboardContent() {
           icon: "🏛️",
           titel: "Neem contact op met de mantelzorg ondersteuner in de gemeente",
           beschrijving: "Zij kunnen samen met jou kijken wat er mogelijk is",
-          href: "/hulpvragen?tab=voor-mij",
+          href: "/hulpvragen?tab=voor-jou",
         },
         {
           icon: "🤝",

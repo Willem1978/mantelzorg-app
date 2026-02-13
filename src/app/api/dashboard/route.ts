@@ -41,10 +41,12 @@ interface CategorieHulpbron extends HulpbronResult {
 }
 
 // Haal hulpbronnen op - gescheiden voor mantelzorger en zorgvrager locaties
+// Filtert op belastingniveau (zichtbaarBijLaag/Gemiddeld/Hoog)
 async function getHulpbronnenVoorTaken(
   latestTest: any,
   mantelzorgerGemeente: string | null,
-  zorgvragerGemeente: string | null
+  zorgvragerGemeente: string | null,
+  belastingNiveau: string | null
 ): Promise<{
   // Hulp voor zorgvrager (per taak, gebaseerd op locatie zorgvrager)
   perTaak: Record<string, HulpbronResult[]>
@@ -58,11 +60,22 @@ async function getHulpbronnenVoorTaken(
   mantelzorgerGemeente: string | null
   zorgvragerGemeente: string | null
 }> {
+  // Belastingniveau-filter: toon alleen hulpbronnen die passen bij het niveau
+  // Als geen niveau bekend, toon alles
+  const niveauFilter = belastingNiveau === 'LAAG'
+    ? { zichtbaarBijLaag: true }
+    : belastingNiveau === 'GEMIDDELD'
+      ? { zichtbaarBijGemiddeld: true }
+      : belastingNiveau === 'HOOG'
+        ? { zichtbaarBijHoog: true }
+        : {}
+
   // Landelijke hulplijnen (altijd zichtbaar) - zonder filter op soortHulp
   const landelijk = await prisma.zorgorganisatie.findMany({
     where: {
       isActief: true,
       gemeente: null,
+      ...niveauFilter,
     },
     orderBy: { naam: 'asc' },
     select: {
@@ -108,6 +121,7 @@ async function getHulpbronnenVoorTaken(
         isActief: true,
         onderdeelTest: onderdeel,
         gemeente: zorgvragerGemeente,
+        ...niveauFilter,
       },
       orderBy: { naam: 'asc' },
       select: {
@@ -125,6 +139,7 @@ async function getHulpbronnenVoorTaken(
         isActief: true,
         onderdeelTest: onderdeel,
         gemeente: null,
+        ...niveauFilter,
       },
       orderBy: { naam: 'asc' },
       select: {
@@ -152,6 +167,7 @@ async function getHulpbronnenVoorTaken(
       isActief: true,
       onderdeelTest: 'Mantelzorgondersteuning',
       gemeente: mantelzorgerGemeente,
+      ...niveauFilter,
     },
     orderBy: { naam: 'asc' },
     select: {
@@ -173,6 +189,7 @@ async function getHulpbronnenVoorTaken(
         { soortHulp: { in: ['Emotionele steun', 'Respijtzorg', 'Lotgenotencontact'] } },
       ],
       gemeente: null,
+      ...niveauFilter,
     },
     orderBy: { naam: 'asc' },
     select: {
@@ -215,6 +232,7 @@ async function getHulpbronnenVoorTaken(
             isActief: true,
             onderdeelTest: onderdeel,
             gemeente: onderdeel === 'Mantelzorgondersteuning' ? mantelzorgerGemeente : zorgvragerGemeente,
+            ...niveauFilter,
           },
           orderBy: { naam: 'asc' },
           select: {
@@ -231,6 +249,7 @@ async function getHulpbronnenVoorTaken(
             isActief: true,
             onderdeelTest: onderdeel,
             gemeente: null,
+            ...niveauFilter,
           },
           orderBy: { naam: 'asc' },
           select: {
@@ -525,10 +544,12 @@ export async function GET() {
       // Hulpbronnen uit de Sociale Kaart
       // - perTaak: hulp bij zorgtaken, gebaseerd op locatie ZORGVRAGER
       // - voorMantelzorger: hulp voor mantelzorger, gebaseerd op locatie MANTELZORGER
+      // - gefilterd op belastingniveau (zichtbaarBijLaag/Gemiddeld/Hoog)
       hulpbronnen: await getHulpbronnenVoorTaken(
         latestTest,
-        caregiver.municipality,           // Locatie mantelzorger
-        caregiver.careRecipientMunicipality // Locatie zorgvrager
+        caregiver.municipality,            // Locatie mantelzorger
+        caregiver.careRecipientMunicipality, // Locatie zorgvrager
+        latestTest?.belastingNiveau || null  // Belastingniveau voor filtering
       ),
 
       // Locatie info voor UI

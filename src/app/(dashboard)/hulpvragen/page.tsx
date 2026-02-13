@@ -632,6 +632,17 @@ function HulpPageContent() {
         <p className="text-sm text-muted-foreground mt-1">
           Kies hieronder voor wie je hulp zoekt. Tik op het <span className="text-primary font-semibold">hartje</span> om iets te bewaren.
         </p>
+        {hulpData?.testNiveau && (
+          <p className={cn(
+            "text-xs mt-2 px-2 py-1 rounded-full inline-flex items-center gap-1",
+            hulpData.testNiveau === "LAAG" && "bg-[var(--accent-green-bg)] text-[var(--accent-green)]",
+            hulpData.testNiveau === "GEMIDDELD" && "bg-[var(--accent-amber-bg)] text-[var(--accent-amber)]",
+            hulpData.testNiveau === "HOOG" && "bg-[var(--accent-red-bg)] text-[var(--accent-red)]",
+          )}>
+            Hulp afgestemd op jouw situatie
+            ({hulpData.testNiveau === "LAAG" ? "lage" : hulpData.testNiveau === "GEMIDDELD" ? "gemiddelde" : "hoge"} belasting)
+          </p>
+        )}
       </div>
 
       {/* DRIE TABS NAAST ELKAAR */}
@@ -730,10 +741,14 @@ function HulpPageContent() {
               Ook jij hebt soms hulp nodig. Hier vind je organisaties die jou kunnen helpen.
             </p>
           </div>
-          {locatieMantelzorger && (
+          {locatieMantelzorger ? (
             <p className="text-sm text-muted-foreground flex items-center gap-1">
               📍 {locatieMantelzorger}
             </p>
+          ) : (
+            <Link href="/profiel" className="text-sm text-primary hover:underline flex items-center gap-1">
+              📍 Vul je woonplaats in voor lokale hulp →
+            </Link>
           )}
 
           <div className="grid grid-cols-2 gap-3">
@@ -791,8 +806,14 @@ function HulpPageContent() {
 
                 if (!heeftHulp) {
                   return (
-                    <div className="text-center py-8 text-muted-foreground ker-card">
-                      <p>Geen hulpbronnen gevonden</p>
+                    <div className="text-center py-8 ker-card">
+                      <span className="text-3xl block mb-2">🔍</span>
+                      <p className="text-foreground font-medium">Geen hulpbronnen gevonden</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {locatieMantelzorger
+                          ? `Er zijn nog geen hulpbronnen voor deze categorie bij ${locatieMantelzorger}.`
+                          : "Vul je woonplaats in bij je profiel zodat we lokale hulp kunnen tonen."}
+                      </p>
                     </div>
                   )
                 }
@@ -836,14 +857,35 @@ function HulpPageContent() {
           <div className="bg-[var(--accent-amber-bg)] rounded-xl p-4 mb-2">
             <p className="text-sm text-foreground">
               <span className="font-medium">💝 Hulp voor je naaste.</span> Hier vind je hulp voor de taken
-              die je voor je naaste doet. Rode en oranje taken zijn het zwaarst voor jou.
-              Daar kun je het beste eerst hulp bij zoeken.
+              die je voor je naaste doet.
+              {hulpData?.zwareTaken && hulpData.zwareTaken.length > 0
+                ? " Rode en oranje taken zijn het zwaarst voor jou. Daar kun je het beste eerst hulp bij zoeken."
+                : ""}
             </p>
           </div>
-          {locatieZorgvrager && (
+          {!hulpData?.zwareTaken?.length && (
+            <div className="ker-card text-center py-6 border-2 border-dashed border-border">
+              <span className="text-3xl block mb-2">📊</span>
+              <p className="text-foreground font-medium mb-1">Nog geen zorgtaken bekend</p>
+              <p className="text-sm text-muted-foreground mb-3">
+                Doe de balanstest zodat we kunnen zien welke taken zwaar zijn en waar je hulp bij kunt krijgen.
+              </p>
+              <Link href="/belastbaarheidstest" className="ker-btn ker-btn-primary inline-flex items-center gap-2">
+                Doe de balanstest
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
+          )}
+          {locatieZorgvrager ? (
             <p className="text-sm text-muted-foreground flex items-center gap-1">
               📍 {locatieZorgvrager}
             </p>
+          ) : (
+            <Link href="/profiel" className="text-sm text-primary hover:underline flex items-center gap-1">
+              📍 Vul de woonplaats van je naaste in voor lokale hulp →
+            </Link>
           )}
 
           <div className="grid grid-cols-2 gap-3">
@@ -921,8 +963,14 @@ function HulpPageContent() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-muted-foreground ker-card">
-                  <p>Geen hulpbronnen gevonden</p>
+                <div className="text-center py-8 ker-card">
+                  <span className="text-3xl block mb-2">🔍</span>
+                  <p className="text-foreground font-medium">Geen hulpbronnen gevonden</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {locatieZorgvrager
+                      ? `Er zijn nog geen hulpbronnen voor deze categorie bij ${locatieZorgvrager}.`
+                      : "Vul de woonplaats van je naaste in bij je profiel zodat we lokale hulp kunnen tonen."}
+                  </p>
                 </div>
               )}
             </div>
