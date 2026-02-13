@@ -324,6 +324,10 @@ export default function BeheerHulpbronnenPage() {
     const [wp, wk] = await Promise.all([pdokWoonplaatsen(gemeente), pdokWijken(gemeente)])
     setBeheerWoonplaatsen(wp)
     setBeheerWijken(wk)
+    // Auto-select woonplaats if only 1 (for WIJK cascade)
+    if (wp.length === 1) {
+      setBeheerWijkWoonplaats(wp[0])
+    }
     setBeheerLoadingLocatie(false)
   }
 
@@ -374,6 +378,10 @@ export default function BeheerHulpbronnenPage() {
     const [wp, wk] = await Promise.all([pdokWoonplaatsen(gemeente), pdokWijken(gemeente)])
     setScrapeWoonplaatsen(wp)
     setScrapeWijken(wk)
+    // Auto-select woonplaats if only 1 (for WIJK cascade)
+    if (wp.length === 1) {
+      setScrapeWijkWoonplaats(wp[0])
+    }
     setScrapeLoadingLocatie(false)
   }
 
@@ -963,8 +971,14 @@ export default function BeheerHulpbronnenPage() {
             {beheerDekkingFilter === "WIJK" && beheerGemeente && (
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1">
-                  3. Woonplaats in {beheerGemeente}
+                  3. Kies woonplaats in {beheerGemeente}
                   {beheerLoadingLocatie && <span className="ml-2 text-[10px]">laden...</span>}
+                  {!beheerWijkWoonplaats && beheerWoonplaatsen.length > 1 && (
+                    <span className="ml-2 text-[10px] text-[var(--accent-amber)]">klik om wijken te zien</span>
+                  )}
+                  {beheerWijkWoonplaats && (
+                    <span className="ml-2 text-[10px] text-[var(--primary)]">{beheerWijkWoonplaats}</span>
+                  )}
                 </label>
                 {beheerWoonplaatsen.length > 0 ? (
                   <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)] max-h-36 overflow-y-auto">
@@ -1306,8 +1320,14 @@ export default function BeheerHulpbronnenPage() {
           {scrapeDekkingNiveau === "WIJK" && scrapeGemeente && (
             <div className="mb-3">
               <label className="block text-xs font-medium text-muted-foreground mb-1">
-                3. Woonplaats in {scrapeGemeente}
+                3. Kies woonplaats in {scrapeGemeente}
                 {scrapeLoadingLocatie && <span className="ml-2 text-[10px]">laden...</span>}
+                {!scrapeWijkWoonplaats && scrapeWoonplaatsen.length > 1 && (
+                  <span className="ml-2 text-[10px] text-[var(--accent-amber)]">klik om wijken te zien</span>
+                )}
+                {scrapeWijkWoonplaats && (
+                  <span className="ml-2 text-[10px] text-[var(--primary)]">{scrapeWijkWoonplaats}</span>
+                )}
               </label>
               {scrapeWoonplaatsen.length > 0 ? (
                 <div className="flex flex-wrap gap-2 p-3 rounded-lg border border-[var(--border)] bg-[var(--background)] max-h-36 overflow-y-auto">
