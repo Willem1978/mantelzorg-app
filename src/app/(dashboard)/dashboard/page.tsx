@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useEffect, useState } from "react"
+import { Suspense, useEffect, useMemo, useState } from "react"
 import { useSession } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -216,7 +216,7 @@ function DashboardContent() {
     )
   }
 
-  // Bereken zware taken
+  // Bereken zware taken (gememoized)
   // Database kan twee formats hebben:
   // 1. Web test: MOEILIJK/ZEER_MOEILIJK/GEMIDDELD/MAKKELIJK
   // 2. WhatsApp test: JA/SOMS/NEE
@@ -227,9 +227,11 @@ function DashboardContent() {
   const isLicht = (m: string | null) =>
     !m || m === 'MAKKELIJK' || m === 'NEE' || m === 'nee'
 
-  const zwareTaken = data?.test?.zorgtaken?.filter(t => isZwaar(t.moeilijkheid)) || []
-  const matigTaken = data?.test?.zorgtaken?.filter(t => isMatig(t.moeilijkheid)) || []
-  const lichtTaken = data?.test?.zorgtaken?.filter(t => isLicht(t.moeilijkheid)) || []
+  const { zwareTaken, matigTaken, lichtTaken } = useMemo(() => ({
+    zwareTaken: data?.test?.zorgtaken?.filter(t => isZwaar(t.moeilijkheid)) || [],
+    matigTaken: data?.test?.zorgtaken?.filter(t => isMatig(t.moeilijkheid)) || [],
+    lichtTaken: data?.test?.zorgtaken?.filter(t => isLicht(t.moeilijkheid)) || [],
+  }), [data?.test?.zorgtaken])
 
   // Genereer vervolgstappen op basis van testscore en -status
   const getVervolgstappen = () => {
@@ -287,7 +289,7 @@ function DashboardContent() {
         {
           icon: "📞",
           titel: "Neem contact op met de mantelzorg hulplijn mocht het zwaarder worden",
-          beschrijving: "De Mantelzorglijn: 030-2059059 (gratis)",
+          beschrijving: "De Mantelzorglijn: 030 - 205 90 59 (gratis)",
           href: "tel:0302059059",
         },
       ]
@@ -344,7 +346,7 @@ function DashboardContent() {
     return stappen.slice(0, 3)
   }
 
-  const vervolgstappen = getVervolgstappen()
+  const vervolgstappen = useMemo(() => getVervolgstappen(), [data?.test?.niveau, data?.test?.hasTest, data?.test?.needsNewTest])
 
   return (
     <div className="ker-page-content">
@@ -381,7 +383,7 @@ function DashboardContent() {
               <p className="text-sm text-muted-foreground">
                 {data.test.niveau === "LAAG" && "Goed bezig! Je balans is in orde. Blijf goed op jezelf letten en neem af en toe bewust een moment van rust. Zo houd je het vol op de lange termijn."}
                 {data.test.niveau === "GEMIDDELD" && "Je draagt veel op je schouders en dat is niet niks. Het is verstandig om te kijken of iemand je ergens mee kan helpen. Denk aan familie, buren, of professionele ondersteuning in je gemeente. Kleine stappen maken al een groot verschil."}
-                {data.test.niveau === "HOOG" && "Je hebt heel veel op je bordje en dat vraagt te veel van je. Het is belangrijk dat je hier niet alleen mee doorgaat. Neem contact op met een mantelzorgondersteuner in je gemeente of bel de Mantelzorglijn (030-2059059, gratis). Zij kunnen samen met jou kijken wat er mogelijk is."}
+                {data.test.niveau === "HOOG" && "Je hebt heel veel op je bordje en dat vraagt te veel van je. Het is belangrijk dat je hier niet alleen mee doorgaat. Neem contact op met een mantelzorgondersteuner in je gemeente of bel de Mantelzorglijn (030 - 205 90 59, gratis). Zij kunnen samen met jou kijken wat er mogelijk is."}
               </p>
             </div>
 
