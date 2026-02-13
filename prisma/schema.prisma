@@ -386,6 +386,10 @@ model Zorgorganisatie {
   onderdeelTest         String?
   soortHulp             String?
   voorwaarden           String?
+
+  @@index([isActief, gemeente])
+  @@index([isActief, onderdeelTest])
+  @@index([gemeente])
 }
 
 model BelastbaarheidRapport {

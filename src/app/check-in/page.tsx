@@ -241,7 +241,7 @@ export default function CheckInPage() {
                   <div>
                     <p className="font-medium text-[#C62828] mb-1">Wil je met iemand praten?</p>
                     <p className="text-sm lg:text-base text-[#C62828]">
-                      Bel de Mantelzorglijn: <a href="tel:0302059059" className="font-bold underline">030 - 205 9 059</a>
+                      Bel de Mantelzorglijn: <a href="tel:0302059059" className="font-bold underline">030 - 205 90 59</a>
                     </p>
                   </div>
                 </div>

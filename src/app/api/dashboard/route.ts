@@ -112,56 +112,49 @@ async function getHulpbronnenVoorTaken(
 
   const perTaak: Record<string, HulpbronResult[]> = {}
 
-  // Hulpbronnen per zware taak - gebaseerd op LOCATIE ZORGVRAGER
-  for (const taak of zwareTaken) {
-    const onderdeel = TAAK_NAAR_ONDERDEEL[taak.taakId]
-    if (!onderdeel) continue
+  // Hulpbronnen per zware taak - PARALLEL ophalen (ipv sequentieel in for-loop)
+  const taakOnderdelen = zwareTaken
+    .map((taak: any) => ({ taak, onderdeel: TAAK_NAAR_ONDERDEEL[taak.taakId] }))
+    .filter(({ onderdeel }: any) => onderdeel)
 
-    // Zoek lokaal (bij zorgvrager), dan landelijk
-    const lokaleHulp = zorgvragerGemeente ? await prisma.zorgorganisatie.findMany({
-      where: {
-        isActief: true,
-        onderdeelTest: onderdeel,
-        gemeente: zorgvragerGemeente,
-        AND: niveauFilter,
-      },
-      orderBy: { naam: 'asc' },
-      select: {
-        naam: true,
-        telefoon: true,
-        website: true,
-        beschrijving: true,
-        gemeente: true,
-      },
-    }) : []
-
-    // Als geen lokale gevonden, zoek landelijke met dit onderdeel
-    const landelijkeHulp = await prisma.zorgorganisatie.findMany({
-      where: {
-        isActief: true,
-        onderdeelTest: onderdeel,
-        gemeente: null,
-        AND: niveauFilter,
-      },
-      orderBy: { naam: 'asc' },
-      select: {
-        naam: true,
-        telefoon: true,
-        website: true,
-        beschrijving: true,
-        gemeente: true,
-      },
+  const taakResultaten = await Promise.all(
+    taakOnderdelen.map(async ({ onderdeel }: any) => {
+      const [lokaleHulp, landelijkeHulp] = await Promise.all([
+        zorgvragerGemeente ? prisma.zorgorganisatie.findMany({
+          where: {
+            isActief: true,
+            onderdeelTest: onderdeel,
+            gemeente: zorgvragerGemeente,
+            AND: niveauFilter,
+          },
+          orderBy: { naam: 'asc' },
+          select: { naam: true, telefoon: true, website: true, beschrijving: true, gemeente: true },
+        }) : Promise.resolve([]),
+        prisma.zorgorganisatie.findMany({
+          where: {
+            isActief: true,
+            onderdeelTest: onderdeel,
+            gemeente: null,
+            AND: niveauFilter,
+          },
+          orderBy: { naam: 'asc' },
+          select: { naam: true, telefoon: true, website: true, beschrijving: true, gemeente: true },
+        }),
+      ])
+      return { lokaleHulp, landelijkeHulp }
     })
+  )
 
+  taakOnderdelen.forEach(({ taak }: any, i: number) => {
+    const { lokaleHulp, landelijkeHulp } = taakResultaten[i]
     const gecombineerd: HulpbronResult[] = [
-      ...lokaleHulp.map(h => ({ ...h, isLandelijk: false })),
-      ...landelijkeHulp.map(h => ({ ...h, isLandelijk: true })),
+      ...lokaleHulp.map((h: any) => ({ ...h, isLandelijk: false })),
+      ...landelijkeHulp.map((h: any) => ({ ...h, isLandelijk: true })),
     ]
-
     if (gecombineerd.length > 0) {
       perTaak[taak.taakNaam] = gecombineerd
     }
-  }
+  })
 
   // Hulpbronnen voor mantelzorger - lokaal OF landelijk
   const lokaalMantelzorger = mantelzorgerGemeente ? await prisma.zorgorganisatie.findMany({
@@ -406,7 +399,7 @@ export async function GET() {
 
     if (latestTest?.belastingNiveau === "HOOG") {
       urgencyLevel = "high"
-      urgencyMessages.push("Je belastingsniveau is hoog - zorg goed voor jezelf!")
+      urgencyMessages.push("Je belastingniveau is hoog - zorg goed voor jezelf!")
     }
     if (needsNewTest && daysSinceLastTest && daysSinceLastTest > 90) {
       urgencyMessages.push("Tijd voor je kwartaal balanstest")
