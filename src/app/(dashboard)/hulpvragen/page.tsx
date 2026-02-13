@@ -405,11 +405,13 @@ function HulpPageContent() {
     return null
   }
 
-  // Helper functie voor locatie string
+  // Helper functie voor locatie string: "Gemeente (Woonplaats)" of alleen "Gemeente"
   const formatLocatie = (loc: LocatieInfo | undefined) => {
     if (!loc) return null
-    const parts = [loc.woonplaats || loc.gemeente].filter(Boolean)
-    return parts.length > 0 ? parts.join(', ') : null
+    if (loc.gemeente && loc.woonplaats && loc.gemeente !== loc.woonplaats) {
+      return `${loc.gemeente} (${loc.woonplaats})`
+    }
+    return loc.woonplaats || loc.gemeente || null
   }
 
   // Helper functie om relevante landelijke hulpbronnen te vinden voor een categorie (mantelzorger)
