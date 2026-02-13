@@ -27,7 +27,13 @@ export async function GET(request: NextRequest) {
       ]
       if (provincie) where.provincie = provincie
     } else if (modus === 'gemeentelijk') {
-      if (gemeente) where.gemeente = gemeente
+      if (gemeente) {
+        // Match gemeente exact, OR records without gemeente but with matching woonplaats
+        where.OR = [
+          { gemeente },
+          { gemeente: null, woonplaats: { contains: gemeente, mode: 'insensitive' as const } },
+        ]
+      }
     } else {
       if (gemeente) where.gemeente = gemeente
       if (landelijk === 'true') where.gemeente = null
@@ -150,4 +156,32 @@ export async function POST(request: NextRequest) {
   })
 
   return NextResponse.json(hulpbron, { status: 201 })
+}
+
+// PATCH /api/beheer/hulpbronnen - Batch fix: set gemeente on records where it's missing
+export async function PATCH(request: NextRequest) {
+  const session = await auth()
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Niet ingelogd' }, { status: 401 })
+  }
+
+  const body = await request.json()
+  const { gemeente, woonplaats } = body
+
+  if (!gemeente) {
+    return NextResponse.json({ error: 'Gemeente is verplicht' }, { status: 400 })
+  }
+
+  // Find records without gemeente that have matching woonplaats
+  const where: any = { gemeente: null }
+  if (woonplaats) {
+    where.woonplaats = { contains: woonplaats, mode: 'insensitive' }
+  }
+
+  const updated = await prisma.zorgorganisatie.updateMany({
+    where,
+    data: { gemeente },
+  })
+
+  return NextResponse.json({ updated: updated.count, gemeente })
 }
