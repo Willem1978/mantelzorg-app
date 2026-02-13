@@ -61,17 +61,16 @@ async function getHulpbronnenVoorTaken(
   zorgvragerGemeente: string | null
 }> {
   // Belastingniveau-filter: toon hulpbronnen die passen bij het niveau
-  // Toon OOK hulpbronnen die nog niet geconfigureerd zijn (defaults: laag=false, gemiddeld=false, hoog=true)
-  // Zo verdwijnen bestaande hulpbronnen niet voor LAAG/GEMIDDELD gebruikers
-  // Gebruik AND-array zodat het niet botst met bestaande OR-clauses in queries
-  const nietGeconfigureerd = { zichtbaarBijLaag: false, zichtbaarBijGemiddeld: false, zichtbaarBijHoog: true }
-  const niveauFilter: Record<string, unknown>[] = belastingNiveau === 'LAAG'
-    ? [{ OR: [{ zichtbaarBijLaag: true }, nietGeconfigureerd] }]
-    : belastingNiveau === 'GEMIDDELD'
-      ? [{ OR: [{ zichtbaarBijGemiddeld: true }, nietGeconfigureerd] }]
-      : belastingNiveau === 'HOOG'
-        ? [{ zichtbaarBijHoog: true }]
-        : []
+  // TODO: activeren zodra beheer-UI beschikbaar is om zichtbaarBijLaag/Gemiddeld/Hoog
+  // per hulpbron in te stellen. Nu uitgeschakeld omdat de schema-defaults
+  // (laag=false, gemiddeld=false, hoog=true) hulpbronnen onzichtbaar maken
+  // voor LAAG/GEMIDDELD gebruikers terwijl beheerders ze nog niet kunnen configureren.
+  const niveauFilter: Record<string, unknown>[] = []
+  // Toekomstige filter logica (bewaard voor later):
+  // LAAG:      [{ OR: [{ zichtbaarBijLaag: true }, { zichtbaarBijLaag: false, zichtbaarBijGemiddeld: false, zichtbaarBijHoog: true }] }]
+  // GEMIDDELD: [{ OR: [{ zichtbaarBijGemiddeld: true }, { zichtbaarBijLaag: false, zichtbaarBijGemiddeld: false, zichtbaarBijHoog: true }] }]
+  // HOOG:      [{ zichtbaarBijHoog: true }]
+  void belastingNiveau // bewust niet gebruikt tot beheer-UI er is
 
   // Landelijke hulplijnen (altijd zichtbaar) - zonder filter op soortHulp
   const landelijk = await prisma.zorgorganisatie.findMany({
