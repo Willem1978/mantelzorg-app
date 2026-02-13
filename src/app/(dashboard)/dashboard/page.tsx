@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useEffect, useMemo, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -216,7 +216,7 @@ function DashboardContent() {
     )
   }
 
-  // Bereken zware taken (gememoized)
+  // Bereken zware taken
   // Database kan twee formats hebben:
   // 1. Web test: MOEILIJK/ZEER_MOEILIJK/GEMIDDELD/MAKKELIJK
   // 2. WhatsApp test: JA/SOMS/NEE
@@ -227,11 +227,9 @@ function DashboardContent() {
   const isLicht = (m: string | null) =>
     !m || m === 'MAKKELIJK' || m === 'NEE' || m === 'nee'
 
-  const { zwareTaken, matigTaken, lichtTaken } = useMemo(() => ({
-    zwareTaken: data?.test?.zorgtaken?.filter(t => isZwaar(t.moeilijkheid)) || [],
-    matigTaken: data?.test?.zorgtaken?.filter(t => isMatig(t.moeilijkheid)) || [],
-    lichtTaken: data?.test?.zorgtaken?.filter(t => isLicht(t.moeilijkheid)) || [],
-  }), [data?.test?.zorgtaken])
+  const zwareTaken = data?.test?.zorgtaken?.filter(t => isZwaar(t.moeilijkheid)) || []
+  const matigTaken = data?.test?.zorgtaken?.filter(t => isMatig(t.moeilijkheid)) || []
+  const lichtTaken = data?.test?.zorgtaken?.filter(t => isLicht(t.moeilijkheid)) || []
 
   // Genereer vervolgstappen op basis van testscore en -status
   const getVervolgstappen = () => {
@@ -346,7 +344,7 @@ function DashboardContent() {
     return stappen.slice(0, 3)
   }
 
-  const vervolgstappen = useMemo(() => getVervolgstappen(), [data?.test?.niveau, data?.test?.hasTest, data?.test?.needsNewTest])
+  const vervolgstappen = getVervolgstappen()
 
   return (
     <div className="ker-page-content">
