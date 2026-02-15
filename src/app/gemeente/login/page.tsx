@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 
-export default function GemeenteLoginPage() {
+function GemeenteLoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get("callbackUrl") || "/gemeente"
@@ -96,5 +96,19 @@ export default function GemeenteLoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function GemeenteLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <GemeenteLoginForm />
+    </Suspense>
   )
 }
