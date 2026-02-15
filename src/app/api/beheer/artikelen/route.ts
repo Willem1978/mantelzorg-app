@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { logAudit } from "@/lib/audit"
 
 export async function GET(request: NextRequest) {
   const session = await auth()
@@ -66,6 +67,14 @@ export async function POST(request: NextRequest) {
         isActief: body.isActief !== undefined ? body.isActief : true,
         aangemaaaktDoor: session.user.id,
       },
+    })
+
+    await logAudit({
+      userId: session.user.id!,
+      actie: "CREATE",
+      entiteit: "Artikel",
+      entiteitId: artikel.id,
+      details: { titel: body.titel, type: body.type, categorie: body.categorie },
     })
 
     return NextResponse.json({ artikel }, { status: 201 })

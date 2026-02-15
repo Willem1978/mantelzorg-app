@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { logAudit } from "@/lib/audit"
 
 export async function PATCH(
   request: NextRequest,
@@ -32,6 +33,14 @@ export async function PATCH(
     const alarm = await prisma.alarmLog.update({
       where: { id },
       data: updateData,
+    })
+
+    await logAudit({
+      userId: session.user.id!,
+      actie: "UPDATE",
+      entiteit: "Alarm",
+      entiteitId: id,
+      details: { isAfgehandeld: body.isAfgehandeld, notitie: body.notitie ? "bijgewerkt" : undefined },
     })
 
     return NextResponse.json({ alarm })
