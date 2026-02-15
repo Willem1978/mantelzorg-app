@@ -419,6 +419,50 @@ model AlarmLog {
 }
 
 // ============================================
+// ARTIKELEN & CONTENT MANAGEMENT
+// ============================================
+
+model Artikel {
+  id              String          @id @default(cuid())
+  titel           String
+  beschrijving    String
+  inhoud          String?         // Rich text inhoud (optioneel, voor uitgebreide artikelen)
+  url             String?         // Externe link
+  bron            String?         // Bronnaam (bijv. "MantelzorgNL")
+  emoji           String?
+  categorie       String          // Slug: praktische-tips, zelfzorg, rechten, financieel
+  type            ArtikelType     @default(ARTIKEL)
+  status          ArtikelStatus   @default(CONCEPT)
+  belastingNiveau BelastingNiveauFilter @default(ALLE)
+  gemeente        String?         // Alleen voor gemeente-nieuws
+  publicatieDatum DateTime?
+  sorteerVolgorde Int             @default(0)
+  isActief        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  aangemaaaktDoor String?         // User ID van de maker
+
+  @@index([categorie, isActief])
+  @@index([type, isActief])
+  @@index([gemeente])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String
+  actie       String   // CREATE, UPDATE, DELETE, LOGIN, etc.
+  entiteit    String   // User, Artikel, Zorgorganisatie, etc.
+  entiteitId  String?
+  details     Json?    // Extra informatie over de wijziging
+  ipAdres     String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([entiteit, entiteitId])
+  @@index([createdAt])
+}
+
+// ============================================
 // FAVORIETEN
 // ============================================
 
@@ -787,4 +831,23 @@ enum AlarmUrgentie {
   MEDIUM
   HIGH
   CRITICAL
+}
+
+enum ArtikelType {
+  ARTIKEL           // Regulier informatief artikel
+  GEMEENTE_NIEUWS   // Gemeentenieuws
+  TIP               // Korte tip
+}
+
+enum ArtikelStatus {
+  CONCEPT           // Nog niet gepubliceerd
+  GEPUBLICEERD      // Live voor gebruikers
+  GEARCHIVEERD      // Niet meer zichtbaar
+}
+
+enum BelastingNiveauFilter {
+  ALLE              // Toon aan iedereen
+  LAAG              // Alleen bij lage belasting
+  GEMIDDELD         // Alleen bij gemiddelde belasting
+  HOOG              // Alleen bij hoge belasting
 }
