@@ -27,6 +27,7 @@ const categorieOpties = [
   { value: "zelfzorg", label: "Zelfzorg" },
   { value: "rechten", label: "Rechten" },
   { value: "financieel", label: "Financieel" },
+  { value: "gemeentenieuws", label: "Gemeentenieuws" },
 ]
 
 const typeOpties = [
@@ -69,6 +70,9 @@ export default function ArtikelenPage() {
   const [editId, setEditId] = useState<string | null>(null)
   const [formulier, setFormulier] = useState(LEEG_FORMULIER)
   const [opslaan, setOpslaan] = useState(false)
+  const [gemeenteZoek, setGemeenteZoek] = useState("")
+  const [gemeenteOpties, setGemeenteOpties] = useState<string[]>([])
+  const [showGemeenteDropdown, setShowGemeenteDropdown] = useState(false)
 
   const laadArtikelen = async () => {
     setLoading(true)
@@ -93,9 +97,33 @@ export default function ArtikelenPage() {
     laadArtikelen()
   }, [filterCategorie, filterType, filterStatus])
 
+  const zoekGemeenten = async (query: string) => {
+    setGemeenteZoek(query)
+    if (query.length < 2) {
+      setGemeenteOpties([])
+      setShowGemeenteDropdown(false)
+      return
+    }
+    try {
+      const res = await fetch(`/api/beheer/locatie?type=gemeenten&zoek=${encodeURIComponent(query)}`)
+      const data = await res.json()
+      setGemeenteOpties(data.gemeenten || [])
+      setShowGemeenteDropdown(true)
+    } catch {
+      setGemeenteOpties([])
+    }
+  }
+
+  const selecteerGemeente = (gemeente: string) => {
+    setFormulier({ ...formulier, gemeente })
+    setGemeenteZoek(gemeente)
+    setShowGemeenteDropdown(false)
+  }
+
   const handleNieuw = () => {
     setEditId(null)
     setFormulier(LEEG_FORMULIER)
+    setGemeenteZoek("")
     setShowForm(true)
   }
 
@@ -115,6 +143,7 @@ export default function ArtikelenPage() {
       gemeente: artikel.gemeente || "",
       sorteerVolgorde: artikel.sorteerVolgorde,
     })
+    setGemeenteZoek(artikel.gemeente || "")
     setShowForm(true)
   }
 
@@ -268,7 +297,12 @@ export default function ArtikelenPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Categorie *</label>
                 <select
                   value={formulier.categorie}
-                  onChange={(e) => setFormulier({ ...formulier, categorie: e.target.value })}
+                  onChange={(e) => {
+                    const nieuweCat = e.target.value
+                    const updates: any = { categorie: nieuweCat }
+                    if (nieuweCat === "gemeentenieuws") updates.type = "GEMEENTE_NIEUWS"
+                    setFormulier({ ...formulier, ...updates })
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                 >
                   {categorieOpties.filter((o) => o.value).map((o) => (
@@ -351,15 +385,45 @@ export default function ArtikelenPage() {
               </div>
 
               {formulier.type === "GEMEENTE_NIEUWS" && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Gemeente</label>
+                <div className="relative">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Gemeente *</label>
                   <input
                     type="text"
-                    value={formulier.gemeente}
-                    onChange={(e) => setFormulier({ ...formulier, gemeente: e.target.value })}
+                    value={gemeenteZoek}
+                    onChange={(e) => zoekGemeenten(e.target.value)}
+                    onFocus={() => gemeenteZoek.length >= 2 && setShowGemeenteDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowGemeenteDropdown(false), 200)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    placeholder="bijv. Nijmegen"
+                    placeholder="Typ om gemeente te zoeken..."
                   />
+                  {formulier.gemeente && (
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                        {formulier.gemeente}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => { setFormulier({ ...formulier, gemeente: "" }); setGemeenteZoek("") }}
+                        className="text-xs text-gray-400 hover:text-red-500"
+                      >
+                        Verwijder
+                      </button>
+                    </div>
+                  )}
+                  {showGemeenteDropdown && gemeenteOpties.length > 0 && (
+                    <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {gemeenteOpties.map((g) => (
+                        <button
+                          key={g}
+                          type="button"
+                          onMouseDown={() => selecteerGemeente(g)}
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 hover:text-blue-700"
+                        >
+                          {g}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -420,7 +484,7 @@ export default function ArtikelenPage() {
                     </span>
                     {artikel.type !== "ARTIKEL" && (
                       <span className="text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-700">
-                        {artikel.type === "GEMEENTE_NIEUWS" ? "Gemeente" : artikel.type}
+                        {artikel.type === "GEMEENTE_NIEUWS" ? `Gemeente${artikel.gemeente ? `: ${artikel.gemeente}` : ""}` : artikel.type}
                       </span>
                     )}
                   </div>
