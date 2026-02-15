@@ -156,17 +156,48 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Check if check-in is needed this month
+    // Check if check-in is needed
     const now = new Date()
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
     const hasCheckedInThisMonth = caregiver.monthlyCheckIns.some(
       (checkIn) => checkIn.month.getTime() === monthStart.getTime() && checkIn.completedAt
     )
 
+    // Smart frequency: haal belastingniveau op voor check-in interval
+    const latestTest = await prisma.belastbaarheidTest.findFirst({
+      where: { caregiverId: caregiver.id, isCompleted: true },
+      orderBy: { completedAt: "desc" },
+      select: { belastingNiveau: true },
+    })
+
+    // Aanbevolen frequentie op basis van belastingniveau
+    // LAAG: maandelijks, GEMIDDELD: 2x per maand, HOOG: wekelijks
+    let aanbevolenFrequentie = "maandelijks"
+    let frequentieDagen = 30
+    if (latestTest?.belastingNiveau === "GEMIDDELD") {
+      aanbevolenFrequentie = "2x per maand"
+      frequentieDagen = 14
+    } else if (latestTest?.belastingNiveau === "HOOG") {
+      aanbevolenFrequentie = "wekelijks"
+      frequentieDagen = 7
+    }
+
+    // Check of check-in nodig is op basis van slimme frequentie
+    const lastCheckIn = caregiver.monthlyCheckIns[0] || null
+    const daysSinceLastCheckIn = lastCheckIn?.completedAt
+      ? Math.floor((now.getTime() - new Date(lastCheckIn.completedAt).getTime()) / (1000 * 60 * 60 * 24))
+      : null
+
+    const needsCheckIn = !hasCheckedInThisMonth ||
+      (daysSinceLastCheckIn !== null && daysSinceLastCheckIn >= frequentieDagen)
+
     return NextResponse.json({
       checkIns: caregiver.monthlyCheckIns,
-      needsCheckIn: !hasCheckedInThisMonth,
-      lastCheckIn: caregiver.monthlyCheckIns[0] || null,
+      needsCheckIn,
+      lastCheckIn,
+      aanbevolenFrequentie,
+      frequentieDagen,
+      daysSinceLastCheckIn,
     })
 
   } catch (error) {

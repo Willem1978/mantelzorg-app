@@ -20,7 +20,7 @@ export async function logAudit({
         actie,
         entiteit,
         entiteitId: entiteitId || null,
-        details: details || null,
+        details: details || undefined,
       },
     })
   } catch (error) {

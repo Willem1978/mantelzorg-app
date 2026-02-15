@@ -283,6 +283,137 @@ async function getHulpbronnenVoorTaken(
   }
 }
 
+// Haal aanbevolen artikelen op basis van belastingniveau
+async function getAanbevolenArtikelen(
+  belastingNiveau: string | null,
+  gemeente: string | null
+) {
+  try {
+    // Bepaal categorieën op basis van niveau
+    let categorieen: string[] = []
+    if (belastingNiveau === "LAAG") {
+      categorieen = ["zelfzorg", "praktische-tips"]
+    } else if (belastingNiveau === "GEMIDDELD") {
+      categorieen = ["rechten", "praktische-tips", "zelfzorg"]
+    } else if (belastingNiveau === "HOOG") {
+      categorieen = ["zelfzorg", "rechten", "financieel"]
+    } else {
+      categorieen = ["praktische-tips", "zelfzorg"]
+    }
+
+    const artikelen = await prisma.artikel.findMany({
+      where: {
+        isActief: true,
+        status: "GEPUBLICEERD",
+        type: "ARTIKEL",
+        categorie: { in: categorieen },
+        OR: [
+          { publicatieDatum: null },
+          { publicatieDatum: { lte: new Date() } },
+        ],
+      },
+      orderBy: [{ sorteerVolgorde: "asc" }, { createdAt: "desc" }],
+      take: 3,
+      select: {
+        id: true,
+        titel: true,
+        beschrijving: true,
+        emoji: true,
+        categorie: true,
+        url: true,
+      },
+    })
+
+    return artikelen
+  } catch {
+    return []
+  }
+}
+
+// Bouw mijlpalen tijdlijn
+function buildMijlpalen(
+  registratieDatum: Date,
+  eersteTestDatum: Date | null,
+  eersteCheckInDatum: Date | null,
+  eersteFavorietDatum: Date | null,
+  profielCompleet: boolean,
+  belastingNiveau: string | null,
+  testTrend: "improved" | "same" | "worse" | null
+) {
+  const mijlpalen: {
+    id: string
+    titel: string
+    beschrijving: string
+    emoji: string
+    datum: Date | null
+    behaald: boolean
+  }[] = []
+
+  // Geregistreerd
+  mijlpalen.push({
+    id: "registratie",
+    titel: "Account aangemaakt",
+    beschrijving: "Je hebt de eerste stap gezet!",
+    emoji: "🎉",
+    datum: registratieDatum,
+    behaald: true,
+  })
+
+  // Profiel compleet
+  mijlpalen.push({
+    id: "profiel",
+    titel: "Profiel ingevuld",
+    beschrijving: "Zo kunnen we je beter helpen",
+    emoji: "👤",
+    datum: profielCompleet ? registratieDatum : null,
+    behaald: profielCompleet,
+  })
+
+  // Eerste test
+  mijlpalen.push({
+    id: "eerste-test",
+    titel: "Eerste balanstest gedaan",
+    beschrijving: "Nu weet je hoe het met je gaat",
+    emoji: "📊",
+    datum: eersteTestDatum,
+    behaald: !!eersteTestDatum,
+  })
+
+  // Eerste favoriet
+  mijlpalen.push({
+    id: "eerste-favoriet",
+    titel: "Eerste favoriet bewaard",
+    beschrijving: "Handig om later terug te lezen",
+    emoji: "❤️",
+    datum: eersteFavorietDatum,
+    behaald: !!eersteFavorietDatum,
+  })
+
+  // Eerste check-in
+  mijlpalen.push({
+    id: "eerste-checkin",
+    titel: "Eerste check-in gedaan",
+    beschrijving: "Zo houd je bij hoe het gaat",
+    emoji: "✅",
+    datum: eersteCheckInDatum,
+    behaald: !!eersteCheckInDatum,
+  })
+
+  // Score verbeterd (alleen als er een trend is)
+  if (testTrend === "improved") {
+    mijlpalen.push({
+      id: "score-verbeterd",
+      titel: "Score verbeterd!",
+      beschrijving: "Je balans is erop vooruit gegaan",
+      emoji: "📈",
+      datum: new Date(),
+      behaald: true,
+    })
+  }
+
+  return mijlpalen
+}
+
 // GET: Dashboard data ophalen
 export async function GET() {
   try {
@@ -302,6 +433,7 @@ export async function GET() {
       recentCheckIns,
       tasks,
       selfCareTasks,
+      favorieten,
     ] = await Promise.all([
       // Caregiver profiel
       prisma.caregiver.findUnique({
@@ -351,6 +483,13 @@ export async function GET() {
       prisma.task.findMany({
         where: { caregiverId, category: "SELF_CARE" },
         orderBy: { dueDate: "asc" },
+      }),
+
+      // Favorieten (voor mijlpalen)
+      prisma.favoriet.findFirst({
+        where: { caregiverId },
+        orderBy: { createdAt: "asc" },
+        select: { createdAt: true },
       }),
     ])
 
@@ -545,6 +684,23 @@ export async function GET() {
         caregiver.municipality,            // Locatie mantelzorger
         caregiver.careRecipientMunicipality, // Locatie zorgvrager
         latestTest?.belastingNiveau || null  // Belastingniveau voor filtering
+      ),
+
+      // Aanbevolen artikelen op basis van belastingniveau
+      aanbevolenArtikelen: await getAanbevolenArtikelen(
+        latestTest?.belastingNiveau || null,
+        caregiver.municipality
+      ),
+
+      // Mijlpalen ("Jouw reis")
+      mijlpalen: buildMijlpalen(
+        caregiver.createdAt,
+        allTests.length > 0 ? allTests[allTests.length - 1].completedAt : null,
+        recentCheckIns.length > 0 ? recentCheckIns[recentCheckIns.length - 1].createdAt : null,
+        favorieten?.createdAt || null,
+        caregiver.profileCompleted,
+        latestTest?.belastingNiveau || null,
+        testTrend
       ),
 
       // Locatie info voor UI
