@@ -10,12 +10,16 @@ const authRoutes = ["/login", "/register"]
 // Beheer routes - vereisen ADMIN rol
 const beheerRoutes = ["/beheer"]
 
+// Gemeente routes - vereisen GEMEENTE_ADMIN of ADMIN rol
+const gemeenteRoutes = ["/gemeente"]
+
 export default auth((request) => {
   const { pathname } = request.nextUrl
 
   const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route))
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route))
   const isBeheerRoute = beheerRoutes.some((route) => pathname.startsWith(route))
+  const isGemeenteRoute = gemeenteRoutes.some((route) => pathname.startsWith(route))
 
   const session = request.auth
 
@@ -23,6 +27,17 @@ export default auth((request) => {
   if (pathname === "/beheer/login") {
     if (session && (session.user as any)?.role === "ADMIN") {
       return NextResponse.redirect(new URL("/beheer", request.url))
+    }
+    return NextResponse.next()
+  }
+
+  // Gemeente login pagina: altijd toegankelijk
+  if (pathname === "/gemeente/login") {
+    if (session) {
+      const role = (session.user as any)?.role
+      if (role === "GEMEENTE_ADMIN" || role === "ADMIN") {
+        return NextResponse.redirect(new URL("/gemeente", request.url))
+      }
     }
     return NextResponse.next()
   }
@@ -36,6 +51,20 @@ export default auth((request) => {
     }
     const role = (session.user as any)?.role
     if (role !== "ADMIN") {
+      return NextResponse.redirect(new URL("/dashboard", request.url))
+    }
+    return NextResponse.next()
+  }
+
+  // Gemeente routes: vereisen inlog + GEMEENTE_ADMIN of ADMIN rol
+  if (isGemeenteRoute) {
+    if (!session) {
+      const loginUrl = new URL("/gemeente/login", request.url)
+      loginUrl.searchParams.set("callbackUrl", pathname)
+      return NextResponse.redirect(loginUrl)
+    }
+    const role = (session.user as any)?.role
+    if (role !== "GEMEENTE_ADMIN" && role !== "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", request.url))
     }
     return NextResponse.next()
