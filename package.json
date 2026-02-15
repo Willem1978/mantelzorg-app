@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "export DIRECT_URL=${DIRECT_URL:-$DATABASE_URL} && prisma generate && prisma db push --skip-generate --accept-data-loss && next build",
+    "build": "node scripts/build.js",
     "start": "next start",
     "lint": "eslint",
     "db:generate": "prisma generate",
