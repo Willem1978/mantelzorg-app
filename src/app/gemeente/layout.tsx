@@ -13,6 +13,8 @@ const menuItems = [
   { href: "/gemeente/alarmen", label: "Signalering", icon: "🔔" },
   { href: "/gemeente/rapportages", label: "Rapportages", icon: "📄" },
   { href: "/gemeente/content", label: "Content", icon: "📝" },
+  { href: "/gemeente/hulpbronnen", label: "Hulpbronnen", icon: "📚" },
+  { href: "/gemeente/evenementen", label: "Evenementen", icon: "📅" },
 ]
 
 export default function GemeenteLayout({

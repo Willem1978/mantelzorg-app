@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 interface DemografieData {
   gemeenteNaam: string
   aantalTests: number
+  aantalMantelzorgers?: number
   belastingNiveauVerdeling: {
     LAAG: number
     GEMIDDELD: number
@@ -13,10 +14,15 @@ interface DemografieData {
   gemiddeldZorguren: number
   zorgurenVerdeling: Record<string, number>
   scoreVerdeling: Record<string, number>
+  leeftijdVerdeling?: Record<string, number> | null
+  zorgrelatie?: Record<string, number> | null
+  wijkVerdeling?: Record<string, number> | null
+  zorgsince?: Record<string, number> | null
   // K-anonimiteit response
   kAnonimiteit?: boolean
   minimumNietBereikt?: boolean
   bericht?: string
+  berichtMantelzorgers?: string
 }
 
 function BarSegment({ label, value, percentage, color }: { label: string; value: number; percentage: number; color: string }) {
@@ -127,6 +133,30 @@ export default function GemeenteDemografie() {
 
   const zorgurenBarColors = ["bg-emerald-400", "bg-emerald-500", "bg-amber-500", "bg-red-500"]
   const scoreBarColors = ["bg-green-500", "bg-amber-500", "bg-red-500"]
+  const leeftijdBarColors = ["bg-sky-400", "bg-sky-500", "bg-blue-500", "bg-indigo-500", "bg-purple-500", "bg-gray-400"]
+  const relatieBarColors = ["bg-rose-400", "bg-pink-500", "bg-fuchsia-500", "bg-violet-500", "bg-purple-400", "bg-gray-400"]
+  const zorgduurBarColors = ["bg-teal-400", "bg-teal-500", "bg-cyan-500", "bg-blue-500", "bg-gray-400"]
+
+  const leeftijdEntries = Object.entries(data.leeftijdVerdeling || {}).filter(([, v]) => v > 0)
+  const leeftijdTotaal = leeftijdEntries.reduce((sum, [, v]) => sum + v, 0)
+
+  const relatieEntries = Object.entries(data.zorgrelatie || {}).filter(([, v]) => v > 0)
+  const relatieTotaal = relatieEntries.reduce((sum, [, v]) => sum + v, 0)
+
+  const wijkEntries = Object.entries(data.wijkVerdeling || {}).sort(([, a], [, b]) => b - a)
+  const wijkTotaal = wijkEntries.reduce((sum, [, v]) => sum + v, 0)
+
+  const zorgduurEntries = Object.entries(data.zorgsince || {}).filter(([, v]) => v > 0)
+  const zorgduurTotaal = zorgduurEntries.reduce((sum, [, v]) => sum + v, 0)
+
+  const relatieLabels: Record<string, string> = {
+    partner: "Partner",
+    ouder: "Ouder",
+    kind: "Kind",
+    familielid: "Familielid",
+    kennis: "Kennis/vriend",
+    "Overig/Onbekend": "Overig/Onbekend",
+  }
 
   return (
     <div className="space-y-6">
@@ -200,6 +230,89 @@ export default function GemeenteDemografie() {
           <p className="text-gray-500 text-sm">Geen score data beschikbaar.</p>
         )}
       </div>
+
+      {/* Leeftijdverdeling */}
+      {data.leeftijdVerdeling && leeftijdEntries.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-1">Leeftijdverdeling</h2>
+          <p className="text-sm text-gray-500 mb-4">{data.aantalMantelzorgers || leeftijdTotaal} mantelzorgers</p>
+          <div className="space-y-3">
+            {leeftijdEntries.map(([label, aantal], i) => (
+              <BarSegment
+                key={label}
+                label={`${label} jaar`}
+                value={aantal}
+                percentage={leeftijdTotaal > 0 ? Math.round((aantal / leeftijdTotaal) * 100) : 0}
+                color={leeftijdBarColors[i % leeftijdBarColors.length]}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Zorgrelatie */}
+      {data.zorgrelatie && relatieEntries.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Zorgrelatie</h2>
+          <div className="space-y-3">
+            {relatieEntries.map(([label, aantal], i) => (
+              <BarSegment
+                key={label}
+                label={relatieLabels[label] || label}
+                value={aantal}
+                percentage={relatieTotaal > 0 ? Math.round((aantal / relatieTotaal) * 100) : 0}
+                color={relatieBarColors[i % relatieBarColors.length]}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Wijkverdeling */}
+      {data.wijkVerdeling && wijkEntries.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Per wijk</h2>
+          <div className="space-y-3">
+            {wijkEntries.slice(0, 15).map(([label, aantal], i) => (
+              <BarSegment
+                key={label}
+                label={label}
+                value={aantal}
+                percentage={wijkTotaal > 0 ? Math.round((aantal / wijkTotaal) * 100) : 0}
+                color={i < 5 ? "bg-emerald-500" : i < 10 ? "bg-emerald-400" : "bg-emerald-300"}
+              />
+            ))}
+          </div>
+          {wijkEntries.length > 15 && (
+            <p className="text-sm text-gray-400 mt-3">En {wijkEntries.length - 15} andere wijken...</p>
+          )}
+        </div>
+      )}
+
+      {/* Zorgduur */}
+      {data.zorgsince && zorgduurEntries.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Zorgduur</h2>
+          <div className="space-y-3">
+            {zorgduurEntries.map(([label, aantal], i) => (
+              <BarSegment
+                key={label}
+                label={label}
+                value={aantal}
+                percentage={zorgduurTotaal > 0 ? Math.round((aantal / zorgduurTotaal) * 100) : 0}
+                color={zorgduurBarColors[i % zorgduurBarColors.length]}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* K-anonimiteit waarschuwing voor mantelzorgerdata */}
+      {data.berichtMantelzorgers && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <p className="text-amber-700 text-sm">{data.berichtMantelzorgers}</p>
+        </div>
+      )}
     </div>
   )
 }

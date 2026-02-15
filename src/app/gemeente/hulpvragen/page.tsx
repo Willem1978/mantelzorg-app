@@ -8,6 +8,14 @@ interface HulpvragenData {
   perCategorie: Record<string, number>
   perStatus: Record<string, number>
   perUrgentie: Record<string, number>
+  onbeantwoord?: number
+  gemiddeldeReactietijd?: number | null
+  topOrganisaties?: { naam: string; aantal: number }[]
+  recenteTrend?: {
+    huidige30Dagen: number
+    vorige30Dagen: number
+    trend: "stijgend" | "dalend" | "stabiel"
+  }
   // K-anonimiteit response
   kAnonimiteit?: boolean
   minimumNietBereikt?: boolean
@@ -135,10 +143,58 @@ export default function GemeenteHulpvragen() {
         </p>
       </div>
 
-      {/* Totaal overzicht */}
-      <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5">
-        <p className="text-sm text-emerald-700">Totaal hulpvragen</p>
-        <p className="text-3xl font-bold text-emerald-800 mt-1">{data.totaalHulpvragen}</p>
+      {/* KPI cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5">
+          <p className="text-sm text-emerald-700">Totaal hulpvragen</p>
+          <p className="text-3xl font-bold text-emerald-800 mt-1">{data.totaalHulpvragen}</p>
+        </div>
+
+        {data.onbeantwoord !== undefined && (
+          <div className={`rounded-xl border p-5 ${
+            data.onbeantwoord > 0
+              ? "bg-red-50 border-red-300 ring-2 ring-red-200"
+              : "bg-green-50 border-green-200"
+          }`}>
+            <p className={`text-sm font-medium ${data.onbeantwoord > 0 ? "text-red-700" : "text-green-700"}`}>
+              Onbeantwoord (&gt;7 dagen)
+            </p>
+            <p className={`text-3xl font-bold mt-1 ${data.onbeantwoord > 0 ? "text-red-800" : "text-green-800"}`}>
+              {data.onbeantwoord}
+            </p>
+            <p className={`text-xs mt-1 ${data.onbeantwoord > 0 ? "text-red-600" : "text-green-600"}`}>
+              {data.onbeantwoord > 0 ? "Vereist aandacht" : "Alles beantwoord"}
+            </p>
+          </div>
+        )}
+
+        {data.gemiddeldeReactietijd !== undefined && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
+            <p className="text-sm text-blue-700">Gem. reactietijd</p>
+            <p className="text-3xl font-bold text-blue-800 mt-1">
+              {data.gemiddeldeReactietijd !== null ? `${data.gemiddeldeReactietijd}d` : "-"}
+            </p>
+            <p className="text-xs text-blue-600 mt-1">In dagen</p>
+          </div>
+        )}
+
+        {data.recenteTrend && (
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-5">
+            <p className="text-sm text-gray-600">Trend (30 dagen)</p>
+            <p className="text-3xl font-bold text-gray-800 mt-1">{data.recenteTrend.huidige30Dagen}</p>
+            <p className="text-xs mt-1">
+              {data.recenteTrend.trend === "stijgend" && (
+                <span className="text-amber-600">Stijgend (was {data.recenteTrend.vorige30Dagen})</span>
+              )}
+              {data.recenteTrend.trend === "dalend" && (
+                <span className="text-green-600">Dalend (was {data.recenteTrend.vorige30Dagen})</span>
+              )}
+              {data.recenteTrend.trend === "stabiel" && (
+                <span className="text-gray-500">Stabiel</span>
+              )}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Per Status */}
@@ -193,6 +249,33 @@ export default function GemeenteHulpvragen() {
           <p className="text-gray-500 text-sm">Geen categorie data beschikbaar.</p>
         )}
       </div>
+
+      {/* Top organisaties */}
+      {data.topOrganisaties && data.topOrganisaties.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Top organisaties</h2>
+          <div className="space-y-3">
+            {data.topOrganisaties.map((org, i) => {
+              const maxAantal = data.topOrganisaties![0].aantal
+              const pct = maxAantal > 0 ? (org.aantal / maxAantal) * 100 : 0
+              return (
+                <div key={i} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-700">{org.naam}</span>
+                    <span className="text-gray-500 font-medium">{org.aantal} hulpvragen</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2.5">
+                    <div
+                      className="h-2.5 rounded-full bg-emerald-500"
+                      style={{ width: `${Math.max(pct, 2)}%` }}
+                    />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

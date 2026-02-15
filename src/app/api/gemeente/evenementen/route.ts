@@ -7,10 +7,11 @@ export async function GET() {
   if (error) return error
 
   try {
-    const artikelen = await prisma.artikel.findMany({
+    const evenementen = await prisma.artikel.findMany({
       where: {
         type: "GEMEENTE_NIEUWS",
-        gemeente: { equals: gemeenteNaam, mode: "insensitive" },
+        categorie: "evenement",
+        gemeente: { equals: gemeenteNaam!, mode: "insensitive" },
         isActief: true,
       },
       select: {
@@ -19,30 +20,26 @@ export async function GET() {
         beschrijving: true,
         inhoud: true,
         url: true,
-        bron: true,
         emoji: true,
-        categorie: true,
         status: true,
-        belastingNiveau: true,
         publicatieDatum: true,
-        sorteerVolgorde: true,
         createdAt: true,
         updatedAt: true,
       },
       orderBy: [
-        { sorteerVolgorde: "asc" },
+        { publicatieDatum: "asc" },
         { createdAt: "desc" },
       ],
     })
 
-    logGemeenteAudit(userId, "BEKEKEN", "Content", { gemeente: gemeenteNaam })
+    logGemeenteAudit(userId, "BEKEKEN", "Evenementen", { gemeente: gemeenteNaam })
 
     return NextResponse.json({
       gemeenteNaam,
-      artikelen,
+      evenementen,
     })
   } catch (err) {
-    console.error("Gemeente content GET error:", err)
+    console.error("Gemeente evenementen GET error:", err)
     return NextResponse.json({ error: "Interne fout" }, { status: 500 })
   }
 }
@@ -53,7 +50,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { titel, beschrijving, inhoud, url, bron, emoji, belastingNiveau, publicatieDatum } = body
+    const { titel, beschrijving, publicatieDatum, inhoud, url, emoji } = body
 
     // Validatie van verplichte velden
     if (!titel || typeof titel !== "string" || titel.trim().length === 0) {
@@ -70,41 +67,48 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const artikel = await prisma.artikel.create({
+    if (!publicatieDatum) {
+      return NextResponse.json(
+        { error: "Datum is verplicht" },
+        { status: 400 }
+      )
+    }
+
+    const evenement = await prisma.artikel.create({
       data: {
         titel: titel.trim(),
         beschrijving: beschrijving.trim(),
         inhoud: inhoud?.trim() || null,
         url: url?.trim() || null,
-        bron: bron?.trim() || null,
         emoji: emoji || null,
-        categorie: "gemeente-nieuws",
+        categorie: "evenement",
         type: "GEMEENTE_NIEUWS",
         status: "GEPUBLICEERD",
-        belastingNiveau: belastingNiveau || "ALLE",
+        belastingNiveau: "ALLE",
         gemeente: gemeenteNaam,
-        publicatieDatum: publicatieDatum ? new Date(publicatieDatum) : new Date(),
+        publicatieDatum: new Date(publicatieDatum),
         aangemaaaktDoor: userId,
       },
     })
 
-    logGemeenteAudit(userId, "AANGEMAAKT", "Content", { gemeente: gemeenteNaam, artikelId: artikel.id })
+    logGemeenteAudit(userId, "AANGEMAAKT", "Evenement", { gemeente: gemeenteNaam, evenementId: evenement.id })
 
     return NextResponse.json(
       {
-        bericht: "Artikel succesvol aangemaakt",
-        artikel: {
-          id: artikel.id,
-          titel: artikel.titel,
-          beschrijving: artikel.beschrijving,
-          status: artikel.status,
-          createdAt: artikel.createdAt,
+        bericht: "Evenement succesvol aangemaakt",
+        evenement: {
+          id: evenement.id,
+          titel: evenement.titel,
+          beschrijving: evenement.beschrijving,
+          publicatieDatum: evenement.publicatieDatum,
+          status: evenement.status,
+          createdAt: evenement.createdAt,
         },
       },
       { status: 201 }
     )
   } catch (err) {
-    console.error("Gemeente content POST error:", err)
+    console.error("Gemeente evenementen POST error:", err)
     return NextResponse.json({ error: "Interne fout" }, { status: 500 })
   }
 }

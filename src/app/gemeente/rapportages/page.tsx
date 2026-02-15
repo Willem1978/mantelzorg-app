@@ -6,7 +6,7 @@ interface Report {
   id: string
   title: string
   description: string
-  format: "CSV" | "PDF"
+  format: "CSV" | "Rapport"
   icon: string
 }
 
@@ -21,9 +21,9 @@ const reports: Report[] = [
   {
     id: "belastbaarheid-rapport",
     title: "Belastbaarheid rapport",
-    description: "Gedetailleerd rapport met gemiddelde belastingsscores, trends en verdeling per niveau over de geselecteerde periode.",
-    format: "PDF",
-    icon: "pdf",
+    description: "Gedetailleerd rapport met gemiddelde belastingsscores, trends en verdeling per niveau. Opgemaakt als afdrukbaar document.",
+    format: "Rapport",
+    icon: "rapport",
   },
   {
     id: "hulpvragen-export",
@@ -36,15 +36,15 @@ const reports: Report[] = [
     id: "signalering-rapport",
     title: "Signalering rapport",
     description: "Overzicht van alarmen en signaleringen met type-verdeling, urgentieniveaus en afhandelstatus.",
-    format: "PDF",
-    icon: "pdf",
+    format: "Rapport",
+    icon: "rapport",
   },
   {
     id: "maandrapportage",
     title: "Maandrapportage",
-    description: "Samenvatting van alle kerngegevens over de afgelopen maand. Geschikt voor bestuurlijke rapportage.",
-    format: "PDF",
-    icon: "pdf",
+    description: "Samenvatting van alle kerngegevens. Geschikt voor bestuurlijke rapportage. Kan direct afgedrukt worden als PDF.",
+    format: "Rapport",
+    icon: "rapport",
   },
   {
     id: "trend-analyse",
@@ -79,10 +79,21 @@ export default function GemeenteRapportages() {
         document.body.removeChild(a)
         URL.revokeObjectURL(url)
       } else {
-        // PDF exports nog niet beschikbaar
-        alert(
-          `PDF-rapportage "${report.title}" wordt binnenkort beschikbaar gesteld.`
-        )
+        // Rapport exports als downloadbaar HTML-bestand
+        const res = await fetch("/api/gemeente/rapportages?format=rapport")
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}))
+          throw new Error(data.error || "Kon rapport niet downloaden")
+        }
+        const blob = await res.blob()
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = `mantelbuddy-${report.id}.html`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
       }
     } catch (err: any) {
       alert(`Fout bij downloaden: ${err.message}`)
@@ -138,17 +149,19 @@ export default function GemeenteRapportages() {
 
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-              <span className="text-red-700 font-bold text-xs">PDF</span>
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">PDF Rapport</h3>
+              <h3 className="font-semibold text-gray-900">Rapport</h3>
               <p className="text-xs text-gray-500">Opgemaakt document</p>
             </div>
           </div>
           <p className="text-sm text-gray-600">
-            Kant-en-klaar opgemaakt rapport met grafieken en samenvattingen.
-            Direct geschikt voor bestuurlijke presentaties en verslaggeving.
+            Kant-en-klaar opgemaakt rapport met samenvattingen en kerncijfers.
+            Open in de browser en druk af als PDF via Ctrl+P / Cmd+P.
           </p>
         </div>
       </div>
@@ -160,12 +173,12 @@ export default function GemeenteRapportages() {
           {reports.map((report) => (
             <div key={report.id} className="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-4">
               <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                report.format === "CSV" ? "bg-green-100" : "bg-red-100"
+                report.format === "CSV" ? "bg-green-100" : "bg-blue-100"
               }`}>
                 <span className={`font-bold text-xs ${
-                  report.format === "CSV" ? "text-green-700" : "text-red-700"
+                  report.format === "CSV" ? "text-green-700" : "text-blue-700"
                 }`}>
-                  {report.format}
+                  {report.format === "CSV" ? "CSV" : "HTML"}
                 </span>
               </div>
 

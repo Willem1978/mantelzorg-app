@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { getGemeenteSession, K_ANONIMITEIT_MINIMUM } from "@/lib/gemeente-auth"
+import { getGemeenteSession, K_ANONIMITEIT_MINIMUM, logGemeenteAudit } from "@/lib/gemeente-auth"
 
 export async function GET() {
-  const { error, gemeenteNaam } = await getGemeenteSession()
+  const { error, gemeenteNaam, userId } = await getGemeenteSession()
   if (error) return error
 
   try {
@@ -89,6 +89,8 @@ export async function GET() {
         createdAt: { gte: dertigDagenGeleden },
       },
     })
+
+    logGemeenteAudit(userId, "BEKEKEN", "Alarmen", { gemeente: gemeenteNaam })
 
     return NextResponse.json({
       gemeenteNaam,

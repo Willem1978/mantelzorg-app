@@ -8,10 +8,39 @@ interface TrendItem {
   aantalTests: number
 }
 
+interface SeizoenItem {
+  kwartaal: string
+  gemiddeldeScore: number | null
+  aantalTests: number
+}
+
+interface Effectiviteit {
+  registratieNaarTest: {
+    mantelzorgersMetTest: number
+    totaalMantelzorgers: number
+    percentage: number
+  }
+  testNaarHulpvraag: {
+    mantelzorgersMetHulpvraag: number
+    totaalMetTest: number
+    percentage: number
+  }
+  scoreVerbetering: number
+}
+
+interface JaarVergelijking {
+  huidigJaar: { jaar: number; gemiddeldeScore: number | null; aantalTests: number }
+  vorigJaar: { jaar: number; gemiddeldeScore: number | null; aantalTests: number }
+  verschil: number | null
+}
+
 interface TrendsData {
   gemeenteNaam: string
   periode: { van: string; tot: string }
   trends: TrendItem[]
+  seizoensData?: SeizoenItem[]
+  effectiviteit?: Effectiviteit
+  jaarVergelijking?: JaarVergelijking | null
   // K-anonimiteit response
   kAnonimiteit?: boolean
   minimumNietBereikt?: boolean
@@ -205,6 +234,116 @@ export default function GemeenteTrends() {
               </table>
             </div>
           </div>
+
+          {/* Seizoenspatronen */}
+          {data.seizoensData && data.seizoensData.some(s => s.aantalTests > 0) && (
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Seizoenspatronen</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {data.seizoensData.map((s) => {
+                  const kwartaalLabels: Record<string, string> = {
+                    Q1: "Jan - Mrt",
+                    Q2: "Apr - Jun",
+                    Q3: "Jul - Sep",
+                    Q4: "Okt - Dec",
+                  }
+                  const score = s.gemiddeldeScore ?? 0
+                  const scoreColor = score <= 8 ? "text-green-600" : score <= 16 ? "text-amber-600" : "text-red-600"
+                  return (
+                    <div key={s.kwartaal} className="bg-gray-50 rounded-xl p-4 text-center">
+                      <p className="text-sm font-medium text-gray-500">{s.kwartaal}</p>
+                      <p className="text-xs text-gray-400">{kwartaalLabels[s.kwartaal] || s.kwartaal}</p>
+                      <p className={`text-2xl font-bold mt-2 ${s.gemiddeldeScore !== null ? scoreColor : "text-gray-300"}`}>
+                        {s.gemiddeldeScore !== null ? s.gemiddeldeScore : "-"}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">{s.aantalTests} tests</p>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Effectiviteit */}
+          {data.effectiviteit && (
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Effectiviteit</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
+                  <p className="text-sm text-blue-700 font-medium">Registratie naar test</p>
+                  <p className="text-3xl font-bold text-blue-800 mt-1">
+                    {data.effectiviteit.registratieNaarTest.percentage}%
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    {data.effectiviteit.registratieNaarTest.mantelzorgersMetTest} van {data.effectiviteit.registratieNaarTest.totaalMantelzorgers}
+                  </p>
+                </div>
+                <div className="bg-purple-50 border border-purple-200 rounded-xl p-5">
+                  <p className="text-sm text-purple-700 font-medium">Test naar hulpvraag</p>
+                  <p className="text-3xl font-bold text-purple-800 mt-1">
+                    {data.effectiviteit.testNaarHulpvraag.percentage}%
+                  </p>
+                  <p className="text-xs text-purple-600 mt-1">
+                    {data.effectiviteit.testNaarHulpvraag.mantelzorgersMetHulpvraag} van {data.effectiviteit.testNaarHulpvraag.totaalMetTest}
+                  </p>
+                </div>
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5">
+                  <p className="text-sm text-emerald-700 font-medium">Score verbetering</p>
+                  <p className="text-3xl font-bold text-emerald-800 mt-1">
+                    {data.effectiviteit.scoreVerbetering}
+                  </p>
+                  <p className="text-xs text-emerald-600 mt-1">
+                    Mantelzorgers met lagere score bij hertest
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Jaarvergelijking */}
+          {data.jaarVergelijking && (
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Jaarvergelijking</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-gray-50 rounded-xl p-5 text-center">
+                  <p className="text-sm text-gray-500">{data.jaarVergelijking.vorigJaar.jaar}</p>
+                  <p className="text-2xl font-bold text-gray-800 mt-1">
+                    {data.jaarVergelijking.vorigJaar.gemiddeldeScore ?? "-"}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">{data.jaarVergelijking.vorigJaar.aantalTests} tests</p>
+                </div>
+                <div className="flex items-center justify-center">
+                  {data.jaarVergelijking.verschil !== null ? (
+                    <div className={`rounded-full px-4 py-2 ${
+                      data.jaarVergelijking.verschil < 0
+                        ? "bg-green-100 text-green-700"
+                        : data.jaarVergelijking.verschil > 0
+                        ? "bg-red-100 text-red-700"
+                        : "bg-gray-100 text-gray-600"
+                    }`}>
+                      <span className="text-lg font-bold">
+                        {data.jaarVergelijking.verschil > 0 ? "+" : ""}{data.jaarVergelijking.verschil}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-gray-400">-</span>
+                  )}
+                </div>
+                <div className="bg-gray-50 rounded-xl p-5 text-center">
+                  <p className="text-sm text-gray-500">{data.jaarVergelijking.huidigJaar.jaar}</p>
+                  <p className="text-2xl font-bold text-gray-800 mt-1">
+                    {data.jaarVergelijking.huidigJaar.gemiddeldeScore ?? "-"}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">{data.jaarVergelijking.huidigJaar.aantalTests} tests</p>
+                </div>
+              </div>
+              {data.jaarVergelijking.verschil !== null && data.jaarVergelijking.verschil < 0 && (
+                <p className="text-sm text-green-600 mt-3 text-center">
+                  De gemiddelde belastingscore is gedaald ten opzichte van vorig jaar (positief)
+                </p>
+              )}
+            </div>
+          )}
         </>
       )}
     </div>
