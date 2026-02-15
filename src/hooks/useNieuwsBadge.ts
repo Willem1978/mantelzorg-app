@@ -1,10 +1,15 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from "react"
-import { gemeenteNieuws } from "@/data/artikelen"
+
+interface NieuwsItem {
+  id: string
+  gemeente: string | null
+}
 
 /**
  * Hook die het aantal ongelezen gemeente-nieuwsitems berekent.
+ * Haalt nieuws op uit de database via API.
  * Leest gezien-status uit de database.
  * Gebruikt door Navbar en MobileNav voor de badge op het Informatie tabblad.
  */
@@ -16,6 +21,7 @@ export function useNieuwsBadge() {
     zorgvrager: null,
   })
   const gelezenRef = useRef<string[]>([])
+  const nieuwsRef = useRef<NieuwsItem[]>([])
 
   const berekenCount = useCallback(() => {
     const { mantelzorger, zorgvrager } = gemeenteRef.current
@@ -24,8 +30,8 @@ export function useNieuwsBadge() {
       return
     }
 
-    const relevant = gemeenteNieuws.filter(n => {
-      const g = n.gemeente.toLowerCase()
+    const relevant = nieuwsRef.current.filter(n => {
+      const g = (n.gemeente || "").toLowerCase()
       return (
         (mantelzorger && g === mantelzorger.toLowerCase()) ||
         (zorgvrager && g === zorgvrager.toLowerCase())
@@ -41,16 +47,17 @@ export function useNieuwsBadge() {
     setCount(relevant.filter(n => !gelezen.includes(n.id)).length)
   }, [])
 
-  // Haal gemeente data + gelezen IDs op bij eerste mount
+  // Haal gemeente data + gelezen IDs + nieuws op bij eerste mount
   useEffect(() => {
     if (hasFetched.current) return
     hasFetched.current = true
 
     const loadData = async () => {
       try {
-        const [gemeenteRes, gelezenRes] = await Promise.all([
+        const [gemeenteRes, gelezenRes, nieuwsRes] = await Promise.all([
           fetch("/api/user/gemeente").catch(() => null),
           fetch("/api/user/gelezen-nieuws").catch(() => null),
+          fetch("/api/artikelen?type=GEMEENTE_NIEUWS").catch(() => null),
         ])
 
         if (gemeenteRes?.ok) {
@@ -66,6 +73,14 @@ export function useNieuwsBadge() {
           if (Array.isArray(data.gelezenIds)) {
             gelezenRef.current = data.gelezenIds
           }
+        }
+
+        if (nieuwsRes?.ok) {
+          const data = await nieuwsRes.json()
+          nieuwsRef.current = (data.artikelen || []).map((a: any) => ({
+            id: a.id,
+            gemeente: a.gemeente || null,
+          }))
         }
 
         berekenCount()

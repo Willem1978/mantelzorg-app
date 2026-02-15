@@ -86,6 +86,22 @@ interface DashboardData {
     completed: number
     upcoming: { id: string; title: string; dueDate: string | null }[]
   }
+  aanbevolenArtikelen?: {
+    id: string
+    titel: string
+    beschrijving: string
+    emoji: string | null
+    categorie: string
+    url: string | null
+  }[]
+  mijlpalen?: {
+    id: string
+    titel: string
+    beschrijving: string
+    emoji: string
+    datum: string | null
+    behaald: boolean
+  }[]
 }
 
 // Mapping van taak namen naar categorieën voor hulpbronnen
@@ -483,6 +499,38 @@ function DashboardContent() {
         </section>
       )}
 
+        {/* Trend motivatie banner */}
+        {data?.test?.hasTest && data?.test?.trend && (
+          <section className="mb-6">
+            {data.test.trend === "improved" && (
+              <div className="ker-card bg-[var(--accent-green-bg)] border-[var(--accent-green)]/30 py-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">📈</span>
+                  <div>
+                    <p className="font-semibold text-sm text-[var(--accent-green)]">
+                      Je score is verbeterd!
+                    </p>
+                    <p className="text-xs text-muted-foreground">Goed bezig! Blijf op deze weg.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            {data.test.trend === "worse" && (
+              <div className="ker-card bg-[var(--accent-amber-bg)] border-[var(--accent-amber)]/30 py-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">💛</span>
+                  <div>
+                    <p className="font-semibold text-sm text-[var(--accent-amber)]">
+                      Je score is gestegen
+                    </p>
+                    <p className="text-xs text-muted-foreground">Wil je kijken welke hulp er beschikbaar is?</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
         {/* SECTIE 2: Jouw Vervolgstappen */}
         {vervolgstappen.length > 0 && (
           <section className="mb-8">
@@ -625,7 +673,169 @@ function DashboardContent() {
           </section>
         )}
 
-          {/* SECTIE 5: WhatsApp met QR code */}
+          {/* SECTIE: Check-in & Welzijn trend */}
+          {data?.checkIns && data.checkIns.recentScores.length > 0 && (
+            <section className="mb-8">
+              <div className="mb-4">
+                <h2 className="text-lg font-bold text-foreground flex items-center gap-2 mb-2">
+                  <span className="text-2xl">📊</span> Je welzijn over tijd
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {data.checkIns.wellbeingTrend === "up" && "Het gaat de goede kant op!"}
+                  {data.checkIns.wellbeingTrend === "down" && "Het lijkt wat zwaarder te worden."}
+                  {data.checkIns.wellbeingTrend === "stable" && "Je welzijn is stabiel."}
+                  {!data.checkIns.wellbeingTrend && "Gebaseerd op je check-ins."}
+                </p>
+              </div>
+
+              {/* Simple bar chart */}
+              <div className="ker-card">
+                <div className="flex items-end justify-between gap-2 h-24 mb-2">
+                  {data.checkIns.recentScores.slice(0, 6).reverse().map((score, i) => {
+                    const heightPercent = (score / 3) * 100
+                    return (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                        <div className="w-full flex justify-center">
+                          <div
+                            className={cn(
+                              "w-full max-w-[32px] rounded-t-md transition-all",
+                              score >= 3 ? "bg-[var(--accent-green)]" :
+                              score >= 2 ? "bg-[var(--accent-amber)]" :
+                              "bg-[var(--accent-red)]"
+                            )}
+                            style={{ height: `${Math.max(heightPercent, 15)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted-foreground border-t border-border pt-2">
+                  <span>Oudste</span>
+                  <span>Nieuwste</span>
+                </div>
+
+                {/* Check-in suggestie */}
+                {!data.checkIns.monthlyDone && (
+                  <Link
+                    href="/check-in"
+                    className="flex items-center justify-center gap-2 mt-4 pt-3 border-t border-border text-sm font-medium text-primary hover:underline"
+                  >
+                    Doe je maandelijkse check-in
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* SECTIE 4: Aanbevolen voor jou */}
+          {data?.aanbevolenArtikelen && data.aanbevolenArtikelen.length > 0 && (
+            <section className="mb-8">
+              <div className="mb-4">
+                <h2 className="text-lg font-bold text-foreground flex items-center gap-2 mb-2">
+                  <span className="text-2xl">💡</span> Aanbevolen voor jou
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {data.test?.niveau === "LAAG" && "Tips om het goed te blijven doen."}
+                  {data.test?.niveau === "GEMIDDELD" && "Artikelen die je nu kunnen helpen."}
+                  {data.test?.niveau === "HOOG" && "Belangrijke informatie voor jou."}
+                  {!data.test?.niveau && "Artikelen die voor jou interessant kunnen zijn."}
+                </p>
+              </div>
+              <div className="space-y-2">
+                {data.aanbevolenArtikelen.map((artikel) => (
+                  <Link
+                    key={artikel.id}
+                    href={artikel.url || `/leren/${artikel.categorie}`}
+                    target={artikel.url ? "_blank" : undefined}
+                    rel={artikel.url ? "noopener noreferrer" : undefined}
+                    className="block"
+                  >
+                    <div className="ker-card hover:border-primary/50 transition-all py-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl flex-shrink-0">{artikel.emoji || "📄"}</span>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-sm truncate">{artikel.titel}</h3>
+                          <p className="text-xs text-muted-foreground line-clamp-1">
+                            {artikel.beschrijving}
+                          </p>
+                        </div>
+                        <svg className="w-4 h-4 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              <Link
+                href="/leren"
+                className="flex items-center justify-center gap-1 mt-3 text-sm font-medium text-primary hover:underline"
+              >
+                Bekijk alle artikelen
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </section>
+          )}
+
+          {/* SECTIE 5: Jouw Reis (Mijlpalen) */}
+          {data?.mijlpalen && data.mijlpalen.length > 0 && (
+            <section className="mb-8">
+              <div className="mb-4">
+                <h2 className="text-lg font-bold text-foreground flex items-center gap-2 mb-2">
+                  <span className="text-2xl">🗺️</span> Jouw reis
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Kijk wat je al hebt bereikt.
+                </p>
+              </div>
+              <div className="relative pl-6">
+                {/* Verticale lijn */}
+                <div className="absolute left-[11px] top-2 bottom-2 w-0.5 bg-border" />
+                <div className="space-y-4">
+                  {data.mijlpalen.map((mijlpaal, i) => (
+                    <div key={mijlpaal.id} className="relative flex items-start gap-3">
+                      {/* Bolletje op de lijn */}
+                      <div
+                        className={cn(
+                          "absolute -left-6 w-[22px] h-[22px] rounded-full flex items-center justify-center text-xs border-2 z-10",
+                          mijlpaal.behaald
+                            ? "bg-primary border-primary text-primary-foreground"
+                            : "bg-background border-border text-muted-foreground"
+                        )}
+                      >
+                        {mijlpaal.behaald ? "✓" : (i + 1)}
+                      </div>
+                      <div className={cn("flex-1 min-w-0", !mijlpaal.behaald && "opacity-50")}>
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{mijlpaal.emoji}</span>
+                          <span className="font-semibold text-sm">{mijlpaal.titel}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground ml-7">
+                          {mijlpaal.behaald
+                            ? mijlpaal.datum
+                              ? new Date(mijlpaal.datum).toLocaleDateString("nl-NL", {
+                                  day: "numeric",
+                                  month: "long",
+                                  year: "numeric",
+                                })
+                              : mijlpaal.beschrijving
+                            : mijlpaal.beschrijving}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* SECTIE 6: WhatsApp met QR code */}
           <section className="mb-8">
             <div className="ker-card bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800">
               <div className="flex items-center gap-2 mb-3">

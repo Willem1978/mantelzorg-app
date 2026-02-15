@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { logAudit } from "@/lib/audit"
 
 export async function PATCH(
   request: NextRequest,
@@ -30,6 +31,14 @@ export async function PATCH(
     const buddy = await prisma.mantelBuddy.update({
       where: { id },
       data: updateData,
+    })
+
+    await logAudit({
+      userId: session.user.id!,
+      actie: "UPDATE",
+      entiteit: "MantelBuddy",
+      entiteitId: id,
+      details: updateData,
     })
 
     return NextResponse.json({ buddy })

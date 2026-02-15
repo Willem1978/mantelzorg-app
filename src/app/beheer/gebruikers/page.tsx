@@ -103,6 +103,12 @@ function GebruikersContent() {
           <h1 className="text-2xl font-bold text-gray-900">Gebruikers</h1>
           <p className="text-gray-500 mt-1">{totaal} gebruikers gevonden</p>
         </div>
+        <a
+          href="/api/beheer/gebruikers/export"
+          className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 flex items-center gap-2"
+        >
+          CSV Export
+        </a>
       </div>
 
       {/* Filters */}

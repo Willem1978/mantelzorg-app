@@ -2,8 +2,17 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import Link from "next/link"
-import { gemeenteNieuws, type GemeenteNieuws } from "@/data/artikelen"
 import { FavorietButton } from "@/components/FavorietButton"
+
+interface GemeenteNieuws {
+  id: string
+  titel: string
+  beschrijving: string
+  gemeente: string
+  publicatieDatum: string | null
+  url: string | null
+  emoji: string | null
+}
 
 export default function GemeenteNieuwsPage() {
   const [gemeenteMantelzorger, setGemeenteMantelzorger] = useState<string | null>(null)
@@ -11,6 +20,7 @@ export default function GemeenteNieuwsPage() {
   const [loading, setLoading] = useState(true)
   const [favorieten, setFavorieten] = useState<Record<string, string>>({})
   const [gelezenIds, setGelezenIds] = useState<string[]>([])
+  const [allNieuws, setAllNieuws] = useState<GemeenteNieuws[]>([])
   const hasFetched = useRef(false)
 
   // Laad alles uit database
@@ -20,14 +30,16 @@ export default function GemeenteNieuwsPage() {
 
     const loadAll = async () => {
       try {
-        // Haal gemeente + gelezen IDs parallel op
-        const [gemeenteRes, gelezenRes] = await Promise.all([
+        // Haal gemeente + gelezen IDs + nieuws parallel op
+        const [gemeenteRes, gelezenRes, nieuwsRes] = await Promise.all([
           fetch("/api/user/gemeente").catch(() => null),
           fetch("/api/user/gelezen-nieuws").catch(() => null),
+          fetch("/api/artikelen?type=GEMEENTE_NIEUWS").catch(() => null),
         ])
 
         let gMantelzorger: string | null = null
         let gZorgvrager: string | null = null
+        let nieuwsItems: GemeenteNieuws[] = []
 
         if (gemeenteRes?.ok) {
           const data = await gemeenteRes.json()
@@ -45,9 +57,19 @@ export default function GemeenteNieuwsPage() {
           }
         }
 
-        // Favorieten check
-        const relevant = gemeenteNieuws.filter(n => {
-          const gemeente = n.gemeente.toLowerCase()
+        // Nieuws uit database
+        if (nieuwsRes?.ok) {
+          const data = await nieuwsRes.json()
+          nieuwsItems = (data.artikelen || []).map((a: any) => ({
+            ...a,
+            gemeente: a.gemeente || "",
+          }))
+          setAllNieuws(nieuwsItems)
+        }
+
+        // Favorieten check - filter relevant nieuws
+        const relevant = nieuwsItems.filter(n => {
+          const gemeente = (n.gemeente || "").toLowerCase()
           return (
             (gMantelzorger && gemeente === gMantelzorger.toLowerCase()) ||
             (gZorgvrager && gemeente === gZorgvrager.toLowerCase())
@@ -80,11 +102,11 @@ export default function GemeenteNieuwsPage() {
 
   // Filter nieuws per gemeente
   const nieuwsMantelzorger = gemeenteMantelzorger
-    ? gemeenteNieuws.filter(n => n.gemeente.toLowerCase() === gemeenteMantelzorger.toLowerCase())
+    ? allNieuws.filter(n => (n.gemeente || "").toLowerCase() === gemeenteMantelzorger.toLowerCase())
     : []
 
   const nieuwsZorgvrager = gemeenteZorgvrager && gemeenteZorgvrager !== gemeenteMantelzorger
-    ? gemeenteNieuws.filter(n => n.gemeente.toLowerCase() === gemeenteZorgvrager.toLowerCase())
+    ? allNieuws.filter(n => (n.gemeente || "").toLowerCase() === gemeenteZorgvrager.toLowerCase())
     : []
 
   const relevantNieuws = [...nieuwsMantelzorger, ...nieuwsZorgvrager]
@@ -323,7 +345,8 @@ function NieuwsCard({
   const isFavorited = !!favorieten[favKey]
   const favorietId = favorieten[favKey]
 
-  const formatDatum = (datum: string) => {
+  const formatDatum = (datum: string | null) => {
+    if (!datum) return ""
     const d = new Date(datum)
     return d.toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" })
   }
@@ -338,8 +361,8 @@ function NieuwsCard({
           titel={item.titel}
           beschrijving={item.beschrijving}
           categorie="Gemeente nieuws"
-          url={item.url}
-          icon={item.emoji}
+          url={item.url || undefined}
+          icon={item.emoji || undefined}
           initialFavorited={isFavorited}
           initialFavorietId={favorietId}
           size="sm"
@@ -348,14 +371,14 @@ function NieuwsCard({
 
       <div className="pr-12">
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-xl">{item.emoji}</span>
+          <span className="text-xl">{item.emoji || "📰"}</span>
           <h2 className="font-semibold text-base">{item.titel}</h2>
           {!isGezien && (
             <span className="w-2 h-2 bg-[var(--accent-red)] rounded-full flex-shrink-0 animate-pulse" />
           )}
         </div>
         <p className="text-sm text-muted-foreground pl-7 mb-1">
-          {formatDatum(item.datum)} — {item.gemeente}
+          {formatDatum(item.publicatieDatum)} — {item.gemeente}
         </p>
         <p className="text-sm text-muted-foreground leading-relaxed pl-7 mb-3">
           {item.beschrijving}

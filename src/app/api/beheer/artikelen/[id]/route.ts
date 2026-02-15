@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { logAudit } from "@/lib/audit"
 
 export async function PUT(
   request: NextRequest,
@@ -36,6 +37,14 @@ export async function PUT(
       },
     })
 
+    await logAudit({
+      userId: session.user.id!,
+      actie: "UPDATE",
+      entiteit: "Artikel",
+      entiteitId: id,
+      details: { titel: body.titel },
+    })
+
     return NextResponse.json({ artikel })
   } catch (error) {
     console.error("Artikel bijwerken mislukt:", error)
@@ -55,7 +64,17 @@ export async function DELETE(
   const { id } = await params
 
   try {
+    const artikel = await prisma.artikel.findUnique({ where: { id }, select: { titel: true } })
     await prisma.artikel.delete({ where: { id } })
+
+    await logAudit({
+      userId: session.user.id!,
+      actie: "DELETE",
+      entiteit: "Artikel",
+      entiteitId: id,
+      details: { titel: artikel?.titel },
+    })
+
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error("Artikel verwijderen mislukt:", error)
