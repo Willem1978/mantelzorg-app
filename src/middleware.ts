@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 
 // Routes die authenticatie vereisen
-const protectedRoutes = ["/dashboard", "/intake", "/rapport", "/agenda", "/profiel", "/privacy", "/organisatie"]
+const protectedRoutes = ["/dashboard", "/intake", "/rapport", "/agenda", "/profiel", "/privacy", "/organisatie", "/onboarding"]
 
 // Routes die alleen voor niet-ingelogde gebruikers zijn
 const authRoutes = ["/login", "/register"]

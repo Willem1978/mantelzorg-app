@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
 import { SmileyGroup, ResultSmiley } from "@/components/ui"
@@ -178,6 +179,72 @@ export default function CheckInPage() {
     return { label: "Zwaar", kleur: "red" }
   }
 
+  // Genereer contextual help suggestions op basis van antwoorden
+  const getContextueleHulp = () => {
+    const suggesties: { emoji: string; titel: string; beschrijving: string; href: string }[] = []
+
+    // Check welke hulpgebieden ze hebben aangegeven (c5)
+    const hulpNodig = (answers["c5"] || "").split(",").filter(Boolean)
+
+    if (hulpNodig.includes("emotioneel")) {
+      suggesties.push({
+        emoji: "💬",
+        titel: "Praten met iemand",
+        beschrijving: "Vind ondersteuning bij jou in de buurt",
+        href: "/hulpvragen?tab=voor-jou",
+      })
+    }
+
+    if (hulpNodig.includes("huishouden") || hulpNodig.includes("zorgtaken")) {
+      suggesties.push({
+        emoji: "🤝",
+        titel: "Hulp zoeken bij taken",
+        beschrijving: "Bekijk welke hulp er beschikbaar is",
+        href: "/hulpvragen?tab=voor-naaste",
+      })
+    }
+
+    if (hulpNodig.includes("tijd_voor_mezelf")) {
+      suggesties.push({
+        emoji: "🧘",
+        titel: "Tips voor zelfzorg",
+        beschrijving: "Kleine dingen die veel verschil maken",
+        href: "/leren/zelfzorg",
+      })
+    }
+
+    if (hulpNodig.includes("administratie")) {
+      suggesties.push({
+        emoji: "⚖️",
+        titel: "Je rechten als mantelzorger",
+        beschrijving: "Regelingen en vergoedingen waar je recht op hebt",
+        href: "/leren/rechten",
+      })
+    }
+
+    // Bij veel moeheid (c1 = ja), zelfzorg aanraden
+    if (answers["c1"] === "ja" && !hulpNodig.includes("tijd_voor_mezelf")) {
+      suggesties.push({
+        emoji: "💚",
+        titel: "Rust en ontspanning",
+        beschrijving: "Tips om beter voor jezelf te zorgen",
+        href: "/leren/zelfzorg",
+      })
+    }
+
+    // Bij weinig steun (c4 = nee), hulp zoeken
+    if (answers["c4"] === "nee") {
+      suggesties.push({
+        emoji: "🏛️",
+        titel: "Hulp in jouw gemeente",
+        beschrijving: "Ontdek welke ondersteuning er voor je is",
+        href: "/hulpvragen?tab=voor-jou",
+      })
+    }
+
+    return suggesties.slice(0, 3) // Max 3 suggesties
+  }
+
   // Completion screen - KER stijl
   if (isCompleted) {
     const mood = calculateMood()
@@ -245,6 +312,31 @@ export default function CheckInPage() {
                     </p>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Contextual suggestions based on answers */}
+            {getContextueleHulp().length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-foreground">
+                  {mood.kleur === "red" ? "Dit kan je nu doen:" : "Misschien handig voor je:"}
+                </p>
+                {getContextueleHulp().map((suggestie, i) => (
+                  <Link key={i} href={suggestie.href} className="block">
+                    <div className="ker-card hover:border-primary/50 transition-all py-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl flex-shrink-0">{suggestie.emoji}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm">{suggestie.titel}</p>
+                          <p className="text-xs text-muted-foreground">{suggestie.beschrijving}</p>
+                        </div>
+                        <svg className="w-4 h-4 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
               </div>
             )}
 

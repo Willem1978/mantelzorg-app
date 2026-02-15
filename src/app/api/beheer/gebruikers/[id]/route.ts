@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { logAudit } from "@/lib/audit"
+import bcrypt from "bcryptjs"
 
 export async function GET(
   request: NextRequest,
@@ -110,6 +112,8 @@ export async function GET(
         email: gebruiker.email,
         name: gebruiker.name,
         role: gebruiker.role,
+        isActive: (gebruiker as any).isActive ?? true,
+        adminNotities: (gebruiker as any).adminNotities || null,
         createdAt: gebruiker.createdAt,
         updatedAt: gebruiker.updatedAt,
         emailVerified: gebruiker.emailVerified,
@@ -153,13 +157,33 @@ export async function PATCH(
 
   try {
     const updateData: any = {}
+    const auditDetails: Record<string, any> = {}
 
     if (body.role) {
       updateData.role = body.role
+      auditDetails.role = body.role
     }
 
     if (body.name !== undefined) {
       updateData.name = body.name
+      auditDetails.name = body.name
+    }
+
+    if (body.isActive !== undefined) {
+      updateData.isActive = body.isActive
+      auditDetails.isActive = body.isActive
+    }
+
+    if (body.adminNotities !== undefined) {
+      updateData.adminNotities = body.adminNotities || null
+      auditDetails.adminNotities = "bijgewerkt"
+    }
+
+    if (body.resetPassword) {
+      const hashedPassword = await bcrypt.hash(body.resetPassword, 12)
+      updateData.password = hashedPassword
+      updateData.sessionVersion = { increment: 1 }
+      auditDetails.wachtwoordReset = true
     }
 
     const gebruiker = await prisma.user.update({
@@ -170,12 +194,64 @@ export async function PATCH(
         email: true,
         name: true,
         role: true,
+        isActive: true,
       },
+    })
+
+    await logAudit({
+      userId: session.user.id!,
+      actie: "UPDATE",
+      entiteit: "User",
+      entiteitId: id,
+      details: auditDetails,
     })
 
     return NextResponse.json({ gebruiker })
   } catch (error) {
     console.error("Gebruiker bijwerken mislukt:", error)
     return NextResponse.json({ error: "Gebruiker bijwerken mislukt" }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth()
+  if (!session || (session.user as any).role !== "ADMIN") {
+    return NextResponse.json({ error: "Niet geautoriseerd" }, { status: 401 })
+  }
+
+  const { id } = await params
+
+  // Voorkom verwijdering eigen account
+  if (id === session.user.id) {
+    return NextResponse.json({ error: "Je kunt je eigen account niet verwijderen" }, { status: 400 })
+  }
+
+  try {
+    const gebruiker = await prisma.user.findUnique({
+      where: { id },
+      select: { email: true, name: true },
+    })
+
+    if (!gebruiker) {
+      return NextResponse.json({ error: "Gebruiker niet gevonden" }, { status: 404 })
+    }
+
+    await prisma.user.delete({ where: { id } })
+
+    await logAudit({
+      userId: session.user.id!,
+      actie: "DELETE",
+      entiteit: "User",
+      entiteitId: id,
+      details: { email: gebruiker.email, name: gebruiker.name },
+    })
+
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    console.error("Gebruiker verwijderen mislukt:", error)
+    return NextResponse.json({ error: "Gebruiker verwijderen mislukt" }, { status: 500 })
   }
 }

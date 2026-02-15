@@ -12,6 +12,8 @@ const menuItems = [
   { href: "/beheer/hulpbronnen", label: "Hulpbronnen", icon: "🏥" },
   { href: "/beheer/mantelbuddies", label: "MantelBuddies", icon: "🤝" },
   { href: "/beheer/alarmen", label: "Alarmen", icon: "🔔" },
+  { href: "/beheer/audit", label: "Audit Log", icon: "📋" },
+  { href: "/beheer/instellingen", label: "Instellingen", icon: "⚙️" },
 ]
 
 export default function BeheerLayout({

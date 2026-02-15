@@ -56,6 +56,7 @@ const LEEG_FORMULIER = {
   status: "CONCEPT",
   belastingNiveau: "ALLE",
   gemeente: "",
+  publicatieDatum: "",
   sorteerVolgorde: 0,
 }
 
@@ -141,6 +142,7 @@ export default function ArtikelenPage() {
       status: artikel.status,
       belastingNiveau: artikel.belastingNiveau,
       gemeente: artikel.gemeente || "",
+      publicatieDatum: artikel.publicatieDatum ? artikel.publicatieDatum.split("T")[0] : "",
       sorteerVolgorde: artikel.sorteerVolgorde,
     })
     setGemeenteZoek(artikel.gemeente || "")
@@ -428,6 +430,17 @@ export default function ArtikelenPage() {
               )}
 
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Publicatiedatum</label>
+                <input
+                  type="date"
+                  value={formulier.publicatieDatum}
+                  onChange={(e) => setFormulier({ ...formulier, publicatieDatum: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                />
+                <p className="text-xs text-gray-400 mt-1">Leeg = direct zichtbaar bij publicatie</p>
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Sorteervolgorde</label>
                 <input
                   type="number"
@@ -489,6 +502,11 @@ export default function ArtikelenPage() {
                     )}
                   </div>
                   <p className="text-sm text-gray-500 mt-1 line-clamp-2">{artikel.beschrijving}</p>
+                  {artikel.publicatieDatum && (
+                    <span className="text-xs text-gray-400">
+                      Publicatie: {new Date(artikel.publicatieDatum).toLocaleDateString("nl-NL")}
+                    </span>
+                  )}
                   {artikel.bron && (
                     <p className="text-xs text-gray-400 mt-1">Bron: {artikel.bron}</p>
                   )}

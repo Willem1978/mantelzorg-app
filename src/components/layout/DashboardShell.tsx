@@ -5,18 +5,20 @@ import { Navbar } from "@/components/layout/Navbar"
 import { MobileNav } from "@/components/navigation/MobileNav"
 import { SessionValidator } from "@/components/SessionValidator"
 import { Tutorial, TUTORIAL_STORAGE_KEY } from "@/components/Tutorial"
+import { Onboarding } from "@/components/Onboarding"
 
 interface DashboardShellProps {
   children: React.ReactNode
 }
 
 export function DashboardShell({ children }: DashboardShellProps) {
+  const [showOnboarding, setShowOnboarding] = useState(false)
   const [showTutorial, setShowTutorial] = useState(false)
   const [userName, setUserName] = useState("")
   const [isChecked, setIsChecked] = useState(false)
   const hasFetched = useRef(false)
 
-  // Initieel: haal naam op en check tutorial status
+  // Initieel: haal naam op en check onboarding/tutorial status
   useEffect(() => {
     if (hasFetched.current) return
     hasFetched.current = true
@@ -28,16 +30,16 @@ export function DashboardShell({ children }: DashboardShellProps) {
           const data = await res.json()
           setUserName(data.name || "")
 
-          // Check tutorial status
           const tutorialSeen = localStorage.getItem(TUTORIAL_STORAGE_KEY)
           if (!tutorialSeen && !data.onboardedAt) {
-            setShowTutorial(true)
+            // Nieuwe gebruiker: toon onboarding welkomstflow
+            setShowOnboarding(true)
           } else if (!tutorialSeen && data.onboardedAt) {
             localStorage.setItem(TUTORIAL_STORAGE_KEY, "true")
           }
         }
       } catch {
-        // Bij fout, gewoon doorgaan zonder tutorial
+        // Bij fout, gewoon doorgaan
       } finally {
         setIsChecked(true)
       }
@@ -57,6 +59,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
   }, [])
 
   // Luister naar "tutorial-reset" event vanuit Profiel pagina
+  // Dit toont de Tutorial (app-uitleg), niet de volledige onboarding
   const handleTutorialReset = useCallback(() => {
     setShowTutorial(true)
     setIsChecked(true)
@@ -66,6 +69,10 @@ export function DashboardShell({ children }: DashboardShellProps) {
     window.addEventListener("tutorial-reset", handleTutorialReset)
     return () => window.removeEventListener("tutorial-reset", handleTutorialReset)
   }, [handleTutorialReset])
+
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false)
+  }
 
   const handleTutorialComplete = () => {
     setShowTutorial(false)
@@ -81,8 +88,13 @@ export function DashboardShell({ children }: DashboardShellProps) {
       </main>
       <MobileNav />
 
-      {/* Tutorial overlay voor nieuwe gebruikers */}
-      {isChecked && showTutorial && (
+      {/* Onboarding welkomstflow voor nieuwe gebruikers (met profielvragen) */}
+      {isChecked && showOnboarding && (
+        <Onboarding userName={userName} onComplete={handleOnboardingComplete} />
+      )}
+
+      {/* Tutorial (app-uitleg) voor herbekijken vanuit profiel */}
+      {isChecked && showTutorial && !showOnboarding && (
         <Tutorial userName={userName} onComplete={handleTutorialComplete} />
       )}
     </div>
