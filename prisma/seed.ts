@@ -1,9 +1,27 @@
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 async function main() {
   console.log('Seeding database...')
+
+  // Create admin user
+  const adminPassword = await bcrypt.hash('Wessel03!', 12)
+  await prisma.user.upsert({
+    where: { email: 'w.veenendaal@livelife.nl' },
+    create: {
+      email: 'w.veenendaal@livelife.nl',
+      name: 'Willem Veenendaal',
+      password: adminPassword,
+      role: 'ADMIN',
+    },
+    update: {
+      password: adminPassword,
+      role: 'ADMIN',
+    },
+  })
+  console.log('Admin user created: w.veenendaal@livelife.nl')
 
   // Create intake categories with questions
   const categories = [
