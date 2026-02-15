@@ -3,8 +3,6 @@
 import Link from "next/link"
 import { useState, useEffect, useRef, useCallback } from "react"
 import { FavorietButton } from "@/components/FavorietButton"
-import { gemeenteNieuws } from "@/data/artikelen"
-import { artikelen } from "@/data/artikelen"
 
 const categories = [
   {
@@ -37,20 +35,27 @@ const categories = [
   },
 ]
 
+interface GemeenteNieuwsItem {
+  id: string
+  titel: string
+  gemeente: string | null
+}
+
 export default function LerenPage() {
   const [favorieten, setFavorieten] = useState<Record<string, string>>({})
   const [gemeenteMantelzorger, setGemeenteMantelzorger] = useState<string | null>(null)
   const [gemeenteZorgvrager, setGemeenteZorgvrager] = useState<string | null>(null)
   const [aantalNieuwItems, setAantalNieuwItems] = useState(0)
+  const [aantalPerCategorie, setAantalPerCategorie] = useState<Record<string, number>>({})
   const hasFetched = useRef(false)
   const gemeenteRef = useRef<{ mantelzorger: string | null; zorgvrager: string | null }>({ mantelzorger: null, zorgvrager: null })
+  const gemeenteNieuwsRef = useRef<GemeenteNieuwsItem[]>([])
 
   const gelezenRef = useRef<string[]>([])
 
   const berekenNieuwItems = useCallback((gMantelzorger: string | null, gZorgvrager: string | null) => {
-    // Filter relevant nieuws
-    const relevant = gemeenteNieuws.filter(n => {
-      const gemeente = n.gemeente.toLowerCase()
+    const relevant = gemeenteNieuwsRef.current.filter(n => {
+      const gemeente = (n.gemeente || "").toLowerCase()
       return (
         (gMantelzorger && gemeente === gMantelzorger.toLowerCase()) ||
         (gZorgvrager && gemeente === gZorgvrager.toLowerCase())
@@ -75,7 +80,7 @@ export default function LerenPage() {
     const loadAll = async () => {
       try {
         // Alle API calls tegelijk starten
-        const [favRes, gemeenteRes, gelezenRes] = await Promise.all([
+        const [favRes, gemeenteRes, gelezenRes, artikelenRes, nieuwsRes] = await Promise.all([
           // Favorieten check
           fetch("/api/favorieten/check", {
             method: "POST",
@@ -88,6 +93,10 @@ export default function LerenPage() {
           fetch("/api/user/gemeente").catch(() => null),
           // Gelezen nieuws IDs uit database
           fetch("/api/user/gelezen-nieuws").catch(() => null),
+          // Artikelen per categorie ophalen
+          fetch("/api/artikelen?type=ARTIKEL").catch(() => null),
+          // Gemeente nieuws ophalen
+          fetch("/api/artikelen?type=GEMEENTE_NIEUWS").catch(() => null),
         ])
 
         // Verwerk favorieten
@@ -107,6 +116,30 @@ export default function LerenPage() {
             if (Array.isArray(data.gelezenIds)) {
               gelezenRef.current = data.gelezenIds
             }
+          } catch {
+            // Silently fail
+          }
+        }
+
+        // Verwerk artikelen data (tel per categorie)
+        if (artikelenRes?.ok) {
+          try {
+            const data = await artikelenRes.json()
+            const counts: Record<string, number> = {}
+            for (const a of data.artikelen || []) {
+              counts[a.categorie] = (counts[a.categorie] || 0) + 1
+            }
+            setAantalPerCategorie(counts)
+          } catch {
+            // Silently fail
+          }
+        }
+
+        // Verwerk gemeente nieuws data
+        if (nieuwsRes?.ok) {
+          try {
+            const data = await nieuwsRes.json()
+            gemeenteNieuwsRef.current = data.artikelen || []
           } catch {
             // Silently fail
           }
@@ -158,7 +191,7 @@ export default function LerenPage() {
 
   // Tel artikelen per categorie
   const getAantalArtikelen = (catId: string) => {
-    return artikelen[catId]?.length || 0
+    return aantalPerCategorie[catId] || 0
   }
 
   return (

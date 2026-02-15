@@ -3,46 +3,91 @@
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
-import { artikelen, categorieInfo } from "@/data/artikelen"
 import { FavorietButton } from "@/components/FavorietButton"
+
+interface Artikel {
+  id: string
+  titel: string
+  beschrijving: string
+  url: string | null
+  bron: string | null
+  emoji: string | null
+}
+
+const categorieInfo: Record<string, { titel: string; beschrijving: string; emoji: string }> = {
+  "praktische-tips": {
+    titel: "Praktische tips",
+    beschrijving: "Handige tips voor het dagelijks leven als mantelzorger.",
+    emoji: "💡",
+  },
+  "zelfzorg": {
+    titel: "Zelfzorg tips",
+    beschrijving: "Zorg ook goed voor jezelf. Dat is net zo belangrijk.",
+    emoji: "🧘",
+  },
+  "rechten": {
+    titel: "Je rechten",
+    beschrijving: "Dit zijn je rechten als mantelzorger. Goed om te weten.",
+    emoji: "⚖️",
+  },
+  "financieel": {
+    titel: "Financieel",
+    beschrijving: "Vergoedingen en regelingen waar je recht op hebt.",
+    emoji: "💰",
+  },
+}
 
 export default function CategoriePage() {
   const params = useParams()
   const categorie = params.categorie as string
 
   const info = categorieInfo[categorie]
-  const items = artikelen[categorie]
 
+  const [items, setItems] = useState<Artikel[]>([])
+  const [loading, setLoading] = useState(true)
   const [favorieten, setFavorieten] = useState<Record<string, string>>({})
   const hasFetched = useRef(false)
 
   useEffect(() => {
-    if (hasFetched.current || !items) return
+    if (hasFetched.current || !info) return
     hasFetched.current = true
 
-    const checkFavorieten = async () => {
+    const loadData = async () => {
       try {
-        const res = await fetch("/api/favorieten/check", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            items: items.map(a => ({ type: "INFORMATIE", itemId: a.id })),
-          }),
-        })
+        // Haal artikelen op uit database
+        const res = await fetch(`/api/artikelen?categorie=${encodeURIComponent(categorie)}&type=ARTIKEL`)
         if (res.ok) {
           const data = await res.json()
-          setFavorieten(data.favorited || {})
+          setItems(data.artikelen || [])
+
+          // Check favorieten voor de opgehaalde artikelen
+          if (data.artikelen?.length > 0) {
+            const favRes = await fetch("/api/favorieten/check", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                items: data.artikelen.map((a: Artikel) => ({ type: "INFORMATIE", itemId: a.id })),
+              }),
+            }).catch(() => null)
+
+            if (favRes?.ok) {
+              const favData = await favRes.json()
+              setFavorieten(favData.favorited || {})
+            }
+          }
         }
       } catch {
         // Silently fail
+      } finally {
+        setLoading(false)
       }
     }
 
-    checkFavorieten()
-  }, [items])
+    loadData()
+  }, [categorie, info])
 
   // Categorie niet gevonden
-  if (!info || !items) {
+  if (!info) {
     return (
       <div className="ker-page-content pb-24">
         <div className="text-center py-12">
@@ -82,6 +127,20 @@ export default function CategoriePage() {
         </p>
       </div>
 
+      {/* Loading state */}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      )}
+
+      {/* Geen artikelen */}
+      {!loading && items.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Nog geen artikelen in deze categorie.</p>
+        </div>
+      )}
+
       {/* Artikelen lijst */}
       <div className="space-y-3">
         {items.map(artikel => {
@@ -99,8 +158,8 @@ export default function CategoriePage() {
                   titel={artikel.titel}
                   beschrijving={artikel.beschrijving}
                   categorie={info.titel}
-                  url={artikel.url}
-                  icon={artikel.emoji}
+                  url={artikel.url || undefined}
+                  icon={artikel.emoji || undefined}
                   initialFavorited={isFavorited}
                   initialFavorietId={favorietId}
                   size="sm"
@@ -110,22 +169,24 @@ export default function CategoriePage() {
               {/* Content */}
               <div className="pr-12">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xl">{artikel.emoji}</span>
+                  <span className="text-xl">{artikel.emoji || "📄"}</span>
                   <h2 className="font-semibold text-sm">{artikel.titel}</h2>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed mb-3 pl-7">
                   {artikel.beschrijving}
                 </p>
-                <div className="flex items-center gap-3 pl-7">
-                  <a
-                    href={artikel.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-primary hover:underline font-medium flex items-center gap-1"
-                  >
-                    🌐 Lees meer op {artikel.bron}
-                  </a>
-                </div>
+                {artikel.url && artikel.bron && (
+                  <div className="flex items-center gap-3 pl-7">
+                    <a
+                      href={artikel.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline font-medium flex items-center gap-1"
+                    >
+                      🌐 Lees meer op {artikel.bron}
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           )
