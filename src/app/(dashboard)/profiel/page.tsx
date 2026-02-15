@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
 import { searchStreets } from "@/lib/pdok"
 import { TUTORIAL_STORAGE_KEY } from "@/components/Tutorial"
+import { PageIntro } from "@/components/ui/PageIntro"
+import { AccessibilitySettings } from "@/components/AccessibilitySettings"
 
 // ============================================
 // TYPES
@@ -794,13 +796,8 @@ export default function ProfielPage() {
         </div>
       </div>
 
-      {/* Uitleg */}
-      <div className="bg-primary/5 rounded-xl p-4 mb-4">
-        <p className="text-sm text-foreground">
-          Met je adresgegevens zoeken we hulp bij jou in de buurt.
-          Klik op "Bewerken" om iets te veranderen.
-        </p>
-      </div>
+      {/* C2.1: Introductietekst */}
+      <PageIntro tekst="Hier kun je je gegevens bekijken en aanpassen. Met je adresgegevens zoeken we hulp bij jou in de buurt. Klik op 'Bewerken' om iets te veranderen." />
 
       {/* Save message */}
       {saveMessage && (
@@ -1070,6 +1067,11 @@ export default function ProfielPage() {
               </a>
             </div>
           )}
+        </div>
+
+        {/* Weergave-instellingen */}
+        <div className="ker-card">
+          <AccessibilitySettings />
         </div>
 
         {/* Account instellingen */}

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import Link from "next/link"
 import { FavorietButton } from "@/components/FavorietButton"
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs"
 
 interface GemeenteNieuws {
   id: string
@@ -161,16 +162,12 @@ export default function GemeenteNieuwsPage() {
 
   return (
     <div className="ker-page-content pb-24">
-      {/* Terug knop */}
-      <Link
-        href="/leren"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-        Terug
-      </Link>
+      {/* Breadcrumbs navigatie */}
+      <Breadcrumbs items={[
+        { label: "Home", href: "/dashboard" },
+        { label: "Informatie", href: "/leren" },
+        { label: "Gemeente nieuws" },
+      ]} />
 
       {/* Header met ongelezen bolletje */}
       <div className="flex items-center gap-3 mb-2 relative">

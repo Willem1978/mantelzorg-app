@@ -100,19 +100,39 @@
   --color-accent-amber-bg: var(--accent-amber-bg);
   --color-accent-red: var(--accent-red);
   --color-accent-red-bg: var(--accent-red-bg);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-atkinson);
+  --font-mono: monospace;
 }
 
-/* Base styles */
+/* Base styles - C1.1: Verhoogde leesbaarheid voor 60+ */
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  font-size: 16px;
-  line-height: 1.6;
+  font-family: 'Atkinson Hyperlegible', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 18px;
+  line-height: 1.7;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  letter-spacing: 0.01em;
+}
+
+/* C1.1: Tekst vergrotingsmodus */
+html.text-xl-mode body {
+  font-size: 20px;
+  line-height: 1.8;
+}
+
+/* C1.3: Hoog contrast modus */
+html.high-contrast {
+  --muted-foreground: #2A2A2A;
+  --border: #888888;
+  --border-strong: #555555;
+}
+
+html.high-contrast.dark {
+  --muted-foreground: #E0E0E0;
+  --border: #888888;
+  --border-strong: #AAAAAA;
 }
 
 /* ============================================
@@ -548,7 +568,7 @@ body {
 }
 
 .mobile-nav-item span {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   margin-top: 0.25rem;
 }
@@ -564,7 +584,7 @@ body {
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 1rem;
 }
 
 .score-badge.green {
@@ -621,7 +641,7 @@ html {
 }
 
 .ker-section-title {
-  font-size: 1.125rem;
+  font-size: 1.375rem;
   font-weight: 700;
   color: var(--foreground);
 }
@@ -680,7 +700,7 @@ html {
 }
 
 .ker-stat-label {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   color: var(--muted-foreground);
   margin-top: 0.25rem;
 }
@@ -721,7 +741,7 @@ html {
 }
 
 .ker-list-item-subtitle {
-  font-size: 0.875rem;
+  font-size: 1rem;
   color: var(--muted-foreground);
   margin-top: 0.125rem;
 }
@@ -749,7 +769,7 @@ html {
   align-items: center;
   padding: 0.25rem 0.625rem;
   border-radius: 9999px;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 600;
 }
 
@@ -771,4 +791,281 @@ html {
 .ker-badge-primary {
   background: var(--primary-light);
   color: var(--primary);
+}
+
+/* ============================================
+   C2.1: PAGE INTRO - Warme welkomstblokken
+   ============================================ */
+
+.ker-page-intro {
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--card) 100%);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  border-radius: 1rem;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.ker-page-intro p {
+  color: var(--foreground);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+/* ============================================
+   C1.4: BREADCRUMBS
+   ============================================ */
+
+.ker-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.9375rem;
+  color: var(--muted-foreground);
+  flex-wrap: wrap;
+}
+
+.ker-breadcrumbs a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.ker-breadcrumbs a:hover {
+  text-decoration: underline;
+}
+
+.ker-breadcrumbs-separator {
+  color: var(--border-strong);
+}
+
+.ker-breadcrumbs-current {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+/* ============================================
+   C2.3: HELP BUTTON - Floating hulp knop
+   ============================================ */
+
+.ker-help-float {
+  position: fixed;
+  bottom: 6rem;
+  right: 1rem;
+  z-index: 40;
+}
+
+@media (min-width: 768px) {
+  .ker-help-float {
+    bottom: 2rem;
+    right: 2rem;
+  }
+}
+
+.ker-help-float-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: none;
+  border-radius: 9999px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(139, 43, 107, 0.3);
+  transition: all 0.2s ease;
+  min-height: 48px;
+}
+
+.ker-help-float-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(139, 43, 107, 0.4);
+}
+
+/* ============================================
+   C2.3: HELP OVERLAY
+   ============================================ */
+
+.ker-help-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+@media (min-width: 768px) {
+  .ker-help-overlay {
+    align-items: center;
+  }
+}
+
+.ker-help-panel {
+  background: var(--card);
+  border-radius: 1.5rem 1.5rem 0 0;
+  padding: 1.5rem;
+  max-height: 85vh;
+  overflow-y: auto;
+  width: 100%;
+  max-width: 32rem;
+  animation: slide-up 0.3s ease-out;
+}
+
+@media (min-width: 768px) {
+  .ker-help-panel {
+    border-radius: 1.5rem;
+  }
+}
+
+/* ============================================
+   C1.2: CONFIRM DIALOG
+   ============================================ */
+
+.ker-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.ker-confirm-dialog {
+  background: var(--card);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  max-width: 24rem;
+  width: 100%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  animation: slide-up 0.2s ease-out;
+}
+
+/* ============================================
+   C2.2: FORM TOOLTIPS
+   ============================================ */
+
+.ker-tooltip-wrapper {
+  position: relative;
+}
+
+.ker-tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 0;
+  right: 0;
+  background: var(--foreground);
+  color: var(--background);
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  z-index: 30;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.ker-tooltip-wrapper:focus-within .ker-tooltip,
+.ker-tooltip.visible {
+  display: block;
+}
+
+.ker-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 1.5rem;
+  border: 6px solid transparent;
+  border-top-color: var(--foreground);
+}
+
+/* ============================================
+   C2.2: STEP INDICATOR
+   ============================================ */
+
+.ker-step-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--primary-light);
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.ker-step-indicator-text {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.ker-step-indicator-bar {
+  flex: 1;
+  height: 0.375rem;
+  background: var(--border);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.ker-step-indicator-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+/* ============================================
+   C2.2: BETERE FOUTMELDINGEN
+   ============================================ */
+
+.ker-error-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--accent-red-bg);
+  border: 1px solid var(--accent-red);
+  border-radius: 0.75rem;
+  color: var(--accent-red);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  margin-top: 0.5rem;
+}
+
+.ker-success-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--accent-green-bg);
+  border: 1px solid var(--accent-green);
+  border-radius: 0.75rem;
+  color: var(--accent-green);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  margin-top: 0.5rem;
+}
+
+/* ============================================
+   @media: Verminder animaties optie
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
 }

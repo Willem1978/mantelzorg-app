@@ -3,3 +3,8 @@ export { Card, CardHeader, CardTitle, CardDescription, CardContent } from "./Car
 export { Input } from "./Input"
 export { Progress } from "./Progress"
 export { SmileyButton, SmileyGroup, ResultSmiley } from "./SmileyButton"
+export { PageIntro } from "./PageIntro"
+export { Breadcrumbs } from "./Breadcrumbs"
+export { PageHelp } from "./PageHelp"
+export { HelpButton } from "./HelpButton"
+export { ConfirmDialog } from "./ConfirmDialog"
