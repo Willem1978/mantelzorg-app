@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
+import { PageIntro } from "@/components/ui/PageIntro"
 
 interface Hulpbron {
   naam: string
@@ -365,7 +366,7 @@ function DashboardContent() {
   return (
     <div className="ker-page-content">
       {/* Header met Ger */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center gap-4 mb-4">
         <GerAvatar size="lg" />
         <div>
           <h1 className="text-2xl font-bold text-foreground">
@@ -376,6 +377,9 @@ function DashboardContent() {
           </p>
         </div>
       </div>
+
+      {/* C2.1: Warme welkomsttekst */}
+      <PageIntro tekst="Hier zie je in een oogopslag hoe het met je gaat en wat je kunt doen. Scroll naar beneden voor tips en hulp." />
 
           {/* SECTIE 1: Jouw Balans */}
           {data?.test?.hasTest ? (

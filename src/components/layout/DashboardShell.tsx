@@ -6,6 +6,7 @@ import { MobileNav } from "@/components/navigation/MobileNav"
 import { SessionValidator } from "@/components/SessionValidator"
 import { Tutorial, TUTORIAL_STORAGE_KEY } from "@/components/Tutorial"
 import { Onboarding } from "@/components/Onboarding"
+import { HelpButton } from "@/components/ui/HelpButton"
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -58,6 +59,13 @@ export function DashboardShell({ children }: DashboardShellProps) {
     fetchUserData()
   }, [])
 
+  // C4: Registreer service worker voor PWA
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {})
+    }
+  }, [])
+
   // Luister naar "tutorial-reset" event vanuit Profiel pagina
   // Dit toont de Tutorial (app-uitleg), niet de volledige onboarding
   const handleTutorialReset = useCallback(() => {
@@ -87,6 +95,9 @@ export function DashboardShell({ children }: DashboardShellProps) {
         {children}
       </main>
       <MobileNav />
+
+      {/* C2.3: Floating hulpknop */}
+      <HelpButton />
 
       {/* Onboarding welkomstflow voor nieuwe gebruikers (met profielvragen) */}
       {isChecked && showOnboarding && (

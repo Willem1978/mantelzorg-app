@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useState, useEffect, useRef, useCallback } from "react"
 import { FavorietButton } from "@/components/FavorietButton"
+import { PageIntro } from "@/components/ui/PageIntro"
 
 const categories = [
   {
@@ -202,12 +203,8 @@ export default function LerenPage() {
         <h1 className="text-2xl font-bold">Informatie, leren en tips</h1>
       </div>
 
-      {/* Uitleg hartje */}
-      <div className="bg-primary/5 rounded-xl p-3 mb-6">
-        <p className="text-sm text-muted-foreground">
-          Tik op een onderwerp om meer te lezen. Bewaar iets met het <span className="text-primary font-semibold">hartje</span>.
-        </p>
-      </div>
+      {/* C2.1: Introductietekst */}
+      <PageIntro tekst="Hier vind je artikelen en tips die passen bij jouw situatie. Tik op een onderwerp om meer te lezen. Bewaar iets met het hartje." />
 
       {/* Gemeente Nieuws - bovenaan als er nieuws is */}
       <Link
