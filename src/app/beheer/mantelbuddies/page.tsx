@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 
 interface Buddy {
@@ -44,7 +44,7 @@ const hulpvormLabels: Record<string, string> = {
   administratie: "Administratie",
 }
 
-export default function MantelBuddiesPage() {
+function MantelBuddiesContent() {
   const [buddies, setBuddies] = useState<Buddy[]>([])
   const [loading, setLoading] = useState(true)
   const [zoek, setZoek] = useState("")
@@ -251,5 +251,13 @@ export default function MantelBuddiesPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function MantelBuddiesPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-gray-500">Laden...</div>}>
+      <MantelBuddiesContent />
+    </Suspense>
   )
 }

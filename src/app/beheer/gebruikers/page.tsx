@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
 
@@ -38,7 +38,7 @@ const niveauKleur: Record<string, string> = {
   HOOG: "bg-red-100 text-red-700",
 }
 
-export default function GebruikersPage() {
+function GebruikersContent() {
   const [gebruikers, setGebruikers] = useState<Gebruiker[]>([])
   const [totaal, setTotaal] = useState(0)
   const [pagina, setPagina] = useState(1)
@@ -232,5 +232,13 @@ export default function GebruikersPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function GebruikersPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-gray-500">Laden...</div>}>
+      <GebruikersContent />
+    </Suspense>
   )
 }
