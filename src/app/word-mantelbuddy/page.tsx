@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { searchGemeenten } from "@/lib/pdok"
 
 const hulpOpties = [
   { id: "gesprek", label: "Gesprek / luisterend oor", icon: "☕", beschrijving: "Even bijpraten, koffiedrinken" },
@@ -28,13 +29,47 @@ export default function WordMantelBuddyPage() {
     email: "",
     telefoon: "",
     postcode: "",
-    woonplaats: "",
+    gemeente: "",
     hulpvormen: [] as string[],
     beschikbaarheid: "",
     motivatie: "",
     ervaring: "",
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [gemeenteQuery, setGemeenteQuery] = useState("")
+  const [gemeenteResults, setGemeenteResults] = useState<string[]>([])
+  const [showGemeenteResults, setShowGemeenteResults] = useState(false)
+  const [isSearchingGemeente, setIsSearchingGemeente] = useState(false)
+
+  const handleGemeenteSearch = async (query: string) => {
+    setGemeenteQuery(query)
+    if (query.length < 2) {
+      setGemeenteResults([])
+      setShowGemeenteResults(false)
+      return
+    }
+    setIsSearchingGemeente(true)
+    try {
+      const results = await searchGemeenten(query)
+      setGemeenteResults(results)
+      setShowGemeenteResults(true)
+    } catch {
+      setGemeenteResults([])
+    } finally {
+      setIsSearchingGemeente(false)
+    }
+  }
+
+  const handleGemeenteSelect = (gemeente: string) => {
+    setFormData(prev => ({ ...prev, gemeente }))
+    setGemeenteQuery("")
+    setShowGemeenteResults(false)
+  }
+
+  const handleGemeenteClear = () => {
+    setFormData(prev => ({ ...prev, gemeente: "" }))
+    setGemeenteQuery("")
+  }
 
   const toggleHulpvorm = (id: string) => {
     setFormData(prev => ({
@@ -149,34 +184,75 @@ export default function WordMantelBuddyPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-1">Postcode *</label>
-                      <input
-                        type="text"
-                        value={formData.postcode}
-                        onChange={e => setFormData({...formData, postcode: e.target.value})}
-                        className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground"
-                        placeholder="1234 AB"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-foreground mb-1">Woonplaats *</label>
-                      <input
-                        type="text"
-                        value={formData.woonplaats}
-                        onChange={e => setFormData({...formData, woonplaats: e.target.value})}
-                        className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground"
-                        placeholder="Amsterdam"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1">Postcode *</label>
+                    <input
+                      type="text"
+                      value={formData.postcode}
+                      onChange={e => setFormData({...formData, postcode: e.target.value})}
+                      className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground"
+                      placeholder="1234 AB"
+                    />
+                  </div>
+
+                  <div className="relative">
+                    <label className="block text-sm font-medium text-foreground mb-1">Gemeente *</label>
+                    {formData.gemeente ? (
+                      <div className="px-4 py-3 bg-[var(--accent-green-bg)] rounded-xl flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span>📍</span>
+                          <span className="font-medium text-foreground">{formData.gemeente}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleGemeenteClear}
+                          className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={gemeenteQuery}
+                          onChange={e => handleGemeenteSearch(e.target.value)}
+                          onFocus={() => gemeenteQuery.length >= 2 && setShowGemeenteResults(true)}
+                          className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground"
+                          placeholder="Typ je gemeente (bijv. Nijmegen)"
+                          autoComplete="off"
+                        />
+                        {isSearchingGemeente && (
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                            <div className="w-5 h-5 border-2 border-[var(--accent-green)] border-t-transparent rounded-full animate-spin" />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {showGemeenteResults && gemeenteResults.length > 0 && (
+                      <div className="absolute z-20 w-full mt-1 bg-card border border-border rounded-xl shadow-lg max-h-52 overflow-auto">
+                        {gemeenteResults.map((gemeente) => (
+                          <button
+                            key={gemeente}
+                            type="button"
+                            onClick={() => handleGemeenteSelect(gemeente)}
+                            className="w-full text-left px-4 py-3 hover:bg-muted transition-colors border-b border-border last:border-b-0"
+                          >
+                            <span className="mr-2">📍</span>
+                            {gemeente}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
               <button
                 onClick={() => setStap(2)}
-                disabled={!formData.voornaam || !formData.email || !formData.telefoon || !formData.postcode}
+                disabled={!formData.voornaam || !formData.email || !formData.telefoon || !formData.postcode || !formData.gemeente}
                 className="ker-btn ker-btn-primary w-full disabled:opacity-50 flex items-center justify-center gap-2"
                 style={{ backgroundColor: "var(--accent-green)" }}
               >

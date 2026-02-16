@@ -19,7 +19,26 @@ export async function getGemeenteSession() {
     return { error: NextResponse.json({ error: "Geen gemeente gekoppeld" }, { status: 400 }), gemeenteNaam: null, userId: null }
   }
 
-  return { error: null, gemeenteNaam, userId: session.user.id }
+  const gemeenteRollen: string[] = session.user.gemeenteRollen || []
+
+  return { error: null, gemeenteNaam, userId: session.user.id, gemeenteRollen }
+}
+
+// Helper: controleer of gebruiker een specifieke gemeente-subrol heeft
+// Hoofdadmins (geen subrollen) hebben altijd toegang, ADMIN ook
+export async function checkGemeenteRol(vereist: string) {
+  const sessie = await getGemeenteSession()
+  if (sessie.error) return sessie
+
+  const isHoofdAdmin = sessie.gemeenteRollen.length === 0
+  if (!isHoofdAdmin && !sessie.gemeenteRollen.includes(vereist)) {
+    return {
+      ...sessie,
+      error: NextResponse.json({ error: "Geen toegang tot deze functie" }, { status: 403 }),
+    }
+  }
+
+  return sessie
 }
 
 // Audit log: registreer gemeente portaal acties

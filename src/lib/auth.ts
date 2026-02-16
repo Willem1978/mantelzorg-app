@@ -87,6 +87,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           role: user.role,
           caregiverId: user.caregiver?.id || null,
           gemeenteNaam: user.gemeenteNaam || null,
+          gemeenteRollen: user.gemeenteRollen || [],
           sessionVersion: updatedUser.sessionVersion,
         }
       },
@@ -99,6 +100,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.role = (user as any).role
         token.caregiverId = (user as any).caregiverId
         token.gemeenteNaam = (user as any).gemeenteNaam
+        token.gemeenteRollen = (user as any).gemeenteRollen || []
         token.sessionVersion = (user as any).sessionVersion
       }
       return token
@@ -109,6 +111,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.role = token.role as string
         session.user.caregiverId = token.caregiverId as string | null
         session.user.gemeenteNaam = token.gemeenteNaam as string | null
+        session.user.gemeenteRollen = (token.gemeenteRollen as string[]) || []
         ;(session.user as any).sessionVersion = token.sessionVersion as number
       }
       return session

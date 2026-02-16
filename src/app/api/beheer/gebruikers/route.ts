@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import bcrypt from "bcryptjs"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
@@ -113,5 +114,78 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Gebruikers ophalen mislukt:", error)
     return NextResponse.json({ error: "Gebruikers ophalen mislukt" }, { status: 500 })
+  }
+}
+
+export async function POST(request: NextRequest) {
+  const session = await auth()
+  if (!session || (session.user as any).role !== "ADMIN") {
+    return NextResponse.json({ error: "Niet geautoriseerd" }, { status: 401 })
+  }
+
+  try {
+    const body = await request.json()
+    const { email, name, password, role, gemeenteNaam } = body
+
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: "E-mail en wachtwoord zijn verplicht" },
+        { status: 400 }
+      )
+    }
+
+    if (password.length < 8) {
+      return NextResponse.json(
+        { error: "Wachtwoord moet minimaal 8 tekens bevatten" },
+        { status: 400 }
+      )
+    }
+
+    const validRoles = ["CAREGIVER", "BUDDY", "ORG_MEMBER", "ORG_ADMIN", "GEMEENTE_ADMIN", "ADMIN"]
+    if (role && !validRoles.includes(role)) {
+      return NextResponse.json(
+        { error: "Ongeldige rol" },
+        { status: 400 }
+      )
+    }
+
+    if (role === "GEMEENTE_ADMIN" && !gemeenteNaam) {
+      return NextResponse.json(
+        { error: "Gemeente is verplicht voor een Gemeente Admin" },
+        { status: 400 }
+      )
+    }
+
+    const existing = await prisma.user.findUnique({ where: { email } })
+    if (existing) {
+      return NextResponse.json(
+        { error: "Dit e-mailadres is al in gebruik" },
+        { status: 409 }
+      )
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12)
+
+    const user = await prisma.user.create({
+      data: {
+        email,
+        name: name || null,
+        password: passwordHash,
+        role: role || "CAREGIVER",
+        ...(role === "GEMEENTE_ADMIN" && { gemeenteNaam }),
+      },
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: "Gebruiker aangemaakt",
+      userId: user.id,
+    })
+  } catch (error) {
+    console.error("Gebruiker aanmaken mislukt:", error)
+    return NextResponse.json(
+      { error: "Gebruiker aanmaken mislukt" },
+      { status: 500 }
+    )
   }
 }
