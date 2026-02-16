@@ -107,18 +107,9 @@ function GebruikersContent() {
       return
     }
     try {
-      const params = new URLSearchParams({
-        q: query,
-        fq: "type:gemeente",
-        rows: "10",
-        sort: "score desc,gemeentenaam asc",
-      })
-      const res = await fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?${params}`)
+      const res = await fetch(`/api/pdok/gemeenten?q=${encodeURIComponent(query)}`)
       const data = await res.json()
-      const gemeenten: string[] = (data.response?.docs || [])
-        .map((doc: any) => doc.gemeentenaam as string)
-        .filter(Boolean)
-      setGemeenteSuggesties([...new Set(gemeenten)])
+      setGemeenteSuggesties(data.gemeenten || [])
     } catch {
       setGemeenteSuggesties([])
     }
