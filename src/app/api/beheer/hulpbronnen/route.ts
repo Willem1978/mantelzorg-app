@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import prisma from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 
@@ -130,7 +131,7 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json()
 
-  const data: Record<string, unknown> = {
+  const data: Prisma.ZorgorganisatieCreateInput = {
     naam: body.naam,
     beschrijving: body.beschrijving || null,
     type: body.type || 'OVERIG',
@@ -163,8 +164,9 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     // If provincie column doesn't exist yet, retry without it
     if (error instanceof Error && error.message?.includes('provincie')) {
-      delete data.provincie
-      const hulpbron = await prisma.zorgorganisatie.create({ data })
+      const { provincie: _unused, ...dataWithoutProvincie } = data
+      void _unused
+      const hulpbron = await prisma.zorgorganisatie.create({ data: dataWithoutProvincie })
       return NextResponse.json(hulpbron, { status: 201 })
     }
     throw error
