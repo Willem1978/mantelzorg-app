@@ -1,7 +1,7 @@
 # MatenBuddy - Doorontwikkelplan & Verbeteringsoverzicht
 
-**Datum:** 15 februari 2026
-**Versie:** 1.0
+**Datum:** 16 februari 2026
+**Versie:** 2.0 - Geactualiseerd na volledige code-audit
 **Project:** MatenBuddy (Mantelzorg-app)
 
 ---
@@ -23,33 +23,63 @@
 
 ## 1. Huidige Status
 
-### Wat er nu is
+> **Let op:** Dit overzicht is gebaseerd op een volledige code-audit van 16 februari 2026. De vorige versie (v1.0) onderschatte de hoeveelheid gebouwde functionaliteit aanzienlijk.
+
+### Applicatie-omvang
+
+| Metriek | Waarde |
+|---------|--------|
+| Totaal pagina's/routes | ~50 pagina's |
+| API routes | ~30 endpoints (~2040 regels) |
+| Database modellen | 32 Prisma modellen |
+| Prisma schema | 871 regels |
+| Tech stack | Next.js 16.1.4, React 19.2.3, TypeScript 5.9.3, Prisma 5.22.0, TailwindCSS 4 |
+
+### Wat er nu is (geactualiseerd)
 
 | Onderdeel | Status | Toelichting |
 |-----------|--------|-------------|
-| Registratie & Login | Werkend | Email/wachtwoord, magic links, WhatsApp login |
-| Belastbaarheidstest | Werkend | 11 vragen, 4 categorieen, scoreberekening |
-| Dashboard | Basis werkend | Welzijnsoverzicht, taken, tips |
-| Hulpvragen | Basis werkend | Zoeken op gemeente, koppeling aan organisaties |
-| Leren-sectie | Werkend | Artikelen per categorie, gemeentenieuws |
-| Favorieten | Werkend | Bookmarken van hulpbronnen en artikelen |
-| WhatsApp Bot | Werkend | Belastbaarheidstest, registratie, menu via Twilio |
-| MantelBuddy aanmelding | Alleen registratieformulier | Geen matching, taken, of beoordelingen |
-| Beheeromgeving | Minimaal | Alleen hulpbronnen beheer, geen gebruikersbeheer |
-| Gemeenteportaal | Niet aanwezig | - |
-| Maandelijkse check-in | Basis werkend | 5-puntsschaal welzijnscheck |
-| PDF Rapport | Werkend | Download belastbaarheidstest resultaten |
+| Registratie & Login | **Werkend** | Email/wachtwoord, bcrypt (12 rounds), JWT sessies, WhatsApp koppeling |
+| Belastbaarheidstest | **Werkend** | 11 vragen, 4 categorieen, scoreberekening, alarmsysteem |
+| Dashboard | **Werkend** | Welzijnsoverzicht, score-gebaseerde content, "Aanbevolen voor jou", "Jouw Reis" tijdlijn |
+| Hulpvragen | **Werkend** | Zoeken op gemeente, koppeling aan organisaties, favorieten |
+| Leren-sectie | **Werkend** | Artikelen per categorie en belastingsniveau, gemeentenieuws |
+| Favorieten | **Werkend** | Bookmarken van hulpbronnen en artikelen |
+| WhatsApp Bot | **Werkend** | Belastbaarheidstest, registratie, menu via Twilio |
+| Check-in systeem | **Werkend** | 5 contextuele vragen, tips per vraag, trend-visualisatie |
+| PDF Rapport | **Werkend** | Download belastbaarheidstest resultaten |
+| Onboarding flow | **Werkend** | 5-stappen welkomstflow na registratie |
+| Beheeromgeving | **Grotendeels werkend** | Gebruikersbeheer, artikelen CMS, hulpbronnen, alarmen, buddy-beheer, statistieken |
+| Gemeenteportaal | **Grotendeels werkend** | KPI-dashboard, demografie, trends, hulpvragen, alarmen, rapportages, CMS |
+| MantelBuddy aanmelding | **Basis werkend** | 3-stappen registratieformulier, admin-beheer van aanmeldingen |
+| UI/UX ouderen | **Grotendeels werkend** | Atkinson Hyperlegible, 18px basis, hoog contrast modus, ARIA labels, PageHelp systeem |
+| PWA | **Basis werkend** | Manifest, service worker (network-first), offline caching |
 
-### Wat ontbreekt
+### Wat ontbreekt (geactualiseerd)
 
-- Volledige beheeromgeving met gebruikersbeheer
-- Klantreis-begeleiding en stapsgewijze onboarding
-- MantelBuddy marktplaats en matching
-- Gemeenteportaal met inzichten
+**Functioneel:**
+- MantelBuddy marktplaats (dashboard, profiel, takenmarktplaats, matching, beoordelingen)
+- Progressieve onboarding (week-voor-week feature introductie)
+- WhatsApp check-in en slimme check-in frequentie
+- Noodknop/SOS-functie
+- Mantelzorg-dagboek
+- Community/lotgenotencontact
+- Gemeentelijke regelingen integratie
+- Huisarts-rapport delen
+- Zorgnetwerk koppeling
+
+**Technisch:**
 - E-mailnotificaties (tokens worden aangemaakt maar niet verzonden)
-- Geautomatiseerde tests
-- Input validatie met schema's (Zod)
+- Geautomatiseerde tests (geen Vitest/Jest)
+- Input validatie met schema's (geen Zod)
 - Rate limiting op API endpoints
+- Redis voor sessies en caching (nu in-memory)
+- Background jobs voor notificaties en herinneringen
+- CI/CD pipeline
+- Monitoring/Sentry
+- Error boundary componenten
+- Gestructureerde logging (nu console.log)
+- Multi-taal ondersteuning
 
 ---
 
@@ -59,116 +89,160 @@
 
 **Doel:** Veilige, rolgebaseerde toegang tot de beheeromgeving.
 
-**Huidig:** Er bestaat een `UserRole` enum met `ADMIN`, `ORG_ADMIN`, `ORG_MEMBER`, maar er is geen volledige admin-interface.
+**Status: GROTENDEELS GEBOUWD**
 
-**Te bouwen:**
-- **Admin login pagina** (`/beheer/login`) met extra beveiligingslaag (2FA optioneel)
-- **Rolgebaseerde toegang:**
-  - `SUPER_ADMIN` - Volledige toegang tot alle modules en instellingen
-  - `ADMIN` - Beheer van content, gebruikers, en rapportages
-  - `ORG_ADMIN` - Beheer van eigen organisatie en gekoppelde mantelzorgers
-  - `GEMEENTE_ADMIN` - Toegang tot gemeenteportaal en geanonimiseerde data
-- **Middleware uitbreiding** in `src/middleware.ts` voor `/beheer/*` routes
-- **Audit logging** - Wie heeft wanneer wat gewijzigd
+**Wat er is:**
+- Admin login pagina (`/beheer/login`) met aparte loginflow
+- Rolgebaseerde toegang met 6 rollen: `CAREGIVER`, `BUDDY`, `ORG_MEMBER`, `ORG_ADMIN`, `GEMEENTE_ADMIN`, `ADMIN`
+- Middleware bescherming in `src/middleware.ts` voor `/beheer/*` routes (alleen ADMIN)
+- Audit logging via `AuditLog` model en `src/lib/audit.ts` (logAudit functie)
+- JWT sessie strategie met 30-dagen max age
+- Session invalidatie bij nieuwe login (sessionVersion)
+
+**Nog te bouwen:**
+- 2FA (optioneel) voor admin accounts
+- `SUPER_ADMIN` rol toevoegen (of bestaande ADMIN rol uitbreiden)
+- Uitgebreidere audit logging (nu niet overal geintegreerd)
 
 ### A2. Content Management (CMS)
 
 **Doel:** Alle informatie, tips, hulpbronnen en artikelen beheren zonder code-aanpassingen.
 
-**Huidig:** Artikelen staan hardcoded in `src/data/artikelen.ts` (304 regels). Hulpbronnen worden via de API beheerd maar met beperkte interface.
-
-**Te bouwen:**
+**Status: GROTENDEELS GEBOUWD**
 
 #### A2.1 Artikelen & Tips Beheer
-- **CRUD interface** voor artikelen met:
-  - Titel, samenvatting, volledige inhoud (rich text editor)
-  - Categorie-toewijzing (Emotioneel welzijn, Praktische hulp, etc.)
-  - Tags voor zoekfunctie
-  - Publicatiestatus (concept / gepubliceerd / gearchiveerd)
-  - Publicatiedatum en sortering
+
+**Status: GEBOUWD**
+
+**Wat er is:**
+- CRUD interface op `/beheer/artikelen` met:
+  - Titel, samenvatting, volledige inhoud
+  - Categorie-toewijzing en type (ARTIKEL, TIP, GIDS, GEMEENTE_NIEUWS)
+  - Publicatiestatus via `ArtikelStatus` enum (CONCEPT / GEPUBLICEERD / GEARCHIVEERD)
   - Koppeling aan belastbaarheidsniveau (LAAG/GEMIDDELD/HOOG)
-  - Doelgroep (alle mantelzorgers / specifieke situatie)
-- **Media-upload** voor afbeeldingen bij artikelen
-- **Preview-functie** om te zien hoe het artikel eruitziet voor de gebruiker
-- **Database migratie** - Artikelen verplaatsen van `artikelen.ts` naar database
+  - Database `Artikel` model (niet meer hardcoded)
+
+**Nog te bouwen:**
+- Rich text editor (nu platte tekst)
+- Media-upload voor afbeeldingen
+- Preview-functie
+- Tags voor zoekfunctie
 
 #### A2.2 Hulpbronnen & Organisaties Beheer
-- **Uitbreiding bestaand beheer** (`/beheer/hulpbronnen`):
-  - Bulk import/export (CSV/Excel)
-  - Filteren en zoeken op gemeente, categorie, status
-  - Contactgegevens validatie
-  - Openingstijden en beschikbaarheid
-  - Koppeling aan specifieke hulpcategorieen
-- **Organisatie-verificatie workflow** - Nieuwe organisaties controleren voor publicatie
-- **Zorgorganisatie-kaart** - Visuele kaart met alle hulpbronnen per gemeente
+
+**Status: GEBOUWD**
+
+**Wat er is:**
+- Uitgebreide CRUD op `/beheer/hulpbronnen`
+- Web scraping enrichment voor hulpbronnen
+- Filteren en zoeken op gemeente, categorie, status
+- Meerdere resource types ondersteund
+- `Zorgorganisatie` model met nationaal/provinciaal/gemeentelijk niveau
+
+**Nog te bouwen:**
+- Bulk import/export (CSV/Excel)
+- Organisatie-verificatie workflow
+- Zorgorganisatie-kaart (visuele kaart)
+- Openingstijden en beschikbaarheid velden
 
 #### A2.3 Gemeentenieuws Beheer
-- **Per gemeente** nieuws en updates publiceren
-- **Notificatie-triggers** - Automatisch notificatie sturen bij nieuw gemeentenieuws
-- **Planning** - Artikelen inplannen voor toekomstige publicatie
+
+**Status: DEELS GEBOUWD**
+
+**Wat er is:**
+- Artikelen systeem ondersteunt `GEMEENTE_NIEUWS` type
+- Content kan per gemeente gepubliceerd worden
+
+**Nog te bouwen:**
+- Notificatie-triggers bij nieuw gemeentenieuws
+- Planning/inplannen voor toekomstige publicatie
 
 ### A3. Gebruikersbeheer
 
 **Doel:** Overzicht en beheer van alle gebruikers vanuit een centraal portaal.
 
-**Te bouwen:**
-
 #### A3.1 Gebruikersoverzicht
-- **Tabel met alle gebruikers** inclusief:
-  - Naam, email, telefoon, gemeente
-  - Rol (Mantelzorger, MantelBuddy, Organisatie, Admin)
-  - Registratiedatum en laatste activiteit
-  - Belastbaarheidsscore (laatst gemeten)
-  - Status (actief / inactief / geblokkeerd)
-  - Onboarding-voortgang
-- **Geavanceerd filteren:**
-  - Op rol, gemeente, belastbaarheidsniveau
-  - Op registratieperiode
-  - Op activiteit (wel/niet actief afgelopen 30 dagen)
-  - Op alarmstatus (actieve alarmen)
-- **Zoekfunctie** op naam, email, telefoonnummer
-- **Export** naar CSV/Excel
+
+**Status: GEBOUWD**
+
+**Wat er is (`/beheer/gebruikers`):**
+- Tabel met alle gebruikers (naam, email, rol, gemeente, status)
+- Filteren op rol
+- Zoekfunctie op naam/email
+- Paginering
+- CSV export
+- Registratiedatum en belastbaarheidsscore getoond
+
+**Nog te bouwen:**
+- Filteren op gemeente, belastbaarheidsniveau, activiteit, alarmstatus
+- Filteren op registratieperiode
+- Onboarding-voortgang kolom
 
 #### A3.2 Gebruiker Detailpagina
-- **Profiel bekijken** (niet bewerken tenzij noodzakelijk - privacy)
-- **Activiteitslog** - Logins, tests gedaan, hulpvragen gesteld
-- **Belastbaarheidshistorie** - Alle testresultaten over tijd in grafiek
-- **Notities** - Interne notities van beheerders (niet zichtbaar voor gebruiker)
-- **Acties:**
-  - Account activeren/deactiveren
-  - Wachtwoord reset link sturen
-  - Rol wijzigen
-  - Account verwijderen (met bevestiging en AVG-compliance)
+
+**Status: GEBOUWD**
+
+**Wat er is (`/beheer/gebruikers/[id]`):**
+- Profiel bekijken met alle gegevens
+- Rol wijzigen
+- Account activeren/deactiveren
+- Wachtwoord reset
+- Interne notities van beheerders
+- MantelBuddy info tonen (indien van toepassing)
+- Belastbaarheidstest historie
+- Check-in historie
+- Actieve alarmen per gebruiker
+- Hulpvragen overzicht
+
+**Nog te bouwen:**
+- Belastbaarheidshistorie als grafiek (nu als lijst)
+- Account verwijderen met AVG-compliance flow
 
 #### A3.3 MantelBuddy Beheer
-- **Aanmeldingen overzicht** met status (AANGEMELD -> GOEDGEKEURD)
-- **VOG-verificatie workflow** - Checklist voor verklaring omtrent gedrag
-- **Training-tracking** - Welke training is voltooid
-- **Beoordeling dashboard** - Gemiddelde scores, klachten
-- **Matching overzicht** - Welke buddy is aan welke mantelzorger gekoppeld
+
+**Status: GEBOUWD**
+
+**Wat er is (`/beheer/mantelbuddies`):**
+- Aanmeldingen overzicht met statusfiltering
+- Status workflow (AANGEMELD -> IN_BEHANDELING -> VOG_AANGEVRAAGD -> GOEDGEKEURD / INACTIEF / AFGEWEZEN)
+- VOG-verificatie toggle
+- Training-status toggle
+- Gemiddelde beoordelingsscores per buddy
+- Matching overzicht
+
+**Nog te bouwen:**
+- Uitgebreider beoordeling dashboard met klachtenafhandeling
 
 #### A3.4 Alarm & Signalering Dashboard
-- **Overzicht actieve alarmen** uit `AlarmLog`
-- **Signaaldetectie:**
-  - Hoge belasting (score >= 18)
-  - Sociaal isolement (sociale score <= 2)
-  - Veel zorguren (> 40 uur/week)
-  - Snelle verslechtering (score > 4 punten gestegen)
-  - Langdurig geen activiteit
-- **Actie-opvolging** - Beheerder kan alarm als "opgepakt" markeren
-- **Escalatie** - Automatisch mailen bij kritieke alarmen
+
+**Status: GEBOUWD**
+
+**Wat er is (`/beheer/alarmen`):**
+- Overzicht actieve alarmen uit `AlarmLog`
+- Filteren op status (actief/opgelost)
+- Alarm als "opgepakt" / "opgelost" markeren
+- Notities toevoegen aan alarmen
+- Directe link naar gebruiker detail
+
+**Nog te bouwen:**
+- Automatische escalatie via email bij kritieke alarmen
+- Dashboard visualisatie van alarm-trends
 
 ### A4. Systeem & Instellingen
 
-**Te bouwen:**
-- **Applicatie-instellingen** - Belastbaarheidstest drempelwaardes, notificatie-instellingen
-- **Email-templates** beheren (welkomstmail, wachtwoord reset, alarm)
-- **WhatsApp-templates** beheren
-- **Statistieken dashboard:**
-  - Aantal actieve gebruikers per week/maand
-  - Gemiddelde belastbaarheidsscore per gemeente
-  - Meest bezochte artikelen
+**Status: DEELS GEBOUWD**
+
+**Wat er is:**
+- Statistieken dashboard (`/beheer/statistieken`) met basis-KPI's
+- Basis applicatie-instellingen
+
+**Nog te bouwen:**
+- Applicatie-instellingen (belastbaarheidstest drempelwaardes, notificatie-instellingen)
+- Email-templates beheren (welkomstmail, wachtwoord reset, alarm)
+- WhatsApp-templates beheren (templates bestaan in code maar zijn niet beheerbaar)
+- Uitgebreidere statistieken:
   - Conversie registratie -> onboarding voltooid
+  - Meest bezochte artikelen
   - Aantal hulpvragen gesteld vs beantwoord
 
 ---
@@ -179,11 +253,9 @@
 
 **Doel:** De mantelzorger stap voor stap meenemen, zodat elke stap begrijpelijk is en direct waarde biedt.
 
-**Huidig:** Er is een intake-formulier en een belastbaarheidstest, maar de samenhang en begeleiding ontbreekt.
-
-**Te bouwen:**
-
 #### B1.1 Welkomstflow (na registratie)
+
+**Status: GEBOUWD** (`/onboarding` - 5 stappen)
 ```
 Stap 1: Welkomstscherm
 "Welkom bij MatenBuddy! Wij helpen jou als mantelzorger.
@@ -217,6 +289,9 @@ Stap 5: Persoonlijk resultaat
 ```
 
 #### B1.2 Progressieve Onboarding (na eerste bezoek)
+
+**Status: NIET GEBOUWD**
+
 Niet alles tegelijk tonen, maar stapsgewijs functies introduceren:
 
 **Week 1:** Dashboard + Belastbaarheidstest resultaat + 1 relevant artikel
@@ -236,6 +311,9 @@ Elk nieuw onderdeel wordt geintroduceerd met:
 **Te bouwen:**
 
 #### B2.1 Dynamisch Hulpadvies
+
+**Status: GEBOUWD** - Dashboard toont content gefilterd op belastingNiveau (LAAG/GEMIDDELD/HOOG).
+
 Op basis van de belastbaarheidsscore automatisch de juiste content tonen:
 
 **Score LAAG (0-8):** Preventief
@@ -260,8 +338,12 @@ Op basis van de belastbaarheidsscore automatisch de juiste content tonen:
 - "Je draagt veel. Het is belangrijk dat je hulp vraagt. Dat is niet zwak, dat is slim."
 
 #### B2.2 Slimme Aanbevelingen Engine
+
+**Status: DEELS GEBOUWD** - "Aanbevolen voor jou" sectie bestaat, filtert op belastingNiveau.
+
 - **"Aanbevolen voor jou"** sectie op dashboard
-- Gebaseerd op:
+- **Wat er is:** Filtering op belastbaarheidsniveau
+- **Nog toe te voegen:** Filtering gebaseerd op:
   - Belastbaarheidsscore per categorie (fysiek, emotioneel, sociaal, praktisch)
   - Gemeente (lokale hulpbronnen)
   - Zorgsituatie (type zorgvrager, uren per week)
@@ -269,6 +351,9 @@ Op basis van de belastbaarheidsscore automatisch de juiste content tonen:
   - Seizoensgebonden tips (winter: eenzaamheid, zomer: vakantie-vervanging)
 
 #### B2.3 Mijlpalen & Motivatie
+
+**Status: GEBOUWD** - "Jouw Reis" tijdlijn en trend-indicator met bemoediging zijn geimplementeerd.
+
 - **"Jouw reis"** tijdlijn die laat zien:
   - Wanneer geregistreerd
   - Eerste test gedaan
@@ -283,14 +368,15 @@ Op basis van de belastbaarheidsscore automatisch de juiste content tonen:
 
 ### B3. Check-in Systeem Uitbreiding
 
-**Huidig:** Eenvoudige 5-puntsschaal.
+**Status: DEELS GEBOUWD**
 
-**Te bouwen:**
+**Wat er is:**
+- Uitgebreid 5-vragen systeem (niet meer alleen 5-puntsschaal)
+- Contextuele tips per vraag
+- Trend-visualisatie op dashboard
+
+**Nog te bouwen:**
 - **Slimme frequentie** - Bij hogere scores vaker check-in aanbieden
-- **Trend-analyse** - Grafiek van welzijn over tijd op dashboard
-- **Contextuele vragen** - Na de score doorvragen:
-  - "Wat maakt het zwaar op dit moment?" (keuzeopties)
-  - "Wil je hulp zoeken?" -> Direct naar relevante hulpbron
 - **WhatsApp check-in** - Automatisch bericht via WhatsApp voor check-in
 - **Buddy-notificatie** - Bij sterke daling MantelBuddy op de hoogte stellen (indien gekoppeld)
 
@@ -305,36 +391,60 @@ Op basis van de belastbaarheidsscore automatisch de juiste content tonen:
 **Te bouwen/verbeteren:**
 
 #### C1.1 Typografie & Leesbaarheid
-- **Minimale lettergrootte:** 18px voor bodytekst (nu soms 14-16px)
-- **Koppen:** Duidelijk hierarchie, 24-32px
-- **Regelafstand:** Minimaal 1.6 (nu soms 1.4)
-- **Lettertype:** Blijf bij sans-serif, overweeg lettertype specifiek geoptimaliseerd voor leesbaarheid (bv. Atkinson Hyperlegible)
-- **Contrast:** WCAG AAA niveau nastreven (7:1 ratio voor tekst)
+
+**Status: GEBOUWD**
+
+**Wat er is:**
+- Minimale lettergrootte 18px voor bodytekst
+- Atkinson Hyperlegible font (specifiek voor leesbaarheid)
+- Regelafstand 1.7
+- Tekstvergrotingsmodus beschikbaar
+
+**Nog te verbeteren:**
+- WCAG AAA niveau (7:1 ratio) volledig doorvoeren
+- Koppen hierarchie consistent maken (24-32px)
 
 #### C1.2 Knoppen & Interactie-elementen
-- **Minimale klikgrootte:** 48x48px (al deels aanwezig, consequent doorvoeren)
-- **Duidelijke hover/focus states** - Zichtbare rand bij focus (toetsenbordgebruik)
-- **Knoppen:** Altijd met tekst, nooit alleen een icoon
-- **Actieknoppen:** Groot, opvallend, met duidelijke actie-tekst
-  - Niet: "Submit" -> Wel: "Verstuur mijn antwoord"
-  - Niet: "Next" -> Wel: "Ga verder"
-- **Bevestiging bij destructieve acties** - Extra stap bij verwijderen/annuleren
+
+**Status: GROTENDEELS GEBOUWD**
+
+**Wat er is:**
+- 48x48px minimale klikgrootte doorgevoerd
+- Focus states geimplementeerd
+- Nederlandse actie-teksten ("Ga verder", "Verstuur", etc.)
+
+**Nog te verbeteren:**
+- Consequent doorvoeren dat knoppen altijd tekst hebben (nooit alleen icoon)
+- Bevestiging bij destructieve acties consequent toepassen
 
 #### C1.3 Kleurgebruik
-- **Hoog contrast modus** als optie (niet alleen dark/light)
-- **Kleur nooit als enige indicator** - Altijd iconen of tekst erbij
-- **Consistente kleurbetekenis:**
+
+**Status: DEELS GEBOUWD**
+
+**Wat er is:**
+- Hoog contrast modus beschikbaar
+- Consistente kleurbetekenis in de meeste componenten
+
+**Nog te verbeteren:**
+- Kleur nooit als enige indicator - altijd iconen of tekst erbij (audit nodig)
+- Consistente kleurbetekenis overal doorvoeren:
   - Groen = positief/succes
   - Oranje = aandacht/waarschuwing
   - Rood = urgent/fout (spaarzaam gebruiken)
   - Blauw = informatie/links
 
 #### C1.4 Layout & Navigatie
-- **Minder elementen per scherm** - Maximaal 3-4 keuzes tegelijk
-- **Geen scrollbare tabellen** op mobiel
-- **Breadcrumbs** voor navigatie-context ("Dashboard > Leren > Emotioneel welzijn")
-- **"Terug" knop** altijd zichtbaar en duidelijk
-- **Vaste navigatie** - Menu altijd op dezelfde plek
+
+**Status: DEELS GEBOUWD**
+
+**Wat er is:**
+- Breadcrumbs geimplementeerd
+- Terug-knoppen op pagina's
+- Vaste navigatie
+
+**Nog te verbeteren:**
+- Minder elementen per scherm - maximaal 3-4 keuzes tegelijk
+- Geen scrollbare tabellen op mobiel (responsive tables audit)
 
 ### C2. Tekstuele Begeleiding
 
@@ -343,6 +453,9 @@ Op basis van de belastbaarheidsscore automatisch de juiste content tonen:
 **Te bouwen:**
 
 #### C2.1 Pagina-introductieteksten
+
+**Status: GEBOUWD** - `PageIntro` component met warme welkomstteksten op alle hoofdpagina's.
+
 Elke pagina begint met een kort, warm welkomstblok:
 
 **Dashboard:**
@@ -361,133 +474,153 @@ Elke pagina begint met een kort, warm welkomstblok:
 > "Een MantelBuddy is een vrijwilliger uit je buurt die je wil helpen. Dat kan een boodschap doen zijn, of gewoon even een kopje koffie drinken."
 
 #### C2.2 Contextuele Hulpteksten
-- **Tooltips** bij elk invoerveld ("Vul hier je e-mailadres in, bijvoorbeeld jan@gmail.com")
-- **Foutmeldingen** in begrijpelijke taal:
-  - Niet: "Invalid email format" -> Wel: "Dit e-mailadres klopt niet. Controleer of je een @ hebt gebruikt."
-  - Niet: "Field required" -> Wel: "Vergeet niet om je naam in te vullen"
-- **Stap-indicatoren** bij formulieren ("Stap 2 van 4 - Je bent al halverwege!")
-- **Bevestigingsmeldingen** na acties ("Je antwoord is opgeslagen. Goed gedaan!")
+
+**Status: GEBOUWD**
+
+**Wat er is:**
+- Tooltips bij invoervelden
+- Nederlandse foutmeldingen in begrijpelijke taal
+- Stap-indicatoren bij formulieren
+- Bevestigingsmeldingen na acties
 
 #### C2.3 Hulp & Uitleg Systeem
-- **"Hoe werkt dit?"** knop op elke pagina
-  - Opent een overlay met stap-voor-stap uitleg met screenshots
-  - Optie om dit scherm niet meer te tonen
-- **Video-uitleg** optie voor complexere functies (belastbaarheidstest, hulpvraag stellen)
-- **"Hulp nodig?"** floating button
-  - Veelgestelde vragen
-  - Bel-optie voor telefonische hulp
-  - WhatsApp-optie
+
+**Status: GEBOUWD**
+
+**Wat er is:**
+- `PageHelp` component: "Hoe werkt dit?" overlay met stap-voor-stap uitleg
+- `HelpButton` floating button op pagina's
+- Hulplijn verwijzingen
+
+**Nog te bouwen:**
+- Video-uitleg optie voor complexere functies
+- "Niet meer tonen" optie voor help-overlays
 
 ### C3. Toegankelijkheid (Accessibility)
 
-**Te bouwen/verbeteren:**
-- **Volledige WCAG 2.1 AA** compliance
-- **Screen reader** ondersteuning met aria-labels
-- **Toetsenbordnavigatie** - Alle functies bereikbaar zonder muis
-- **Tekst vergrotingsmodus** - Schakelaar voor extra groot lettertype
-- **Verminder animaties** optie voor gebruikers die daar gevoelig voor zijn
-- **Taalgebruik audit** - Alle teksten laten controleren op B1-niveau
+**Status: GROTENDEELS GEBOUWD**
+
+**Wat er is:**
+- ARIA labels en screen reader ondersteuning
+- Toetsenbordnavigatie geimplementeerd
+- Tekst vergrotingsmodus (schakelaar)
+- "Verminder animaties" optie (prefers-reduced-motion)
+
+**Nog te verbeteren:**
+- Volledige WCAG 2.1 AA compliance audit
+- Taalgebruik audit - alle teksten controleren op B1-niveau
 
 ### C4. Mobiele Ervaring
 
-**Te verbeteren:**
-- **Grotere touch targets** op mobiel (minimaal 48x48px)
-- **Swipe-navigatie** waar logisch (bijv. door artikelen bladeren)
-- **Offline-modus** voor basisinformatie (favorieten, laatst gelezen artikelen)
-- **App-achtige ervaring** via PWA (Progressive Web App)
-  - Installeerbaar op thuisscherm
-  - Push-notificaties
-  - Offline beschikbaarheid
+**Status: DEELS GEBOUWD**
+
+**Wat er is:**
+- 48x48px touch targets
+- PWA manifest (`/public/manifest.json`) - "MantelBuddy", standalone mode
+- Service worker (`/public/sw.js`) - network-first strategie, precaching van /, /dashboard, /manifest.json
+- API calls worden overgeslagen bij caching
+
+**Nog te bouwen:**
+- Swipe-navigatie waar logisch
+- Offline-pagina voor als er geen verbinding is
+- Push-notificaties
+- Installatie-prompt ("Toevoegen aan startscherm")
+- Offline beschikbaarheid van favorieten en gelezen artikelen
 
 ---
 
 ## 5. Module D: Gemeenteportaal & Dashboard
 
+> **Status: GROTENDEELS GEBOUWD** - Het volledige gemeenteportaal is geimplementeerd met dashboard, inzichten, en CMS.
+
 ### D1. Gemeente Dashboard
 
 **Doel:** Gemeenten inzicht geven in de mantelzorgsituatie in hun gemeente, zodat ze beleid kunnen aanpassen.
 
-**Te bouwen:**
-
 #### D1.1 Gemeente Login & Autorisatie
-- **Aparte login** voor gemeentemedewerkers (`/gemeente/login`)
-- **Rol:** `GEMEENTE_ADMIN` met toegang tot alleen eigen gemeente-data
-- **Meerdere gebruikers per gemeente** mogelijk
-- **Koppeling aan gemeente** via gemeentecode of postcode-reeks
+
+**Status: GEBOUWD** (`/gemeente/login`)
+
+**Wat er is:**
+- Aparte login voor gemeentemedewerkers
+- `GEMEENTE_ADMIN` rol met middleware-bescherming
+- Toegang tot alleen eigen gemeente-data
 
 #### D1.2 Overzichtsdashboard
-- **KPI-tegels bovenaan:**
-  - Totaal aantal geregistreerde mantelzorgers in gemeente
-  - Gemiddelde belastbaarheidsscore
-  - Aantal actieve alarmen
-  - Trend t.o.v. vorige maand (pijl omhoog/omlaag)
-  - Aantal MantelBuddies actief in gemeente
-  - Percentage mantelzorgers met hulpvraag
+
+**Status: GEBOUWD** (`/gemeente/dashboard`)
+
+**Wat er is:**
+- KPI-tegels met kerncijfers
+- Score-verdeling visualisatie
+- Trend-indicatoren
 
 #### D1.3 Demografische Inzichten (geanonimiseerd)
-- **Leeftijdsverdeling** mantelzorgers
-- **Type zorgrelatie** (partner, ouder, kind, etc.)
-- **Gemiddeld aantal zorguren per week**
-- **Verdeling over belastbaarheidsniveaus** (taartdiagram: LAAG/GEMIDDELD/HOOG)
-- **Geografische spreiding** binnen gemeente (wijk-niveau indien mogelijk)
+
+**Status: GEBOUWD** (`/gemeente/demografie`)
 
 #### D1.4 Trend-analyses
-- **Score-ontwikkeling over tijd** (lijn-grafiek per maand)
-- **Seizoenspatronen** herkennen (hogere belasting in winter?)
-- **Effectiviteit meting:**
-  - Daalt de gemiddelde score na interventie?
-  - Hoeveel mantelzorgers zoeken hulp na hoge score?
-  - Conversie: registratie -> actief gebruik -> hulp gevonden
+
+**Status: GEBOUWD** (`/gemeente/trends`)
 
 #### D1.5 Hulpvragen Inzichten
-- **Meest gevraagde hulpcategorieen** in de gemeente
-- **Onbeantwoorde hulpvragen** (signaal voor tekort aan aanbod)
-- **Hulpaanbod vs. hulpvraag** balans
-- **Organisaties die veel/weinig benaderd worden**
+
+**Status: GEBOUWD** (`/gemeente/hulpvragen`)
 
 #### D1.6 Alarmen & Signalering
-- **Geanonimiseerd overzicht** van alarmen:
-  - Aantal hoge-belasting signalen deze maand
-  - Aantal sociaal-isolement signalen
-  - Trend in alarmen
-- **Geen persoonlijke data** - Gemeente ziet trends, geen individuen
-- **Optioneel:** Met toestemming van mantelzorger kan gemeente contact opnemen
+
+**Status: GEBOUWD** (`/gemeente/alarmen`)
 
 #### D1.7 Rapportages & Export
-- **Maandelijkse/kwartaalrapportage** genereren (PDF)
-- **Data-export** voor beleidsrapporten (CSV, anoniem)
-- **Benchmark** - Vergelijking met landelijke gemiddelden (als data beschikbaar)
-- **Automatische rapportage** via email aan gemeente-contactpersoon
+
+**Status: GEBOUWD** (`/gemeente/rapportages`)
+
+**Nog te bouwen voor D1.x:**
+- Benchmark - vergelijking met landelijke gemiddelden
+- Automatische rapportage via email aan gemeente-contactpersoon
+- Seizoenspatronen herkenning
+- Effectiviteitsmetingen (conversie, interventie-effect)
 
 ### D2. Gemeente Content Management
 
-**Te bouwen:**
-- **Gemeentenieuws publiceren** - Lokale evenementen, regelingen, contactmomenten
-- **Lokale hulpbronnen beheren** - Organisaties in de gemeente toevoegen/wijzigen
-- **Mantelzorgwaardering** - Informatie over gemeentelijke waardering publiceren
-- **Evenementen** - Lokale bijeenkomsten voor mantelzorgers publiceren
+**Status: GEBOUWD**
+
+**Wat er is:**
+- Content pagina (`/gemeente/content`)
+- Evenementen pagina (`/gemeente/evenementen`)
+- Hulpbronnen pagina (`/gemeente/hulpbronnen`)
+
+**Nog te bouwen:**
+- Mantelzorgwaardering informatie publiceren
 
 ### D3. Gemeente API & Data Privacy
 
-**Technisch:**
-- **Alle data geanonimiseerd** - Geen persoonsgegevens in gemeente-dashboard
-- **Aggregatie op gemeente-niveau** - Minimaal 10 gebruikers voor statistieken (k-anonimiteit)
-- **AVG-compliant** - Verwerkersovereenkomst met gemeente
-- **Audit trail** - Logging van alle data-toegang door gemeente
+**Status: DEELS GEBOUWD**
+
+**Wat er is:**
+- K-anonimiteit check (minimaal 10 gebruikers voor statistieken)
+- Data op gemeente-niveau geaggregeerd
+
+**Nog te bouwen:**
+- Volledige audit trail voor gemeente data-toegang
+- Data Protection Impact Assessment (DPIA)
+- Formele verwerkersovereenkomst-support
 
 ---
 
 ## 6. Module E: MantelBuddy Marktplaats & Vrijwilligersomgeving
 
+> **Status: GROTENDEELS NOG TE BOUWEN** - Database modellen bestaan (BuddyMatch, BuddyTaak, BuddyBeoordeling), maar de frontend en API zijn nog niet geimplementeerd. Alleen het registratieformulier en admin-beheer zijn gebouwd.
+
 ### E1. MantelBuddy Profiel & Dashboard
 
 **Doel:** Een complete omgeving voor vrijwilligers die mantelzorgers willen helpen.
 
-**Huidig:** Alleen een registratieformulier (`/word-mantelbuddy`). Geen dashboard of profiel.
+**Huidig:** Registratieformulier (`/word-mantelbuddy`, 3 stappen). Admin-beheer van buddies op `/beheer/mantelbuddies`. Geen buddy-eigen dashboard of profiel.
 
 **Te bouwen:**
 
-#### E1.1 MantelBuddy Dashboard (`/buddy/dashboard`)
+#### E1.1 MantelBuddy Dashboard (`/buddy/dashboard`) - **NIET GEBOUWD**
 - **Welkomstbanner** met naam en status
 - **Statistieken:**
   - Aantal voltooide taken
@@ -499,7 +632,7 @@ Elke pagina begint met een kort, warm welkomstblok:
 - **Mijn matches** (vaste koppelingen)
 - **Nieuwe notificaties**
 
-#### E1.2 MantelBuddy Profiel (`/buddy/profiel`)
+#### E1.2 MantelBuddy Profiel (`/buddy/profiel`) - **NIET GEBOUWD**
 - **Persoonlijke gegevens** bewerken
 - **Hulpvormen** aanpassen (welke hulp kan ik bieden)
 - **Beschikbaarheid** instellen:
@@ -513,7 +646,7 @@ Elke pagina begint met een kort, warm welkomstblok:
 - **VOG-status** en **training-status** inzien
 - **Mijn beoordelingen** bekijken
 
-#### E1.3 Onboarding Flow MantelBuddy
+#### E1.3 Onboarding Flow MantelBuddy - **DEELS** (alleen 3-stappen registratie)
 ```
 Stap 1: Bevestiging aanmelding (email)
 Stap 2: Kennismakingsgesprek (telefonisch/video)
@@ -527,7 +660,7 @@ Stap 6: Eerste taak zoeken of match accepteren
 
 **Doel:** Mantelzorgers kunnen taken uitzetten, MantelBuddies kunnen reageren.
 
-#### E2.1 Taak Aanmaken (Mantelzorger)
+#### E2.1 Taak Aanmaken (Mantelzorger) - **NIET GEBOUWD** (DB model `BuddyTaak` bestaat)
 **Pagina:** `/hulpvragen/nieuwe-taak`
 
 - **Categorie kiezen** (met iconen, grote knoppen):
@@ -545,7 +678,7 @@ Stap 6: Eerste taak zoeken of match accepteren
 - **Locatie:** Automatisch op basis van profiel (alleen gemeente/wijk zichtbaar voor buddy)
 - **Preview:** "Zo ziet je hulpvraag eruit" voor bevestiging
 
-#### E2.2 Takenmarktplaats Overzicht (MantelBuddy)
+#### E2.2 Takenmarktplaats Overzicht (MantelBuddy) - **NIET GEBOUWD**
 **Pagina:** `/buddy/taken`
 
 - **Filteropties:**
@@ -561,7 +694,7 @@ Stap 6: Eerste taak zoeken of match accepteren
   - Afstand ("2 km bij jou vandaan")
   - "Ik wil helpen" knop
 
-#### E2.3 Reactie & Matching Flow
+#### E2.3 Reactie & Matching Flow - **NIET GEBOUWD** (DB model `BuddyMatch` bestaat)
 ```
 MantelBuddy klikt "Ik wil helpen"
   -> Optioneel bericht toevoegen ("Ik kan donderdag!")
@@ -583,14 +716,14 @@ Na afloop:
   -> Taak status: VOLTOOID
 ```
 
-#### E2.4 Afstandsberekening
+#### E2.4 Afstandsberekening - **NIET GEBOUWD**
 - **Postcode-gebaseerd** (privacy-vriendelijk)
 - **Haversine formule** voor afstandsberekening tussen postcodes
 - **PDOK integratie** voor postcode-naar-coordinaat conversie (reeds aanwezig)
 - **Zoekradius** instelbaar per MantelBuddy (standaard 5km)
 - **Sortering** op afstand (dichtsbijzijnde eerst)
 
-### E3. Beoordelingssysteem
+### E3. Beoordelingssysteem - **NIET GEBOUWD** (DB model `BuddyBeoordeling` bestaat)
 
 **Te bouwen:**
 
@@ -623,7 +756,7 @@ Automatisch berekend op basis van:
 - **Admin review** bij flags
 - **Tijdelijk pauzeren** van buddy bij herhaalde klachten
 
-### E4. Communicatie & Notificaties
+### E4. Communicatie & Notificaties - **NIET GEBOUWD**
 
 **Te bouwen:**
 - **In-app berichten** tussen mantelzorger en buddy (na match)
@@ -636,7 +769,7 @@ Automatisch berekend op basis van:
 
 ## 7. Module F: Eigen Suggesties & Innovatie
 
-### F1. Noodknop / SOS-functie
+### F1. Noodknop / SOS-functie - **NIET GEBOUWD**
 
 **Wat:** Een prominente "Ik heb NU hulp nodig" knop op het dashboard.
 
@@ -652,7 +785,7 @@ Automatisch berekend op basis van:
   - Crisislijn
 - Optioneel: locatie delen met vertrouwd contact
 
-### F2. Mantelzorg-dagboek
+### F2. Mantelzorg-dagboek - **NIET GEBOUWD**
 
 **Wat:** Een privaat dagboek waar mantelzorgers kort kunnen opschrijven hoe hun dag was.
 
@@ -665,7 +798,7 @@ Automatisch berekend op basis van:
 - Privacy: alleen zichtbaar voor de gebruiker zelf
 - Trends: "De afgelopen week had je meer groene dagen"
 
-### F3. Mantelzorger Community
+### F3. Mantelzorger Community - **NIET GEBOUWD**
 
 **Wat:** Een plek waar mantelzorgers ervaringen kunnen delen (forum/chat).
 
@@ -678,7 +811,7 @@ Automatisch berekend op basis van:
 - **Lokale groepen** per gemeente
 - Start eenvoudig: ervaringsverhalen delen (geen real-time chat)
 
-### F4. Slimme Herinneringen & Nudges
+### F4. Slimme Herinneringen & Nudges - **NIET GEBOUWD** (WhatsApp templates bestaan in code maar geen scheduler)
 
 **Wat:** Proactieve, gepersonaliseerde herinneringen via WhatsApp of push.
 
@@ -689,7 +822,7 @@ Automatisch berekend op basis van:
 - "Er is een MantelBuddy bij jou in de buurt die kan helpen met boodschappen."
 - Seizoensgebonden: "De feestdagen kunnen zwaar zijn als mantelzorger. Hier zijn tips..."
 
-### F5. Integratie met Gemeentelijke Regelingen
+### F5. Integratie met Gemeentelijke Regelingen - **NIET GEBOUWD**
 
 **Wat:** Automatisch tonen welke regelingen/toeslagen de mantelzorger mogelijk kan aanvragen.
 
@@ -699,7 +832,7 @@ Automatisch berekend op basis van:
 - Link naar aanvraagprocedure
 - Beheerbaar via admin-portal per gemeente
 
-### F6. Multi-taal Ondersteuning
+### F6. Multi-taal Ondersteuning - **NIET GEBOUWD** (alle content hardcoded in Nederlands)
 
 **Wat:** De app beschikbaar maken in meerdere talen.
 
@@ -711,7 +844,7 @@ Automatisch berekend op basis van:
 - Alle vaste teksten in vertaalbestanden
 - Taalwissel in profiel en bij registratie
 
-### F7. Offline Modus & PWA
+### F7. Offline Modus & PWA - **DEELS GEBOUWD** (manifest + basis service worker)
 
 **Wat:** De app installeerbaar maken en offline basisfunctionaliteit bieden.
 
@@ -723,7 +856,7 @@ Automatisch berekend op basis van:
 - Sync wanneer weer online
 - "Toevoegen aan startscherm" prompt
 
-### F8. Gamification (Subtiel)
+### F8. Gamification (Subtiel) - **MINIMAAL** (mijlpalen in B2.3)
 
 **Wat:** Zachte motivatie-elementen om betrokkenheid te verhogen.
 
@@ -735,7 +868,7 @@ Automatisch berekend op basis van:
 - Voortgangsbalk voor profielcompleetheid
 - MantelBuddy: "Je hebt al 10 mantelzorgers geholpen!"
 
-### F9. Rapportage voor Huisarts
+### F9. Rapportage voor Huisarts - **NIET GEBOUWD** (PDF export bestaat maar niet voor delen met huisarts)
 
 **Wat:** Mantelzorger kan een samenvatting van belastbaarheidstrend delen met huisarts.
 
@@ -747,7 +880,7 @@ Automatisch berekend op basis van:
 - Mantelzorger kiest zelf welke data gedeeld wordt
 - QR-code optie voor in de wachtkamer
 
-### F10. Koppeling met Zorgnetwerk
+### F10. Koppeling met Zorgnetwerk - **NIET GEBOUWD**
 
 **Wat:** Inzicht in het zorgnetwerk rondom de zorgvrager.
 
@@ -765,110 +898,150 @@ Automatisch berekend op basis van:
 
 ### T1. Code-kwaliteit
 
-| Verbetering | Prioriteit | Toelichting |
-|------------|-----------|-------------|
-| Test framework (Vitest) toevoegen | Hoog | Geen geautomatiseerde tests aanwezig |
-| Input validatie met Zod | Hoog | Nu handmatige validatie per route |
-| Rate limiting (API) | Hoog | Brute-force bescherming op auth endpoints |
-| Dashboard route opsplitsen | Middel | `dashboard/route.ts` is 1700+ regels |
-| WhatsApp webhook opsplitsen | Middel | `webhook/route.ts` is 550+ regels |
-| Error boundary componenten | Middel | Crash-bescherming voor gebruikers |
-| Logging framework (Pino/Winston) | Middel | Gestructureerde logging i.p.v. console.log |
+| Verbetering | Prioriteit | Status | Toelichting |
+|------------|-----------|--------|-------------|
+| Test framework (Vitest) toevoegen | Hoog | **Ontbreekt** | Geen testbestanden, geen testconfig |
+| Input validatie met Zod | Hoog | **Ontbreekt** | Handmatige validatie per route |
+| Rate limiting (API) | Hoog | **Ontbreekt** | Geen bescherming op endpoints |
+| Dashboard route opsplitsen | Middel | **Niet gedaan** | `dashboard/route.ts` is ~896 regels |
+| WhatsApp webhook opsplitsen | Middel | **Niet gedaan** | `webhook/route.ts` is groot |
+| Error boundary componenten | Middel | **Ontbreekt** | Geen `error.tsx` bestanden, geen ErrorBoundary |
+| Logging framework (Pino/Winston) | Middel | **Ontbreekt** | ~11 console.log/error instanties, geen structuur |
 
 ### T2. Infrastructuur
 
-| Verbetering | Prioriteit | Toelichting |
-|------------|-----------|-------------|
-| Redis voor sessie/cache | Hoog | WhatsApp sessies nu in-memory (gaan verloren bij restart) |
-| Email service (Resend/SendGrid) | Hoog | Email verificatie en wachtwoord-reset werken niet |
-| Background jobs (Bull/Agenda) | Middel | Alarmen en notificaties synchroon in API |
-| CDN voor statische assets | Laag | Performance-verbetering |
-| CI/CD pipeline | Middel | Geautomatiseerd testen en deployen |
-| Monitoring (Sentry) | Middel | Foutdetectie in productie |
+| Verbetering | Prioriteit | Status | Toelichting |
+|------------|-----------|--------|-------------|
+| Redis voor sessie/cache | Hoog | **Ontbreekt** | WhatsApp sessies in-memory (`whatsapp-session.ts` heeft TODO voor Redis) |
+| Email service (Resend/SendGrid) | Hoog | **Ontbreekt** | Tokens worden aangemaakt, emails niet verzonden (console.log in dev) |
+| Background jobs (Bull/Agenda) | Middel | **Ontbreekt** | WhatsApp reminder templates bestaan maar geen scheduler |
+| CDN voor statische assets | Laag | **Ontbreekt** | Performance-verbetering |
+| CI/CD pipeline | Middel | **Ontbreekt** | Geen `.github/workflows/`, geen GitHub Actions |
+| Monitoring (Sentry) | Middel | **Ontbreekt** | Geen error tracking, geen alerting |
 
 ### T3. Database
 
-| Verbetering | Prioriteit | Toelichting |
-|------------|-----------|-------------|
-| Database indexen optimaliseren | Middel | Performance bij groeiend gebruikersbestand |
-| Soft deletes implementeren | Middel | Data behouden voor audit/compliance |
-| Database backups automatiseren | Hoog | Data-verlies voorkomen |
-| Row Level Security activeren | Middel | `rls-enable.sql` bestaat maar is niet actief |
+| Verbetering | Prioriteit | Status | Toelichting |
+|------------|-----------|--------|-------------|
+| Database indexen optimaliseren | Middel | **Basis aanwezig** | Indexen op AuditLog (userId, entiteit, createdAt) |
+| Soft deletes implementeren | Middel | **Ontbreekt** | Geen `deletedAt` velden in schema |
+| Database backups automatiseren | Hoog | **Ontbreekt** | Geen backup-strategie |
+| Row Level Security activeren | Middel | **Ontbreekt** | Niet geconfigureerd in Prisma schema |
 
 ### T4. Beveiliging
 
-| Verbetering | Prioriteit | Toelichting |
-|------------|-----------|-------------|
-| NextAuth upgraden naar stable | Hoog | Nu beta.30, beveiligingsrisico |
-| CSP headers toevoegen | Middel | Content Security Policy |
-| CORS configuratie | Middel | API bescherming |
-| Dependency audit | Hoog | Verouderde packages controleren |
-| Secrets management | Hoog | Token was per ongeluk gedeeld in chat |
+| Verbetering | Prioriteit | Status | Toelichting |
+|------------|-----------|--------|-------------|
+| NextAuth upgraden naar stable | Hoog | **Beta 5.0.0-beta.30** | Beta software in productie |
+| CSP headers toevoegen | Middel | **Ontbreekt** | Geen Content Security Policy |
+| CORS configuratie | Middel | **Ontbreekt** | Geen CORS headers in middleware |
+| Dependency audit | Hoog | **Niet gedaan** | Verouderde packages controleren |
+| Secrets management | Hoog | **Onduidelijk** | Geen duidelijke secrets-strategie |
 
 ---
 
-## 9. Prioritering & Fasering
+## 9. Prioritering & Fasering (Geactualiseerd)
 
-### Fase 1: Fundament (maand 1-2)
-**Focus:** Technische basis en beveiliging versterken
+> **NB:** De oorspronkelijke fasering is herzien. Fase 2 (Beheeromgeving), Fase 3 (Klantreis & UX) en Fase 5 (Gemeenteportaal) zijn grotendeels al gebouwd. De nieuwe fasering richt zich op wat nog ontbreekt.
 
-1. Email service implementeren (verificatie + wachtwoord reset)
-2. Rate limiting op auth endpoints
-3. Input validatie met Zod
+### Fase 1: Technisch Fundament (prioriteit HOOG)
+**Focus:** Kritieke technische gaps dichten
+
+1. Email service implementeren (verificatie + wachtwoord reset) - **KRITIEK**
+2. Rate limiting op auth en API endpoints
+3. Input validatie met Zod schemas
 4. Test framework opzetten (Vitest) + eerste tests
-5. Redis voor WhatsApp sessies
-6. Versienummer synchroniseren
+5. Redis voor WhatsApp sessies en caching
+6. Error boundary componenten toevoegen
+7. NextAuth upgraden naar stable release
 
-### Fase 2: Beheeromgeving (maand 2-4)
-**Focus:** Admin portal opzetten
+### Fase 2: Beheeromgeving Afronden (prioriteit MIDDEL)
+**Focus:** Resterende gaps in de admin portal
 
-1. Admin authenticatie en rolbeheer
-2. Gebruikersbeheer (overzicht, detail, zoeken)
-3. Content management (artikelen naar database, CRUD)
-4. Hulpbronnen beheer uitbreiden
-5. Alarm & signalering dashboard
-6. MantelBuddy aanmeldingen beheren
+~~1. Admin authenticatie en rolbeheer~~ **KLAAR**
+~~2. Gebruikersbeheer (overzicht, detail, zoeken)~~ **KLAAR**
+~~3. Content management (artikelen naar database, CRUD)~~ **KLAAR**
+~~4. Hulpbronnen beheer~~ **KLAAR**
+~~5. Alarm & signalering dashboard~~ **KLAAR**
+~~6. MantelBuddy aanmeldingen beheren~~ **KLAAR**
 
-### Fase 3: Klantreis & UX (maand 3-5)
-**Focus:** Gebruikerservaring optimaliseren
+**Wat nog moet:**
+1. Rich text editor voor artikelen
+2. Email-templates beheerbaar maken
+3. WhatsApp-templates beheerbaar maken
+4. Automatische escalatie bij kritieke alarmen
+5. Geavanceerde filters (gemeente, activiteit, alarmstatus)
 
-1. Onboarding flow (stapsgewijze welkomst)
-2. UI-verbeteringen voor oudere gebruikers (typografie, knoppen, contrast)
-3. Tekstuele begeleiding (pagina-intro's, hulpteksten, foutmeldingen)
-4. Gepersonaliseerde aanbevelingen op dashboard
-5. Check-in systeem uitbreiden
-6. Dynamisch hulpadvies op basis van score
+### Fase 3: Klantreis & UX Afronden (prioriteit MIDDEL)
+**Focus:** Resterende UX-verbeteringen
 
-### Fase 4: MantelBuddy Marktplaats (maand 4-7)
-**Focus:** Vrijwilligersplatform bouwen
+~~1. Onboarding flow~~ **KLAAR**
+~~2. UI-verbeteringen (typografie, knoppen)~~ **GROTENDEELS KLAAR**
+~~3. Tekstuele begeleiding~~ **KLAAR**
+~~4. Gepersonaliseerde aanbevelingen~~ **DEELS KLAAR**
+~~5. Dynamisch hulpadvies~~ **KLAAR**
 
-1. MantelBuddy dashboard en profiel
-2. Takenmarktplaats (aanmaken + overzicht)
-3. Afstandsberekening en zoekradius
-4. Reactie & matching flow
-5. Beoordelingssysteem
-6. Notificaties (WhatsApp + push)
+**Wat nog moet:**
+1. Progressieve onboarding (week-voor-week introductie)
+2. Slimme aanbevelingen uitbreiden (seizoen, gedrag, zorgsituatie)
+3. WhatsApp check-in integratie
+4. Slimme check-in frequentie
+5. WCAG 2.1 AA audit en afronding
+6. B1-niveau taalgebruik audit
 
-### Fase 5: Gemeenteportaal (maand 6-8)
-**Focus:** Inzichten voor gemeenten
+### Fase 4: MantelBuddy Marktplaats (prioriteit HOOG - grootste open module)
+**Focus:** Vrijwilligersplatform bouwen - dit is de grootste ongebouwde module
 
-1. Gemeente authenticatie en autorisatie
-2. KPI-dashboard met kerncijfers
-3. Demografische inzichten (geanonimiseerd)
-4. Trend-analyses en grafieken
-5. Rapportage-generatie (PDF/CSV)
-6. Gemeente content management
+1. MantelBuddy dashboard (`/buddy/dashboard`)
+2. MantelBuddy profiel (`/buddy/profiel`) met beschikbaarheid en zoekradius
+3. Buddy onboarding flow (VOG, training, profiel completeren)
+4. Taak aanmaken door mantelzorger
+5. Takenmarktplaats overzicht voor buddies
+6. Reactie & matching flow
+7. Afstandsberekening (postcode-gebaseerd)
+8. Beoordelingssysteem
+9. Notificaties (WhatsApp + push + in-app)
 
-### Fase 6: Innovatie (maand 8+)
+### Fase 5: Gemeenteportaal Afronden (prioriteit LAAG)
+**Focus:** Resterende gaps - meeste functionaliteit is al gebouwd
+
+~~1. Gemeente authenticatie en autorisatie~~ **KLAAR**
+~~2. KPI-dashboard~~ **KLAAR**
+~~3. Demografische inzichten~~ **KLAAR**
+~~4. Trend-analyses~~ **KLAAR**
+~~5. Rapportage-generatie~~ **KLAAR**
+~~6. Gemeente content management~~ **KLAAR**
+
+**Wat nog moet:**
+1. Benchmark vergelijking met landelijke gemiddelden
+2. Automatische rapportage via email
+3. Audit trail voor gemeente data-toegang
+4. DPIA uitvoeren
+
+### Fase 6: Innovatie (prioriteit LAAG)
 **Focus:** Extra features en doorontwikkeling
 
 1. Noodknop / SOS-functie
 2. Mantelzorg-dagboek
-3. PWA / Offline modus
-4. Multi-taal ondersteuning
-5. Huisarts-rapport delen
-6. Community / lotgenotencontact
-7. Gemeentelijke regelingen integratie
+3. Slimme herinneringen & nudges (scheduler + background jobs)
+4. PWA uitbreiden (offline pagina, push notificaties, installatie-prompt)
+5. Multi-taal ondersteuning
+6. Huisarts-rapport delen
+7. Community / lotgenotencontact
+8. Gemeentelijke regelingen integratie
+9. Zorgnetwerk koppeling
+
+### Fase 7: Infrastructuur & Productie-readiness
+**Focus:** Professionalisering voor productie-gebruik
+
+1. CI/CD pipeline (GitHub Actions)
+2. Gestructureerde logging (Pino/Winston)
+3. Monitoring (Sentry)
+4. Database backups automatiseren
+5. Soft deletes implementeren
+6. CSP en CORS headers
+7. Background jobs framework (Bull/Agenda)
+8. Dependency audit en security scan
 
 ---
 
@@ -906,3 +1079,4 @@ Automatisch berekend op basis van:
 ---
 
 *Dit document is een levend document en zal worden bijgewerkt naarmate de ontwikkeling vordert.*
+*Laatste update: 16 februari 2026 - Volledige code-audit uitgevoerd en alle statussen geactualiseerd.*
