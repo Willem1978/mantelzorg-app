@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma"
 
 export async function GET(request: NextRequest) {
   const session = await auth()
-  if (!session || (session.user as any).role !== "ADMIN") {
+  if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Niet geautoriseerd" }, { status: 401 })
   }
 
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   const richting = searchParams.get("richting") || "desc"
 
   try {
-    const where: any = {}
+    const where: Record<string, unknown> = {}
 
     if (zoek) {
       where.OR = [
@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const session = await auth()
-  if (!session || (session.user as any).role !== "ADMIN") {
+  if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Niet geautoriseerd" }, { status: 401 })
   }
 

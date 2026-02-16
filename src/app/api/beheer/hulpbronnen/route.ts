@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   const debug = searchParams.get('debug')
 
   try {
-    const where: any = {}
+    const where: Record<string, unknown> = {}
 
     if (modus === 'landelijk') {
       where.OR = [
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
       // provincie column not yet in database - will be added on next deploy
     }
 
-    const response: any = {
+    const response: Record<string, unknown> = {
       hulpbronnen,
       filters: {
         gemeenten: gemeenten.map((g) => g.gemeente).filter(Boolean),
@@ -114,9 +114,10 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(response)
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Hulpbronnen API error:', error)
-    return NextResponse.json({ error: error.message, hulpbronnen: [], filters: { gemeenten: [], onderdelen: [], provincies: [] } }, { status: 500 })
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: message, hulpbronnen: [], filters: { gemeenten: [], onderdelen: [], provincies: [] } }, { status: 500 })
   }
 }
 
@@ -129,7 +130,7 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json()
 
-  const data: any = {
+  const data: Record<string, unknown> = {
     naam: body.naam,
     beschrijving: body.beschrijving || null,
     type: body.type || 'OVERIG',
@@ -159,9 +160,9 @@ export async function POST(request: NextRequest) {
   try {
     const hulpbron = await prisma.zorgorganisatie.create({ data })
     return NextResponse.json(hulpbron, { status: 201 })
-  } catch (error: any) {
+  } catch (error: unknown) {
     // If provincie column doesn't exist yet, retry without it
-    if (error.message?.includes('provincie')) {
+    if (error instanceof Error && error.message?.includes('provincie')) {
       delete data.provincie
       const hulpbron = await prisma.zorgorganisatie.create({ data })
       return NextResponse.json(hulpbron, { status: 201 })
@@ -185,7 +186,7 @@ export async function PATCH(request: NextRequest) {
   }
 
   // Find records without gemeente that have matching woonplaats
-  const where: any = { gemeente: null }
+  const where: Record<string, unknown> = { gemeente: null }
   if (woonplaats) {
     where.woonplaats = { contains: woonplaats, mode: 'insensitive' }
   }

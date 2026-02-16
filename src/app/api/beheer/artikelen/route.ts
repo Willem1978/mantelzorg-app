@@ -5,7 +5,7 @@ import { logAudit } from "@/lib/audit"
 
 export async function GET(request: NextRequest) {
   const session = await auth()
-  if (!session || (session.user as any).role !== "ADMIN") {
+  if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Niet geautoriseerd" }, { status: 401 })
   }
 
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   const zoek = searchParams.get("zoek") || ""
 
   try {
-    const where: any = {}
+    const where: Record<string, unknown> = {}
 
     if (categorie) where.categorie = categorie
     if (type) where.type = type
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const session = await auth()
-  if (!session || (session.user as any).role !== "ADMIN") {
+  if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Niet geautoriseerd" }, { status: 401 })
   }
 

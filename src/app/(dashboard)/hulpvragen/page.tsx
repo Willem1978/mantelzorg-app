@@ -230,7 +230,7 @@ function HulpPageContent() {
         // 1. Web test: MOEILIJK/ZEER_MOEILIJK/GEMIDDELD/MAKKELIJK
         // 2. WhatsApp test: JA/SOMS/NEE
         const alleTaken = (dashboardData.test?.zorgtaken || [])
-          .map((t: any) => ({
+          .map((t: { naam: string; moeilijkheid: string; categorie?: string }) => ({
             ...t,
             categorie: TAAK_NAAR_CATEGORIE[t.naam] || null
           }))
@@ -367,8 +367,6 @@ function HulpPageContent() {
       </div>
     )
   }
-
-  const openHulpvragen = helpRequests.filter(r => r.status !== 'RESOLVED' && r.status !== 'CLOSED').length
 
   // Bepaal welke categorieën zware taken hebben en hun niveau
   // Ondersteunt zowel web format (MOEILIJK/GEMIDDELD) als WhatsApp format (JA/SOMS)
@@ -996,7 +994,7 @@ function HulpPageContent() {
               return (
                 <div className="text-center py-8 text-muted-foreground ker-card">
                   <p>Alle landelijke hulpbronnen staan bij de andere categorieën.</p>
-                  <p className="text-sm mt-2">Klik op "Voor jou" om hulpbronnen te bekijken.</p>
+                  <p className="text-sm mt-2">Klik op &quot;Voor jou&quot; om hulpbronnen te bekijken.</p>
                 </div>
               )
             }

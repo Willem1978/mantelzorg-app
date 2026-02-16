@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { Prisma } from "@prisma/client"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -8,13 +9,13 @@ export async function GET(request: NextRequest) {
   const gemeente = searchParams.get("gemeente") || ""
 
   try {
-    const where: any = {
+    const where: Prisma.ArtikelWhereInput = {
       isActief: true,
       status: "GEPUBLICEERD",
     }
 
     if (categorie) where.categorie = categorie
-    if (type) where.type = type
+    if (type) where.type = type as "ARTIKEL" | "GEMEENTE_NIEUWS" | "TIP"
     if (gemeente) {
       where.gemeente = { equals: gemeente, mode: "insensitive" }
     }

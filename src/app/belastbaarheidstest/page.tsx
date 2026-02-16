@@ -390,11 +390,6 @@ export default function BelastbaarheidstestPage() {
     const niveau = getBelastingNiveau(score)
     const totaleUren = berekenTotaleUren()
 
-    // Debug: log taken data
-    console.log("=== Frontend: Opslaan test ===")
-    console.log("Taken state:", taken)
-    console.log("Geselecteerde taken:", Object.entries(taken).filter(([, d]) => d.isGeselecteerd))
-
     try {
       const response = await fetch("/api/belastbaarheidstest", {
         method: "POST",
@@ -422,7 +417,6 @@ export default function BelastbaarheidstestPage() {
       // Wacht op response en check of opslaan gelukt is
       if (response.ok) {
         const result = await response.json()
-        console.log("Test opgeslagen:", result)
         // Kleine vertraging om database tijd te geven
         await new Promise(resolve => setTimeout(resolve, 100))
       } else {

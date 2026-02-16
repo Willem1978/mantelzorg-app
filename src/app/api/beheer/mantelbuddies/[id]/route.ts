@@ -8,7 +8,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
-  if (!session || (session.user as any).role !== "ADMIN") {
+  if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Niet geautoriseerd" }, { status: 401 })
   }
 
@@ -16,7 +16,7 @@ export async function PATCH(
   const body = await request.json()
 
   try {
-    const updateData: any = {}
+    const updateData: Record<string, unknown> = {}
 
     if (body.status !== undefined) updateData.status = body.status
     if (body.vogGoedgekeurd !== undefined) updateData.vogGoedgekeurd = body.vogGoedgekeurd

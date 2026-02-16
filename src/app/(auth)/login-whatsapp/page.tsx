@@ -10,7 +10,7 @@ function LoginWhatsAppForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(false)
-  const [isCheckingPhone, setIsCheckingPhone] = useState(false)
+  const [, setIsCheckingPhone] = useState(false)
   const [error, setError] = useState("")
   const [step, setStep] = useState(searchParams.get("phone") ? 1 : 0) // 0 = phone input, 1 = login
   const [manualPhone, setManualPhone] = useState("")

@@ -18,10 +18,6 @@ export async function POST(request: Request) {
       totaleUren,
     } = data
 
-    // Debug logging
-    console.log("=== Belastbaarheidstest POST ===")
-    console.log("Taken ontvangen:", JSON.stringify(taken, null, 2))
-
     // Bepaal belasting niveau voor database
     let belastingNiveau: "LAAG" | "GEMIDDELD" | "HOOG" = "LAAG"
     if (score >= 7 && score <= 12) belastingNiveau = "GEMIDDELD"
@@ -78,8 +74,6 @@ export async function POST(request: Request) {
             }
             const taakConfig = getTaakConfig(taakId)
 
-            console.log(`Taak ${taakId}:`, taak)
-
             // Converteer uren string naar getal
             let urenPerWeek: number | null = null
             if (taak.uren) {
@@ -99,8 +93,6 @@ export async function POST(request: Request) {
             if (taak.belasting === "nee") moeilijkheid = "MAKKELIJK"
             if (taak.belasting === "soms") moeilijkheid = "GEMIDDELD"
             if (taak.belasting === "ja") moeilijkheid = "MOEILIJK"
-
-            console.log(`  -> moeilijkheid: ${moeilijkheid}, urenPerWeek: ${urenPerWeek}`)
 
             return {
               taakId,

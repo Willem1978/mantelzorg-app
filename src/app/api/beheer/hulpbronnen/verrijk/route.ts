@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import prisma from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -51,7 +52,7 @@ async function hasProvincieColumn(): Promise<boolean> {
 }
 
 // POST /api/beheer/hulpbronnen/verrijk - Enrich all records with missing location data
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   const session = await auth()
   if (!session?.user) {
     return NextResponse.json({ error: 'Niet ingelogd' }, { status: 401 })
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
     const log: string[] = []
 
     for (const r of records) {
-      const updates: any = {}
+      const updates: Record<string, string> = {}
 
       // a. Set gemeente from woonplaats if missing
       if (!r.gemeente && r.woonplaats) {
@@ -151,9 +152,9 @@ export async function POST(request: NextRequest) {
       },
       log,
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Verrijk API error:', error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 })
   }
 }
 
@@ -163,7 +164,7 @@ export async function GET() {
     const provincieExists = await hasProvincieColumn()
 
     // Build select dynamically based on available columns
-    const select: any = {
+    const select: Prisma.ZorgorganisatieSelect = {
       id: true,
       naam: true,
       woonplaats: true,
@@ -174,9 +175,17 @@ export async function GET() {
 
     const records = await prisma.zorgorganisatie.findMany({ select })
 
-    const missingGemeente = records.filter((r: any) => !r.gemeente)
-    const missingProvincie = provincieExists ? records.filter((r: any) => !r.provincie) : records
-    const missingWoonplaats = records.filter((r: any) => !r.woonplaats)
+    type VerrijkRecord = {
+      gemeente?: string | null
+      woonplaats?: string | null
+      provincie?: string | null
+      naam?: string | null
+      dekkingNiveau?: string
+    }
+
+    const missingGemeente = records.filter((r) => !(r as VerrijkRecord).gemeente)
+    const missingProvincie = provincieExists ? records.filter((r) => !(r as VerrijkRecord).provincie) : records
+    const missingWoonplaats = records.filter((r) => !(r as VerrijkRecord).woonplaats)
 
     return NextResponse.json({
       total: records.length,
@@ -184,16 +193,19 @@ export async function GET() {
       missingProvincie: missingProvincie.length,
       missingWoonplaats: missingWoonplaats.length,
       provincieColumnExists: provincieExists,
-      records: records.map((r: any) => ({
-        naam: r.naam,
-        woonplaats: r.woonplaats,
-        gemeente: r.gemeente,
-        provincie: r.provincie || null,
-        dekkingNiveau: r.dekkingNiveau,
-        needsUpdate: !r.gemeente || (provincieExists ? !r.provincie : true),
-      })),
+      records: records.map((r) => {
+        const rec = r as VerrijkRecord
+        return {
+          naam: rec.naam,
+          woonplaats: rec.woonplaats,
+          gemeente: rec.gemeente,
+          provincie: rec.provincie || null,
+          dekkingNiveau: rec.dekkingNiveau,
+          needsUpdate: !rec.gemeente || (provincieExists ? !rec.provincie : true),
+        }
+      }),
     })
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 })
   }
 }

@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
-  if (!session || (session.user as any).role !== "ADMIN") {
+  if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Niet geautoriseerd" }, { status: 401 })
   }
 
@@ -96,7 +96,7 @@ export async function GET(
     }
 
     // Haal alarm logs op als er tests zijn
-    let alarmen: any[] = []
+    let alarmen: Awaited<ReturnType<typeof prisma.alarmLog.findMany>> = []
     if (gebruiker.caregiver?.belastbaarheidTests.length) {
       const testIds = gebruiker.caregiver.belastbaarheidTests.map((t) => t.id)
       alarmen = await prisma.alarmLog.findMany({
@@ -112,8 +112,8 @@ export async function GET(
         email: gebruiker.email,
         name: gebruiker.name,
         role: gebruiker.role,
-        isActive: (gebruiker as any).isActive ?? true,
-        adminNotities: (gebruiker as any).adminNotities || null,
+        isActive: gebruiker.isActive ?? true,
+        adminNotities: gebruiker.adminNotities || null,
         createdAt: gebruiker.createdAt,
         updatedAt: gebruiker.updatedAt,
         emailVerified: gebruiker.emailVerified,
@@ -148,7 +148,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
-  if (!session || (session.user as any).role !== "ADMIN") {
+  if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Niet geautoriseerd" }, { status: 401 })
   }
 
@@ -156,8 +156,8 @@ export async function PATCH(
   const body = await request.json()
 
   try {
-    const updateData: any = {}
-    const auditDetails: Record<string, any> = {}
+    const updateData: Record<string, unknown> = {}
+    const auditDetails: Record<string, unknown> = {}
 
     if (body.role) {
       updateData.role = body.role
@@ -218,7 +218,7 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth()
-  if (!session || (session.user as any).role !== "ADMIN") {
+  if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Niet geautoriseerd" }, { status: 401 })
   }
 

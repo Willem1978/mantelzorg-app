@@ -64,8 +64,6 @@ export async function POST(request: NextRequest) {
       data: { password: hashedTempPassword },
     })
 
-    console.log('Magic link verified for user:', magicLink.user.email)
-
     // Return credentials voor automatisch inloggen
     return NextResponse.json({
       success: true,
