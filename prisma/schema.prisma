@@ -17,6 +17,7 @@ model User {
   image          String?
   role           UserRole            @default(CAREGIVER)
   gemeenteNaam   String?             // Alleen voor GEMEENTE_ADMIN: naam van de gemeente
+  gemeenteRollen String[]            // Sub-rollen binnen gemeente: COMMUNICATIE, HULPBRONNEN, BELEID
   isActive       Boolean             @default(true)
   adminNotities  String?
   sessionVersion Int                 @default(1) // Incrementeert bij elke login om oude sessies te invalideren
@@ -62,6 +63,18 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model InviteToken {
+  id        String    @id @default(cuid())
+  email     String
+  token     String    @unique
+  gemeenteNaam String?
+  gemeenteRollen String[]
+  invitedBy String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
 }
 
 model MagicLinkToken {

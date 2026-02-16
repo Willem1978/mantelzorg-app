@@ -46,9 +46,11 @@ function GebruikersContent() {
   const [loading, setLoading] = useState(true)
   const [zoekInput, setZoekInput] = useState("")
   const [toonNieuwFormulier, setToonNieuwFormulier] = useState(false)
-  const [nieuwFormulier, setNieuwFormulier] = useState({ email: "", name: "", password: "", role: "CAREGIVER" })
+  const [nieuwFormulier, setNieuwFormulier] = useState({ email: "", name: "", password: "", role: "CAREGIVER", gemeenteNaam: "" })
   const [nieuwLaden, setNieuwLaden] = useState(false)
   const [nieuwFout, setNieuwFout] = useState("")
+  const [gemeenteSuggesties, setGemeenteSuggesties] = useState<string[]>([])
+  const [gemeenteZoek, setGemeenteZoek] = useState("")
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -100,6 +102,25 @@ function GebruikersContent() {
     router.push(`/beheer/gebruikers?${params}`)
   }
 
+  const zoekGemeenten = useCallback(async (query: string) => {
+    if (query.length < 2) {
+      setGemeenteSuggesties([])
+      return
+    }
+    try {
+      const res = await fetch(`/api/pdok/gemeenten?q=${encodeURIComponent(query)}`)
+      const data = await res.json()
+      setGemeenteSuggesties(data.gemeenten || [])
+    } catch {
+      setGemeenteSuggesties([])
+    }
+  }, [])
+
+  useEffect(() => {
+    const timer = setTimeout(() => zoekGemeenten(gemeenteZoek), 300)
+    return () => clearTimeout(timer)
+  }, [gemeenteZoek, zoekGemeenten])
+
   const handleNieuweGebruiker = async (e: React.FormEvent) => {
     e.preventDefault()
     setNieuwLaden(true)
@@ -119,7 +140,9 @@ function GebruikersContent() {
       }
 
       setToonNieuwFormulier(false)
-      setNieuwFormulier({ email: "", name: "", password: "", role: "CAREGIVER" })
+      setNieuwFormulier({ email: "", name: "", password: "", role: "CAREGIVER", gemeenteNaam: "" })
+      setGemeenteZoek("")
+      setGemeenteSuggesties([])
       laadGebruikers()
     } catch {
       setNieuwFout("Er ging iets mis bij het aanmaken")
@@ -235,7 +258,7 @@ function GebruikersContent() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
                 <select
                   value={nieuwFormulier.role}
-                  onChange={(e) => setNieuwFormulier({ ...nieuwFormulier, role: e.target.value })}
+                  onChange={(e) => setNieuwFormulier({ ...nieuwFormulier, role: e.target.value, gemeenteNaam: "" })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="CAREGIVER">Mantelzorger</option>
@@ -246,6 +269,54 @@ function GebruikersContent() {
                   <option value="ADMIN">Beheerder</option>
                 </select>
               </div>
+              {nieuwFormulier.role === "GEMEENTE_ADMIN" && (
+                <div className="relative">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Gemeente *</label>
+                  {nieuwFormulier.gemeenteNaam ? (
+                    <div className="flex items-center gap-2">
+                      <span className="flex-1 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700 font-medium">
+                        {nieuwFormulier.gemeenteNaam}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => { setNieuwFormulier({ ...nieuwFormulier, gemeenteNaam: "" }); setGemeenteZoek("") }}
+                        className="px-2 py-2 text-gray-400 hover:text-gray-600 text-sm"
+                      >
+                        Wijzig
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <input
+                        type="text"
+                        value={gemeenteZoek}
+                        onChange={(e) => setGemeenteZoek(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Zoek gemeente..."
+                      />
+                      {gemeenteSuggesties.length > 0 && (
+                        <ul className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                          {gemeenteSuggesties.map((g) => (
+                            <li key={g}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setNieuwFormulier({ ...nieuwFormulier, gemeenteNaam: g })
+                                  setGemeenteZoek("")
+                                  setGemeenteSuggesties([])
+                                }}
+                                className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 hover:text-blue-700"
+                              >
+                                {g}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
               {nieuwFout && (
                 <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{nieuwFout}</p>
               )}

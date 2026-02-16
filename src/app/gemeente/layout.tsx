@@ -3,18 +3,21 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 
-const menuItems = [
-  { href: "/gemeente", label: "Dashboard", icon: "📊", exact: true },
-  { href: "/gemeente/demografie", label: "Demografie", icon: "👥" },
-  { href: "/gemeente/trends", label: "Trends", icon: "📈" },
-  { href: "/gemeente/hulpvragen", label: "Hulpvragen", icon: "🤝" },
-  { href: "/gemeente/alarmen", label: "Signalering", icon: "🔔" },
-  { href: "/gemeente/rapportages", label: "Rapportages", icon: "📄" },
-  { href: "/gemeente/content", label: "Content", icon: "📝" },
-  { href: "/gemeente/hulpbronnen", label: "Hulpbronnen", icon: "📚" },
-  { href: "/gemeente/evenementen", label: "Evenementen", icon: "📅" },
+// Mapping van menu-items naar vereiste gemeente subrollen
+// Items zonder 'rollen' zijn altijd zichtbaar voor de hoofdadmin
+const alleMenuItems = [
+  { href: "/gemeente", label: "Dashboard", icon: "📊", exact: true, rollen: ["BELEID"] },
+  { href: "/gemeente/demografie", label: "Demografie", icon: "👥", rollen: ["BELEID"] },
+  { href: "/gemeente/trends", label: "Trends", icon: "📈", rollen: ["BELEID"] },
+  { href: "/gemeente/hulpvragen", label: "Hulpvragen", icon: "🤝", rollen: ["BELEID"] },
+  { href: "/gemeente/alarmen", label: "Signalering", icon: "🔔", rollen: ["BELEID"] },
+  { href: "/gemeente/rapportages", label: "Rapportages", icon: "📄", rollen: ["BELEID"] },
+  { href: "/gemeente/content", label: "Content", icon: "📝", rollen: ["COMMUNICATIE"] },
+  { href: "/gemeente/hulpbronnen", label: "Hulpbronnen", icon: "📚", rollen: ["HULPBRONNEN"] },
+  { href: "/gemeente/evenementen", label: "Evenementen", icon: "📅", rollen: ["COMMUNICATIE"] },
+  { href: "/gemeente/gebruikers", label: "Gebruikers", icon: "👤", rollen: [] },
 ]
 
 export default function GemeenteLayout({
@@ -32,6 +35,17 @@ export default function GemeenteLayout({
   }
 
   const gemeenteNaam = (session?.user as any)?.gemeenteNaam || "Gemeente"
+  const gemeenteRollen: string[] = (session?.user as any)?.gemeenteRollen || []
+  const userRole = (session?.user as any)?.role
+
+  // Hoofdadmin (geen subrollen of ADMIN) ziet alles, anders filteren op rollen
+  const isHoofdAdmin = userRole === "ADMIN" || gemeenteRollen.length === 0
+  const menuItems = useMemo(() => {
+    if (isHoofdAdmin) return alleMenuItems
+    return alleMenuItems.filter((item) =>
+      item.rollen.length === 0 || item.rollen.some((r) => gemeenteRollen.includes(r))
+    )
+  }, [isHoofdAdmin, gemeenteRollen])
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">

@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { email, name, password, role } = body
+    const { email, name, password, role, gemeenteNaam } = body
 
     if (!email || !password) {
       return NextResponse.json(
@@ -149,6 +149,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (role === "GEMEENTE_ADMIN" && !gemeenteNaam) {
+      return NextResponse.json(
+        { error: "Gemeente is verplicht voor een Gemeente Admin" },
+        { status: 400 }
+      )
+    }
+
     const existing = await prisma.user.findUnique({ where: { email } })
     if (existing) {
       return NextResponse.json(
@@ -165,6 +172,7 @@ export async function POST(request: NextRequest) {
         name: name || null,
         password: passwordHash,
         role: role || "CAREGIVER",
+        ...(role === "GEMEENTE_ADMIN" && { gemeenteNaam }),
       },
     })
 

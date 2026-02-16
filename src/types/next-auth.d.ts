@@ -7,6 +7,7 @@ declare module "next-auth" {
       role: string
       caregiverId: string | null
       gemeenteNaam: string | null
+      gemeenteRollen: string[]
     } & DefaultSession["user"]
   }
 }
@@ -17,5 +18,6 @@ declare module "next-auth/jwt" {
     role: string
     caregiverId: string | null
     gemeenteNaam: string | null
+    gemeenteRollen: string[]
   }
 }
