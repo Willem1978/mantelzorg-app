@@ -187,7 +187,7 @@ export default function BalanstestOverzichtPage() {
                 </div>
 
                 {/* Test balken - toon max 8, oudste eerst */}
-                {[...tests].reverse().slice(-8).map((test, i, arr) => {
+                {[...tests].reverse().slice(-8).map((test) => {
                   const hoogte = (test.score / maxScore) * 100
                   return (
                     <div key={test.id} className="flex-1 flex flex-col items-center justify-end h-full relative z-10">

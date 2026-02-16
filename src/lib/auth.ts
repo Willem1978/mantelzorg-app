@@ -57,20 +57,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           phoneNumber.trim() !== "" &&
           phoneNumber.startsWith("+31")
 
-        console.log("Login attempt - phoneNumber:", phoneNumber, "hasValidPhone:", hasValidPhone, "caregiver:", user.caregiver?.id)
         if (hasValidPhone && user.caregiver) {
           try {
-            console.log("Linking phone number:", phoneNumber, "to caregiver:", user.caregiver.id)
             await prisma.caregiver.update({
               where: { id: user.caregiver.id },
               data: { phoneNumber: phoneNumber },
             })
-            console.log("Phone number linked successfully")
           } catch (error) {
             console.error("Failed to link phone number:", error)
           }
-        } else {
-          console.log("Not linking - phoneNumber:", phoneNumber, "caregiver:", !!user.caregiver)
         }
 
         // Incrementeer sessionVersion om oude sessies te invalideren (single-session login)

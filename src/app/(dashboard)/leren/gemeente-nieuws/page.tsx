@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import Link from "next/link"
 import { FavorietButton } from "@/components/FavorietButton"
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs"
@@ -61,7 +61,7 @@ export default function GemeenteNieuwsPage() {
         // Nieuws uit database
         if (nieuwsRes?.ok) {
           const data = await nieuwsRes.json()
-          nieuwsItems = (data.artikelen || []).map((a: any) => ({
+          nieuwsItems = (data.artikelen || []).map((a: GemeenteNieuws & { gemeente: string | null }) => ({
             ...a,
             gemeente: a.gemeente || "",
           }))
@@ -102,15 +102,15 @@ export default function GemeenteNieuwsPage() {
   }, [])
 
   // Filter nieuws per gemeente
-  const nieuwsMantelzorger = gemeenteMantelzorger
+  const nieuwsMantelzorger = useMemo(() => gemeenteMantelzorger
     ? allNieuws.filter(n => (n.gemeente || "").toLowerCase() === gemeenteMantelzorger.toLowerCase())
-    : []
+    : [], [allNieuws, gemeenteMantelzorger])
 
-  const nieuwsZorgvrager = gemeenteZorgvrager && gemeenteZorgvrager !== gemeenteMantelzorger
+  const nieuwsZorgvrager = useMemo(() => gemeenteZorgvrager && gemeenteZorgvrager !== gemeenteMantelzorger
     ? allNieuws.filter(n => (n.gemeente || "").toLowerCase() === gemeenteZorgvrager.toLowerCase())
-    : []
+    : [], [allNieuws, gemeenteZorgvrager, gemeenteMantelzorger])
 
-  const relevantNieuws = [...nieuwsMantelzorger, ...nieuwsZorgvrager]
+  const relevantNieuws = useMemo(() => [...nieuwsMantelzorger, ...nieuwsZorgvrager], [nieuwsMantelzorger, nieuwsZorgvrager])
   const geenGemeente = !gemeenteMantelzorger && !gemeenteZorgvrager
 
   // Sla op naar database (fire-and-forget)

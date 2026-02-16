@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button, Input } from "@/components/ui"
@@ -42,7 +42,7 @@ function EmailVerificationContent() {
       if (data.verifyUrl) {
         console.log("Verification URL:", data.verifyUrl)
       }
-    } catch (err) {
+    } catch {
       setMessage("Er ging iets mis. Probeer het later opnieuw.")
     } finally {
       setIsLoading(false)

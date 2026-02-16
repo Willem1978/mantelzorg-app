@@ -1,6 +1,7 @@
 "use client"
 
 import { Suspense, useEffect, useState } from "react"
+import Image from "next/image"
 import { useSession } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -55,7 +56,7 @@ interface DashboardData {
   checkIns: {
     weeklyDone: boolean
     monthlyDone: boolean
-    lastCheckIn: any
+    lastCheckIn: string | null
     wellbeingTrend: "up" | "down" | "stable" | null
     recentScores: number[]
   }
@@ -857,12 +858,13 @@ function DashboardContent() {
               {/* QR Code */}
               <div className="flex justify-center mb-4">
                 <div className="bg-white p-3 rounded-xl shadow-sm">
-                  <img
+                  <Image
                     src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://wa.me/14155238886?text=Hoi"
                     alt="Scan QR code om WhatsApp te starten"
                     width={120}
                     height={120}
                     className="rounded-lg"
+                    unoptimized
                   />
                 </div>
               </div>

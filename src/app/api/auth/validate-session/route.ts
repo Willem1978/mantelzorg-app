@@ -26,7 +26,7 @@ export async function GET() {
     }
 
     // Vergelijk met de sessionVersion in de JWT
-    const tokenSessionVersion = (session.user as any).sessionVersion
+    const tokenSessionVersion = (session.user as { sessionVersion?: number }).sessionVersion
 
     if (tokenSessionVersion !== user.sessionVersion) {
       return NextResponse.json({

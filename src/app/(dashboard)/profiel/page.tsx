@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { signOut } from "next-auth/react"
 import Link from "next/link"
@@ -1005,12 +1006,13 @@ export default function ProfielPage() {
           {/* QR Code naar WhatsApp */}
           <div className="flex justify-center mb-4">
             <div className="bg-white p-3 rounded-xl shadow-sm">
-              <img
+              <Image
                 src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://wa.me/14155238886?text=Hoi"
                 alt="Scan QR code om WhatsApp te starten"
                 width={120}
                 height={120}
                 className="rounded-lg"
+                unoptimized
               />
             </div>
           </div>

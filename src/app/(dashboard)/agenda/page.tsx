@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button, Card, CardContent } from "@/components/ui"
 import { cn } from "@/lib/utils"
 
@@ -39,8 +39,6 @@ export default function AgendaPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [selectedDate, setSelectedDate] = useState(new Date())
-  const [viewMode, setViewMode] = useState<"week" | "month">("week")
-
   // Form state
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
@@ -53,11 +51,7 @@ export default function AgendaPage() {
   const [reminder, setReminder] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  useEffect(() => {
-    fetchEvents()
-  }, [selectedDate])
-
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     try {
       const start = new Date(selectedDate)
       start.setDate(start.getDate() - 7)
@@ -74,7 +68,11 @@ export default function AgendaPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [selectedDate])
+
+  useEffect(() => {
+    fetchEvents()
+  }, [fetchEvents])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

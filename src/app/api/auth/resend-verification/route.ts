@@ -56,7 +56,9 @@ export async function POST(request: NextRequest) {
 
     // In production, send email
     const verifyUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/auth/verify-email?token=${verificationToken}`
-    console.log("New verification link:", verifyUrl)
+    if (process.env.NODE_ENV === "development") {
+      console.log("New verification link:", verifyUrl)
+    }
 
     return NextResponse.json({
       success: true,
