@@ -17,7 +17,8 @@
 7. [Module F: Eigen Suggesties & Innovatie](#7-module-f-eigen-suggesties--innovatie)
 8. [Technische Verbeteringen](#8-technische-verbeteringen)
 9. [Prioritering & Fasering](#9-prioritering--fasering)
-10. [Risico's & Aandachtspunten](#10-risicos--aandachtspunten)
+10. [Bouwomvang & Kostenraming](#10-bouwomvang--kostenraming)
+11. [Risico's & Aandachtspunten](#11-risicos--aandachtspunten)
 
 ---
 
@@ -1045,7 +1046,132 @@ Automatisch berekend op basis van:
 
 ---
 
-## 10. Risico's & Aandachtspunten
+## 10. Bouwomvang & Kostenraming
+
+> **Gebaseerd op:** Volledige code-audit van 16 februari 2026. Codebase omvat 190 TypeScript bestanden, ~38.500 regels code, 50 pagina's, 70 API routes, 39 componenten, 32 Prisma modellen.
+
+### 10.1 Wat er al gebouwd is
+
+| Module | Omschrijving | Geschatte uren |
+|--------|-------------|---------------|
+| Setup & Architectuur | Next.js, Prisma, Auth, DB schema (32 modellen) | 40-50 |
+| Registratie & Login | NextAuth, bcrypt, JWT, middleware, WhatsApp koppeling | 24-32 |
+| Belastbaarheidstest | 11 vragen, scoring, alarm-logica | 20-28 |
+| Dashboard | Welzijnsoverzicht, aanbevelingen, "Jouw Reis" tijdlijn | 32-40 |
+| Hulpvragen & Leren | Zoeken, filteren, favorieten, artikelen | 24-32 |
+| WhatsApp Bot | Twilio integratie, sessies, webhook | 32-40 |
+| Check-in Systeem | 5 vragen, contextuele tips, trend-visualisatie | 16-20 |
+| Onboarding Flow | 5-stappen welkomst na registratie | 12-16 |
+| Beheeromgeving | Gebruikers, CMS, alarmen, buddies, statistieken | 60-80 |
+| Gemeenteportaal | Dashboard, demografie, trends, rapportages, CMS | 50-65 |
+| MantelBuddy Registratie | 3-stappen formulier, admin-beheer | 16-20 |
+| UI/UX Systeem | Atkinson Hyperlegible, hoog contrast, PageHelp, ARIA | 30-40 |
+| PWA | Manifest, service worker | 8-10 |
+| PDF Rapport | jsPDF generatie | 8-12 |
+| Profiel, Privacy, Agenda, overig | Diverse pagina's | 24-32 |
+| Prisma Schema | 32 modellen, enums, relaties, seeds | 20-28 |
+| Handmatig testen & debugging | - | 30-40 |
+| **Totaal gebouwd** | | **~450-580 uur** |
+
+### 10.2 Wat er nog gebouwd moet worden
+
+#### Hoge prioriteit - Technisch Fundament (~100-150 uur)
+
+| Item | Geschatte uren |
+|------|---------------|
+| Email service (Resend/SendGrid) - verificatie, wachtwoord reset, alarmen | 16-24 |
+| Rate limiting op auth + API endpoints | 8-12 |
+| Zod validatie schemas voor alle ~70 API routes | 20-30 |
+| Test framework (Vitest) + eerste unit/integration tests | 30-40 |
+| Error boundary componenten (error.tsx per route segment) | 8-12 |
+| Redis voor sessies, caching, WhatsApp state | 12-16 |
+| NextAuth upgrade van beta naar stable | 8-16 |
+
+#### Hoge prioriteit - MantelBuddy Marktplaats (~150-210 uur)
+
+| Item | Geschatte uren |
+|------|---------------|
+| MantelBuddy Dashboard (eigen omgeving voor vrijwilligers) | 24-32 |
+| MantelBuddy Profiel (beschikbaarheid, zoekradius, VOG-status) | 16-24 |
+| Takenmarktplaats (aanmaken, overzicht, filteren, kaartweergave) | 40-56 |
+| Matching & Reactie Flow (interesse, acceptatie, notificaties) | 24-32 |
+| Afstandsberekening (postcode/Haversine, PDOK, zoekradius) | 12-16 |
+| Beoordelingssysteem (sterren, betrouwbaarheid, moderatie) | 16-24 |
+| Buddy Notificaties (in-app, WhatsApp, email, push) | 16-24 |
+
+#### Middelhoge prioriteit - Afronding bestaande modules (~80-110 uur)
+
+| Item | Geschatte uren |
+|------|---------------|
+| Progressieve onboarding (week-voor-week introductie) | 16-24 |
+| Slimme aanbevelingen uitbreiden (seizoen, gedrag, zorgsituatie) | 16-20 |
+| WhatsApp check-in integratie | 12-16 |
+| Background jobs framework (Bull) voor herinneringen/notificaties | 16-24 |
+| Rich text editor voor CMS artikelen | 12-16 |
+| WCAG 2.1 AA audit en fixes | 8-12 |
+
+#### Lagere prioriteit - Innovatie features (~220-290 uur)
+
+| Item | Geschatte uren |
+|------|---------------|
+| Noodknop/SOS-functie | 8-12 |
+| Mantelzorg-dagboek (CRUD + kalender + trends) | 20-28 |
+| Community/forum (groepen, moderatie, anoniem) | 40-56 |
+| Multi-taal i18n (next-intl + vertalingen NL/EN/TR/AR) | 30-40 |
+| Huisarts-rapport (PDF + QR-code) | 12-16 |
+| Gemeentelijke regelingen (database + matching op profiel) | 16-24 |
+| Zorgnetwerk (uitnodigingen, gedeelde taken) | 24-32 |
+| PWA uitbreiden (offline pagina, push, install prompt) | 16-20 |
+| Slimme herinneringen & nudges | 12-16 |
+| CI/CD pipeline (GitHub Actions) | 12-16 |
+| Monitoring (Sentry) | 8-12 |
+| Logging framework (Pino/Winston) | 8-12 |
+| Database: soft deletes, backups, CSP/CORS headers | 16-24 |
+
+### 10.3 Totaaloverzicht
+
+| | Uren | Status |
+|--|------|--------|
+| **Al gebouwd** | ~450-580 | Klaar |
+| **Nog te bouwen (alles)** | ~550-760 | Open |
+| Waarvan: Technisch fundament (HOOG) | ~100-150 | Fase 1 |
+| Waarvan: MantelBuddy Marktplaats (HOOG) | ~150-210 | Fase 4 |
+| Waarvan: Afronding modules (MIDDEL) | ~80-110 | Fase 2-3 |
+| Waarvan: Innovatie + infra (LAAG) | ~220-290 | Fase 6-7 |
+| **Totaal compleet project** | **~1.050-1.260** | |
+
+### 10.4 Kostenraming
+
+**Bouwprijs huidige applicatie (wat er nu staat):**
+
+| Scenario | Uurtarief | Totaalprijs |
+|----------|-----------|-------------|
+| Junior developer (NL) | 50-70/uur | 22.500 - 40.600 |
+| Medior developer (NL) | 75-100/uur | 33.750 - 58.000 |
+| Senior developer (NL, ZZP) | 100-130/uur | 45.000 - 75.400 |
+| Ontwikkelbureau (NL) | 120-160/uur | 54.000 - 92.800 |
+
+> **Realistische waarde huidige build:** Een medior/senior fullstack developer zou hier 3-4 maanden fulltime over doen. **Geschatte bouwprijs: 50.000 - 75.000 euro.**
+
+**Kosten resterende bouw (alles):**
+
+| Scenario | Uurtarief | Totaalprijs |
+|----------|-----------|-------------|
+| Senior developer (NL, ZZP) | 100-130/uur | 55.000 - 98.800 |
+| Ontwikkelbureau (NL) | 120-160/uur | 66.000 - 121.600 |
+
+**Kosten alleen hoge prioriteit (technisch fundament + MantelBuddy Marktplaats):**
+
+| Scenario | Uurtarief | Totaalprijs |
+|----------|-----------|-------------|
+| Senior developer (NL, ZZP) | 100-130/uur | 25.000 - 46.800 |
+| Ontwikkelbureau (NL) | 120-160/uur | 30.000 - 57.600 |
+
+> **Totale projectwaarde bij voltooiing:** ~105.000 - 126.000 euro (senior developer tarief).
+
+---
+
+## 11. Risico's & Aandachtspunten
 
 ### Privacy & AVG
 - Mantelzorger-data is gevoelig (gezondheid, zorgsituatie)
