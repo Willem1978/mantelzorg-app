@@ -349,7 +349,7 @@ export async function searchGemeenten(query: string): Promise<string[]> {
 
   try {
     const params = new URLSearchParams({
-      q: query,
+      q: `${query}*`,
       fq: "type:gemeente",
       rows: "10",
       sort: "score desc,gemeentenaam asc",
