@@ -27,8 +27,7 @@ interface Gebruiker {
 const rolLabels: Record<string, string> = {
   CAREGIVER: "Mantelzorger",
   BUDDY: "MantelBuddy",
-  ORG_MEMBER: "Organisatie",
-  ORG_ADMIN: "Org. Admin",
+  GEMEENTE_ADMIN: "Gemeente Admin",
   ADMIN: "Beheerder",
 }
 
@@ -108,9 +107,18 @@ function GebruikersContent() {
       return
     }
     try {
-      const res = await fetch(`/api/pdok/gemeenten?q=${encodeURIComponent(query)}`)
+      const params = new URLSearchParams({
+        q: query,
+        fq: "type:gemeente",
+        rows: "10",
+        sort: "score desc,gemeentenaam asc",
+      })
+      const res = await fetch(`https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?${params}`)
       const data = await res.json()
-      setGemeenteSuggesties(data.gemeenten || [])
+      const gemeenten: string[] = (data.response?.docs || [])
+        .map((doc: any) => doc.gemeentenaam as string)
+        .filter(Boolean)
+      setGemeenteSuggesties([...new Set(gemeenten)])
     } catch {
       setGemeenteSuggesties([])
     }
@@ -197,7 +205,7 @@ function GebruikersContent() {
             { value: "", label: "Alle rollen" },
             { value: "CAREGIVER", label: "Mantelzorgers" },
             { value: "BUDDY", label: "MantelBuddies" },
-            { value: "ORG_MEMBER", label: "Organisaties" },
+            { value: "GEMEENTE_ADMIN", label: "Gemeente Admins" },
             { value: "ADMIN", label: "Beheerders" },
           ].map((r) => (
             <button
@@ -263,8 +271,6 @@ function GebruikersContent() {
                 >
                   <option value="CAREGIVER">Mantelzorger</option>
                   <option value="BUDDY">MantelBuddy</option>
-                  <option value="ORG_MEMBER">Organisatie</option>
-                  <option value="ORG_ADMIN">Org. Admin</option>
                   <option value="GEMEENTE_ADMIN">Gemeente Admin</option>
                   <option value="ADMIN">Beheerder</option>
                 </select>
