@@ -27,6 +27,8 @@ const categorieOpties = [
   { value: "respijtzorg", label: "Respijtzorg" },
   { value: "psychosociaal", label: "Psychosociaal" },
   { value: "praktisch", label: "Praktisch" },
+  { value: "hulpmiddelen", label: "Hulpmiddelen" },
+  { value: "educatie", label: "Educatie & training" },
   { value: "overig", label: "Overig" },
 ]
 

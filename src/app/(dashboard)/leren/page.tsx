@@ -15,7 +15,7 @@ const categories = [
   },
   {
     id: "zelfzorg",
-    title: "Zelfzorg tips",
+    title: "Zelfzorg",
     description: "Zorg ook voor jezelf",
     emoji: "🧘",
     href: "/leren/zelfzorg",
@@ -23,16 +23,23 @@ const categories = [
   {
     id: "rechten",
     title: "Je rechten",
-    description: "Waar heb je recht op?",
+    description: "Wmo, Zvw, Wlz en meer",
     emoji: "⚖️",
     href: "/leren/rechten",
   },
   {
     id: "financieel",
     title: "Financieel",
-    description: "Vergoedingen & regelingen",
+    description: "Kosten, vergoedingen & pgb",
     emoji: "💰",
     href: "/leren/financieel",
+  },
+  {
+    id: "hulpmiddelen-producten",
+    title: "Hulpmiddelen & producten",
+    description: "Fysiek, digitaal & aanpassingen",
+    emoji: "🛠️",
+    href: "/leren/hulpmiddelen-producten",
   },
 ]
 
@@ -200,7 +207,7 @@ export default function LerenPage() {
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <span className="text-3xl">📚</span>
-        <h1 className="text-2xl font-bold">Informatie, leren en tips</h1>
+        <h1 className="text-2xl font-bold">Informatie, tips & hulpmiddelen</h1>
       </div>
 
       {/* C2.1: Introductietekst */}

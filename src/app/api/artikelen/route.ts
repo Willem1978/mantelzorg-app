@@ -38,6 +38,8 @@ export async function GET(request: NextRequest) {
         bron: true,
         emoji: true,
         categorie: true,
+        subHoofdstuk: true,
+        bronLabel: true,
         type: true,
         belastingNiveau: true,
         gemeente: true,

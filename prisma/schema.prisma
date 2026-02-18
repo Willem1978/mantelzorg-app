@@ -399,9 +399,12 @@ model Zorgorganisatie {
   doelgroep             String?
   kosten                String?
   locatieOmschrijving   String?
-  onderdeelTest         String?
+  onderdeelTest         String?             // Categorie: Persoonlijke verzorging, Ondersteuning, Respijtzorg, etc.
   soortHulp             String?
   voorwaarden           String?
+  verschijntIn          String[]            // Array van plekken waar dit item verschijnt (voor cross-referencing)
+  routeLabel            String?             // Wet/route label: Wmo, Zvw, Wlz (voor display op hulpkaarten)
+  bronLabel             String?             // Bronlabel: Landelijk, Gemeente, Zvw, Wlz, Overig
 
   @@index([isActief, gemeente])
   @@index([isActief, onderdeelTest])
@@ -446,10 +449,12 @@ model Artikel {
   url             String?         // Externe link
   bron            String?         // Bronnaam (bijv. "MantelzorgNL")
   emoji           String?
-  categorie       String          // Slug: praktische-tips, zelfzorg, rechten, financieel
+  categorie       String          // Slug: praktische-tips, zelfzorg, rechten, financieel, hulpmiddelen-producten
+  subHoofdstuk    String?         // Sub-chapter slug binnen categorie (bijv. "dagelijks-organiseren", "overbelasting-herkennen")
   type            ArtikelType     @default(ARTIKEL)
   status          ArtikelStatus   @default(CONCEPT)
   belastingNiveau BelastingNiveauFilter @default(ALLE)
+  bronLabel       String?         // Bronlabel: Landelijk, Gemeente (Wmo), Zorgverzekeraar (Zvw), Wlz, Overig
   gemeente        String?         // Alleen voor gemeente-nieuws
   publicatieDatum DateTime?
   sorteerVolgorde Int             @default(0)
@@ -461,6 +466,7 @@ model Artikel {
   @@index([categorie, isActief])
   @@index([type, isActief])
   @@index([gemeente])
+  @@index([subHoofdstuk])
 }
 
 model AuditLog {
