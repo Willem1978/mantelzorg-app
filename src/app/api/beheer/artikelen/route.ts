@@ -58,6 +58,8 @@ export async function POST(request: NextRequest) {
         bron: body.bron || null,
         emoji: body.emoji || null,
         categorie: body.categorie,
+        subHoofdstuk: body.subHoofdstuk || null,
+        bronLabel: body.bronLabel || null,
         type: body.type || "ARTIKEL",
         status: body.status || "CONCEPT",
         belastingNiveau: body.belastingNiveau || "ALLE",

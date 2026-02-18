@@ -27,6 +27,8 @@ export async function PUT(
         bron: body.bron || null,
         emoji: body.emoji || null,
         categorie: body.categorie,
+        subHoofdstuk: body.subHoofdstuk || null,
+        bronLabel: body.bronLabel || null,
         type: body.type || "ARTIKEL",
         status: body.status || "CONCEPT",
         belastingNiveau: body.belastingNiveau || "ALLE",

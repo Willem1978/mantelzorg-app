@@ -181,7 +181,7 @@ async function getHulpbronnenVoorTaken(
       isActief: true,
       OR: [
         { onderdeelTest: 'Mantelzorgondersteuning' },
-        { soortHulp: { in: ['Emotionele steun', 'Respijtzorg', 'Lotgenotencontact'] } },
+        { soortHulp: { in: ['Emotionele steun', 'Respijtzorg', 'Lotgenotencontact', 'Educatie', 'Leren en training'] } },
       ],
       gemeente: null,
       AND: niveauFilter,
@@ -203,7 +203,9 @@ async function getHulpbronnenVoorTaken(
   ]
 
   // Alle hulpbronnen per categorie (voor hulp zoeken sectie)
+  // Inclusief nieuwe "Voor jou" categorieën
   const alleOnderdelen = [
+    // Voor naaste
     'Persoonlijke verzorging',
     'Huishoudelijke taken',
     'Vervoer',
@@ -214,19 +216,26 @@ async function getHulpbronnenVoorTaken(
     'Boodschappen',
     'Klusjes in en om het huis',
     'Huisdieren',
+    // Voor jou (mantelzorger)
     'Mantelzorgondersteuning',
+    'Respijtzorg',
+    'Emotionele steun',
+    'Lotgenotencontact',
+    'Leren en training',
   ]
 
   // Alle categorieën PARALLEL ophalen (ipv sequentieel in for-loop)
   const categorieResultaten = await Promise.all(
     alleOnderdelen.map(async (onderdeel) => {
       const [lokaal, landelijkCat] = await Promise.all([
-        // Lokaal bij zorgvrager (behalve mantelzorgondersteuning, die is bij mantelzorger)
+        // Lokaal bij zorgvrager (behalve mantelzorger-categorieën, die zijn bij mantelzorger)
         prisma.zorgorganisatie.findMany({
           where: {
             isActief: true,
             onderdeelTest: onderdeel,
-            gemeente: onderdeel === 'Mantelzorgondersteuning' ? mantelzorgerGemeente : zorgvragerGemeente,
+            gemeente: ['Mantelzorgondersteuning', 'Respijtzorg', 'Emotionele steun', 'Lotgenotencontact', 'Leren en training'].includes(onderdeel)
+              ? mantelzorgerGemeente
+              : zorgvragerGemeente,
             AND: niveauFilter,
           },
           orderBy: { naam: 'asc' },

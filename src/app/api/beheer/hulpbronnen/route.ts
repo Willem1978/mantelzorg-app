@@ -156,6 +156,9 @@ export async function POST(request: NextRequest) {
     kosten: body.kosten || null,
     doelgroep: body.doelgroep || null,
     aanmeldprocedure: body.aanmeldprocedure || null,
+    verschijntIn: body.verschijntIn || [],
+    routeLabel: body.routeLabel || null,
+    bronLabel: body.bronLabel || null,
   }
 
   try {

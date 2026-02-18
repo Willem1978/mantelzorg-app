@@ -11,6 +11,8 @@ interface Artikel {
   bron: string | null
   emoji: string | null
   categorie: string
+  subHoofdstuk: string | null
+  bronLabel: string | null
   type: string
   status: string
   belastingNiveau: string
@@ -27,7 +29,51 @@ const categorieOpties = [
   { value: "zelfzorg", label: "Zelfzorg" },
   { value: "rechten", label: "Rechten" },
   { value: "financieel", label: "Financieel" },
+  { value: "hulpmiddelen-producten", label: "Hulpmiddelen & producten" },
   { value: "gemeentenieuws", label: "Gemeentenieuws" },
+]
+
+// Sub-hoofdstuk opties per categorie
+const subHoofdstukOpties: Record<string, { value: string; label: string }[]> = {
+  "praktische-tips": [
+    { value: "", label: "Geen sub-hoofdstuk" },
+    { value: "dagelijks-organiseren", label: "Dagelijks organiseren" },
+    { value: "samen-organiseren", label: "Samen organiseren met familie/netwerk" },
+    { value: "veiligheid-zware-taken", label: "Veiligheid bij zware taken" },
+  ],
+  "zelfzorg": [
+    { value: "", label: "Geen sub-hoofdstuk" },
+    { value: "overbelasting-herkennen", label: "Overbelasting herkennen" },
+    { value: "pauze-en-respijt", label: "Pauze en respijt organiseren" },
+    { value: "emotionele-steun", label: "Emotionele steun en praten" },
+  ],
+  "rechten": [
+    { value: "", label: "Geen sub-hoofdstuk" },
+    { value: "routekaart-wmo-zvw-wlz", label: "Routekaart Wmo/Zvw/Wlz" },
+    { value: "gemeente-wmo-aanvragen", label: "Gemeente (Wmo) aanvragen" },
+    { value: "clientondersteuning", label: "Gratis clientondersteuning" },
+  ],
+  "financieel": [
+    { value: "", label: "Geen sub-hoofdstuk" },
+    { value: "eigen-bijdrage-kosten", label: "Eigen bijdrage en kosten" },
+    { value: "mantelzorgwaardering", label: "Mantelzorgwaardering" },
+    { value: "pgb-aanvragen-beheer", label: "Pgb: aanvragen en beheer" },
+    { value: "vergoedingen-hulpmiddelen", label: "Vergoedingen hulpmiddelen" },
+  ],
+  "hulpmiddelen-producten": [
+    { value: "", label: "Geen sub-hoofdstuk" },
+    { value: "hulpmiddelen-overzicht", label: "Hulpmiddelen overzicht" },
+    { value: "vergoedingsroutes", label: "Vergoedingsroutes" },
+  ],
+}
+
+const bronLabelOpties = [
+  { value: "", label: "Geen bronlabel" },
+  { value: "Landelijk", label: "Landelijk" },
+  { value: "Gemeente (Wmo)", label: "Gemeente (Wmo)" },
+  { value: "Zorgverzekeraar (Zvw)", label: "Zorgverzekeraar (Zvw)" },
+  { value: "Wlz", label: "Wlz" },
+  { value: "Overig", label: "Overig" },
 ]
 
 const typeOpties = [
@@ -52,6 +98,8 @@ const LEEG_FORMULIER = {
   bron: "",
   emoji: "",
   categorie: "praktische-tips",
+  subHoofdstuk: "",
+  bronLabel: "",
   type: "ARTIKEL",
   status: "CONCEPT",
   belastingNiveau: "ALLE",
@@ -138,6 +186,8 @@ export default function ArtikelenPage() {
       bron: artikel.bron || "",
       emoji: artikel.emoji || "",
       categorie: artikel.categorie,
+      subHoofdstuk: artikel.subHoofdstuk || "",
+      bronLabel: artikel.bronLabel || "",
       type: artikel.type,
       status: artikel.status,
       belastingNiveau: artikel.belastingNiveau,
@@ -301,13 +351,43 @@ export default function ArtikelenPage() {
                   value={formulier.categorie}
                   onChange={(e) => {
                     const nieuweCat = e.target.value
-                    const updates: any = { categorie: nieuweCat }
+                    const updates: any = { categorie: nieuweCat, subHoofdstuk: "" }
                     if (nieuweCat === "gemeentenieuws") updates.type = "GEMEENTE_NIEUWS"
                     setFormulier({ ...formulier, ...updates })
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                 >
                   {categorieOpties.filter((o) => o.value).map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Sub-hoofdstuk (dynamisch op basis van categorie) */}
+              {subHoofdstukOpties[formulier.categorie] && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Sub-hoofdstuk</label>
+                  <select
+                    value={formulier.subHoofdstuk}
+                    onChange={(e) => setFormulier({ ...formulier, subHoofdstuk: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  >
+                    {subHoofdstukOpties[formulier.categorie].map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Bronlabel */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bronlabel</label>
+                <select
+                  value={formulier.bronLabel}
+                  onChange={(e) => setFormulier({ ...formulier, bronLabel: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                >
+                  {bronLabelOpties.map((o) => (
                     <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
                 </select>
