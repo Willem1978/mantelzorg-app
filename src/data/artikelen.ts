@@ -37,7 +37,7 @@ export const artikelen: Record<string, Artikel[]> = {
       titel: "Tips voor veilig medicijngebruik",
       beschrijving:
         "Als mantelzorger help je vaak met medicijnen. Neem altijd het medicijnoverzicht mee naar de dokter. Let op veranderingen zoals sufheid of verwardheid.",
-      url: "https://www.zorgvoorbeter.nl/medicatieveiligheid",
+      url: "https://www.zorgvoorbeter.nl/thema-s/medicatieveiligheid",
       bron: "Zorg voor Beter",
       emoji: "💊",
     },
@@ -100,7 +100,7 @@ export const artikelen: Record<string, Artikel[]> = {
       titel: "Dagstructuur bij dementie",
       beschrijving:
         "Een vaste dagindeling geeft rust voor iemand met dementie. Begin vroeg met dagbesteding. Het geeft structuur en jij hebt even tijd voor jezelf.",
-      url: "https://www.dementie.nl/dagbesteding",
+      url: "https://www.dementie.nl/zorg-en-regelzaken/zorg-en-hulp-voor-thuis/dagbesteding-voor-je-naaste-met-dementie",
       bron: "Dementie.nl",
       emoji: "🧠",
     },
@@ -241,7 +241,7 @@ export const artikelen: Record<string, Artikel[]> = {
       titel: "Gratis onafhankelijke clientondersteuning",
       beschrijving:
         "Kom je er niet uit? Een clientondersteuner helpt gratis bij het organiseren van zorg en ondersteuning. Onafhankelijk en via gemeente of Wlz-route beschikbaar.",
-      url: "https://www.rijksoverheid.nl/onderwerpen/zorg-en-ondersteuning-thuis/clientondersteuning",
+      url: "https://www.regelhulp.nl/onderwerpen/clientondersteuning",
       bron: "Rijksoverheid",
       emoji: "🤝",
     },
@@ -307,7 +307,7 @@ export const artikelen: Record<string, Artikel[]> = {
       titel: "Hulpmiddelen via de Wmo of Wlz",
       beschrijving:
         "Hulpmiddelen zoals een tillift, rolstoel of hoog-laag bed kunnen vergoed worden. Vraag altijd eerst vergoeding aan voordat je iets koopt.",
-      url: "https://www.rijksoverheid.nl/onderwerpen/zorg-en-ondersteuning-thuis/hulpmiddelen-in-en-om-het-huis",
+      url: "https://www.regelhulp.nl/onderwerpen/hulpmiddelen/hulpmiddelen-thuis-wonen",
       bron: "Rijksoverheid",
       emoji: "🦽",
     },
