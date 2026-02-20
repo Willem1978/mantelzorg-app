@@ -137,7 +137,7 @@ async function main() {
     { id: 'zz-7', titel: 'Logeeropvang en vakantiemogelijkheden', beschrijving: 'Je naaste kan tijdelijk logeren in een zorginstelling zodat jij op vakantie kunt. Vraag het aan via je gemeente of zorgkantoor. Plan het op tijd.', url: 'https://www.mantelzorg.nl/onderwerpen/vervangende-zorg/', bron: 'MantelzorgNL', emoji: '🏖️', categorie: 'zelfzorg', subHoofdstuk: 'pauze-en-respijt', bronLabel: 'Gemeente (Wmo)', sorteerVolgorde: 5 },
     // Sub: Emotionele steun en praten
     { id: 'zz-4', titel: 'Werk en mantelzorg combineren', beschrijving: 'Veel mantelzorgers werken ook. Praat erover met je werkgever. Vaak is er meer mogelijk dan je denkt, zoals thuiswerken of aangepaste werktijden.', url: 'https://www.mantelzorg.nl/onderwerpen/werk/werkende-mantelzorgers-valkuilen-en-tips/', bron: 'MantelzorgNL', emoji: '💼', categorie: 'zelfzorg', subHoofdstuk: 'emotionele-steun', bronLabel: 'Landelijk', sorteerVolgorde: 6 },
-    { id: 'zz-5', titel: 'De Mantelzorglijn: praat met iemand', beschrijving: 'Heb je vragen of wil je je verhaal kwijt? Bel de Mantelzorglijn op 030 760 60 55. Je kunt ook WhatsAppen of mailen. Ze staan voor je klaar.', url: 'https://www.mantelzorg.nl/onderwerpen/ondersteuning/mantelzorglijn-voor-al-je-vragen-over-mantelzorg/', bron: 'MantelzorgNL', emoji: '📞', categorie: 'zelfzorg', subHoofdstuk: 'emotionele-steun', bronLabel: 'Landelijk', sorteerVolgorde: 7 },
+    { id: 'zz-5', titel: 'De Mantelzorglijn: praat met iemand', beschrijving: 'Heb je vragen of wil je je verhaal kwijt? Bel de Mantelzorglijn op 030 760 60 55. Je kunt ook WhatsAppen of mailen. Ze staan voor je klaar.', url: 'https://www.mantelzorg.nl/onderwerpen/ondersteuning/waar-kun-je-terecht/mantelzorglijn', bron: 'MantelzorgNL', emoji: '📞', categorie: 'zelfzorg', subHoofdstuk: 'emotionele-steun', bronLabel: 'Landelijk', sorteerVolgorde: 7 },
     { id: 'zz-8', titel: 'Lotgenotencontact: praat met andere mantelzorgers', beschrijving: 'Het helpt om te praten met mensen die hetzelfde meemaken. Via MantelzorgNL of je steunpunt vind je lotgenotengroepen bij jou in de buurt.', url: 'https://www.mantelzorg.nl/onderwerpen/ondersteuning/', bron: 'MantelzorgNL', emoji: '👥', categorie: 'zelfzorg', subHoofdstuk: 'emotionele-steun', bronLabel: 'Landelijk', sorteerVolgorde: 8 },
     // === JE RECHTEN ===
     // Sub: Routekaart Wmo/Zvw/Wlz
@@ -256,7 +256,7 @@ async function main() {
     {
       title: 'Mantelzorglijn',
       description: 'Gratis telefonische ondersteuning voor mantelzorgers',
-      url: 'https://www.mantelzorg.nl/onderwerpen/ondersteuning/mantelzorglijn-voor-al-je-vragen-over-mantelzorg/',
+      url: 'https://www.mantelzorg.nl/onderwerpen/ondersteuning/waar-kun-je-terecht/mantelzorglijn',
       type: 'NATIONAL_SERVICE' as const,
       category: 'Ondersteuning',
       isNational: true,

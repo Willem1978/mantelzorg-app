@@ -166,7 +166,7 @@ export const artikelen: Record<string, Artikel[]> = {
       titel: "De Mantelzorglijn: praat met iemand",
       beschrijving:
         "Heb je vragen of wil je je verhaal kwijt? Bel de Mantelzorglijn op 030 760 60 55. Je kunt ook WhatsAppen of mailen. Ze staan voor je klaar.",
-      url: "https://www.mantelzorg.nl/onderwerpen/ondersteuning/mantelzorglijn-voor-al-je-vragen-over-mantelzorg/",
+      url: "https://www.mantelzorg.nl/onderwerpen/ondersteuning/waar-kun-je-terecht/mantelzorglijn",
       bron: "MantelzorgNL",
       emoji: "📞",
     },

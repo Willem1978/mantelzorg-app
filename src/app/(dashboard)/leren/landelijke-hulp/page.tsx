@@ -81,18 +81,15 @@ export default function LandelijkeHulpPage() {
     )
   }
 
-  // Groepeer hulpbronnen
-  const hulplijnen = hulpbronnen.filter(h => h.telefoon)
-  const wegwijzers = hulpbronnen.filter(h =>
-    h.soortHulp?.toLowerCase().includes('informatie') ||
-    h.soortHulp?.toLowerCase().includes('advies') ||
-    h.soortHulp?.toLowerCase().includes('wegwijzer')
+  // Groepeer hulpbronnen op basis van soortHulp
+  const hulplijnen = hulpbronnen.filter(h =>
+    h.soortHulp?.toLowerCase().includes('hulplijn')
   )
-  const overig = hulpbronnen.filter(h =>
-    !h.telefoon &&
-    !h.soortHulp?.toLowerCase().includes('informatie') &&
-    !h.soortHulp?.toLowerCase().includes('advies') &&
-    !h.soortHulp?.toLowerCase().includes('wegwijzer')
+  const overheidFinancieel = hulpbronnen.filter(h =>
+    h.soortHulp?.toLowerCase().includes('overheid')
+  )
+  const belangenorganisaties = hulpbronnen.filter(h =>
+    h.soortHulp?.toLowerCase().includes('belangenorganisatie')
   )
 
   return (
@@ -113,62 +110,58 @@ export default function LandelijkeHulpPage() {
         Hulplijnen die je kunt bellen, en wegwijzers die je helpen uitzoeken waar je moet zijn.
       </p>
 
-      {/* Uitleg */}
-      <div className="bg-primary/5 rounded-xl p-3 mb-6">
-        <p className="text-sm text-muted-foreground">
-          Bel, chat of bezoek de website. Bewaar iets met het <span className="text-primary font-semibold">hartje</span>.
-        </p>
-      </div>
-
       {hulpbronnen.length === 0 && (
         <div className="text-center py-12 text-muted-foreground ker-card">
           <p>Er zijn nog geen landelijke hulpbronnen beschikbaar.</p>
         </div>
       )}
 
-      {/* Landelijke hulplijnen */}
+      {/* Hulplijnen */}
       {hulplijnen.length > 0 && (
         <div className="mb-6">
           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-2">
-            📞 Landelijke hulplijnen en adviespunten
+            📞 Hulplijnen
           </p>
           <p className="text-xs text-muted-foreground mb-3">
-            Bel, chat of bezoek de website. Bewaar met het hartje.
+            Direct bellen voor een luisterend oor, advies of informatie.
           </p>
           <div className="space-y-2">
             {hulplijnen.map((hulp, i) => (
-              <HulpCard key={`hulplijn-${i}`} hulp={hulp} favorieten={favorieten} categorie="Landelijke hulplijnen" />
+              <HulpCard key={`hulplijn-${i}`} hulp={hulp} favorieten={favorieten} categorie="Hulplijnen" />
             ))}
           </div>
         </div>
       )}
 
-      {/* Wegwijzers en loketten */}
-      {wegwijzers.length > 0 && (
+      {/* Overheid & financieel */}
+      {overheidFinancieel.length > 0 && (
         <div className="mb-6">
           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-2">
-            🗺️ Wegwijzers & loketten
+            🏛️ Overheid & financieel
           </p>
           <p className="text-xs text-muted-foreground mb-3">
-            &quot;Waar moet ik zijn?&quot; — Regelhulp, Zorginstituut, CAK, SVB.
+            Loketten en wegwijzers voor regelingen, vergoedingen en eigen bijdrage.
           </p>
           <div className="space-y-2">
-            {wegwijzers.map((hulp, i) => (
-              <HulpCard key={`wegwijzer-${i}`} hulp={hulp} favorieten={favorieten} categorie="Wegwijzers" />
+            {overheidFinancieel.map((hulp, i) => (
+              <HulpCard key={`overheid-${i}`} hulp={hulp} favorieten={favorieten} categorie="Overheid & financieel" />
             ))}
           </div>
         </div>
       )}
 
-      {/* Overig */}
-      {overig.length > 0 && (
+      {/* Belangenorganisaties */}
+      {belangenorganisaties.length > 0 && (
         <div className="mb-6">
           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-2">
-            📋 Overige landelijke bronnen
+            🤝 Belangenorganisaties
+          </p>
+          <p className="text-xs text-muted-foreground mb-3">
+            Verenigingen die opkomen voor mantelzorgers met informatie, tips en lotgenotencontact.
           </p>
           <div className="space-y-2">
-            {overig.map((hulp, i) => (
-              <HulpCard key={`overig-${i}`} hulp={hulp} favorieten={favorieten} categorie="Landelijk" />
+            {belangenorganisaties.map((hulp, i) => (
+              <HulpCard key={`belang-${i}`} hulp={hulp} favorieten={favorieten} categorie="Belangenorganisaties" />
             ))}
           </div>
         </div>
