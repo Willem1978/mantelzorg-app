@@ -19,7 +19,7 @@ interface Favoriet {
   createdAt: string
 }
 
-type FavTab = "voor-jou" | "voor-naaste" | "algemeen" | "informatie"
+type FavTab = "voor-jou" | "voor-naaste" | "informatie"
 
 // Categorieën die bij "Voor jou" horen (mantelzorger)
 const CATEGORIEEN_MANTELZORGER = [
@@ -108,12 +108,14 @@ export default function FavorietenPage() {
   const voorNaaste = favorieten.filter(f =>
     f.type === "HULP" && CATEGORIEEN_ZORGVRAGER.includes(f.categorie || "")
   )
-  const algemeen = favorieten.filter(f =>
+  // Algemeen (landelijke hulpbronnen) + informatie-artikelen samenvoegen in "Informatie"
+  const algemeenHulp = favorieten.filter(f =>
     f.type === "HULP" &&
     !CATEGORIEEN_MANTELZORGER.includes(f.categorie || "") &&
     !CATEGORIEEN_ZORGVRAGER.includes(f.categorie || "")
   )
-  const informatie = favorieten.filter(f => f.type === "INFORMATIE")
+  const informatieArtikelen = favorieten.filter(f => f.type === "INFORMATIE")
+  const informatie = [...informatieArtikelen, ...algemeenHulp]
 
   const geenFavorieten = favorieten.length === 0
 
@@ -126,7 +128,6 @@ export default function FavorietenPage() {
     switch (activeTab) {
       case "voor-jou": return voorJou
       case "voor-naaste": return voorNaaste
-      case "algemeen": return algemeen
       case "informatie": return informatie
       default: return []
     }
@@ -193,8 +194,8 @@ export default function FavorietenPage() {
             </p>
           </div>
 
-          {/* 2x2 grid met 4 gelijke tabs */}
-          <div className="grid grid-cols-2 gap-2 mb-6">
+          {/* 3 gelijke tabs */}
+          <div className="grid grid-cols-3 gap-2 mb-6">
             <TabButton
               label="Voor jou"
               emoji="💜"
@@ -212,15 +213,6 @@ export default function FavorietenPage() {
               isActive={activeTab === "voor-naaste"}
               onClick={() => handleTabClick("voor-naaste")}
               disabled={voorNaaste.length === 0}
-            />
-            <TabButton
-              label="Algemeen"
-              emoji="🌍"
-              count={algemeen.length}
-              countAfgerond={countAfgerond(algemeen)}
-              isActive={activeTab === "algemeen"}
-              onClick={() => handleTabClick("algemeen")}
-              disabled={algemeen.length === 0}
             />
             <TabButton
               label="Informatie"

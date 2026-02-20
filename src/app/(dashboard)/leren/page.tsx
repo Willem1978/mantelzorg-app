@@ -216,7 +216,7 @@ export default function LerenPage() {
       {/* Gemeente Nieuws - bovenaan als er nieuws is */}
       <Link
         href="/leren/gemeente-nieuws"
-        className="ker-card hover:shadow-md transition-shadow flex items-center gap-4 p-4 mb-6 relative"
+        className="ker-card hover:shadow-md transition-shadow flex items-center gap-4 p-4 mb-4 relative"
       >
         <span className="text-3xl">🏘️</span>
         <div className="flex-1">
@@ -236,6 +236,24 @@ export default function LerenPage() {
             {aantalNieuwItems}
           </span>
         )}
+        {/* Pijl rechts */}
+        <svg className="w-5 h-5 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </Link>
+
+      {/* Landelijke hulp & wegwijzers */}
+      <Link
+        href="/leren/landelijke-hulp"
+        className="ker-card hover:shadow-md transition-shadow flex items-center gap-4 p-4 mb-6 relative"
+      >
+        <span className="text-3xl">🌍</span>
+        <div className="flex-1">
+          <h2 className="font-bold text-lg">Landelijke hulp & wegwijzers</h2>
+          <p className="text-sm text-muted-foreground">
+            Hulplijnen, adviespunten en wegwijzers
+          </p>
+        </div>
         {/* Pijl rechts */}
         <svg className="w-5 h-5 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

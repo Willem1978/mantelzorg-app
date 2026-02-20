@@ -187,7 +187,7 @@ const hulpvraagCategories = [
   { value: "OTHER", label: "Anders", icon: "📝", hint: "Iets anders" },
 ]
 
-type TabType = 'voor-jou' | 'voor-naaste' | 'algemeen'
+type TabType = 'voor-jou' | 'voor-naaste'
 
 // Wrapper component voor Suspense boundary (nodig voor useSearchParams)
 export default function HulpPage() {
@@ -231,7 +231,7 @@ function HulpPageContent() {
     const tabParam = searchParams.get('tab') as TabType | null
     const categorieParam = searchParams.get('categorie')
 
-    if (tabParam && ['voor-jou', 'voor-naaste', 'algemeen'].includes(tabParam)) {
+    if (tabParam && ['voor-jou', 'voor-naaste'].includes(tabParam)) {
       setActiveTab(tabParam)
       if (categorieParam) {
         setSelectedCategorie(decodeURIComponent(categorieParam))
@@ -471,16 +471,6 @@ function HulpPageContent() {
     ).length
   }
 
-  // Landelijke hulpbronnen die NIET relevant zijn voor de mantelzorger categorieën
-  const getOverigeLandelijke = (): LandelijkeHulpbron[] => {
-    if (!hulpData?.landelijk) return []
-
-    const relevanteKeywords = ['ondersteuning', 'mantelzorg', 'respijt', 'emotioneel', 'steun', 'lotgenoot', 'lotgenoten', 'educatie', 'training', 'cursus', 'leren']
-    return hulpData.landelijk.filter(h =>
-      !relevanteKeywords.some(kw => h.soortHulp?.toLowerCase().includes(kw))
-    )
-  }
-
   const locatieMantelzorger = formatLocatie(hulpData?.locatie?.mantelzorger)
   const locatieZorgvrager = formatLocatie(hulpData?.locatie?.zorgvrager)
 
@@ -675,7 +665,7 @@ function HulpPageContent() {
         )}
       </div>
 
-      {/* DRIE TABS NAAST ELKAAR */}
+      {/* TWEE TABS NAAST ELKAAR */}
       {(() => {
         // Bereken totalen voor badges
         // Voor jou: lokale hulpbronnen + relevante landelijke hulpbronnen
@@ -685,11 +675,9 @@ function HulpPageContent() {
         const aantalVoorJou = aantalLokaalVoorJou + aantalLandelijkVoorJou
 
         const aantalZwareTaken = hulpData?.zwareTaken?.length || 0
-        // Algemeen: alleen overige landelijke hulpbronnen die niet in categorieën passen
-        const aantalLandelijk = getOverigeLandelijke().length
 
         return (
-          <div className="grid grid-cols-3 gap-2 mb-6">
+          <div className="grid grid-cols-2 gap-2 mb-6">
             <button
               onClick={() => handleTabClick('voor-jou')}
               className={cn(
@@ -731,28 +719,6 @@ function HulpPageContent() {
                     : "bg-[var(--accent-amber)] text-white"
                 )}>
                   {aantalZwareTaken}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => handleTabClick('algemeen')}
-              className={cn(
-                "py-3 px-2 rounded-xl font-medium text-sm transition-all text-center relative",
-                activeTab === 'algemeen'
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-              )}
-            >
-              <span className="text-lg block mb-1">🌍</span>
-              Algemeen
-              {aantalLandelijk > 0 && (
-                <span className={cn(
-                  "absolute -top-1 -right-1 w-5 h-5 text-xs font-bold rounded-full flex items-center justify-center",
-                  activeTab === 'algemeen'
-                    ? "bg-white text-primary"
-                    : "bg-primary text-white"
-                )}>
-                  {aantalLandelijk}
                 </span>
               )}
             </button>
@@ -1016,97 +982,6 @@ function HulpPageContent() {
               )}
             </div>
           )}
-        </div>
-      )}
-
-      {/* TAB: ALGEMEEN - Landelijke hulplijnen en wegwijzers */}
-      {activeTab === 'algemeen' && (
-        <div className="space-y-4">
-          <div className="bg-muted rounded-xl p-4 mb-2">
-            <p className="text-sm text-foreground">
-              <span className="font-medium">🌍 Landelijke hulp & wegwijzers.</span> Hulplijnen die je kunt bellen,
-              en wegwijzers die je helpen uitzoeken waar je moet zijn.
-            </p>
-          </div>
-          {(() => {
-            const overigeLandelijke = getOverigeLandelijke()
-            const alleLandelijke = hulpData?.landelijk || []
-
-            if (alleLandelijke.length === 0) {
-              return (
-                <div className="text-center py-8 text-muted-foreground ker-card">
-                  <p>Er zijn nog geen landelijke hulpbronnen beschikbaar.</p>
-                </div>
-              )
-            }
-
-            // Groepeer ALLE landelijke hulpbronnen in twee secties
-            const hulplijnen = alleLandelijke.filter(h => h.telefoon)
-            const wegwijzers = alleLandelijke.filter(h =>
-              h.soortHulp?.toLowerCase().includes('informatie') ||
-              h.soortHulp?.toLowerCase().includes('advies') ||
-              h.soortHulp?.toLowerCase().includes('wegwijzer')
-            )
-            // Overige die niet hulplijn of wegwijzer zijn
-            const overig = alleLandelijke.filter(h =>
-              !h.telefoon &&
-              !h.soortHulp?.toLowerCase().includes('informatie') &&
-              !h.soortHulp?.toLowerCase().includes('advies') &&
-              !h.soortHulp?.toLowerCase().includes('wegwijzer')
-            )
-
-            return (
-              <>
-                {/* Landelijke hulplijnen */}
-                {hulplijnen.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-2">
-                      📞 Landelijke hulplijnen en adviespunten
-                    </p>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      Bel, chat of bezoek de website. Bewaar met het hartje.
-                    </p>
-                    <div className="space-y-2">
-                      {hulplijnen.map((hulp, i) => (
-                        <LandelijkeHulpCard key={`hulplijn-${i}`} hulp={hulp} favorieten={favorieten} categorie="Landelijke hulplijnen" />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Wegwijzers en loketten */}
-                {wegwijzers.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-2">
-                      🗺️ Wegwijzers & loketten
-                    </p>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      &quot;Waar moet ik zijn?&quot; — Regelhulp, Zorginstituut, CAK, SVB.
-                    </p>
-                    <div className="space-y-2">
-                      {wegwijzers.map((hulp, i) => (
-                        <LandelijkeHulpCard key={`wegwijzer-${i}`} hulp={hulp} favorieten={favorieten} categorie="Wegwijzers" />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Overig */}
-                {overig.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-2">
-                      📋 Overige landelijke bronnen
-                    </p>
-                    <div className="space-y-2">
-                      {overig.map((hulp, i) => (
-                        <LandelijkeHulpCard key={`overig-${i}`} hulp={hulp} favorieten={favorieten} categorie="Landelijk" />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
-            )
-          })()}
         </div>
       )}
 
