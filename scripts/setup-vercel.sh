@@ -1,0 +1,48 @@
+#!/bin/bash
+# Setup script voor Vercel deployment van mantelzorg-app
+# Voer uit met: bash scripts/setup-vercel.sh
+
+echo "🔧 Mantelzorg-app Vercel Setup"
+echo "=============================="
+
+# Check of vercel CLI geinstalleerd is
+if ! command -v vercel &> /dev/null; then
+    echo "📦 Vercel CLI installeren..."
+    npm install -g vercel
+fi
+
+# Login bij Vercel
+echo ""
+echo "📋 Stap 1: Inloggen bij Vercel..."
+vercel login
+
+# Link project
+echo ""
+echo "📋 Stap 2: Project koppelen aan Vercel..."
+vercel link
+
+# Environment variables instellen
+echo ""
+echo "📋 Stap 3: Environment variables instellen..."
+
+vercel env add DATABASE_URL production <<< "postgresql://postgres:pwdZnKMWsirV6CgV@db.akqwesqwbyniyekyuebf.supabase.co:5432/postgres"
+echo "  ✅ DATABASE_URL"
+
+vercel env add DIRECT_URL production <<< "postgresql://postgres:pwdZnKMWsirV6CgV@db.akqwesqwbyniyekyuebf.supabase.co:5432/postgres"
+echo "  ✅ DIRECT_URL"
+
+vercel env add AUTH_SECRET production <<< "I4otrwnhi1dOFRpgitPwAMDpj8fBLHBwHojQVuf6g+w="
+echo "  ✅ AUTH_SECRET"
+
+echo ""
+read -p "Wat is je Vercel domein? (bijv. mantelzorg-app.vercel.app): " DOMAIN
+vercel env add NEXTAUTH_URL production <<< "https://$DOMAIN"
+echo "  ✅ NEXTAUTH_URL"
+
+# Deploy
+echo ""
+echo "📋 Stap 4: Deployen..."
+vercel --prod
+
+echo ""
+echo "🎉 Klaar! Je app is nu live op Vercel."
