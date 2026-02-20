@@ -81,15 +81,20 @@ export default function LandelijkeHulpPage() {
     )
   }
 
-  // Groepeer hulpbronnen op basis van soortHulp
+  // Groepeer hulpbronnen op basis van soortHulp of naam
+  const hulplijnNamen = ['mantelzorglijn', 'luisterlijn', 'alzheimer', 'zilverlijn', 'sensoor']
+  const overheidNamen = ['regelhulp', 'cak', 'svb', 'zorginstituut']
+
   const hulplijnen = hulpbronnen.filter(h =>
-    h.soortHulp?.toLowerCase().includes('hulplijn')
+    h.soortHulp?.toLowerCase().includes('hulplijn') ||
+    hulplijnNamen.some(n => h.naam.toLowerCase().includes(n))
   )
   const overheidFinancieel = hulpbronnen.filter(h =>
-    h.soortHulp?.toLowerCase().includes('overheid')
+    h.soortHulp?.toLowerCase().includes('overheid') ||
+    overheidNamen.some(n => h.naam.toLowerCase().includes(n))
   )
   const belangenorganisaties = hulpbronnen.filter(h =>
-    h.soortHulp?.toLowerCase().includes('belangenorganisatie')
+    !hulplijnen.includes(h) && !overheidFinancieel.includes(h)
   )
 
   return (
