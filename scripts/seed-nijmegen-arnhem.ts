@@ -1161,7 +1161,7 @@ const landelijkeOrganisaties: ZorgorganisatieData[] = [
     beschrijving: 'Gratis hulplijn voor alle vragen over mantelzorg. Bel, WhatsApp of mail.',
     type: 'LANDELIJK',
     telefoon: '030 760 60 55',
-    website: 'https://www.mantelzorg.nl/mantelzorglijn/',
+    website: 'https://www.mantelzorg.nl/onderwerpen/ondersteuning/mantelzorglijn-voor-al-je-vragen-over-mantelzorg/',
     gemeente: null,
     soortHulp: 'Ondersteuning en advies',
     doelgroep: 'Alle mantelzorgers',

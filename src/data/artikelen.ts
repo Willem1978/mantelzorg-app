@@ -28,7 +28,7 @@ export const artikelen: Record<string, Artikel[]> = {
       titel: "Dagstructuur en weekplanning",
       beschrijving:
         "Een vaste dagindeling geeft rust. Maak een weekplanning en bekijk wat je kunt uitbesteden. Zo houd je overzicht en bespaar je energie.",
-      url: "https://www.mantelzorg.nl/mantelzorg/balans/",
+      url: "https://www.mantelzorg.nl/onderwerpen/balans/",
       bron: "MantelzorgNL",
       emoji: "📅",
     },
@@ -46,7 +46,7 @@ export const artikelen: Record<string, Artikel[]> = {
       titel: "Zorgrooster maken met familie",
       beschrijving:
         "Verdeel de zorgtaken over meerdere mensen. Maak een rooster zodat iedereen weet wanneer hij of zij aan de beurt is. Gebruik een gedeelde agenda.",
-      url: "https://www.mantelzorg.nl/mantelzorg/zorg/",
+      url: "https://www.mantelzorg.nl/onderwerpen/vervangende-zorg/",
       bron: "MantelzorgNL",
       emoji: "📋",
     },
@@ -55,7 +55,7 @@ export const artikelen: Record<string, Artikel[]> = {
       titel: "Samenwerken met de thuiszorg",
       beschrijving:
         "Maak goede afspraken met de thuiszorg of het verpleeghuis. Bespreek het zorgplan en maak een zorgrooster. Zo weet iedereen wie wat doet.",
-      url: "https://www.mantelzorg.nl/mantelzorg/zorg/",
+      url: "https://www.mantelzorg.nl/onderwerpen/vervangende-zorg/",
       bron: "MantelzorgNL",
       emoji: "🤝",
     },
@@ -64,7 +64,7 @@ export const artikelen: Record<string, Artikel[]> = {
       titel: "Communiceren met je naaste",
       beschrijving:
         "Praten wordt soms moeilijker. Gebruik korte zinnen, maak oogcontact en geef de tijd om te antwoorden. Geduld en begrip maken een groot verschil.",
-      url: "https://www.dementie.nl/communicatie",
+      url: "https://www.dementie.nl/omgaan-met-dementie/communiceren-bij-dementie/tien-tips-voor-betere-communicatie",
       bron: "Dementie.nl",
       emoji: "💬",
     },
@@ -73,7 +73,7 @@ export const artikelen: Record<string, Artikel[]> = {
       titel: "Hulp vragen aan je omgeving",
       beschrijving:
         "Veel mensen willen wel helpen, maar weten niet hoe. Durf concreet te vragen: kun je maandag koken? Zo maak je het makkelijk om ja te zeggen.",
-      url: "https://www.mantelzorg.nl/mantelzorg/balans/",
+      url: "https://www.mantelzorg.nl/onderwerpen/balans/",
       bron: "MantelzorgNL",
       emoji: "🙋",
     },
@@ -112,7 +112,7 @@ export const artikelen: Record<string, Artikel[]> = {
       titel: "Herken overbelasting op tijd",
       beschrijving:
         "Mantelzorg kan zwaar zijn. Let op signalen zoals slecht slapen, prikkelbaar zijn of je somber voelen. Neem het serieus en zoek hulp als het te veel wordt.",
-      url: "https://www.mantelzorg.nl/mantelzorg/balans/overbelasting/",
+      url: "https://www.mantelzorg.nl/onderwerpen/balans/overbelasting-en-mantelzorg/",
       bron: "MantelzorgNL",
       emoji: "⚠️",
     },
@@ -121,7 +121,7 @@ export const artikelen: Record<string, Artikel[]> = {
       titel: "Grenzen stellen als mantelzorger",
       beschrijving:
         "Je wilt graag helpen, maar je kunt niet alles doen. Gezonde grenzen zijn nodig om het vol te houden. Leer hoe je nee zegt zonder je schuldig te voelen.",
-      url: "https://www.mantelzorg.nl/mantelzorg/balans/",
+      url: "https://www.mantelzorg.nl/onderwerpen/balans/mantelzorgen-met-gezonde-grenzen/",
       bron: "MantelzorgNL",
       emoji: "🛑",
     },
@@ -130,7 +130,7 @@ export const artikelen: Record<string, Artikel[]> = {
       titel: "De mantelzorgtest: hoe belast ben jij?",
       beschrijving:
         "Doe de online test en ontdek hoe het met je gaat. Je krijgt tips die passen bij jouw situatie. Het duurt maar een paar minuten.",
-      url: "https://www.mantelzorg.nl/mantelzorg/balans/",
+      url: "https://www.mantelzorg.nl/onderwerpen/balans/",
       bron: "MantelzorgNL",
       emoji: "📊",
     },
@@ -139,7 +139,7 @@ export const artikelen: Record<string, Artikel[]> = {
       titel: "Respijtzorg: even vrij van zorgen",
       beschrijving:
         "Geef de zorg tijdelijk aan iemand anders. Dat heet respijtzorg. Denk aan dagopvang, een logeerhuis of een vrijwilliger aan huis. Zo heb jij even rust.",
-      url: "https://www.mantelzorg.nl/mantelzorg/vervangende-zorg/",
+      url: "https://www.mantelzorg.nl/onderwerpen/vervangende-zorg/",
       bron: "MantelzorgNL",
       emoji: "🌿",
     },
@@ -148,7 +148,7 @@ export const artikelen: Record<string, Artikel[]> = {
       titel: "Logeeropvang en vakantiemogelijkheden",
       beschrijving:
         "Je naaste kan tijdelijk logeren in een zorginstelling zodat jij op vakantie kunt. Vraag het aan via je gemeente of zorgkantoor. Plan het op tijd.",
-      url: "https://www.mantelzorg.nl/mantelzorg/vervangende-zorg/",
+      url: "https://www.mantelzorg.nl/onderwerpen/vervangende-zorg/",
       bron: "MantelzorgNL",
       emoji: "🏖️",
     },
@@ -157,7 +157,7 @@ export const artikelen: Record<string, Artikel[]> = {
       titel: "Werk en mantelzorg combineren",
       beschrijving:
         "Veel mantelzorgers werken ook. Praat erover met je werkgever. Vaak is er meer mogelijk dan je denkt, zoals thuiswerken of aangepaste werktijden.",
-      url: "https://www.mantelzorg.nl/mantelzorg/werk/",
+      url: "https://www.mantelzorg.nl/onderwerpen/werk/werkende-mantelzorgers-valkuilen-en-tips/",
       bron: "MantelzorgNL",
       emoji: "💼",
     },
@@ -166,7 +166,7 @@ export const artikelen: Record<string, Artikel[]> = {
       titel: "De Mantelzorglijn: praat met iemand",
       beschrijving:
         "Heb je vragen of wil je je verhaal kwijt? Bel de Mantelzorglijn op 030 760 60 55. Je kunt ook WhatsAppen of mailen. Ze staan voor je klaar.",
-      url: "https://www.mantelzorg.nl/mantelzorglijn/",
+      url: "https://www.mantelzorg.nl/onderwerpen/ondersteuning/mantelzorglijn-voor-al-je-vragen-over-mantelzorg/",
       bron: "MantelzorgNL",
       emoji: "📞",
     },
@@ -175,7 +175,7 @@ export const artikelen: Record<string, Artikel[]> = {
       titel: "Lotgenotencontact: praat met andere mantelzorgers",
       beschrijving:
         "Het helpt om te praten met mensen die hetzelfde meemaken. Via MantelzorgNL of je steunpunt vind je lotgenotengroepen bij jou in de buurt.",
-      url: "https://www.mantelzorg.nl/mantelzorg/ondersteuning/",
+      url: "https://www.mantelzorg.nl/onderwerpen/ondersteuning/",
       bron: "MantelzorgNL",
       emoji: "👥",
     },
@@ -187,7 +187,7 @@ export const artikelen: Record<string, Artikel[]> = {
       titel: "De Wmo: hulp via je gemeente",
       beschrijving:
         "Via de Wet maatschappelijke ondersteuning (Wmo) kun je hulp krijgen van je gemeente. Denk aan huishoudelijke hulp, vervoer of aanpassingen in huis.",
-      url: "https://www.mantelzorg.nl/mantelzorg/wetten/wmo/",
+      url: "https://www.mantelzorg.nl/onderwerpen/wetten/wmo-en-mantelzorg/",
       bron: "MantelzorgNL",
       emoji: "🏛️",
     },
@@ -196,7 +196,7 @@ export const artikelen: Record<string, Artikel[]> = {
       titel: "Mantelzorg is altijd vrijwillig",
       beschrijving:
         "De gemeente mag je niet verplichten om mantelzorg te geven. Je mag altijd nee zeggen. Vraag de gemeente dan om een andere oplossing te zoeken.",
-      url: "https://www.mantelzorg.nl/mantelzorg/wetten/",
+      url: "https://www.mantelzorg.nl/onderwerpen/wetten/rechten-en-plichten-van-de-mantelzorger/",
       bron: "MantelzorgNL",
       emoji: "✋",
     },
@@ -214,7 +214,7 @@ export const artikelen: Record<string, Artikel[]> = {
       titel: "Recht op respijtzorg",
       beschrijving:
         "Je hebt recht op tijdelijke vervanging van de zorg. Dit kan via de Wmo, de Wlz of je zorgverzekeraar. De eigen bijdrage is maximaal 21 euro per maand.",
-      url: "https://www.mantelzorg.nl/mantelzorg/vervangende-zorg/",
+      url: "https://www.mantelzorg.nl/onderwerpen/vervangende-zorg/wie-betaalt-voor-respijtzorg/",
       bron: "MantelzorgNL",
       emoji: "🔄",
     },
@@ -280,7 +280,7 @@ export const artikelen: Record<string, Artikel[]> = {
       titel: "Mantelzorgwaardering van je gemeente",
       beschrijving:
         "Veel gemeenten geven jaarlijks een blijk van waardering aan mantelzorgers. Dit kan geld zijn, een cadeaubon of een activiteit. Vraag het aan bij je gemeente.",
-      url: "https://www.mantelzorg.nl/mantelzorg/waardering/",
+      url: "https://www.mantelzorg.nl/onderwerpen/geldzaken/mantelzorgwaardering",
       bron: "MantelzorgNL",
       emoji: "🎁",
     },
@@ -289,7 +289,7 @@ export const artikelen: Record<string, Artikel[]> = {
       titel: "Betaald worden via een PGB",
       beschrijving:
         "Je naaste kan een persoonsgebonden budget (PGB) aanvragen. Daaruit kun jij als mantelzorger betaald worden. Je mag maximaal 40 uur per week declareren.",
-      url: "https://www.mantelzorg.nl/mantelzorg/pgb/",
+      url: "https://www.mantelzorg.nl/onderwerpen/persoonsgebonden-budget/",
       bron: "MantelzorgNL",
       emoji: "💶",
     },
