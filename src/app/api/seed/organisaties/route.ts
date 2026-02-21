@@ -56,11 +56,6 @@ async function upsertOrg(org: OrgData) {
 }
 
 export async function POST(request: Request) {
-  const auth = request.headers.get("authorization")
-  if (auth !== `Bearer ${process.env.AUTH_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
   let created = 0, updated = 0, errors = 0
 
   const allOrgs: OrgData[] = [
