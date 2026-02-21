@@ -5,44 +5,6 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { FavorietButton } from "@/components/FavorietButton"
 import { PageIntro } from "@/components/ui/PageIntro"
 
-const categories = [
-  {
-    id: "praktische-tips",
-    title: "Praktische tips",
-    description: "Voor het dagelijks leven",
-    emoji: "💡",
-    href: "/leren/praktische-tips",
-  },
-  {
-    id: "zelfzorg",
-    title: "Zelfzorg",
-    description: "Zorg ook voor jezelf",
-    emoji: "🧘",
-    href: "/leren/zelfzorg",
-  },
-  {
-    id: "rechten",
-    title: "Je rechten",
-    description: "Wmo, Zvw, Wlz en meer",
-    emoji: "⚖️",
-    href: "/leren/rechten",
-  },
-  {
-    id: "financieel",
-    title: "Financieel",
-    description: "Kosten, vergoedingen & pgb",
-    emoji: "💰",
-    href: "/leren/financieel",
-  },
-  {
-    id: "hulpmiddelen-producten",
-    title: "Hulpmiddelen & producten",
-    description: "Fysiek, digitaal & aanpassingen",
-    emoji: "🛠️",
-    href: "/leren/hulpmiddelen-producten",
-  },
-]
-
 interface GemeenteNieuwsItem {
   id: string
   titel: string
@@ -50,6 +12,12 @@ interface GemeenteNieuwsItem {
 }
 
 export default function LerenPage() {
+  // Content state - fetched from API
+  const [categories, setCategories] = useState<any[]>([])
+  const [contentLoading, setContentLoading] = useState(true)
+  const [contentError, setContentError] = useState<string | null>(null)
+  const hasFetchedContent = useRef(false)
+
   const [favorieten, setFavorieten] = useState<Record<string, string>>({})
   const [gemeenteMantelzorger, setGemeenteMantelzorger] = useState<string | null>(null)
   const [gemeenteZorgvrager, setGemeenteZorgvrager] = useState<string | null>(null)
@@ -80,9 +48,39 @@ export default function LerenPage() {
     setAantalNieuwItems(nieuw.length)
   }, [])
 
-  // Laad gemeente data en favorieten PARALLEL
+  // Fetch categories from API on mount
   useEffect(() => {
-    if (hasFetched.current) return
+    if (hasFetchedContent.current) return
+    hasFetchedContent.current = true
+
+    const loadCategories = async () => {
+      try {
+        const res = await fetch("/api/content/categorieen?type=LEREN")
+        if (!res.ok) throw new Error("Fout bij laden van categorieën")
+
+        const data = await res.json()
+        const mapped = (data.categorieen || []).map((c: any) => ({
+          id: c.slug,
+          title: c.naam,
+          description: c.beschrijving,
+          emoji: c.emoji,
+          href: `/leren/${c.slug}`,
+        }))
+        setCategories(mapped)
+      } catch (error) {
+        console.error("Error loading categories:", error)
+        setContentError("Er ging iets mis bij het laden van categorieën.")
+      } finally {
+        setContentLoading(false)
+      }
+    }
+
+    loadCategories()
+  }, [])
+
+  // Laad gemeente data en favorieten PARALLEL (wacht tot categories geladen zijn)
+  useEffect(() => {
+    if (hasFetched.current || contentLoading || categories.length === 0) return
     hasFetched.current = true
 
     const loadAll = async () => {
@@ -175,7 +173,7 @@ export default function LerenPage() {
     }
 
     loadAll()
-  }, [berekenNieuwItems])
+  }, [berekenNieuwItems, contentLoading, categories])
 
   // Luister naar gezien-event van gemeente-nieuws pagina
   useEffect(() => {
@@ -200,6 +198,34 @@ export default function LerenPage() {
   // Tel artikelen per categorie
   const getAantalArtikelen = (catId: string) => {
     return aantalPerCategorie[catId] || 0
+  }
+
+  if (contentLoading) {
+    return (
+      <div className="ker-page-content flex items-center justify-center min-h-[50vh]">
+        <div className="text-center">
+          <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Laden...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (contentError) {
+    return (
+      <div className="ker-page-content flex items-center justify-center min-h-[50vh]">
+        <div className="text-center max-w-md mx-auto px-4">
+          <p className="text-foreground font-medium mb-2">Er ging iets mis</p>
+          <p className="text-muted-foreground text-sm mb-4">{contentError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="ker-btn ker-btn-primary"
+          >
+            Opnieuw proberen
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (

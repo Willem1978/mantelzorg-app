@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
@@ -8,58 +8,74 @@ import { GerAvatar } from "@/components/GerAvatar"
 import { SmileyGroup, ResultSmiley } from "@/components/ui"
 import { useToast } from "@/components/ui/Toast"
 
-// Korte maandelijkse check-in vragen (NEE/SOMS/JA stijl)
-// B1 taalgebruik - korte, eenvoudige zinnen
-const checkInQuestions = [
-  {
-    id: "c1",
-    question: "Ben je vaak moe?",
-    tip: "Als je veel moe bent, is dat een teken dat je rust nodig hebt.",
-    reversed: false, // "nee" is positief
-  },
-  {
-    id: "c2",
-    question: "Heb je tijd voor jezelf?",
-    tip: "Tijd voor jezelf is belangrijk. Ook voor jou.",
-    reversed: true, // "ja" is hier positief
-  },
-  {
-    id: "c3",
-    question: "Maak je je vaak zorgen?",
-    tip: "Zorgen maken hoort erbij. Maar het mag niet te veel worden.",
-    reversed: false,
-  },
-  {
-    id: "c4",
-    question: "Krijg je hulp van anderen?",
-    tip: "Hulp van anderen is fijn. Je hoeft het niet alleen te doen.",
-    reversed: true,
-  },
-  {
-    id: "c5",
-    question: "Waar wil je hulp bij?",
-    tip: "Kies wat voor jou belangrijk is. Je kunt meer dan één ding kiezen.",
-    isMultiSelect: true,
-    options: [
-      { value: "geen", label: "Het gaat goed zo", icon: "✅" },
-      { value: "huishouden", label: "Huishouden", icon: "🧹" },
-      { value: "zorgtaken", label: "Zorgtaken", icon: "🩺" },
-      { value: "tijd_voor_mezelf", label: "Tijd voor mezelf", icon: "🧘" },
-      { value: "administratie", label: "Papierwerk", icon: "📋" },
-      { value: "emotioneel", label: "Praten met iemand", icon: "💬" },
-    ],
-  },
-]
-
 export default function CheckInPage() {
   const router = useRouter()
   const { showSuccess, showError } = useToast()
+
+  // Content state - fetched from API
+  const [checkInQuestions, setCheckInQuestions] = useState<any[]>([])
+  const [contentLoading, setContentLoading] = useState(true)
+  const [contentError, setContentError] = useState<string | null>(null)
+  const hasFetchedContent = useRef(false)
+
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [answers, setAnswers] = useState<Record<string, string>>({})
   const [selectedOptions, setSelectedOptions] = useState<string[]>([])
   const [isCompleted, setIsCompleted] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isTransitioning, setIsTransitioning] = useState(false)
+
+  // Fetch content from API on mount
+  useEffect(() => {
+    if (hasFetchedContent.current) return
+    hasFetchedContent.current = true
+
+    const loadContent = async () => {
+      try {
+        const [vragenRes, optiesRes] = await Promise.all([
+          fetch("/api/content/balanstest-vragen?type=CHECKIN"),
+          fetch("/api/content/formulier-opties?groep=CHECKIN_HULP"),
+        ])
+
+        if (!vragenRes.ok || !optiesRes.ok) {
+          throw new Error("Fout bij laden van content")
+        }
+
+        const vragenData = await vragenRes.json()
+        const optiesData = await optiesRes.json()
+
+        const mappedOptions = (optiesData.opties || []).map((o: any) => ({
+          value: o.waarde,
+          label: o.label,
+          icon: o.emoji,
+        }))
+
+        const mappedQuestions = (vragenData.vragen || []).map((v: any) => {
+          const question: any = {
+            id: v.vraagId,
+            question: v.vraagTekst,
+            tip: v.tip,
+            reversed: v.reversed,
+            isMultiSelect: v.isMultiSelect,
+          }
+          // Attach options to multi-select questions
+          if (v.isMultiSelect) {
+            question.options = mappedOptions
+          }
+          return question
+        })
+
+        setCheckInQuestions(mappedQuestions)
+      } catch (error) {
+        console.error("Error loading content:", error)
+        setContentError("Er ging iets mis bij het laden. Probeer het opnieuw.")
+      } finally {
+        setContentLoading(false)
+      }
+    }
+
+    loadContent()
+  }, [])
 
   const currentQuestion = checkInQuestions[currentQuestionIndex]
   const totalQuestions = checkInQuestions.length
@@ -245,6 +261,35 @@ export default function CheckInPage() {
     return suggesties.slice(0, 3) // Max 3 suggesties
   }
 
+  // Loading state
+  if (contentLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Laden...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (contentError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <p className="text-foreground font-medium mb-2">Er ging iets mis</p>
+          <p className="text-muted-foreground text-sm mb-4">{contentError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="ker-btn ker-btn-primary"
+          >
+            Opnieuw proberen
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   // Completion screen - KER stijl
   if (isCompleted) {
     const mood = calculateMood()
@@ -407,7 +452,7 @@ export default function CheckInPage() {
               </p>
 
               <div className="grid grid-cols-2 gap-3">
-                {currentQuestion.options.map((option) => {
+                {currentQuestion.options.map((option: { value: string; label: string; icon: string }) => {
                   const isSelected = selectedOptions.includes(option.value)
                   return (
                     <button

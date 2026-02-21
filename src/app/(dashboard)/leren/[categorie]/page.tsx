@@ -17,62 +17,6 @@ interface Artikel {
   bronLabel: string | null
 }
 
-// Sub-hoofdstuk definities per categorie
-const subHoofdstukken: Record<string, { slug: string; titel: string; beschrijving: string }[]> = {
-  "praktische-tips": [
-    { slug: "dagelijks-organiseren", titel: "Dagelijks organiseren", beschrijving: "Dagstructuur, weekplanning en taken uitbesteden" },
-    { slug: "samen-organiseren", titel: "Samen organiseren met familie/netwerk", beschrijving: "Afspraken, back-up en samenwerking" },
-    { slug: "veiligheid-zware-taken", titel: "Veiligheid bij zware taken", beschrijving: "Tillen, verplaatsen en medicatie" },
-  ],
-  "zelfzorg": [
-    { slug: "overbelasting-herkennen", titel: "Overbelasting herkennen", beschrijving: "Signalen herkennen en wat je kunt doen" },
-    { slug: "pauze-en-respijt", titel: "Pauze en respijt organiseren", beschrijving: "Tijdelijke overname van zorg regelen" },
-    { slug: "emotionele-steun", titel: "Emotionele steun en praten", beschrijving: "Steun zoeken en stress verwerken" },
-  ],
-  "rechten": [
-    { slug: "routekaart-wmo-zvw-wlz", titel: "Routekaart Wmo / Zvw / Wlz", beschrijving: "Wat hoort waar? Interactief overzicht" },
-    { slug: "gemeente-wmo-aanvragen", titel: "Gemeente (Wmo) aanvragen", beschrijving: "Wat je kunt krijgen en hoe je het aanvraagt" },
-    { slug: "clientondersteuning", titel: "Gratis clientondersteuning", beschrijving: "Onafhankelijke hulp bij het organiseren van zorg" },
-  ],
-  "financieel": [
-    { slug: "eigen-bijdrage-kosten", titel: "Eigen bijdrage en kosten", beschrijving: "CAK, abonnementstarief en rekentools" },
-    { slug: "mantelzorgwaardering", titel: "Mantelzorgwaardering", beschrijving: "Jaarlijkse waardering van je gemeente" },
-    { slug: "pgb-aanvragen-beheer", titel: "Pgb: aanvragen en beheer", beschrijving: "Route, vaardigheden en SVB" },
-    { slug: "vergoedingen-hulpmiddelen", titel: "Vergoedingen hulpmiddelen", beschrijving: "Eerst aanvragen, dan kopen" },
-  ],
-  "hulpmiddelen-producten": [
-    { slug: "hulpmiddelen-overzicht", titel: "Hulpmiddelen overzicht", beschrijving: "Fysieke en digitale hulpmiddelen vinden" },
-    { slug: "vergoedingsroutes", titel: "Vergoedingsroutes", beschrijving: "Welk hulpmiddel via welke wet?" },
-  ],
-}
-
-const categorieInfo: Record<string, { titel: string; beschrijving: string; emoji: string }> = {
-  "praktische-tips": {
-    titel: "Praktische tips",
-    beschrijving: "Handige tips voor het dagelijks leven als mantelzorger.",
-    emoji: "💡",
-  },
-  "zelfzorg": {
-    titel: "Zelfzorg",
-    beschrijving: "Zorg ook goed voor jezelf. Dat is net zo belangrijk.",
-    emoji: "🧘",
-  },
-  "rechten": {
-    titel: "Je rechten",
-    beschrijving: "Dit zijn je rechten als mantelzorger. Wmo, Zvw, Wlz en meer.",
-    emoji: "⚖️",
-  },
-  "financieel": {
-    titel: "Financieel",
-    beschrijving: "Kosten, vergoedingen en regelingen waar je recht op hebt.",
-    emoji: "💰",
-  },
-  "hulpmiddelen-producten": {
-    titel: "Hulpmiddelen & producten",
-    beschrijving: "Vind het juiste hulpmiddel en ontdek vergoedingsroutes.",
-    emoji: "🛠️",
-  },
-}
 
 // Bronlabel kleuren
 function bronLabelKleur(label: string | null): string {
@@ -90,6 +34,13 @@ export default function CategoriePage() {
   const params = useParams()
   const categorie = params.categorie as string
 
+  // Content state - fetched from API
+  const [categorieInfo, setCategorieInfo] = useState<Record<string, { titel: string; beschrijving: string; emoji: string }>>({})
+  const [subHoofdstukken, setSubHoofdstukken] = useState<Record<string, { slug: string; titel: string; beschrijving: string }[]>>({})
+  const [contentLoading, setContentLoading] = useState(true)
+  const [contentError, setContentError] = useState<string | null>(null)
+  const hasFetchedContent = useRef(false)
+
   const info = categorieInfo[categorie]
 
   const [items, setItems] = useState<Artikel[]>([])
@@ -97,8 +48,56 @@ export default function CategoriePage() {
   const [favorieten, setFavorieten] = useState<Record<string, string>>({})
   const hasFetched = useRef(false)
 
+  // Fetch category info and sub-chapters from API
   useEffect(() => {
-    if (hasFetched.current || !info) return
+    if (hasFetchedContent.current) return
+    hasFetchedContent.current = true
+
+    const loadContent = async () => {
+      try {
+        const res = await fetch("/api/content/categorieen?type=LEREN")
+        if (!res.ok) throw new Error("Fout bij laden van categorieën")
+
+        const data = await res.json()
+        const allCategories = data.categorieen || []
+
+        // Build categorieInfo map
+        const infoMap: Record<string, { titel: string; beschrijving: string; emoji: string }> = {}
+        const subsMap: Record<string, { slug: string; titel: string; beschrijving: string }[]> = {}
+
+        for (const c of allCategories) {
+          infoMap[c.slug] = {
+            titel: c.naam,
+            beschrijving: c.beschrijving,
+            emoji: c.emoji,
+          }
+
+          // Build subHoofdstukken from children
+          if (c.children && c.children.length > 0) {
+            subsMap[c.slug] = c.children.map((child: any) => ({
+              slug: child.slug,
+              titel: child.naam,
+              beschrijving: child.beschrijving,
+            }))
+          }
+        }
+
+        setCategorieInfo(infoMap)
+        setSubHoofdstukken(subsMap)
+      } catch (error) {
+        console.error("Error loading category content:", error)
+        setContentError("Er ging iets mis bij het laden.")
+      } finally {
+        setContentLoading(false)
+      }
+    }
+
+    loadContent()
+  }, [])
+
+  // Fetch artikelen once content is loaded
+  useEffect(() => {
+    if (hasFetched.current || contentLoading || !categorieInfo[categorie]) return
     hasFetched.current = true
 
     const loadData = async () => {
@@ -133,7 +132,36 @@ export default function CategoriePage() {
     }
 
     loadData()
-  }, [categorie, info])
+  }, [categorie, contentLoading, categorieInfo])
+
+  // Loading state
+  if (contentLoading) {
+    return (
+      <div className="ker-page-content flex items-center justify-center min-h-[50vh]">
+        <div className="text-center">
+          <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Laden...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (contentError) {
+    return (
+      <div className="ker-page-content flex items-center justify-center min-h-[50vh]">
+        <div className="text-center max-w-md mx-auto px-4">
+          <p className="text-foreground font-medium mb-2">Er ging iets mis</p>
+          <p className="text-muted-foreground text-sm mb-4">{contentError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="ker-btn ker-btn-primary"
+          >
+            Opnieuw proberen
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   // Categorie niet gevonden
   if (!info) {

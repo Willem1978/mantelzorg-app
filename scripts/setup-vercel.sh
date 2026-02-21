@@ -24,14 +24,24 @@ vercel link
 # Environment variables instellen
 echo ""
 echo "📋 Stap 3: Environment variables instellen..."
+echo ""
+echo "Je hebt de volgende gegevens nodig:"
+echo "  - DATABASE_URL (Supabase/PostgreSQL connection string)"
+echo "  - AUTH_SECRET (genereer met: openssl rand -base64 32)"
+echo "  - Je Vercel domein"
+echo ""
 
-vercel env add DATABASE_URL production <<< "postgresql://postgres:pwdZnKMWsirV6CgV@db.akqwesqwbyniyekyuebf.supabase.co:5432/postgres"
+read -sp "DATABASE_URL (PostgreSQL connection string): " DB_URL
+echo ""
+vercel env add DATABASE_URL production <<< "$DB_URL"
 echo "  ✅ DATABASE_URL"
 
-vercel env add DIRECT_URL production <<< "postgresql://postgres:pwdZnKMWsirV6CgV@db.akqwesqwbyniyekyuebf.supabase.co:5432/postgres"
+vercel env add DIRECT_URL production <<< "$DB_URL"
 echo "  ✅ DIRECT_URL"
 
-vercel env add AUTH_SECRET production <<< "I4otrwnhi1dOFRpgitPwAMDpj8fBLHBwHojQVuf6g+w="
+read -sp "AUTH_SECRET (geheime sleutel): " AUTH_SECRET
+echo ""
+vercel env add AUTH_SECRET production <<< "$AUTH_SECRET"
 echo "  ✅ AUTH_SECRET"
 
 echo ""

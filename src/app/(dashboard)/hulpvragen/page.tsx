@@ -74,119 +74,6 @@ interface HelpRequest {
   response?: string
 }
 
-// Categorieën voor zorgvrager (hulp voor wie je zorgt) - visueel gegroepeerd
-const CATEGORIEEN_ZORGVRAGER_GROEPEN = [
-  {
-    groep: 'Dagelijks leven',
-    categorieen: [
-      { naam: 'Persoonlijke verzorging', icon: '🛁', kort: 'Verzorging', routeLabel: 'Wmo/Zvw/Wlz' },
-      { naam: 'Bereiden en/of nuttigen van maaltijden', icon: '🍽️', kort: 'Maaltijden', routeLabel: 'Gemeente' },
-      { naam: 'Boodschappen', icon: '🛒', kort: 'Boodschappen', routeLabel: 'Gemeente' },
-    ],
-  },
-  {
-    groep: 'In en om het huis',
-    categorieen: [
-      { naam: 'Huishoudelijke taken', icon: '🧹', kort: 'Huishouden', routeLabel: 'Wmo' },
-      { naam: 'Klusjes in en om het huis', icon: '🔧', kort: 'Klusjes', routeLabel: 'Gemeente' },
-    ],
-  },
-  {
-    groep: 'Organisatie & regelwerk',
-    categorieen: [
-      { naam: 'Administratie en aanvragen', icon: '📋', kort: 'Administratie', routeLabel: 'Landelijk' },
-      { naam: 'Plannen en organiseren', icon: '📅', kort: 'Plannen', routeLabel: null },
-    ],
-  },
-  {
-    groep: 'Welzijn & mobiliteit',
-    categorieen: [
-      { naam: 'Sociaal contact en activiteiten', icon: '👥', kort: 'Sociaal', routeLabel: 'Wmo' },
-      { naam: 'Vervoer', icon: '🚗', kort: 'Vervoer', routeLabel: 'Landelijk' },
-    ],
-  },
-  {
-    groep: 'Overig',
-    categorieen: [
-      { naam: 'Huisdieren', icon: '🐕', kort: 'Huisdieren', routeLabel: null },
-    ],
-  },
-]
-
-// Flat lijst voor backwards compatibility
-const CATEGORIEEN_ZORGVRAGER = CATEGORIEEN_ZORGVRAGER_GROEPEN.flatMap(g => g.categorieen)
-
-// Categorieën voor mantelzorger (hulp voor jou)
-const CATEGORIEEN_MANTELZORGER = [
-  { naam: 'Mantelzorgondersteuning', icon: '💜', kort: 'Ondersteuning' },
-  { naam: 'Respijtzorg', icon: '🏠', kort: 'Respijtzorg' },
-  { naam: 'Emotionele steun', icon: '💚', kort: 'Praten & steun' },
-  { naam: 'Lotgenotencontact', icon: '👥', kort: 'Lotgenoten' },
-  { naam: 'Leren en training', icon: '🎓', kort: 'Leren & training' },
-]
-
-// Mapping van taak namen naar categorieën
-// Ondersteunt variaties uit web test, WhatsApp test en database
-const TAAK_NAAR_CATEGORIE: Record<string, string> = {
-  // Persoonlijke verzorging - alle variaties
-  'Wassen/aankleden': 'Persoonlijke verzorging',
-  'Wassen en aankleden': 'Persoonlijke verzorging',
-  'Persoonlijke verzorging': 'Persoonlijke verzorging',
-  'Toiletgang': 'Persoonlijke verzorging',
-  'Medicijnen': 'Persoonlijke verzorging',
-  'Toezicht': 'Persoonlijke verzorging',
-  'Medische zorg': 'Persoonlijke verzorging',
-  // Huishoudelijke taken
-  'Huishouden': 'Huishoudelijke taken',
-  'Huishoudelijke taken': 'Huishoudelijke taken',
-  // Vervoer
-  'Vervoer': 'Vervoer',
-  'Vervoer/begeleiding': 'Vervoer',
-  'Vervoer naar afspraken': 'Vervoer',
-  // Administratie - alle variaties
-  'Administratie': 'Administratie en aanvragen',
-  'Administratie en aanvragen': 'Administratie en aanvragen',
-  'Administratie en geldzaken': 'Administratie en aanvragen',
-  // Plannen en organiseren - aparte categorie
-  'Plannen en organiseren': 'Plannen en organiseren',
-  'Regelen en afspraken maken': 'Plannen en organiseren',
-  'Plannen': 'Plannen en organiseren',
-  'Organiseren': 'Plannen en organiseren',
-  // Sociaal contact - alle variaties
-  'Sociaal contact': 'Sociaal contact en activiteiten',
-  'Sociaal contact en activiteiten': 'Sociaal contact en activiteiten',
-  'Activiteiten': 'Sociaal contact en activiteiten',
-  'Bezoek en gezelschap': 'Sociaal contact en activiteiten',
-  'Bezoek en uitjes': 'Sociaal contact en activiteiten',
-  // Maaltijden - alle variaties
-  'Maaltijden': 'Bereiden en/of nuttigen van maaltijden',
-  'Eten maken': 'Bereiden en/of nuttigen van maaltijden',
-  'Eten en drinken': 'Bereiden en/of nuttigen van maaltijden',
-  // Boodschappen - alle variaties
-  'Boodschappen': 'Boodschappen',
-  'Boodschappen doen': 'Boodschappen',
-  // Klusjes - alle variaties
-  'Klusjes': 'Klusjes in en om het huis',
-  'Klusjes in huis': 'Klusjes in en om het huis',
-  'Klusjes in en om huis': 'Klusjes in en om het huis',
-  'Klusjes in/om huis': 'Klusjes in en om het huis',
-  'Klusjes in en om het huis': 'Klusjes in en om het huis',
-  // Huisdieren
-  'Huisdieren': 'Huisdieren',
-  'Huisdieren verzorgen': 'Huisdieren',
-  'Dieren': 'Huisdieren',
-}
-
-// Hulpvraag categorieën
-const hulpvraagCategories = [
-  { value: "RESPITE_CARE", label: "Even vrij", icon: "🏠", hint: "Iemand neemt de zorg over" },
-  { value: "EMOTIONAL_SUPPORT", label: "Praten", icon: "💚", hint: "Over je gevoel praten" },
-  { value: "PRACTICAL_HELP", label: "Hulp thuis", icon: "🔧", hint: "Klussen of taken" },
-  { value: "FINANCIAL_ADVICE", label: "Geld", icon: "💰", hint: "Hulp met geld of aanvragen" },
-  { value: "INFORMATION", label: "Info", icon: "ℹ️", hint: "Informatie zoeken" },
-  { value: "OTHER", label: "Anders", icon: "📝", hint: "Iets anders" },
-]
-
 type TabType = 'voor-jou' | 'voor-naaste'
 
 // Wrapper component voor Suspense boundary (nodig voor useSearchParams)
@@ -213,6 +100,18 @@ function HulpPageContent() {
   const [showVragenTab, setShowVragenTab] = useState(false)
   const [initializedFromUrl, setInitializedFromUrl] = useState(false)
 
+  // Content state - fetched from API
+  const [CATEGORIEEN_ZORGVRAGER_GROEPEN, setCategorieenZorgvragerGroepen] = useState<any[]>([])
+  const [CATEGORIEEN_MANTELZORGER, setCategorieenMantelzorger] = useState<any[]>([])
+  const [TAAK_NAAR_CATEGORIE, setTaakNaarCategorie] = useState<Record<string, string>>({})
+  const [hulpvraagCategories, setHulpvraagCategories] = useState<any[]>([])
+  const [contentLoading, setContentLoading] = useState(true)
+  const [contentError, setContentError] = useState<string | null>(null)
+  const hasFetchedContent = useRef(false)
+
+  // Derived: flat list for backwards compatibility
+  const CATEGORIEEN_ZORGVRAGER = CATEGORIEEN_ZORGVRAGER_GROEPEN.flatMap((g: any) => g.categorieen)
+
   // Favorieten state
   const [favorieten, setFavorieten] = useState<Record<string, string>>({})
   const hasFetchedFav = useRef(false)
@@ -223,6 +122,81 @@ function HulpPageContent() {
   const [formCategory, setFormCategory] = useState("")
   const [formUrgency, setFormUrgency] = useState("NORMAL")
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Fetch content from API on mount
+  useEffect(() => {
+    if (hasFetchedContent.current) return
+    hasFetchedContent.current = true
+
+    const loadContent = async () => {
+      try {
+        const [zorgvragerRes, mantelzorgerRes, hulpvraagRes, mappingsRes] = await Promise.all([
+          fetch("/api/content/categorieen?type=HULP_ZORGVRAGER"),
+          fetch("/api/content/categorieen?type=HULP_MANTELZORGER"),
+          fetch("/api/content/categorieen?type=HULPVRAAG"),
+          fetch("/api/content/taak-mappings"),
+        ])
+
+        if (!zorgvragerRes.ok || !mantelzorgerRes.ok || !hulpvraagRes.ok || !mappingsRes.ok) {
+          throw new Error("Fout bij laden van content")
+        }
+
+        const zorgvragerData = await zorgvragerRes.json()
+        const mantelzorgerData = await mantelzorgerRes.json()
+        const hulpvraagData = await hulpvraagRes.json()
+        const mappingsData = await mappingsRes.json()
+
+        // Reconstruct CATEGORIEEN_ZORGVRAGER_GROEPEN by grouping on metadata.groep
+        const groepMap: Record<string, any[]> = {}
+        for (const c of (zorgvragerData.categorieen || [])) {
+          const groep = c.metadata?.groep || 'Overig'
+          if (!groepMap[groep]) groepMap[groep] = []
+          groepMap[groep].push({
+            naam: c.naam,
+            icon: c.icon,
+            kort: c.hint,
+            routeLabel: c.metadata?.routeLabel || null,
+          })
+        }
+        const mappedGroepen = Object.entries(groepMap).map(([groep, categorieen]) => ({
+          groep,
+          categorieen,
+        }))
+        setCategorieenZorgvragerGroepen(mappedGroepen)
+
+        // Map mantelzorger categories
+        const mappedMantelzorger = (mantelzorgerData.categorieen || []).map((c: any) => ({
+          naam: c.naam,
+          icon: c.icon,
+          kort: c.hint,
+        }))
+        setCategorieenMantelzorger(mappedMantelzorger)
+
+        // Map hulpvraag categories
+        const mappedHulpvraag = (hulpvraagData.categorieen || []).map((c: any) => ({
+          value: c.slug.toUpperCase().replace(/-/g, '_'),
+          label: c.naam,
+          icon: c.icon,
+          hint: c.hint,
+        }))
+        setHulpvraagCategories(mappedHulpvraag)
+
+        // Reconstruct TAAK_NAAR_CATEGORIE from mappings
+        const mappedTaakCategorie: Record<string, string> = {}
+        for (const m of (mappingsData.mappings || [])) {
+          mappedTaakCategorie[m.taak || m.key] = m.categorie || m.value
+        }
+        setTaakNaarCategorie(mappedTaakCategorie)
+      } catch (error) {
+        console.error("Error loading content:", error)
+        setContentError("Er ging iets mis bij het laden van categorieën.")
+      } finally {
+        setContentLoading(false)
+      }
+    }
+
+    loadContent()
+  }, [])
 
   // URL parameters verwerken (van rapport pagina)
   useEffect(() => {
@@ -389,10 +363,27 @@ function HulpPageContent() {
     }
   }
 
-  if (loading) {
+  if (loading || contentLoading) {
     return (
       <div className="ker-page-content flex items-center justify-center min-h-[50vh]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+
+  if (contentError) {
+    return (
+      <div className="ker-page-content flex items-center justify-center min-h-[50vh]">
+        <div className="text-center max-w-md mx-auto px-4">
+          <p className="text-foreground font-medium mb-2">Er ging iets mis</p>
+          <p className="text-muted-foreground text-sm mb-4">{contentError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="ker-btn ker-btn-primary"
+          >
+            Opnieuw proberen
+          </button>
+        </div>
       </div>
     )
   }
@@ -890,7 +881,7 @@ function HulpPageContent() {
               <div key={groep.groep}>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{groep.groep}</p>
                 <div className="grid grid-cols-2 gap-3">
-                  {groep.categorieen.map((cat) => {
+                  {groep.categorieen.map((cat: { naam: string; icon: string; kort: string; routeLabel: string | null }) => {
                     const taakStatus = getTaakStatus(cat.naam)
                     const aantalHulp = hulpData?.perCategorie?.[cat.naam]?.length || 0
                     const isSelected = selectedCategorie === cat.naam
