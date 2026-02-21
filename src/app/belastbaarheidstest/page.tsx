@@ -1,123 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Button, SmileyGroup } from "@/components/ui"
 import { cn } from "@/lib/utils"
 import { searchStreets } from "@/lib/pdok"
 import { GerAvatar } from "@/components/GerAvatar"
-
-// ============================================
-// CONFIGURATIE - VRAGEN & TAKEN
-// ============================================
-
-const belastbaarheidVragen = [
-  // SECTIE: Jouw energie
-  {
-    id: "q1",
-    header: "Jouw energie",
-    headerIntro: "Eerst een paar vragen aan jou over hoe jij je lichamelijk voelt.",
-    vraag: "Slaap je minder goed door de zorg voor je naaste?",
-    tip: "Veel mantelzorgers merken dat hun slaap onrustig wordt door piekeren of nachtelijke zorgtaken.",
-    weegfactor: 1.5,
-  },
-  {
-    id: "q2",
-    header: "Jouw energie",
-    vraag: "Heb je last van je lichaam door het zorgen?",
-    tip: "Fysieke klachten zoals rugpijn of vermoeidheid komen veel voor bij mantelzorgers.",
-    weegfactor: 1.0,
-  },
-  {
-    id: "q3",
-    header: "Jouw energie",
-    vraag: "Kost het zorgen veel tijd en energie?",
-    tip: "Het is normaal om dit te ervaren. Zorg goed voor jezelf.",
-    weegfactor: 1.0,
-  },
-  // SECTIE: Jouw gevoel
-  {
-    id: "q4",
-    header: "Jouw gevoel",
-    headerIntro: "Nu een paar vragen over hoe jij je emotioneel voelt.",
-    vraag: "Is de band met je naaste veranderd?",
-    tip: "Relaties veranderen door ziekte. Dat is normaal en soms lastig.",
-    weegfactor: 1.5,
-  },
-  {
-    id: "q5",
-    header: "Jouw gevoel",
-    vraag: "Maakt het gedrag van je naaste je verdrietig, bang of boos?",
-    tip: "Deze gevoelens zijn heel begrijpelijk en komen veel voor.",
-    weegfactor: 1.5,
-  },
-  {
-    id: "q6",
-    header: "Jouw gevoel",
-    vraag: "Heb je verdriet dat je naaste anders is dan vroeger?",
-    tip: "Rouwen om wie iemand was is een normaal onderdeel van mantelzorg.",
-    weegfactor: 1.0,
-  },
-  {
-    id: "q7",
-    header: "Jouw gevoel",
-    vraag: "Slokt de zorg al je energie op?",
-    tip: "Als dit zo voelt, is het belangrijk om hulp te zoeken.",
-    weegfactor: 1.5,
-  },
-  // SECTIE: Jouw tijd
-  {
-    id: "q8",
-    header: "Jouw tijd",
-    headerIntro: "Tot slot een paar vragen over je tijd en je eigen leven.",
-    vraag: "Pas je je dagelijks leven aan voor de zorg?",
-    tip: "Aanpassingen zijn normaal, maar vergeet jezelf niet.",
-    weegfactor: 1.0,
-  },
-  {
-    id: "q9",
-    header: "Jouw tijd",
-    vraag: "Pas je regelmatig je plannen aan om te helpen?",
-    tip: "Flexibiliteit is mooi, maar je eigen plannen tellen ook.",
-    weegfactor: 1.0,
-  },
-  {
-    id: "q10",
-    header: "Jouw tijd",
-    vraag: "Kom je niet meer toe aan dingen die je leuk vindt?",
-    tip: "Tijd voor jezelf is geen luxe, maar noodzaak.",
-    weegfactor: 1.0,
-  },
-  {
-    id: "q11",
-    header: "Jouw tijd",
-    vraag: "Kost het zorgen net zoveel tijd als je werk?",
-    tip: "Mantelzorg is ook werk. Gun jezelf erkenning hiervoor.",
-    weegfactor: 1.5,
-  },
-]
-
-const zorgtaken = [
-  { id: "t1", naam: "Administratie en geldzaken", beschrijving: "Rekeningen, post, verzekeringen" },
-  { id: "t2", naam: "Regelen en afspraken maken", beschrijving: "Arts, thuiszorg, dagbesteding" },
-  { id: "t3", naam: "Boodschappen doen", beschrijving: "Supermarkt, apotheek" },
-  { id: "t4", naam: "Bezoek en gezelschap", beschrijving: "Gesprekken, uitjes, wandelen" },
-  { id: "t5", naam: "Vervoer naar afspraken", beschrijving: "Ziekenhuis, huisarts, familie" },
-  { id: "t6", naam: "Persoonlijke verzorging", beschrijving: "Wassen, aankleden, medicijnen" },
-  { id: "t7", naam: "Eten en drinken", beschrijving: "Koken, maaltijden, dieet" },
-  { id: "t8", naam: "Huishouden", beschrijving: "Schoonmaken, was, opruimen" },
-  { id: "t9", naam: "Klusjes in en om huis", beschrijving: "Reparaties, tuin, onderhoud" },
-]
-
-const urenOpties = [
-  { value: "0-2", label: "Tot 2 uur per week", uren: 1 },
-  { value: "2-4", label: "2 tot 4 uur per week", uren: 3 },
-  { value: "4-8", label: "4 tot 8 uur per week", uren: 6 },
-  { value: "8-12", label: "8 tot 12 uur per week", uren: 10 },
-  { value: "12-24", label: "12 tot 24 uur per week", uren: 18 },
-  { value: "24+", label: "Meer dan 24 uur per week", uren: 30 },
-]
 
 // ============================================
 // STREET SEARCH COMPONENT
@@ -252,17 +141,19 @@ export default function BelastbaarheidstestPage() {
   const { data: session, status } = useSession()
   const isLoggedIn = status === "authenticated" && !!session?.user
 
+  // Content state - fetched from API
+  const [belastbaarheidVragen, setBelastbaarheidVragen] = useState<any[]>([])
+  const [zorgtaken, setZorgtaken] = useState<any[]>([])
+  const [urenOpties, setUrenOpties] = useState<any[]>([])
+  const [contentLoading, setContentLoading] = useState(true)
+  const [contentError, setContentError] = useState<string | null>(null)
+  const hasFetchedContent = useRef(false)
+
   const [currentStep, setCurrentStep] = useState<Step>("intro")
   const [currentVraagIndex, setCurrentVraagIndex] = useState(0)
   const [currentTaakDetailIndex, setCurrentTaakDetailIndex] = useState(0)
   const [antwoorden, setAntwoorden] = useState<Record<string, string>>({})
-  const [taken, setTaken] = useState<Record<string, TaakData>>(() => {
-    const initial: Record<string, TaakData> = {}
-    zorgtaken.forEach((t) => {
-      initial[t.id] = { isGeselecteerd: false, uren: "", belasting: "" }
-    })
-    return initial
-  })
+  const [taken, setTaken] = useState<Record<string, TaakData>>({})
   const [gegevens, setGegevens] = useState<GegevensData>({
     naam: "",
     email: "",
@@ -272,6 +163,69 @@ export default function BelastbaarheidstestPage() {
   const [gegevensError, setGegevensError] = useState("")
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+
+  // Fetch content from API on mount
+  useEffect(() => {
+    if (hasFetchedContent.current) return
+    hasFetchedContent.current = true
+
+    const loadContent = async () => {
+      try {
+        const [vragenRes, zorgtakenRes, optiesRes] = await Promise.all([
+          fetch("/api/content/balanstest-vragen?type=BALANSTEST"),
+          fetch("/api/content/zorgtaken"),
+          fetch("/api/content/formulier-opties?groep=UREN_BALANSTEST"),
+        ])
+
+        if (!vragenRes.ok || !zorgtakenRes.ok || !optiesRes.ok) {
+          throw new Error("Fout bij laden van content")
+        }
+
+        const vragenData = await vragenRes.json()
+        const zorgtakenData = await zorgtakenRes.json()
+        const optiesData = await optiesRes.json()
+
+        const mappedVragen = (vragenData.vragen || []).map((v: any) => ({
+          id: v.vraagId,
+          header: v.sectie,
+          headerIntro: v.beschrijving,
+          vraag: v.vraagTekst,
+          tip: v.tip,
+          weegfactor: v.gewicht,
+        }))
+
+        const mappedZorgtaken = (zorgtakenData.zorgtaken || []).map((z: any) => ({
+          id: z.taakId,
+          naam: z.naam,
+          beschrijving: z.beschrijving,
+        }))
+
+        const mappedOpties = (optiesData.opties || []).map((o: any) => ({
+          value: o.waarde,
+          label: o.label,
+          uren: parseInt(o.beschrijving || "0"),
+        }))
+
+        setBelastbaarheidVragen(mappedVragen)
+        setZorgtaken(mappedZorgtaken)
+        setUrenOpties(mappedOpties)
+
+        // Initialize taken state based on fetched zorgtaken
+        const initialTaken: Record<string, TaakData> = {}
+        mappedZorgtaken.forEach((t: any) => {
+          initialTaken[t.id] = { isGeselecteerd: false, uren: "", belasting: "" }
+        })
+        setTaken(initialTaken)
+      } catch (error) {
+        console.error("Error loading content:", error)
+        setContentError("Er ging iets mis bij het laden. Probeer het opnieuw.")
+      } finally {
+        setContentLoading(false)
+      }
+    }
+
+    loadContent()
+  }, [])
 
   const currentVraag = belastbaarheidVragen[currentVraagIndex]
   const totalVragen = belastbaarheidVragen.length
@@ -478,6 +432,38 @@ export default function BelastbaarheidstestPage() {
     else if (keuze === "login") router.push("/login?from=test")
     else router.push("/rapport-gast")
     setIsSaving(false)
+  }
+
+  // ============================================
+  // RENDER - LOADING
+  // ============================================
+
+  if (contentLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Laden...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (contentError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <p className="text-foreground font-medium mb-2">Er ging iets mis</p>
+          <p className="text-muted-foreground text-sm mb-4">{contentError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="ker-btn ker-btn-primary"
+          >
+            Opnieuw proberen
+          </button>
+        </div>
+      </div>
+    )
   }
 
   // ============================================

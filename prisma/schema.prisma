@@ -874,3 +874,155 @@ enum BelastingNiveauFilter {
   GEMIDDELD         // Alleen bij gemiddelde belasting
   HOOG              // Alleen bij hoge belasting
 }
+
+// ============================================
+// CONTENT BEHEER - Alle app content in database
+// ============================================
+
+// Balanstest en Check-in vragen
+model BalanstestVraag {
+  id           String    @id @default(cuid())
+  type         VraagType
+  vraagId      String    @unique  // unieke key, bijv. "q1", "c1"
+  vraagTekst   String
+  beschrijving String?            // Extra uitleg of sectie header intro
+  tip          String?            // Tip tekst bij de vraag
+  sectie       String?            // Sectie header (bijv. "Jouw energie", "Jouw gevoel")
+  opties       Json?              // Array van antwoordopties [{label, waarde, score, icon}]
+  gewicht      Float    @default(1.0)
+  reversed     Boolean  @default(false) // Voor check-in: is "ja" het positieve antwoord?
+  isMultiSelect Boolean @default(false) // Voor check-in multi-select vragen
+  emoji        String?
+  volgorde     Int      @default(0)
+  isActief     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([type, isActief])
+}
+
+enum VraagType {
+  BALANSTEST
+  CHECKIN
+}
+
+// Zorgtaak definities (gebruikt in balanstest en hulpvragen)
+model Zorgtaak {
+  id           String   @id @default(cuid())
+  taakId       String   @unique  // unieke key, bijv. "t1", "verzorging"
+  naam         String
+  beschrijving String?
+  categorie    String?            // Groep: "Dagelijks leven", "Organisatie", etc.
+  emoji        String?
+  icon         String?            // Icoon naam
+  kort         String?            // Korte weergavenaam
+  routeLabel   String?            // "Wmo", "Zvw", etc.
+  groep        String?            // Visuele groep (bijv. "Dagelijks leven")
+  volgorde     Int      @default(0)
+  isActief     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  mappings     TaakCategorieMapping[]
+
+  @@index([isActief])
+}
+
+// Taak-naar-categorie mappings (vertaalt diverse taaknamen naar canonical categorie)
+model TaakCategorieMapping {
+  id           String   @id @default(cuid())
+  bronNaam     String   @unique  // Naam zoals binnenkomt (bijv. "Wassen/aankleden")
+  zorgtaakId   String
+  zorgtaak     Zorgtaak @relation(fields: [zorgtaakId], references: [id], onDelete: Cascade)
+  bron         String?            // "WEB", "WHATSAPP" — herkomst van de mapping
+  isActief     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  @@index([zorgtaakId])
+}
+
+// Content categorieën (leren, hulpvraag, sub-hoofdstukken, etc.)
+model ContentCategorie {
+  id           String            @id @default(cuid())
+  type         CategorieType
+  slug         String
+  naam         String
+  beschrijving String?
+  emoji        String?
+  icon         String?            // Icoon naam
+  hint         String?            // Extra hint tekst
+  parentId     String?
+  parent       ContentCategorie?  @relation("CategorieHierarchie", fields: [parentId], references: [id])
+  children     ContentCategorie[] @relation("CategorieHierarchie")
+  metadata     Json?              // Extra data (bronLabelKleur, routeLabel, etc.)
+  volgorde     Int                @default(0)
+  isActief     Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@unique([type, slug])
+  @@index([type, isActief])
+  @@index([parentId])
+}
+
+enum CategorieType {
+  LEREN              // Leren hoofdcategorieën (Praktische tips, Zelfzorg, etc.)
+  SUB_HOOFDSTUK      // Sub-hoofdstukken binnen leren categorieën
+  HULPVRAAG          // Hulpvraag categorieën (Even vrij, Praten, etc.)
+  HULP_ZORGVRAGER    // Hulp categorieën voor zorgvrager
+  HULP_MANTELZORGER  // Hulp categorieën voor mantelzorger
+}
+
+// Formulier opties (dropdown/selectie opties)
+model FormulierOptie {
+  id           String     @id @default(cuid())
+  groep        OptieGroep
+  waarde       String
+  label        String
+  beschrijving String?
+  emoji        String?
+  volgorde     Int        @default(0)
+  isActief     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([groep, waarde])
+  @@index([groep, isActief])
+}
+
+enum OptieGroep {
+  RELATIE                // partner, ouder, kind, etc.
+  UREN_PER_WEEK          // 0-5, 5-10, etc.
+  ZORGDUUR               // <1 jaar, 1-3 jaar, etc.
+  UREN_BALANSTEST        // Uren opties voor balanstest (0-2, 2-4, etc.)
+  BUDDY_HULPVORM         // gesprek, boodschappen, vervoer, etc.
+  CHECKIN_HULP           // Hulp opties bij check-in vraag
+}
+
+// App content (onboarding, tutorial, pagina intro's, etc.)
+model AppContent {
+  id           String         @id @default(cuid())
+  type         AppContentType
+  sleutel      String
+  titel        String?
+  inhoud       String?        // Hoofdtekst (markdown of plain text)
+  subtekst     String?        // Secundaire tekst
+  emoji        String?
+  icon         String?
+  afbeelding   String?        // URL naar afbeelding
+  metadata     Json?          // Extra data (feature cards, knopteksten, etc.)
+  volgorde     Int            @default(0)
+  isActief     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@unique([type, sleutel])
+  @@index([type, isActief])
+}
+
+enum AppContentType {
+  ONBOARDING     // Onboarding flow stappen
+  TUTORIAL       // Tutorial stappen
+  PAGINA_INTRO   // Pagina titels en beschrijvingen
+  FEATURE_CARD   // Feature uitleg kaarten
+}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { GerAvatar } from "@/components/GerAvatar"
 import { searchGemeenten } from "@/lib/pdok"
@@ -30,6 +30,63 @@ export function Onboarding({ userName, onComplete }: OnboardingProps) {
     careHoursPerWeek: "",
     careSinceDuration: "",
   })
+
+  // Content state - fetched from API
+  const [relatieOpties, setRelatieOpties] = useState<any[]>([])
+  const [urenOpties, setUrenOpties] = useState<any[]>([])
+  const [duurOpties, setDuurOpties] = useState<any[]>([])
+  const [contentLoading, setContentLoading] = useState(true)
+  const [contentError, setContentError] = useState<string | null>(null)
+  const hasFetchedContent = useRef(false)
+
+  // Fetch form options from API on mount
+  useEffect(() => {
+    if (hasFetchedContent.current) return
+    hasFetchedContent.current = true
+
+    const loadContent = async () => {
+      try {
+        const [relatieRes, urenRes, duurRes] = await Promise.all([
+          fetch("/api/content/formulier-opties?groep=RELATIE"),
+          fetch("/api/content/formulier-opties?groep=UREN_PER_WEEK"),
+          fetch("/api/content/formulier-opties?groep=ZORGDUUR"),
+        ])
+
+        if (!relatieRes.ok || !urenRes.ok || !duurRes.ok) {
+          throw new Error("Fout bij laden van opties")
+        }
+
+        const relatieData = await relatieRes.json()
+        const urenData = await urenRes.json()
+        const duurData = await duurRes.json()
+
+        setRelatieOpties((relatieData.opties || []).map((o: any) => ({
+          value: o.waarde,
+          label: o.label,
+          emoji: o.emoji,
+        })))
+
+        setUrenOpties((urenData.opties || []).map((o: any) => ({
+          value: o.waarde,
+          label: o.label,
+          beschrijving: o.beschrijving,
+        })))
+
+        setDuurOpties((duurData.opties || []).map((o: any) => ({
+          value: o.waarde,
+          label: o.label,
+          emoji: o.emoji,
+        })))
+      } catch (error) {
+        console.error("Error loading onboarding content:", error)
+        setContentError("Er ging iets mis bij het laden.")
+      } finally {
+        setContentLoading(false)
+      }
+    }
+
+    loadContent()
+  }, [])
 
   const voornaam = userName?.split(" ")[0] || ""
   const progressPercent = ((step + 1) / TOTAL_STEPS) * 100
@@ -90,6 +147,34 @@ export function Onboarding({ userName, onComplete }: OnboardingProps) {
     return true
   }
 
+  if (contentLoading) {
+    return (
+      <div className="fixed inset-0 z-[100] bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Laden...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (contentError) {
+    return (
+      <div className="fixed inset-0 z-[100] bg-background flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <p className="text-foreground font-medium mb-2">Er ging iets mis</p>
+          <p className="text-muted-foreground text-sm mb-4">{contentError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="ker-btn ker-btn-primary"
+          >
+            Opnieuw proberen
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="fixed inset-0 z-[100] bg-background flex flex-col">
       {/* Progress bar bovenaan */}
@@ -119,8 +204,8 @@ export function Onboarding({ userName, onComplete }: OnboardingProps) {
       <div className="flex-1 overflow-y-auto px-5 pb-28">
         <div className="max-w-lg mx-auto" key={step}>
           {step === 0 && <StapWelkom naam={voornaam} />}
-          {step === 1 && <StapWieBenJij data={data} onChange={setData} />}
-          {step === 2 && <StapZorgsituatie data={data} onChange={setData} />}
+          {step === 1 && <StapWieBenJij data={data} onChange={setData} relatieOpties={relatieOpties} />}
+          {step === 2 && <StapZorgsituatie data={data} onChange={setData} urenOpties={urenOpties} duurOpties={duurOpties} />}
           {step === 3 && <StapAppUitleg />}
           {step === 4 && <StapKlaar naam={voornaam} />}
         </div>
@@ -201,9 +286,11 @@ function StapWelkom({ naam }: { naam: string }) {
 function StapWieBenJij({
   data,
   onChange,
+  relatieOpties,
 }: {
   data: OnboardingData
   onChange: (data: OnboardingData) => void
+  relatieOpties: any[]
 }) {
   const [gemeenteQuery, setGemeenteQuery] = useState("")
   const [gemeenteResults, setGemeenteResults] = useState<string[]>([])
@@ -239,14 +326,6 @@ function StapWieBenJij({
     onChange({ ...data, gemeente: "" })
     setGemeenteQuery("")
   }
-
-  const relatieOpties = [
-    { value: "partner", label: "Mijn partner", emoji: "💑" },
-    { value: "ouder", label: "Mijn ouder", emoji: "👵" },
-    { value: "kind", label: "Mijn kind", emoji: "👧" },
-    { value: "ander-familielid", label: "Ander familielid", emoji: "👨‍👩‍👧" },
-    { value: "kennis", label: "Kennis of vriend(in)", emoji: "🤝" },
-  ]
 
   return (
     <div className="pt-6">
@@ -349,24 +428,14 @@ function StapWieBenJij({
 function StapZorgsituatie({
   data,
   onChange,
+  urenOpties,
+  duurOpties,
 }: {
   data: OnboardingData
   onChange: (data: OnboardingData) => void
+  urenOpties: any[]
+  duurOpties: any[]
 }) {
-  const urenOpties = [
-    { value: "0-5", label: "0 - 5 uur", beschrijving: "Af en toe bijspringen" },
-    { value: "5-10", label: "5 - 10 uur", beschrijving: "Regelmatig helpen" },
-    { value: "10-20", label: "10 - 20 uur", beschrijving: "Flink bezig" },
-    { value: "20-40", label: "20 - 40 uur", beschrijving: "Bijna een baan" },
-    { value: "40+", label: "Meer dan 40 uur", beschrijving: "Fulltime zorg" },
-  ]
-
-  const duurOpties = [
-    { value: "<1", label: "Minder dan 1 jaar", emoji: "🌱" },
-    { value: "1-3", label: "1 - 3 jaar", emoji: "🌿" },
-    { value: "3-5", label: "3 - 5 jaar", emoji: "🌳" },
-    { value: "5+", label: "Meer dan 5 jaar", emoji: "🏔️" },
-  ]
 
   return (
     <div className="pt-6">
