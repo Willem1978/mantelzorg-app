@@ -2,8 +2,6 @@
 
 import { useState } from "react"
 
-const AUTH_SECRET = "I4otrwnhi1dOFRpgitPwAMDpj8fBLHBwHojQVuf6g+w="
-
 const steps = [
   { label: "Stap 1: Artikelen + Nieuws + Admin", endpoint: "/api/seed/artikelen", description: "Admin user, 44 artikelen, 6 gemeente nieuws items, intake vragen" },
   { label: "Stap 2: Content", endpoint: "/api/seed/content", description: "Balanstest vragen, zorgtaken, categorieen, formulier opties, app content" },
@@ -21,7 +19,7 @@ export default function SeedPage() {
     try {
       const res = await fetch(endpoint, {
         method: "POST",
-        headers: { Authorization: `Bearer ${AUTH_SECRET}` },
+        headers: { "Content-Type": "application/json" },
       })
       const data = await res.json()
       setResults(prev => ({
