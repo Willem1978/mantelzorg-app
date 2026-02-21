@@ -120,7 +120,7 @@ export async function GET(
           isActief: true,
           OR: [
             { onderdeelTest: 'Mantelzorgondersteuning' },
-            { soortHulp: { in: ['Emotionele steun', 'Respijtzorg', 'Lotgenotencontact'] } },
+            { soortHulp: { in: ['Emotionele steun', 'Vervangende mantelzorg', 'Lotgenotencontact'] } },
           ],
           gemeente: null,
         },

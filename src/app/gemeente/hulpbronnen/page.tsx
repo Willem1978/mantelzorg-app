@@ -24,7 +24,7 @@ const categorieOpties = [
   { value: "zorg", label: "Zorg" },
   { value: "financieel", label: "Financieel" },
   { value: "juridisch", label: "Juridisch" },
-  { value: "respijtzorg", label: "Respijtzorg" },
+  { value: "vervangende-mantelzorg", label: "Vervangende mantelzorg" },
   { value: "psychosociaal", label: "Psychosociaal" },
   { value: "praktisch", label: "Praktisch" },
   { value: "hulpmiddelen", label: "Hulpmiddelen" },

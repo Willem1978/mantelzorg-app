@@ -63,7 +63,7 @@ const wellbeingDistribution = [
 ]
 
 const needsByCategory = [
-  { category: "Respijtzorg", count: 34, percentage: 22 },
+  { category: "Vervangende mantelzorg", count: 34, percentage: 22 },
   { category: "Emotionele steun", count: 28, percentage: 18 },
   { category: "Praktische hulp", count: 25, percentage: 16 },
   { category: "Financieel advies", count: 19, percentage: 12 },

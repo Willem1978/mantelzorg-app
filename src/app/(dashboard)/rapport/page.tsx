@@ -612,7 +612,7 @@ function getHulpTip(taakId: string): string {
     t4: "De gemeente kan aangepast vervoer regelen (Regiotaxi, WMO-vervoer).",
     t5: "Vraag bij je gemeente naar vrijwillige hulp bij administratie en formulieren.",
     t6: "Dagbesteding of vrijwilligers kunnen voor gezelschap zorgen.",
-    t7: "Respijtzorg of dagopvang kan toezicht overnemen zodat jij even rust hebt.",
+    t7: "Vervangende mantelzorg of dagopvang kan toezicht overnemen zodat jij even rust hebt.",
     t8: "Thuiszorg of wijkverpleging kan medische handelingen overnemen.",
     t9: "Vrijwilligers of een klussenbus kunnen helpen met klussen in huis.",
   }

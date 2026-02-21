@@ -53,7 +53,7 @@ const urgentieColors: Record<string, string> = {
 }
 
 const categorieLabels: Record<string, string> = {
-  RESPITE_CARE: "Respijtzorg",
+  RESPITE_CARE: "Vervangende mantelzorg",
   EMOTIONAL_SUPPORT: "Emotionele steun",
   PRACTICAL_HELP: "Praktische hulp",
   FINANCIAL_ADVICE: "Financieel advies",

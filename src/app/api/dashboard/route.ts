@@ -181,7 +181,7 @@ async function getHulpbronnenVoorTaken(
       isActief: true,
       OR: [
         { onderdeelTest: 'Mantelzorgondersteuning' },
-        { soortHulp: { in: ['Emotionele steun', 'Respijtzorg', 'Lotgenotencontact', 'Educatie', 'Leren en training'] } },
+        { soortHulp: { in: ['Emotionele steun', 'Vervangende mantelzorg', 'Lotgenotencontact', 'Educatie', 'Leren en training'] } },
       ],
       gemeente: null,
       AND: niveauFilter,
@@ -218,7 +218,7 @@ async function getHulpbronnenVoorTaken(
     'Huisdieren',
     // Voor jou (mantelzorger)
     'Mantelzorgondersteuning',
-    'Respijtzorg',
+    'Vervangende mantelzorg',
     'Emotionele steun',
     'Lotgenotencontact',
     'Leren en training',
@@ -233,7 +233,7 @@ async function getHulpbronnenVoorTaken(
           where: {
             isActief: true,
             onderdeelTest: onderdeel,
-            gemeente: ['Mantelzorgondersteuning', 'Respijtzorg', 'Emotionele steun', 'Lotgenotencontact', 'Leren en training'].includes(onderdeel)
+            gemeente: ['Mantelzorgondersteuning', 'Vervangende mantelzorg', 'Emotionele steun', 'Lotgenotencontact', 'Leren en training'].includes(onderdeel)
               ? mantelzorgerGemeente
               : zorgvragerGemeente,
             AND: niveauFilter,

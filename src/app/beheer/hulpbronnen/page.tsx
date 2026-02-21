@@ -1491,7 +1491,7 @@ export default function BeheerHulpbronnenPage() {
           <div className="flex flex-col sm:flex-row gap-3 mb-4">
             <input
               type="text"
-              placeholder="Zoekterm (bijv. respijtzorg, dagbesteding)"
+              placeholder="Zoekterm (bijv. vervangende mantelzorg, dagbesteding)"
               value={scrapeZoekterm}
               onChange={(e) => setScrapeZoekterm(e.target.value)}
               className="flex-1 px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"

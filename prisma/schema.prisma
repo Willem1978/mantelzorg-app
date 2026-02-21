@@ -399,7 +399,7 @@ model Zorgorganisatie {
   doelgroep             String?
   kosten                String?
   locatieOmschrijving   String?
-  onderdeelTest         String?             // Categorie: Persoonlijke verzorging, Ondersteuning, Respijtzorg, etc.
+  onderdeelTest         String?             // Categorie: Persoonlijke verzorging, Ondersteuning, Vervangende mantelzorg, etc.
   soortHulp             String?
   voorwaarden           String?
   verschijntIn          String[]            // Array van plekken waar dit item verschijnt (voor cross-referencing)
