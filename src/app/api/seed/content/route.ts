@@ -77,7 +77,7 @@ export async function POST(request: Request) {
     // Mantelzorger
     const catMantelzorger = [
       { slug: "mantelzorgondersteuning", naam: "Mantelzorgondersteuning", icon: "\u{1F49C}", hint: "Ondersteuning", volgorde: 1 },
-      { slug: "respijtzorg", naam: "Respijtzorg", icon: "\u{1F3E0}", hint: "Respijtzorg", volgorde: 2 },
+      { slug: "vervangende-mantelzorg", naam: "Vervangende mantelzorg", icon: "\u{1F3E0}", hint: "Vervangende mantelzorg", volgorde: 2 },
       { slug: "emotionele-steun", naam: "Emotionele steun", icon: "\u{1F49A}", hint: "Praten & steun", volgorde: 3 },
       { slug: "lotgenotencontact", naam: "Lotgenotencontact", icon: "\u{1F465}", hint: "Lotgenoten", volgorde: 4 },
       { slug: "leren-en-training", naam: "Leren en training", icon: "\u{1F393}", hint: "Leren & training", volgorde: 5 },
@@ -208,7 +208,7 @@ export async function POST(request: Request) {
       // Tutorial
       { type: "TUTORIAL" as const, sleutel: "welkom", titel: "Welkom bij MantelBuddy", inhoud: "Ik ben **Ger**, en ik ga je stap voor stap uitleggen hoe MantelBuddy jou kan helpen.", subtekst: "Het duurt maar 2 minuutjes.", emoji: "\u{1F44B}", volgorde: 0 },
       { type: "TUTORIAL" as const, sleutel: "balanstest", titel: "De Balanstest", inhoud: "Met een **korte test** van 2 minuten kijken we hoe het met je gaat.", emoji: "\u{1F4CA}", volgorde: 1, metadata: { demoScore: 13, maxScore: 24 } },
-      { type: "TUTORIAL" as const, sleutel: "hulp-mantelzorger", titel: "Hulp voor jou", inhoud: "Je hoeft het niet alleen te doen. MantelBuddy zoekt hulp **bij jou in de buurt**.", subtekst: "Daarom vragen we je adres.", emoji: "\u{1F49C}", volgorde: 2, metadata: { items: [{ emoji: "\u{1F49C}", label: "Ondersteuning" }, { emoji: "\u{1F3E0}", label: "Respijtzorg" }, { emoji: "\u{1F49A}", label: "Praten" }, { emoji: "\u{1F465}", label: "Lotgenoten" }] } },
+      { type: "TUTORIAL" as const, sleutel: "hulp-mantelzorger", titel: "Hulp voor jou", inhoud: "Je hoeft het niet alleen te doen. MantelBuddy zoekt hulp **bij jou in de buurt**.", subtekst: "Daarom vragen we je adres.", emoji: "\u{1F49C}", volgorde: 2, metadata: { items: [{ emoji: "\u{1F49C}", label: "Ondersteuning" }, { emoji: "\u{1F3E0}", label: "Vervangende mantelzorg" }, { emoji: "\u{1F49A}", label: "Praten" }, { emoji: "\u{1F465}", label: "Lotgenoten" }] } },
       { type: "TUTORIAL" as const, sleutel: "hulp-naaste", titel: "Hulp voor je naaste", inhoud: "Er is ook hulp voor de persoon waar je voor zorgt.", emoji: "\u{1F49D}", volgorde: 3, metadata: { items: [{ emoji: "\u{1F6C1}", label: "Verzorging", status: "zwaar" }, { emoji: "\u{1F9F9}", label: "Huishouden", status: "gemiddeld" }, { emoji: "\u{1F37D}\uFE0F", label: "Maaltijden", status: "gemiddeld" }, { emoji: "\u{1F697}", label: "Vervoer", status: "licht" }] } },
       { type: "TUTORIAL" as const, sleutel: "mantelbuddies", titel: "MantelBuddies", inhoud: "Een **MantelBuddy** is een vrijwilliger bij jou in de buurt.", emoji: "\u{1F91D}", volgorde: 4, metadata: { items: [{ emoji: "\u{1F6D2}", text: "Boodschappen doen" }, { emoji: "\u2615", text: "Even een praatje maken" }, { emoji: "\u{1F697}", text: "Mee naar de dokter" }, { emoji: "\u{1F527}", text: "Klusjes in huis" }] } },
       { type: "TUTORIAL" as const, sleutel: "informatie", titel: "Informatie en tips", inhoud: "Bij **Informatie** vind je handige artikelen en nieuws uit jouw gemeente.", emoji: "\u{1F4DA}", volgorde: 5 },

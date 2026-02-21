@@ -133,7 +133,7 @@ function hulpTip(taakId: string): string {
     t4: "De gemeente kan aangepast vervoer regelen (Regiotaxi, WMO-vervoer).",
     t5: "Vraag bij je gemeente naar vrijwillige hulp bij administratie.",
     t6: "Dagbesteding of vrijwilligers kunnen voor gezelschap zorgen.",
-    t7: "Respijtzorg of dagopvang kan toezicht overnemen zodat jij rust hebt.",
+    t7: "Vervangende mantelzorg of dagopvang kan toezicht overnemen zodat jij rust hebt.",
     t8: "Thuiszorg of wijkverpleging kan medische handelingen overnemen.",
     t9: "Vrijwilligers of een klussenbus kunnen helpen met klussen.",
   }
@@ -344,7 +344,7 @@ export function generatePdfRapport(data: PdfRapportData): void {
     const acties = [
       "Neem contact op met je huisarts en bespreek hoe het gaat",
       "Bel je gemeente voor WMO-ondersteuning of mantelzorgsteunpunt",
-      "Vraag respijtzorg aan zodat jij even rust kunt nemen",
+      "Vraag vervangende mantelzorg aan zodat jij even rust kunt nemen",
       "Praat erover met iemand die je vertrouwt",
     ]
     for (const a of acties) { y = bullet(doc, y, a, C.rood) }
