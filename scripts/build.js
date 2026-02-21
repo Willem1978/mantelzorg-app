@@ -14,12 +14,8 @@ if (!process.env.DIRECT_URL && process.env.DATABASE_URL) {
 // Generate Prisma client
 execSync('npx prisma generate', { stdio: 'inherit', env: process.env });
 
-// Only run db push if not on Vercel (migrations should be managed separately)
-if (!process.env.VERCEL) {
-  execSync('npx prisma db push --skip-generate --accept-data-loss', { stdio: 'inherit', env: process.env });
-} else {
-  console.log('Skipping prisma db push on Vercel (manage migrations separately)');
-}
+// Run db push to ensure database schema is up to date
+execSync('npx prisma db push --skip-generate --accept-data-loss', { stdio: 'inherit', env: process.env });
 
 // Build Next.js
 execSync('npx next build', { stdio: 'inherit', env: process.env });
