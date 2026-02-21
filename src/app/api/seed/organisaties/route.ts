@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { ZorgorganisatieType } from "@prisma/client"
 
 export const maxDuration = 120
 
 interface OrgData {
   naam: string
   beschrijving?: string
-  type: string
+  type: ZorgorganisatieType
   telefoon?: string
   email?: string
   website?: string
