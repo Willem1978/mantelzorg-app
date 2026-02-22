@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 // Mapping van menu-items naar vereiste gemeente subrollen
 // Items zonder 'rollen' zijn altijd zichtbaar voor de hoofdadmin
@@ -20,6 +20,18 @@ const alleMenuItems = [
   { href: "/gemeente/gebruikers", label: "Gebruikers", icon: "👤", rollen: [] },
 ]
 
+// Spinner component om herhaling te voorkomen
+function LoadingSpinner({ tekst }: { tekst: string }) {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
+        <span className="text-gray-500 text-sm">{tekst}</span>
+      </div>
+    </div>
+  )
+}
+
 export default function GemeenteLayout({
   children,
 }: {
@@ -28,46 +40,40 @@ export default function GemeenteLayout({
   const pathname = usePathname()
   const { data: session, status } = useSession()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [redirecting, setRedirecting] = useState(false)
+
+  const userRole = (session?.user as any)?.role
+
+  // Client-side auth redirect als fallback (via useEffect om render loop te voorkomen)
+  useEffect(() => {
+    if (pathname === "/gemeente/login") return
+
+    if (status === "unauthenticated") {
+      setRedirecting(true)
+      window.location.href = `/gemeente/login?callbackUrl=${encodeURIComponent(pathname)}`
+    } else if (status === "authenticated" && userRole !== "GEMEENTE_ADMIN" && userRole !== "ADMIN") {
+      setRedirecting(true)
+      window.location.href = "/gemeente/login"
+    }
+  }, [status, userRole, pathname])
 
   // Login pagina heeft geen sidebar
   if (pathname === "/gemeente/login") {
     return <>{children}</>
   }
 
-  // Wacht tot sessie geladen is om hydration errors te voorkomen
+  // Wacht tot sessie geladen is
   if (status === "loading") {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
-          <span className="text-gray-500 text-sm">Portaal laden...</span>
-        </div>
-      </div>
-    )
+    return <LoadingSpinner tekst="Portaal laden..." />
   }
 
-  // Client-side auth fallback: redirect naar login als niet ingelogd
-  // (vangt situaties op waar middleware niet werkt, bijv. Next.js 16 deprecation)
-  if (status === "unauthenticated") {
-    if (typeof window !== "undefined") {
-      window.location.href = `/gemeente/login?callbackUrl=${encodeURIComponent(pathname)}`
-    }
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
-          <span className="text-gray-500 text-sm">Doorsturen naar login...</span>
-        </div>
-      </div>
-    )
+  // Redirect is bezig
+  if (redirecting || status === "unauthenticated") {
+    return <LoadingSpinner tekst="Doorsturen naar login..." />
   }
 
-  // Controleer of gebruiker de juiste rol heeft
-  const userRole = (session?.user as any)?.role
+  // Rolcontrole
   if (userRole !== "GEMEENTE_ADMIN" && userRole !== "ADMIN") {
-    if (typeof window !== "undefined") {
-      window.location.href = "/gemeente/login"
-    }
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-white rounded-2xl shadow-lg p-8 text-center max-w-md">
@@ -88,13 +94,12 @@ export default function GemeenteLayout({
 
   // Hoofdadmin (geen subrollen of ADMIN) ziet alles, anders filteren op rollen
   const isHoofdAdmin = userRole === "ADMIN" || gemeenteRollen.length === 0
-  const menuItems = useMemo(() => {
-    if (isHoofdAdmin) return alleMenuItems
-    return alleMenuItems.filter((item) =>
-      item.rollen.length === 0 || item.rollen.some((r) => gemeenteRollen.includes(r))
-    )
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isHoofdAdmin, JSON.stringify(gemeenteRollen)])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const menuItems = isHoofdAdmin
+    ? alleMenuItems
+    : alleMenuItems.filter((item) =>
+        item.rollen.length === 0 || item.rollen.some((r) => gemeenteRollen.includes(r))
+      )
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
