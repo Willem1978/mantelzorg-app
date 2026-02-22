@@ -939,9 +939,6 @@ function HulpPageContent() {
                         )}
                         <span className="text-2xl mb-2">{cat.icon}</span>
                         <p className="font-bold text-sm">{cat.kort}</p>
-                        {cat.routeLabel && !isSelected && (
-                          <p className="text-xs text-muted-foreground mt-0.5">{cat.routeLabel}</p>
-                        )}
                         {aantalHulp > 0 && (
                           <p className={cn(
                             "text-xs mt-0.5",
