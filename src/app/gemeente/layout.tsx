@@ -46,9 +46,45 @@ export default function GemeenteLayout({
     )
   }
 
-  const gemeenteNaam = (session?.user as any)?.gemeenteNaam || "Gemeente"
-  const gemeenteRollen: string[] = (session?.user as any)?.gemeenteRollen || []
+  // Client-side auth fallback: redirect naar login als niet ingelogd
+  // (vangt situaties op waar middleware niet werkt, bijv. Next.js 16 deprecation)
+  if (status === "unauthenticated") {
+    if (typeof window !== "undefined") {
+      window.location.href = `/gemeente/login?callbackUrl=${encodeURIComponent(pathname)}`
+    }
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
+          <span className="text-gray-500 text-sm">Doorsturen naar login...</span>
+        </div>
+      </div>
+    )
+  }
+
+  // Controleer of gebruiker de juiste rol heeft
   const userRole = (session?.user as any)?.role
+  if (userRole !== "GEMEENTE_ADMIN" && userRole !== "ADMIN") {
+    if (typeof window !== "undefined") {
+      window.location.href = "/gemeente/login"
+    }
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white rounded-2xl shadow-lg p-8 text-center max-w-md">
+          <h2 className="text-lg font-bold text-gray-900 mb-2">Geen toegang</h2>
+          <p className="text-gray-500 text-sm mb-4">Je hebt geen toegang tot het gemeenteportaal.</p>
+          <a href="/gemeente/login" className="text-emerald-600 hover:underline text-sm font-medium">
+            Inloggen met een ander account
+          </a>
+        </div>
+      </div>
+    )
+  }
+
+  const gemeenteNaam = (session?.user as any)?.gemeenteNaam || "Gemeente"
+  const gemeenteRollen: string[] = Array.isArray((session?.user as any)?.gemeenteRollen)
+    ? (session?.user as any).gemeenteRollen
+    : []
 
   // Hoofdadmin (geen subrollen of ADMIN) ziet alles, anders filteren op rollen
   const isHoofdAdmin = userRole === "ADMIN" || gemeenteRollen.length === 0
@@ -57,7 +93,8 @@ export default function GemeenteLayout({
     return alleMenuItems.filter((item) =>
       item.rollen.length === 0 || item.rollen.some((r) => gemeenteRollen.includes(r))
     )
-  }, [isHoofdAdmin, gemeenteRollen])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHoofdAdmin, JSON.stringify(gemeenteRollen)])
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
