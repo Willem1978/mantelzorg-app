@@ -35,8 +35,22 @@ export async function GET(request: NextRequest) {
       { gemeente: null },
     ]
 
-    const doelgroepFilter = doelgroep
-      ? [{ OR: [{ doelgroep }, { doelgroep: null }] }]
+    // Doelgroep filter: vertaal "MANTELZORGER"/"ZORGVRAGER" naar onderdeelTest categorieën
+    // Het doelgroep-veld in de database bevat vrije tekst, niet enum waarden
+    const MANTELZORGER_CATEGORIEEN = [
+      'Mantelzorgondersteuning',
+      'Vervangende mantelzorg',
+      'Emotionele steun',
+      'Lotgenotencontact',
+      'Leren en training',
+    ]
+    const doelgroepFilter = doelgroep === "MANTELZORGER"
+      ? [{ onderdeelTest: { in: MANTELZORGER_CATEGORIEEN } }]
+      : doelgroep === "ZORGVRAGER"
+      ? [{ OR: [
+          { onderdeelTest: { notIn: MANTELZORGER_CATEGORIEEN } },
+          { onderdeelTest: null },
+        ] }]
       : []
 
     const categorieFilter = onderdeelTest
