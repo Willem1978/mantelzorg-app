@@ -306,7 +306,7 @@ export default function GemeenteHulpbronnen() {
     ? CATEGORIEEN_MANTELZORGER
     : [...CATEGORIEEN_ZORGVRAGER, ...CATEGORIEEN_MANTELZORGER]
 
-  const isLandelijk = (item: Hulpbron) => item.dekkingNiveau === "LANDELIJK"
+  const isLandelijk = (item: Hulpbron) => item.dekkingNiveau === "LANDELIJK" || !item.gemeente
 
   return (
     <div className="space-y-6">
