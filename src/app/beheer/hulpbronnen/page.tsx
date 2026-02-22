@@ -30,6 +30,8 @@ interface Hulpbron {
   kosten: string | null
   doelgroep: string | null
   aanmeldprocedure: string | null
+  bronLabel: string | null
+  zorgverzekeraar: string | null
 }
 
 interface ScrapedResult {
@@ -103,6 +105,30 @@ const DEKKING_NIVEAUS = [
   { value: "WIJK", label: "Specifieke wijken" },
 ]
 
+const BRON_LABEL_OPTIES = [
+  "Landelijk",
+  "Gemeente",
+  "Zvw",
+  "Wlz",
+  "Wmo",
+  "Overig",
+]
+
+const ZORGVERZEKERAAR_OPTIES = [
+  "Zilveren Kruis",
+  "VGZ",
+  "CZ",
+  "Menzis",
+  "ONVZ",
+  "DSW",
+  "Eno/Salland",
+  "Zorg en Zekerheid",
+  "ASR",
+  "Caresq",
+  "EUCARE",
+  "iptiQ",
+]
+
 const EMPTY_FORM: Partial<Hulpbron> = {
   naam: "",
   beschrijving: "",
@@ -128,6 +154,8 @@ const EMPTY_FORM: Partial<Hulpbron> = {
   kosten: "",
   doelgroep: "",
   aanmeldprocedure: "",
+  bronLabel: "",
+  zorgverzekeraar: "",
 }
 
 export default function BeheerHulpbronnenPage() {
@@ -1755,6 +1783,22 @@ export default function BeheerHulpbronnenPage() {
                   {!item.dekkingNiveau && item.gemeente && (
                     <span className="ker-badge text-[10px]">{item.gemeente}</span>
                   )}
+                  {item.bronLabel && (
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                      item.bronLabel === "Landelijk"
+                        ? "bg-amber-100 text-amber-700"
+                        : item.bronLabel === "Gemeente"
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-gray-100 text-gray-700"
+                    }`}>
+                      {item.bronLabel}
+                    </span>
+                  )}
+                  {item.zorgverzekeraar && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 font-medium">
+                      {item.zorgverzekeraar}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 flex-wrap mt-1">
                   {item.onderdeelTest && (
@@ -2370,6 +2414,48 @@ export default function BeheerHulpbronnenPage() {
                   {SOORT_HULP_OPTIES.map((s) => (
                     <option key={s} value={s}>
                       {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Bron label (Landelijk/Lokaal) */}
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                  Bron
+                </label>
+                <select
+                  value={editItem.bronLabel || ""}
+                  onChange={(e) =>
+                    setEditItem({ ...editItem, bronLabel: e.target.value })
+                  }
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+                >
+                  <option value="">-- Geen --</option>
+                  {BRON_LABEL_OPTIES.map((b) => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Zorgverzekeraar */}
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                  Zorgverzekeraar
+                </label>
+                <select
+                  value={editItem.zorgverzekeraar || ""}
+                  onChange={(e) =>
+                    setEditItem({ ...editItem, zorgverzekeraar: e.target.value })
+                  }
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+                >
+                  <option value="">-- Geen --</option>
+                  {ZORGVERZEKERAAR_OPTIES.map((z) => (
+                    <option key={z} value={z}>
+                      {z}
                     </option>
                   ))}
                 </select>

@@ -45,6 +45,7 @@ export async function PUT(
       verschijntIn: body.verschijntIn !== undefined ? body.verschijntIn : undefined,
       routeLabel: body.routeLabel ?? null,
       bronLabel: body.bronLabel ?? null,
+      zorgverzekeraar: body.zorgverzekeraar ?? null,
     },
   })
 
