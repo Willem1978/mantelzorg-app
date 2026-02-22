@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
     const gemeenteFilter = [
       { gemeente: { equals: gemeenteNaam!, mode: "insensitive" as const } },
       { dekkingNiveau: "LANDELIJK" },
+      { gemeente: null },
     ]
 
     const doelgroepFilter = doelgroep
