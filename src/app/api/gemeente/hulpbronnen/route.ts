@@ -32,26 +32,30 @@ export async function GET(request: NextRequest) {
     }
 
     // sectie === "hulp" (default): Zorgorganisatie records voor deze gemeente
-    const where: Record<string, unknown> = {
-      isActief: true,
-      OR: [
-        { gemeente: { equals: gemeenteNaam!, mode: "insensitive" } },
-        { dekkingNiveau: "LANDELIJK" },
-      ],
-    }
+    const gemeenteFilter = [
+      { gemeente: { equals: gemeenteNaam!, mode: "insensitive" as const } },
+      { dekkingNiveau: "LANDELIJK" },
+    ]
 
-    if (doelgroep) where.doelgroep = doelgroep
+    // Doelgroep filter: toon ook records zonder doelgroep (null = voor iedereen)
+    const doelgroepFilter = doelgroep
+      ? [{ OR: [{ doelgroep }, { doelgroep: null }] }]
+      : []
 
-    if (zoek) {
-      const zoekCondition = {
-        OR: [
+    const zoekFilter = zoek
+      ? [{ OR: [
           { naam: { contains: zoek, mode: "insensitive" as const } },
           { beschrijving: { contains: zoek, mode: "insensitive" as const } },
-        ],
-      }
-      const existingOR = where.OR
-      delete where.OR
-      where.AND = [{ OR: existingOR }, zoekCondition]
+        ] }]
+      : []
+
+    const where = {
+      isActief: true,
+      AND: [
+        { OR: gemeenteFilter },
+        ...doelgroepFilter,
+        ...zoekFilter,
+      ],
     }
 
     const hulpbronnen = await prisma.zorgorganisatie.findMany({
