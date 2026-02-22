@@ -188,32 +188,28 @@ export function ContentModal({
         </div>
 
         {/* Footer met knoppen */}
-        <div className="px-5 py-4 border-t border-border space-y-2">
-          {telefoon && (
-            <a
-              href={`tel:${telefoon}`}
-              className="ker-btn ker-btn-primary w-full flex items-center justify-center gap-2"
-            >
-              📞 Bellen: {telefoon}
-            </a>
-          )}
-          {(url || website) && (
-            <a
-              href={url || website || ""}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`ker-btn w-full flex items-center justify-center gap-2 ${telefoon ? "ker-btn-secondary" : "ker-btn-primary"}`}
-            >
-              🌐 {bron ? `Lees meer op ${bron}` : "Bekijk website"}
-            </a>
-          )}
-          <button
-            onClick={onClose}
-            className="ker-btn ker-btn-secondary w-full"
-          >
-            Sluiten
-          </button>
-        </div>
+        {(telefoon || url || website) && (
+          <div className="px-5 py-4 border-t border-border space-y-2">
+            {telefoon && (
+              <a
+                href={`tel:${telefoon}`}
+                className="ker-btn ker-btn-primary w-full flex items-center justify-center gap-2"
+              >
+                📞 Bellen: {telefoon}
+              </a>
+            )}
+            {(url || website) && (
+              <a
+                href={url || website || ""}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`ker-btn w-full flex items-center justify-center gap-2 ${telefoon ? "ker-btn-secondary" : "ker-btn-primary"}`}
+              >
+                🌐 {bron ? `Lees meer op ${bron}` : "Bekijk website"}
+              </a>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
