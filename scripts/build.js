@@ -17,5 +17,12 @@ execSync('npx prisma generate', { stdio: 'inherit', env: process.env });
 // Run db push to ensure database schema is up to date
 execSync('npx prisma db push --skip-generate --accept-data-loss', { stdio: 'inherit', env: process.env });
 
+// Run db seed to ensure seed data is present
+try {
+  execSync('npx prisma db seed', { stdio: 'inherit', env: process.env });
+} catch (e) {
+  console.warn('Warning: prisma db seed failed, continuing build...', e.message);
+}
+
 // Build Next.js
 execSync('npx next build', { stdio: 'inherit', env: process.env });
