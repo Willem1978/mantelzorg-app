@@ -76,7 +76,7 @@ export default function CategoriePage() {
 
           // Build subHoofdstukken from children
           if (c.children && c.children.length > 0) {
-            subsMap[c.slug] = c.children.map((child: any) => ({
+            subsMap[c.slug] = c.children.map((child: { slug: string; naam: string; beschrijving: string }) => ({
               slug: child.slug,
               titel: child.naam,
               beschrijving: child.beschrijving,
@@ -126,8 +126,8 @@ export default function CategoriePage() {
             }
           }
         }
-      } catch {
-        // Silently fail
+      } catch (error) {
+        console.error("Fout bij laden artikelen:", error)
       } finally {
         setLoading(false)
       }

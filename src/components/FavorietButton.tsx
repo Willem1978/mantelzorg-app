@@ -77,14 +77,14 @@ export function FavorietButton({
         })
         if (!res.ok) throw new Error()
         const data = await res.json()
-        setFavorietId(data.favoriet.id)
+        setFavorietId(data?.favoriet?.id)
       }
 
       onToggle?.(!wasFavorited)
       // Update navbar badge
       window.dispatchEvent(new Event("favorieten-updated"))
-    } catch {
-      // Revert bij fout
+    } catch (error) {
+      console.error("Fout bij favorieten toggle:", error)
       setIsFavorited(wasFavorited)
     } finally {
       setIsLoading(false)

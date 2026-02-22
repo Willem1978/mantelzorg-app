@@ -11,9 +11,17 @@ interface GemeenteNieuwsItem {
   gemeente: string | null
 }
 
+interface LerenCategorie {
+  id: string
+  title: string
+  description: string
+  emoji: string
+  href: string
+}
+
 export default function LerenPage() {
   // Content state - fetched from API
-  const [categories, setCategories] = useState<any[]>([])
+  const [categories, setCategories] = useState<LerenCategorie[]>([])
   const [contentLoading, setContentLoading] = useState(true)
   const [contentError, setContentError] = useState<string | null>(null)
   const hasFetchedContent = useRef(false)
@@ -59,7 +67,7 @@ export default function LerenPage() {
         if (!res.ok) throw new Error("Fout bij laden van categorieën")
 
         const data = await res.json()
-        const mapped = (data.categorieen || []).map((c: any) => ({
+        const mapped: LerenCategorie[] = (data.categorieen || []).map((c: { slug: string; naam: string; beschrijving: string; emoji: string }) => ({
           id: c.slug,
           title: c.naam,
           description: c.beschrijving,
@@ -110,8 +118,8 @@ export default function LerenPage() {
           try {
             const data = await favRes.json()
             setFavorieten(data.favorited || {})
-          } catch {
-            // Silently fail
+          } catch (error) {
+            console.error("Fout bij verwerken data:", error)
           }
         }
 
@@ -122,8 +130,8 @@ export default function LerenPage() {
             if (Array.isArray(data.gelezenIds)) {
               gelezenRef.current = data.gelezenIds
             }
-          } catch {
-            // Silently fail
+          } catch (error) {
+            console.error("Fout bij verwerken data:", error)
           }
         }
 
@@ -136,8 +144,8 @@ export default function LerenPage() {
               counts[a.categorie] = (counts[a.categorie] || 0) + 1
             }
             setAantalPerCategorie(counts)
-          } catch {
-            // Silently fail
+          } catch (error) {
+            console.error("Fout bij verwerken data:", error)
           }
         }
 
@@ -146,8 +154,8 @@ export default function LerenPage() {
           try {
             const data = await nieuwsRes.json()
             gemeenteNieuwsRef.current = data.artikelen || []
-          } catch {
-            // Silently fail
+          } catch (error) {
+            console.error("Fout bij verwerken data:", error)
           }
         }
 
@@ -163,12 +171,12 @@ export default function LerenPage() {
 
             // Bereken nieuw items
             berekenNieuwItems(gMantelzorger, gZorgvrager)
-          } catch {
-            // Silently fail
+          } catch (error) {
+            console.error("Fout bij verwerken data:", error)
           }
         }
-      } catch {
-        // Netwerk/onverwachte fout - silently fail
+      } catch (error) {
+        console.error("Fout bij laden leren data:", error)
       }
     }
 
@@ -186,8 +194,8 @@ export default function LerenPage() {
             gelezenRef.current = data.gelezenIds
           }
         }
-      } catch {
-        // Silently fail
+      } catch (error) {
+        console.error("Fout bij vernieuwen gelezen status:", error)
       }
       berekenNieuwItems(gemeenteRef.current.mantelzorger, gemeenteRef.current.zorgvrager)
     }
