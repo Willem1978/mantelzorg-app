@@ -47,9 +47,22 @@ export async function GET(request: NextRequest) {
     // Bouw AND-condities op (doelgroep + zoek + eventueel bestaande OR)
     const andConditions: Record<string, unknown>[] = []
 
-    // Doelgroep filter: toon ook records zonder doelgroep (null = voor iedereen)
-    if (doelgroep) {
-      andConditions.push({ OR: [{ doelgroep }, { doelgroep: null }] })
+    // Doelgroep filter: vertaal "MANTELZORGER"/"ZORGVRAGER" naar onderdeelTest categorieën
+    // Het doelgroep-veld in de database bevat vrije tekst, niet enum waarden
+    const MANTELZORGER_CATEGORIEEN = [
+      'Mantelzorgondersteuning',
+      'Vervangende mantelzorg',
+      'Emotionele steun',
+      'Lotgenotencontact',
+      'Leren en training',
+    ]
+    if (doelgroep === "MANTELZORGER") {
+      andConditions.push({ onderdeelTest: { in: MANTELZORGER_CATEGORIEEN } })
+    } else if (doelgroep === "ZORGVRAGER") {
+      andConditions.push({ OR: [
+        { onderdeelTest: { notIn: MANTELZORGER_CATEGORIEEN } },
+        { onderdeelTest: null },
+      ] })
     }
 
     if (zoek) {
