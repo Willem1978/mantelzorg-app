@@ -48,6 +48,7 @@ const CATEGORIEEN_ZORGVRAGER = [
   "Huishoudelijke taken",
   "Klusjes in en om het huis",
   "Administratie en aanvragen",
+  "Plannen en organiseren",
   "Sociaal contact en activiteiten",
   "Vervoer",
 ]
