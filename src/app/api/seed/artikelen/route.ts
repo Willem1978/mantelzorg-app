@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
+import { artikelInhoud } from "@/data/artikel-inhoud"
+import { artikelInhoud2 } from "@/data/artikel-inhoud-2"
+
+const alleInhoud: Record<string, string> = { ...artikelInhoud, ...artikelInhoud2 }
 
 export const maxDuration = 60
 
@@ -109,10 +113,11 @@ export async function POST(request: Request) {
     ]
 
     for (const a of artikelenData) {
+      const inhoud = alleInhoud[a.id] || null
       await prisma.artikel.upsert({
         where: { id: a.id },
-        create: { id: a.id, titel: a.titel, beschrijving: a.beschrijving, url: a.url, bron: a.bron, emoji: a.emoji, categorie: a.categorie, subHoofdstuk: a.subHoofdstuk, bronLabel: a.bronLabel, type: "ARTIKEL", status: "GEPUBLICEERD", belastingNiveau: "ALLE", sorteerVolgorde: a.sorteerVolgorde, isActief: true },
-        update: { titel: a.titel, beschrijving: a.beschrijving, url: a.url, bron: a.bron, emoji: a.emoji, categorie: a.categorie, subHoofdstuk: a.subHoofdstuk, bronLabel: a.bronLabel, sorteerVolgorde: a.sorteerVolgorde },
+        create: { id: a.id, titel: a.titel, beschrijving: a.beschrijving, inhoud, url: a.url, bron: a.bron, emoji: a.emoji, categorie: a.categorie, subHoofdstuk: a.subHoofdstuk, bronLabel: a.bronLabel, type: "ARTIKEL", status: "GEPUBLICEERD", belastingNiveau: "ALLE", sorteerVolgorde: a.sorteerVolgorde, isActief: true },
+        update: { titel: a.titel, beschrijving: a.beschrijving, inhoud, url: a.url, bron: a.bron, emoji: a.emoji, categorie: a.categorie, subHoofdstuk: a.subHoofdstuk, bronLabel: a.bronLabel, sorteerVolgorde: a.sorteerVolgorde },
       })
     }
     results.push(`${artikelenData.length} artikelen`)

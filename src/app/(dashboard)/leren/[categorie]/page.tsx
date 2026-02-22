@@ -5,11 +5,13 @@ import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import { FavorietButton } from "@/components/FavorietButton"
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs"
+import { ContentModal } from "@/components/ui/ContentModal"
 
 interface Artikel {
   id: string
   titel: string
   beschrijving: string
+  inhoud: string | null
   url: string | null
   bron: string | null
   emoji: string | null
@@ -292,51 +294,63 @@ function ArtikelCard({ artikel, categorieTitel, isFavorited, favorietId }: {
   isFavorited: boolean
   favorietId?: string
 }) {
+  const [modalOpen, setModalOpen] = useState(false)
+
   return (
-    <div className="ker-card py-4 relative">
-      {/* Hartje rechtsboven */}
-      <div className="absolute top-3 right-3">
-        <FavorietButton
-          type="INFORMATIE"
-          itemId={artikel.id}
-          titel={artikel.titel}
-          beschrijving={artikel.beschrijving}
-          categorie={categorieTitel}
-          url={artikel.url || undefined}
-          icon={artikel.emoji || undefined}
-          initialFavorited={isFavorited}
-          initialFavorietId={favorietId}
-          size="sm"
-        />
+    <>
+      <div
+        className="ker-card py-4 relative cursor-pointer hover:shadow-md transition-shadow"
+        onClick={() => setModalOpen(true)}
+      >
+        {/* Hartje rechtsboven */}
+        <div className="absolute top-3 right-3" onClick={(e) => e.stopPropagation()}>
+          <FavorietButton
+            type="INFORMATIE"
+            itemId={artikel.id}
+            titel={artikel.titel}
+            beschrijving={artikel.beschrijving}
+            categorie={categorieTitel}
+            url={artikel.url || undefined}
+            icon={artikel.emoji || undefined}
+            initialFavorited={isFavorited}
+            initialFavorietId={favorietId}
+            size="sm"
+          />
+        </div>
+
+        {/* Content */}
+        <div className="pr-12">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xl">{artikel.emoji || "📄"}</span>
+            <h2 className="font-semibold text-sm">{artikel.titel}</h2>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed mb-2 pl-7 line-clamp-2">
+            {artikel.beschrijving}
+          </p>
+          <div className="flex items-center gap-3 pl-7 flex-wrap">
+            {artikel.bronLabel && (
+              <span className={`text-xs px-2 py-0.5 rounded-full ${bronLabelKleur(artikel.bronLabel)}`}>
+                {artikel.bronLabel}
+              </span>
+            )}
+            {artikel.inhoud && (
+              <span className="text-xs text-primary font-medium">Lees meer →</span>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Content */}
-      <div className="pr-12">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-xl">{artikel.emoji || "📄"}</span>
-          <h2 className="font-semibold text-sm">{artikel.titel}</h2>
-        </div>
-        <p className="text-xs text-muted-foreground leading-relaxed mb-3 pl-7">
-          {artikel.beschrijving}
-        </p>
-        <div className="flex items-center gap-3 pl-7 flex-wrap">
-          {artikel.url && artikel.bron && (
-            <a
-              href={artikel.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-primary hover:underline font-medium flex items-center gap-1"
-            >
-              🌐 Lees meer op {artikel.bron}
-            </a>
-          )}
-          {artikel.bronLabel && (
-            <span className={`text-xs px-2 py-0.5 rounded-full ${bronLabelKleur(artikel.bronLabel)}`}>
-              {artikel.bronLabel}
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
+      <ContentModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        titel={artikel.titel}
+        emoji={artikel.emoji}
+        beschrijving={artikel.beschrijving}
+        inhoud={artikel.inhoud}
+        bron={artikel.bron}
+        bronLabel={artikel.bronLabel}
+        url={artikel.url}
+      />
+    </>
   )
 }
