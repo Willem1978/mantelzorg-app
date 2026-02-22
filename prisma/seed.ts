@@ -290,59 +290,9 @@ async function main() {
     })
   }
 
-  // Seed Zutphen zorgorganisaties (hulpbronnen)
-  const zutphenOrganisaties = [
-    { naam: 'Perspectief Zutphen - Mantelzorgondersteuning', beschrijving: 'Het aanspreekpunt voor mantelzorgers in Zutphen. Advies, informatie en een luisterend oor.', type: 'MANTELZORGSTEUNPUNT' as const, telefoon: '0575-519700', website: 'https://www.perspectief.nu/', gemeente: 'Zutphen', onderdeelTest: 'Mantelzorgondersteuning', soortHulp: 'Informatie en advies', doelgroep: 'Alle mantelzorgers', kosten: 'Gratis', zichtbaarBijLaag: true, zichtbaarBijGemiddeld: true, zichtbaarBijHoog: true },
-    { naam: 'Perspectief Zutphen - Emotionele steun', beschrijving: 'Luisterend oor, individuele gesprekken en emotionele ondersteuning voor mantelzorgers.', type: 'MANTELZORGSTEUNPUNT' as const, telefoon: '0575-519700', website: 'https://www.perspectief.nu/', gemeente: 'Zutphen', onderdeelTest: 'Emotionele steun', soortHulp: 'Emotionele steun', doelgroep: 'Alle mantelzorgers', kosten: 'Gratis', zichtbaarBijLaag: false, zichtbaarBijGemiddeld: true, zichtbaarBijHoog: true },
-    { naam: 'Perspectief Zutphen - Lotgenotengroepen', beschrijving: 'Gespreksgroepen waar je andere mantelzorgers ontmoet en ervaringen deelt.', type: 'MANTELZORGSTEUNPUNT' as const, telefoon: '0575-519700', website: 'https://www.perspectief.nu/', gemeente: 'Zutphen', onderdeelTest: 'Lotgenotencontact', soortHulp: 'Lotgenotencontact', doelgroep: 'Alle mantelzorgers', kosten: 'Gratis', zichtbaarBijLaag: false, zichtbaarBijGemiddeld: true, zichtbaarBijHoog: true },
-    { naam: 'Perspectief Zutphen - Cursussen en training', beschrijving: 'Cursussen en trainingen voor mantelzorgers, zoals omgaan met stress en grenzen stellen.', type: 'MANTELZORGSTEUNPUNT' as const, telefoon: '0575-519700', website: 'https://www.perspectief.nu/', gemeente: 'Zutphen', onderdeelTest: 'Leren en training', soortHulp: 'Educatie', doelgroep: 'Alle mantelzorgers', kosten: 'Gratis', zichtbaarBijLaag: false, zichtbaarBijGemiddeld: true, zichtbaarBijHoog: true },
-    { naam: 'Gemeente Zutphen - Mantelzorgcompliment', beschrijving: 'Jaarlijkse waardering van de gemeente voor mantelzorgers. Aanvragen via het Sociaal Wijkteam.', type: 'GEMEENTE' as const, website: 'https://www.zutphen.nl/', gemeente: 'Zutphen', onderdeelTest: 'Mantelzorgondersteuning', soortHulp: 'Financiele regelingen', doelgroep: 'Alle mantelzorgers in Zutphen', kosten: 'Gratis', zichtbaarBijLaag: true, zichtbaarBijGemiddeld: true, zichtbaarBijHoog: true },
-    { naam: 'Sociaal Wijkteam Zutphen', beschrijving: 'Eerste aanspreekpunt voor vragen over zorg, welzijn en ondersteuning.', type: 'SOCIAAL_WIJKTEAM' as const, website: 'https://www.zutphen.nl/', gemeente: 'Zutphen', onderdeelTest: 'Plannen en organiseren', soortHulp: 'Informatie en advies', doelgroep: 'Alle inwoners', kosten: 'Gratis', zichtbaarBijLaag: true, zichtbaarBijGemiddeld: true, zichtbaarBijHoog: true },
-    { naam: 'Perspectief Zutphen - Boodschappenhulp', beschrijving: 'Vrijwilligers helpen met boodschappen doen.', type: 'VRIJWILLIGERS' as const, telefoon: '0575-519700', website: 'https://www.perspectief.nu/', gemeente: 'Zutphen', onderdeelTest: 'Boodschappen', soortHulp: 'Praktische hulp', doelgroep: 'Ouderen, zieken, mantelzorgers', kosten: 'Gratis', zichtbaarBijLaag: true, zichtbaarBijGemiddeld: true, zichtbaarBijHoog: true },
-    { naam: 'Gemeente Zutphen - Huishoudelijke hulp WMO', beschrijving: 'Huishoudelijke hulp via de WMO. Aanvragen via het Sociaal Wijkteam.', type: 'GEMEENTE' as const, website: 'https://www.zutphen.nl/', gemeente: 'Zutphen', onderdeelTest: 'Huishoudelijke taken', soortHulp: 'Praktische hulp', doelgroep: 'Inwoners die zelf niet kunnen schoonmaken', kosten: 'Eigen bijdrage via CAK', zichtbaarBijLaag: true, zichtbaarBijGemiddeld: true, zichtbaarBijHoog: true },
-    { naam: 'Perspectief Zutphen - Klusjes', beschrijving: 'Vrijwilligers helpen met kleine klusjes in en om het huis.', type: 'VRIJWILLIGERS' as const, telefoon: '0575-519700', website: 'https://www.perspectief.nu/', gemeente: 'Zutphen', onderdeelTest: 'Klusjes in en om het huis', soortHulp: 'Praktische hulp', doelgroep: 'Ouderen, zieken, mantelzorgers', kosten: 'Gratis', zichtbaarBijLaag: true, zichtbaarBijGemiddeld: true, zichtbaarBijHoog: true },
-    { naam: 'AutoMaatje Zutphen', beschrijving: 'Vrijwillige chauffeurs brengen u naar afspraken.', type: 'VRIJWILLIGERS' as const, website: 'https://www.anwb.nl/automaatje', gemeente: 'Zutphen', onderdeelTest: 'Vervoer', soortHulp: 'Praktische hulp', doelgroep: 'Ouderen die niet zelf kunnen rijden', kosten: '\u20AC0,35 per km', zichtbaarBijLaag: true, zichtbaarBijGemiddeld: true, zichtbaarBijHoog: true },
-    { naam: 'Regiotaxi Zutphen', beschrijving: 'Van deur tot deur vervoer voor mensen die niet zelfstandig kunnen reizen.', type: 'GEMEENTE' as const, website: 'https://www.zutphen.nl/', gemeente: 'Zutphen', onderdeelTest: 'Vervoer', soortHulp: 'Praktische hulp', doelgroep: 'Mensen die niet zelfstandig kunnen reizen', kosten: 'Laag tarief met indicatie', zichtbaarBijLaag: true, zichtbaarBijGemiddeld: true, zichtbaarBijHoog: true },
-    { naam: 'Tafeltje Dekje Zutphen', beschrijving: 'Warme maaltijden aan huis bezorgd.', type: 'VRIJWILLIGERS' as const, website: 'https://www.maaltijdvoorzieningen.nl/', gemeente: 'Zutphen', onderdeelTest: 'Bereiden en/of nuttigen van maaltijden', soortHulp: 'Praktische hulp', doelgroep: 'Ouderen die niet zelf kunnen koken', zichtbaarBijLaag: true, zichtbaarBijGemiddeld: true, zichtbaarBijHoog: true },
-    { naam: 'Perspectief Zutphen - Maatjes', beschrijving: 'Vrijwillige maatjes voor sociaal contact en activiteiten.', type: 'VRIJWILLIGERS' as const, telefoon: '0575-519700', website: 'https://www.perspectief.nu/', gemeente: 'Zutphen', onderdeelTest: 'Sociaal contact en activiteiten', soortHulp: 'Praktische hulp', doelgroep: 'Mensen die behoefte hebben aan sociaal contact', kosten: 'Gratis', zichtbaarBijLaag: true, zichtbaarBijGemiddeld: true, zichtbaarBijHoog: true },
-    { naam: 'Perspectief Zutphen - Administratiehulp', beschrijving: 'Vrijwilligers helpen met eenvoudige administratieve taken.', type: 'VRIJWILLIGERS' as const, telefoon: '0575-519700', website: 'https://www.perspectief.nu/', gemeente: 'Zutphen', onderdeelTest: 'Administratie en aanvragen', soortHulp: 'Praktische hulp', doelgroep: 'Ouderen, zieken, mantelzorgers', kosten: 'Gratis', zichtbaarBijLaag: true, zichtbaarBijGemiddeld: true, zichtbaarBijHoog: true },
-    { naam: 'ZZG Zorggroep Zutphen - Thuiszorg', beschrijving: 'Professionele thuiszorg: persoonlijke verzorging, verpleging en begeleiding.', type: 'THUISZORG' as const, website: 'https://www.zzgzorggroep.nl/zorg-thuis/', gemeente: 'Zutphen', onderdeelTest: 'Persoonlijke verzorging', soortHulp: 'Professionele zorg', doelgroep: 'Mensen met zorgbehoefte', zichtbaarBijLaag: true, zichtbaarBijGemiddeld: true, zichtbaarBijHoog: true },
-    { naam: 'Dagbesteding De Hanzehof Zutphen', beschrijving: 'Dagbesteding en activiteiten voor ouderen en mensen met dementie.', type: 'DAGBESTEDING' as const, website: 'https://www.zutphen.nl/', gemeente: 'Zutphen', onderdeelTest: 'Vervangende mantelzorg', soortHulp: 'Vervangende mantelzorg', doelgroep: 'Ouderen en mensen met dementie', zichtbaarBijLaag: false, zichtbaarBijGemiddeld: true, zichtbaarBijHoog: true },
-    { naam: 'MEE Veluwe Zutphen', beschrijving: 'Onafhankelijke clientondersteuning voor mensen met een beperking.', type: 'OVERIG' as const, website: 'https://www.mee.nl/', gemeente: 'Zutphen', onderdeelTest: 'Plannen en organiseren', soortHulp: 'Informatie en advies', doelgroep: 'Mensen met een beperking of chronische ziekte', kosten: 'Gratis', zichtbaarBijLaag: true, zichtbaarBijGemiddeld: true, zichtbaarBijHoog: true },
-    { naam: 'Dierenvoedselbank Zutphen', beschrijving: 'Gratis dierenvoer voor mensen met een laag inkomen.', type: 'VRIJWILLIGERS' as const, website: 'https://www.dierenvoedselbanknederland.nl/', gemeente: 'Zutphen', onderdeelTest: 'Huisdieren', soortHulp: 'Praktische hulp', doelgroep: 'Huisdiereigenaren met laag inkomen', kosten: 'Gratis', zichtbaarBijLaag: true, zichtbaarBijGemiddeld: true, zichtbaarBijHoog: true },
-  ]
-
-  for (const org of zutphenOrganisaties) {
-    const existing = await prisma.zorgorganisatie.findFirst({
-      where: { naam: org.naam, gemeente: org.gemeente },
-    })
-    if (existing) {
-      await prisma.zorgorganisatie.update({
-        where: { id: existing.id },
-        data: {
-          beschrijving: org.beschrijving, type: org.type, telefoon: (org as any).telefoon,
-          website: org.website, onderdeelTest: org.onderdeelTest,
-          soortHulp: org.soortHulp, doelgroep: org.doelgroep,
-          kosten: (org as any).kosten, zichtbaarBijLaag: org.zichtbaarBijLaag,
-          zichtbaarBijGemiddeld: org.zichtbaarBijGemiddeld,
-          zichtbaarBijHoog: org.zichtbaarBijHoog, isActief: true,
-        },
-      })
-    } else {
-      await prisma.zorgorganisatie.create({
-        data: {
-          naam: org.naam, beschrijving: org.beschrijving, type: org.type,
-          telefoon: (org as any).telefoon, website: org.website,
-          gemeente: org.gemeente, onderdeelTest: org.onderdeelTest,
-          soortHulp: org.soortHulp, doelgroep: org.doelgroep,
-          kosten: (org as any).kosten, zichtbaarBijLaag: org.zichtbaarBijLaag,
-          zichtbaarBijGemiddeld: org.zichtbaarBijGemiddeld,
-          zichtbaarBijHoog: org.zichtbaarBijHoog, isActief: true,
-        },
-      })
-    }
-  }
-  console.log(`${zutphenOrganisaties.length} Zutphen zorgorganisaties seeded`)
+  // Zutphen zorgorganisaties worden nu geseed via scripts/update-zutphen-hulpbronnen.ts
+  // Op basis van de Sociale Kaart Zutphen 2026
+  console.log('Zutphen zorgorganisaties: gebruik scripts/update-zutphen-hulpbronnen.ts')
 
   console.log('Seeding complete!')
 }
