@@ -19,6 +19,7 @@ const menuItems = [
   { href: "/beheer/intake-vragen", label: "Intake vragen", icon: "📥" },
   { href: "/beheer/alarmen", label: "Alarmen", icon: "🔔" },
   { href: "/beheer/audit", label: "Audit Log", icon: "📋" },
+  { href: "/beheer/data-update", label: "Data bijwerken", icon: "🔄" },
   { href: "/beheer/instellingen", label: "Instellingen", icon: "⚙️" },
 ]
 
