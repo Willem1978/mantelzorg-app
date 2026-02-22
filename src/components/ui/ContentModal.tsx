@@ -164,18 +164,12 @@ export function ContentModal({
           )}
 
           {/* Info-blokken voor organisaties */}
-          {(gemeente || doelgroep || kosten) && (
+          {(gemeente || kosten) && (
             <div className="space-y-2 mb-4">
               {gemeente && (
                 <div className="flex items-center gap-2 text-sm">
                   <span className="text-muted-foreground">📍</span>
                   <span className="text-foreground">{gemeente}</span>
-                </div>
-              )}
-              {doelgroep && (
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-muted-foreground">👥</span>
-                  <span className="text-foreground">{doelgroep}</span>
                 </div>
               )}
               {kosten && (
