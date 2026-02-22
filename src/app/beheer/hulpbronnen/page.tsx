@@ -40,16 +40,30 @@ interface ScrapedResult {
   gemeente?: string
 }
 
-const ONDERDEEL_OPTIES = [
-  "Administratie en aanvragen",
+// Categorieën per doelgroep
+const CATEGORIEEN_ZORGVRAGER = [
+  "Persoonlijke verzorging",
   "Bereiden en/of nuttigen van maaltijden",
   "Boodschappen",
   "Huishoudelijke taken",
   "Klusjes in en om het huis",
-  "Mantelzorgondersteuning",
-  "Persoonlijke verzorging",
+  "Administratie en aanvragen",
   "Sociaal contact en activiteiten",
   "Vervoer",
+]
+
+const CATEGORIEEN_MANTELZORGER = [
+  "Mantelzorgondersteuning",
+  "Vervangende mantelzorg",
+  "Emotionele steun",
+  "Lotgenotencontact",
+  "Leren en training",
+]
+
+// Alle onderdelen (voor backwards compatibility)
+const ONDERDEEL_OPTIES = [
+  ...CATEGORIEEN_ZORGVRAGER,
+  ...CATEGORIEEN_MANTELZORGER.filter((c) => !CATEGORIEEN_ZORGVRAGER.includes(c)),
 ]
 
 const SOORT_HULP_OPTIES = [
@@ -111,6 +125,12 @@ const EMPTY_FORM: Partial<Hulpbron> = {
 
 export default function BeheerHulpbronnenPage() {
   const { data: session, status } = useSession()
+
+  // Hoofd-tab: "informatie" of "hulp"
+  const [activeTab, setActiveTab] = useState<"informatie" | "hulp">("hulp")
+
+  // Doelgroep filter: "" = alle, "MANTELZORGER", "ZORGVRAGER"
+  const [filterDoelgroep, setFilterDoelgroep] = useState<string>("")
 
   // Beheer modus: null = keuze, "landelijk" = landelijk/provincie, "gemeentelijk" = gemeente/woonplaats/wijk
   const [beheerModus, setBeheerModus] = useState<"landelijk" | "gemeentelijk" | null>(null)
@@ -195,6 +215,7 @@ export default function BeheerHulpbronnenPage() {
     if (zoek) params.set("zoek", zoek)
     if (filterOnderdeel) params.set("onderdeelTest", filterOnderdeel)
     if (filterActief) params.set("actief", filterActief)
+    if (filterDoelgroep) params.set("doelgroep", filterDoelgroep)
 
     const res = await fetch(`/api/beheer/hulpbronnen?${params}&t=${Date.now()}`, {
       cache: "no-store",
@@ -207,7 +228,7 @@ export default function BeheerHulpbronnenPage() {
       setFilterOnderdelen(data.filters.onderdelen)
     }
     setLoading(false)
-  }, [beheerModus, beheerGemeente, beheerProvincie, zoek, filterOnderdeel, filterActief])
+  }, [beheerModus, beheerGemeente, beheerProvincie, zoek, filterOnderdeel, filterActief, filterDoelgroep])
 
   useEffect(() => {
     if (status !== "loading" && beheerModus) {
@@ -409,6 +430,7 @@ export default function BeheerHulpbronnenPage() {
         : null,
       onderdeelTest: editItem.onderdeelTest || null,
       soortHulp: editItem.soortHulp || null,
+      doelgroep: editItem.doelgroep || null,
     }
 
     const res = await fetch(url, {
@@ -554,6 +576,13 @@ export default function BeheerHulpbronnenPage() {
   const actiefCount = gefilterdeHulpbronnen.filter((h) => h.isActief).length
   const inactiefCount = gefilterdeHulpbronnen.filter((h) => !h.isActief).length
 
+  // Categorieën afhankelijk van doelgroep
+  const categorieOpties = filterDoelgroep === "ZORGVRAGER"
+    ? CATEGORIEEN_ZORGVRAGER
+    : filterDoelgroep === "MANTELZORGER"
+    ? CATEGORIEEN_MANTELZORGER
+    : ONDERDEEL_OPTIES
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 pb-24">
       {/* Header */}
@@ -562,7 +591,7 @@ export default function BeheerHulpbronnenPage() {
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <span className="text-2xl">🗂️</span> Hulpbronnen Beheer
           </h1>
-          {beheerModus && (
+          {activeTab === "hulp" && beheerModus && (
             <p className="text-sm text-muted-foreground mt-1">
               {gefilterdeHulpbronnen.length} hulpbronnen ({actiefCount} actief, {inactiefCount} inactief)
             </p>
@@ -573,7 +602,7 @@ export default function BeheerHulpbronnenPage() {
             </p>
           )}
         </div>
-        {isLoggedIn && beheerModus && (
+        {isLoggedIn && activeTab === "hulp" && beheerModus && (
           <div className="flex gap-2 flex-wrap">
             <button
               onClick={handleVerrijk}
@@ -650,6 +679,53 @@ export default function BeheerHulpbronnenPage() {
         </div>
       )}
 
+      {/* Hoofdtabs: Informatie / Hulp */}
+      <div className="flex border-b border-[var(--border)] mb-6">
+        <button
+          onClick={() => setActiveTab("informatie")}
+          className={`px-6 py-3 text-sm font-medium border-b-2 transition ${
+            activeTab === "informatie"
+              ? "border-[var(--primary)] text-[var(--primary)]"
+              : "border-transparent text-muted-foreground hover:text-foreground hover:border-[var(--border)]"
+          }`}
+        >
+          Informatie
+        </button>
+        <button
+          onClick={() => setActiveTab("hulp")}
+          className={`px-6 py-3 text-sm font-medium border-b-2 transition ${
+            activeTab === "hulp"
+              ? "border-[var(--primary)] text-[var(--primary)]"
+              : "border-transparent text-muted-foreground hover:text-foreground hover:border-[var(--border)]"
+          }`}
+        >
+          Hulp
+        </button>
+      </div>
+
+      {/* === INFORMATIE TAB === */}
+      {activeTab === "informatie" && (
+        <div className="ker-card text-center py-12">
+          <div className="text-4xl mb-4">📰</div>
+          <h2 className="text-lg font-bold text-foreground mb-2">Informatie & Artikelen</h2>
+          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+            Informatie-artikelen en content worden beheerd via het Artikelen beheer.
+            Gemeenten kunnen vanuit hun portaal alleen gemeentenieuws toevoegen.
+          </p>
+          <a
+            href="/beheer/artikelen"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-medium bg-[var(--primary)] text-white hover:opacity-90 transition"
+          >
+            Naar Artikelen Beheer
+            <span>→</span>
+          </a>
+        </div>
+      )}
+
+      {/* === HULP TAB === */}
+      {activeTab === "hulp" && (
+      <>
+
       {/* Stap 1: Keuze Landelijk of Gemeentelijk */}
       <div className="ker-card mb-6">
         <div className="flex items-center gap-3">
@@ -694,6 +770,56 @@ export default function BeheerHulpbronnenPage() {
           </button>
         </div>
       </div>
+
+      {/* Stap 2: Doelgroep selector */}
+      {beheerModus && (
+        <div className="ker-card mb-6">
+          <label className="block text-xs font-medium text-muted-foreground mb-2">
+            Voor wie is de hulp?
+          </label>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                setFilterDoelgroep("MANTELZORGER")
+                setFilterOnderdeel("")
+              }}
+              className={`flex-1 py-3 px-4 rounded-lg text-center font-medium transition border-2 ${
+                filterDoelgroep === "MANTELZORGER"
+                  ? "border-purple-500 bg-purple-500 text-white"
+                  : "border-[var(--border)] bg-[var(--background)] text-foreground hover:border-purple-400 hover:bg-purple-50"
+              }`}
+            >
+              <div className="text-lg mb-1">💜</div>
+              <div className="text-sm">Voor de mantelzorger</div>
+            </button>
+            <button
+              onClick={() => {
+                setFilterDoelgroep("ZORGVRAGER")
+                setFilterOnderdeel("")
+              }}
+              className={`flex-1 py-3 px-4 rounded-lg text-center font-medium transition border-2 ${
+                filterDoelgroep === "ZORGVRAGER"
+                  ? "border-emerald-500 bg-emerald-500 text-white"
+                  : "border-[var(--border)] bg-[var(--background)] text-foreground hover:border-emerald-400 hover:bg-emerald-50"
+              }`}
+            >
+              <div className="text-lg mb-1">🤲</div>
+              <div className="text-sm">Voor de zorgvrager</div>
+            </button>
+          </div>
+          {filterDoelgroep && (
+            <button
+              onClick={() => {
+                setFilterDoelgroep("")
+                setFilterOnderdeel("")
+              }}
+              className="mt-2 text-xs text-muted-foreground hover:text-foreground transition"
+            >
+              Filter wissen
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Landelijk: provincie filter */}
       {beheerModus === "landelijk" && (
@@ -788,7 +914,7 @@ export default function BeheerHulpbronnenPage() {
               className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
             >
               <option value="">Alle categorieën</option>
-              {filterOnderdelen.map((o) => (
+              {(filterDoelgroep ? categorieOpties : filterOnderdelen).map((o) => (
                 <option key={o} value={o}>{o}</option>
               ))}
             </select>
@@ -1137,7 +1263,7 @@ export default function BeheerHulpbronnenPage() {
                   className="px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
                 >
                   <option value="">Alle categorieën</option>
-                  {filterOnderdelen.map((o) => (
+                  {(filterDoelgroep ? categorieOpties : filterOnderdelen).map((o) => (
                     <option key={o} value={o}>{o}</option>
                   ))}
                 </select>
@@ -1591,6 +1717,12 @@ export default function BeheerHulpbronnenPage() {
                   ) : (
                     <span className="ker-badge ker-badge-red text-[10px]">Inactief</span>
                   )}
+                  {item.doelgroep === "MANTELZORGER" && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-medium">Mantelzorger</span>
+                  )}
+                  {item.doelgroep === "ZORGVRAGER" && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 font-medium">Zorgvrager</span>
+                  )}
                   {item.dekkingNiveau === "LANDELIJK" && (
                     <span className="ker-badge ker-badge-amber text-[10px]">Landelijk</span>
                   )}
@@ -1722,6 +1854,10 @@ export default function BeheerHulpbronnenPage() {
           </div>
         </div>
       )}
+
+      </>
+      )}
+      {/* Einde hulp tab */}
 
       {/* Add/Edit Form Modal */}
       {showForm && (
@@ -2134,6 +2270,37 @@ export default function BeheerHulpbronnenPage() {
                 />
               </div>
 
+              {/* Doelgroep */}
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                  Doelgroep *
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditItem({ ...editItem, doelgroep: "MANTELZORGER", onderdeelTest: "" })}
+                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition border-2 ${
+                      editItem.doelgroep === "MANTELZORGER"
+                        ? "border-purple-500 bg-purple-500 text-white"
+                        : "border-[var(--border)] text-foreground hover:border-purple-400"
+                    }`}
+                  >
+                    💜 Voor de mantelzorger
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditItem({ ...editItem, doelgroep: "ZORGVRAGER", onderdeelTest: "" })}
+                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition border-2 ${
+                      editItem.doelgroep === "ZORGVRAGER"
+                        ? "border-emerald-500 bg-emerald-500 text-white"
+                        : "border-[var(--border)] text-foreground hover:border-emerald-400"
+                    }`}
+                  >
+                    🤲 Voor de zorgvrager
+                  </button>
+                </div>
+              </div>
+
               {/* Type */}
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1">
@@ -2154,10 +2321,10 @@ export default function BeheerHulpbronnenPage() {
                 </select>
               </div>
 
-              {/* Onderdeel Test (categorie) */}
+              {/* Categorie (afhankelijk van doelgroep) */}
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1">
-                  Categorie (onderdeel test)
+                  Categorie
                 </label>
                 <select
                   value={editItem.onderdeelTest || ""}
@@ -2167,7 +2334,12 @@ export default function BeheerHulpbronnenPage() {
                   className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
                 >
                   <option value="">-- Geen --</option>
-                  {ONDERDEEL_OPTIES.map((o) => (
+                  {(editItem.doelgroep === "ZORGVRAGER"
+                    ? CATEGORIEEN_ZORGVRAGER
+                    : editItem.doelgroep === "MANTELZORGER"
+                    ? CATEGORIEEN_MANTELZORGER
+                    : ONDERDEEL_OPTIES
+                  ).map((o) => (
                     <option key={o} value={o}>
                       {o}
                     </option>
@@ -2178,7 +2350,7 @@ export default function BeheerHulpbronnenPage() {
               {/* Soort Hulp */}
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1">
-                  Soort hulp (voor mantelzorger)
+                  Soort hulp
                 </label>
                 <select
                   value={editItem.soortHulp || ""}

@@ -1,335 +1,644 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 
-interface Resource {
+// Zorgorganisatie interface (hulp tab)
+interface Hulpbron {
   id: string
-  title: string
-  description: string
-  category: string
+  naam: string
+  beschrijving: string | null
   type: string
-  url: string | null
-  city: string | null
+  telefoon: string | null
+  email: string | null
+  website: string | null
+  gemeente: string | null
+  onderdeelTest: string | null
+  soortHulp: string | null
+  doelgroep: string | null
+  dekkingNiveau: string
+  isActief: boolean
+}
+
+// Artikel interface (informatie tab)
+interface Artikel {
+  id: string
+  titel: string
+  beschrijving: string
+  status: string
+  publicatieDatum: string | null
   createdAt: string
 }
 
-interface HulpbronnenData {
-  gemeenteNaam: string
-  lokaal: Resource[]
-  nationaal: Resource[]
-}
+// Categorieën per doelgroep
+const CATEGORIEEN_ZORGVRAGER = [
+  "Persoonlijke verzorging",
+  "Bereiden en/of nuttigen van maaltijden",
+  "Boodschappen",
+  "Huishoudelijke taken",
+  "Klusjes in en om het huis",
+  "Administratie en aanvragen",
+  "Sociaal contact en activiteiten",
+  "Vervoer",
+]
 
-const categorieOpties = [
-  { value: "welzijn", label: "Welzijn" },
-  { value: "zorg", label: "Zorg" },
-  { value: "financieel", label: "Financieel" },
-  { value: "juridisch", label: "Juridisch" },
-  { value: "vervangende-mantelzorg", label: "Vervangende mantelzorg" },
-  { value: "psychosociaal", label: "Psychosociaal" },
-  { value: "praktisch", label: "Praktisch" },
-  { value: "hulpmiddelen", label: "Hulpmiddelen" },
-  { value: "educatie", label: "Educatie & training" },
-  { value: "overig", label: "Overig" },
+const CATEGORIEEN_MANTELZORGER = [
+  "Mantelzorgondersteuning",
+  "Vervangende mantelzorg",
+  "Emotionele steun",
+  "Lotgenotencontact",
+  "Leren en training",
 ]
 
 export default function GemeenteHulpbronnen() {
-  const [data, setData] = useState<HulpbronnenData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  // Tabs
+  const [activeTab, setActiveTab] = useState<"informatie" | "hulp">("hulp")
 
-  // Form state
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [category, setCategory] = useState("welzijn")
-  const [url, setUrl] = useState("")
-  const [submitting, setSubmitting] = useState(false)
-  const [submitError, setSubmitError] = useState<string | null>(null)
-  const [submitSuccess, setSubmitSuccess] = useState(false)
+  // Informatie tab state
+  const [artikelen, setArtikelen] = useState<Artikel[]>([])
+  const [artikelenLoading, setArtikelenLoading] = useState(false)
+  const [artikelenError, setArtikelenError] = useState<string | null>(null)
+  const [gemeenteNaam, setGemeenteNaam] = useState("")
 
-  const fetchHulpbronnen = () => {
-    fetch("/api/gemeente/hulpbronnen")
-      .then((res) => {
-        if (!res.ok) throw new Error("Kon hulpbronnen niet ophalen")
+  // Informatie form
+  const [nieuwsTitel, setNieuwsTitel] = useState("")
+  const [nieuwsBeschrijving, setNieuwsBeschrijving] = useState("")
+  const [nieuwsSubmitting, setNieuwsSubmitting] = useState(false)
+  const [nieuwsError, setNieuwsError] = useState<string | null>(null)
+  const [nieuwsSuccess, setNieuwsSuccess] = useState(false)
+
+  // Hulp tab state
+  const [hulpbronnen, setHulpbronnen] = useState<Hulpbron[]>([])
+  const [hulpLoading, setHulpLoading] = useState(false)
+  const [hulpError, setHulpError] = useState<string | null>(null)
+  const [doelgroep, setDoelgroep] = useState<string>("")
+  const [zoek, setZoek] = useState("")
+
+  // Hulp form
+  const [showHulpForm, setShowHulpForm] = useState(false)
+  const [hulpNaam, setHulpNaam] = useState("")
+  const [hulpBeschrijving, setHulpBeschrijving] = useState("")
+  const [hulpDoelgroep, setHulpDoelgroep] = useState("")
+  const [hulpCategorie, setHulpCategorie] = useState("")
+  const [hulpTelefoon, setHulpTelefoon] = useState("")
+  const [hulpEmail, setHulpEmail] = useState("")
+  const [hulpWebsite, setHulpWebsite] = useState("")
+  const [hulpSubmitting, setHulpSubmitting] = useState(false)
+  const [hulpSubmitError, setHulpSubmitError] = useState<string | null>(null)
+  const [hulpSubmitSuccess, setHulpSubmitSuccess] = useState(false)
+
+  // Fetch informatie (gemeentenieuws)
+  const fetchInformatie = useCallback(() => {
+    setArtikelenLoading(true)
+    setArtikelenError(null)
+    fetch("/api/gemeente/hulpbronnen?sectie=informatie")
+      .then(async (res) => {
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}))
+          throw new Error(body.error || "Kon gemeentenieuws niet ophalen")
+        }
         return res.json()
       })
-      .then((data: HulpbronnenData) => {
-        setData(data)
+      .then((data) => {
+        setArtikelen(data.artikelen || [])
+        setGemeenteNaam(data.gemeenteNaam || "")
       })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false))
-  }
-
-  useEffect(() => {
-    fetchHulpbronnen()
+      .catch((err) => setArtikelenError(err.message))
+      .finally(() => setArtikelenLoading(false))
   }, [])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSubmitError(null)
-    setSubmitSuccess(false)
+  // Fetch hulp (zorgorganisaties)
+  const fetchHulp = useCallback(() => {
+    setHulpLoading(true)
+    setHulpError(null)
+    const params = new URLSearchParams({ sectie: "hulp" })
+    if (doelgroep) params.set("doelgroep", doelgroep)
+    if (zoek) params.set("zoek", zoek)
 
-    if (!title.trim() || !description.trim()) {
-      setSubmitError("Vul titel en beschrijving in.")
+    fetch(`/api/gemeente/hulpbronnen?${params}`)
+      .then(async (res) => {
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}))
+          throw new Error(body.error || "Kon hulpbronnen niet ophalen")
+        }
+        return res.json()
+      })
+      .then((data) => {
+        setHulpbronnen(data.hulpbronnen || [])
+        if (data.gemeenteNaam) setGemeenteNaam(data.gemeenteNaam)
+      })
+      .catch((err) => setHulpError(err.message))
+      .finally(() => setHulpLoading(false))
+  }, [doelgroep, zoek])
+
+  useEffect(() => {
+    if (activeTab === "informatie") fetchInformatie()
+    else fetchHulp()
+  }, [activeTab, fetchInformatie, fetchHulp])
+
+  // Gemeentenieuws toevoegen
+  const handleNieuwsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setNieuwsError(null)
+    setNieuwsSuccess(false)
+
+    if (!nieuwsTitel.trim() || !nieuwsBeschrijving.trim()) {
+      setNieuwsError("Vul titel en beschrijving in.")
       return
     }
 
-    setSubmitting(true)
-
+    setNieuwsSubmitting(true)
     try {
       const res = await fetch("/api/gemeente/hulpbronnen", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: title.trim(),
-          description: description.trim(),
-          category,
-          url: url.trim() || undefined,
+          sectie: "informatie",
+          titel: nieuwsTitel.trim(),
+          beschrijving: nieuwsBeschrijving.trim(),
         }),
       })
-
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || "Kon hulpbron niet aanmaken")
+        throw new Error(data.error || "Kon nieuws niet toevoegen")
       }
-
-      setTitle("")
-      setDescription("")
-      setCategory("welzijn")
-      setUrl("")
-      setSubmitSuccess(true)
-
-      // Refresh list
-      setLoading(true)
-      fetchHulpbronnen()
-
-      setTimeout(() => setSubmitSuccess(false), 3000)
+      setNieuwsTitel("")
+      setNieuwsBeschrijving("")
+      setNieuwsSuccess(true)
+      fetchInformatie()
+      setTimeout(() => setNieuwsSuccess(false), 3000)
     } catch (err: any) {
-      setSubmitError(err.message)
+      setNieuwsError(err.message)
     } finally {
-      setSubmitting(false)
+      setNieuwsSubmitting(false)
     }
   }
 
-  const ResourceCard = ({ resource }: { resource: Resource }) => (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <h3 className="font-semibold text-gray-900">{resource.title}</h3>
-          <p className="text-sm text-gray-500 mt-1 line-clamp-2">{resource.description}</p>
-        </div>
-        <span className="flex-shrink-0 inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">
-          {resource.category}
-        </span>
-      </div>
-      {resource.url && (
-        <div className="mt-3">
-          <a
-            href={resource.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm text-emerald-600 hover:text-emerald-700 font-medium"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-            Bekijk website
-          </a>
-        </div>
-      )}
-    </div>
-  )
+  // Hulpbron toevoegen
+  const handleHulpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setHulpSubmitError(null)
+    setHulpSubmitSuccess(false)
+
+    if (!hulpNaam.trim()) {
+      setHulpSubmitError("Naam is verplicht.")
+      return
+    }
+
+    setHulpSubmitting(true)
+    try {
+      const res = await fetch("/api/gemeente/hulpbronnen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sectie: "hulp",
+          naam: hulpNaam.trim(),
+          beschrijving: hulpBeschrijving.trim() || undefined,
+          doelgroep: hulpDoelgroep || undefined,
+          onderdeelTest: hulpCategorie || undefined,
+          telefoon: hulpTelefoon.trim() || undefined,
+          email: hulpEmail.trim() || undefined,
+          website: hulpWebsite.trim() || undefined,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Kon hulpbron niet toevoegen")
+      }
+      setHulpNaam("")
+      setHulpBeschrijving("")
+      setHulpDoelgroep("")
+      setHulpCategorie("")
+      setHulpTelefoon("")
+      setHulpEmail("")
+      setHulpWebsite("")
+      setShowHulpForm(false)
+      setHulpSubmitSuccess(true)
+      fetchHulp()
+      setTimeout(() => setHulpSubmitSuccess(false), 3000)
+    } catch (err: any) {
+      setHulpSubmitError(err.message)
+    } finally {
+      setHulpSubmitting(false)
+    }
+  }
+
+  // Categorieën op basis van doelgroep
+  const hulpFormCategorieOpties = hulpDoelgroep === "ZORGVRAGER"
+    ? CATEGORIEEN_ZORGVRAGER
+    : hulpDoelgroep === "MANTELZORGER"
+    ? CATEGORIEEN_MANTELZORGER
+    : [...CATEGORIEEN_ZORGVRAGER, ...CATEGORIEEN_MANTELZORGER.filter((c) => !CATEGORIEEN_ZORGVRAGER.includes(c))]
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Hulpbronnen</h1>
-        <p className="text-gray-500 mt-1">Beheer lokale en nationale hulpbronnen voor mantelzorgers</p>
+        <p className="text-gray-500 mt-1">
+          Beheer informatie en hulp voor mantelzorgers{gemeenteNaam ? ` in ${gemeenteNaam}` : ""}
+        </p>
       </div>
 
-      {/* Nieuwe hulpbron form */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Nieuwe lokale hulpbron toevoegen</h2>
+      {/* Tabs */}
+      <div className="flex border-b border-gray-200">
+        <button
+          onClick={() => setActiveTab("informatie")}
+          className={`px-6 py-3 text-sm font-medium border-b-2 transition ${
+            activeTab === "informatie"
+              ? "border-emerald-600 text-emerald-600"
+              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+          }`}
+        >
+          Informatie
+        </button>
+        <button
+          onClick={() => setActiveTab("hulp")}
+          className={`px-6 py-3 text-sm font-medium border-b-2 transition ${
+            activeTab === "hulp"
+              ? "border-emerald-600 text-emerald-600"
+              : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+          }`}
+        >
+          Hulp
+        </button>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-                Titel
-              </label>
-              <input
-                id="title"
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Naam van de hulpbron"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors"
-                disabled={submitting}
-              />
-            </div>
+      {/* === INFORMATIE TAB === */}
+      {activeTab === "informatie" && (
+        <div className="space-y-6">
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+            <p className="text-sm text-blue-700">
+              Hier beheert u gemeentenieuws voor mantelzorgers in {gemeenteNaam || "uw gemeente"}.
+              Landelijke informatie-artikelen worden centraal beheerd door de beheerder.
+            </p>
+          </div>
 
-            <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-                Categorie
-              </label>
-              <select
-                id="category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors bg-white"
-                disabled={submitting}
+          {/* Nieuw gemeentenieuws form */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Gemeentenieuws toevoegen</h2>
+            <form onSubmit={handleNieuwsSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Titel *</label>
+                <input
+                  type="text"
+                  value={nieuwsTitel}
+                  onChange={(e) => setNieuwsTitel(e.target.value)}
+                  placeholder="Titel van het nieuwsbericht"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                  disabled={nieuwsSubmitting}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Beschrijving *</label>
+                <textarea
+                  value={nieuwsBeschrijving}
+                  onChange={(e) => setNieuwsBeschrijving(e.target.value)}
+                  placeholder="Beschrijving van het nieuws"
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-vertical"
+                  disabled={nieuwsSubmitting}
+                />
+              </div>
+              {nieuwsError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-red-700 text-sm">{nieuwsError}</p>
+                </div>
+              )}
+              {nieuwsSuccess && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <p className="text-green-700 text-sm">Gemeentenieuws toegevoegd!</p>
+                </div>
+              )}
+              <button
+                type="submit"
+                disabled={nieuwsSubmitting}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
               >
-                {categorieOpties.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                {nieuwsSubmitting ? "Toevoegen..." : "+ Nieuws toevoegen"}
+              </button>
+            </form>
+          </div>
+
+          {/* Bestaand gemeentenieuws */}
+          {artikelenLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
+                <span className="text-gray-500 text-sm">Gemeentenieuws laden...</span>
+              </div>
             </div>
+          ) : artikelenError ? (
+            <div className="bg-white rounded-xl border border-gray-200 p-6 text-center">
+              <p className="text-red-700 text-sm">{artikelenError}</p>
+            </div>
+          ) : artikelen.length === 0 ? (
+            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+              <p className="text-gray-500">Nog geen gemeentenieuws.</p>
+              <p className="text-gray-400 text-sm mt-1">Voeg hierboven uw eerste nieuwsbericht toe.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Gemeentenieuws ({artikelen.length})
+              </h2>
+              {artikelen.map((artikel) => (
+                <div key={artikel.id} className="bg-white rounded-xl border border-gray-200 p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{artikel.titel}</h3>
+                      <p className="text-sm text-gray-500 mt-1">{artikel.beschrijving}</p>
+                    </div>
+                    <span className={`flex-shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      artikel.status === "GEPUBLICEERD"
+                        ? "bg-green-100 text-green-700"
+                        : artikel.status === "CONCEPT"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-gray-100 text-gray-600"
+                    }`}>
+                      {artikel.status === "GEPUBLICEERD" ? "Gepubliceerd" : artikel.status === "CONCEPT" ? "Concept" : "Gearchiveerd"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2">
+                    {artikel.publicatieDatum
+                      ? new Date(artikel.publicatieDatum).toLocaleDateString("nl-NL")
+                      : new Date(artikel.createdAt).toLocaleDateString("nl-NL")}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* === HULP TAB === */}
+      {activeTab === "hulp" && (
+        <div className="space-y-6">
+          {/* Doelgroep selector */}
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Voor wie is de hulp?
+            </label>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setDoelgroep("MANTELZORGER"); setZoek("") }}
+                className={`flex-1 py-3 px-4 rounded-lg text-center font-medium transition border-2 ${
+                  doelgroep === "MANTELZORGER"
+                    ? "border-purple-500 bg-purple-500 text-white"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-purple-300 hover:bg-purple-50"
+                }`}
+              >
+                <div className="text-lg mb-1">💜</div>
+                <div className="text-sm">Voor de mantelzorger</div>
+              </button>
+              <button
+                onClick={() => { setDoelgroep("ZORGVRAGER"); setZoek("") }}
+                className={`flex-1 py-3 px-4 rounded-lg text-center font-medium transition border-2 ${
+                  doelgroep === "ZORGVRAGER"
+                    ? "border-emerald-500 bg-emerald-500 text-white"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-emerald-300 hover:bg-emerald-50"
+                }`}
+              >
+                <div className="text-lg mb-1">🤲</div>
+                <div className="text-sm">Voor de zorgvrager</div>
+              </button>
+            </div>
+            {doelgroep && (
+              <button
+                onClick={() => { setDoelgroep(""); setZoek("") }}
+                className="mt-2 text-xs text-gray-400 hover:text-gray-600 transition"
+              >
+                Filter wissen
+              </button>
+            )}
           </div>
 
-          <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-              Beschrijving
-            </label>
-            <textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Beschrijving van de hulpbron"
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors resize-vertical"
-              disabled={submitting}
-            />
-          </div>
-
-          <div>
-            <label htmlFor="url" className="block text-sm font-medium text-gray-700 mb-1">
-              Website URL <span className="text-gray-400">(optioneel)</span>
-            </label>
+          {/* Zoekbalk + toevoegen knop */}
+          <div className="flex gap-3">
             <input
-              id="url"
-              type="url"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://voorbeeld.nl"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors"
-              disabled={submitting}
+              type="text"
+              placeholder="Zoek op naam..."
+              value={zoek}
+              onChange={(e) => setZoek(e.target.value)}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
             />
+            <button
+              onClick={() => setShowHulpForm(!showHulpForm)}
+              className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors whitespace-nowrap"
+            >
+              + Toevoegen
+            </button>
           </div>
 
-          {submitError && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <p className="text-red-700 text-sm">{submitError}</p>
+          {/* Hulpbron toevoegen form */}
+          {showHulpForm && (
+            <div className="bg-white rounded-xl border-2 border-emerald-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Nieuwe hulpbron toevoegen</h2>
+              <form onSubmit={handleHulpSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Naam *</label>
+                  <input
+                    type="text"
+                    value={hulpNaam}
+                    onChange={(e) => setHulpNaam(e.target.value)}
+                    placeholder="Naam van de organisatie"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                    disabled={hulpSubmitting}
+                  />
+                </div>
+
+                {/* Doelgroep keuze */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Doelgroep</label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { setHulpDoelgroep("MANTELZORGER"); setHulpCategorie("") }}
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition border-2 ${
+                        hulpDoelgroep === "MANTELZORGER"
+                          ? "border-purple-500 bg-purple-500 text-white"
+                          : "border-gray-200 text-gray-700 hover:border-purple-300"
+                      }`}
+                    >
+                      💜 Mantelzorger
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setHulpDoelgroep("ZORGVRAGER"); setHulpCategorie("") }}
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition border-2 ${
+                        hulpDoelgroep === "ZORGVRAGER"
+                          ? "border-emerald-500 bg-emerald-500 text-white"
+                          : "border-gray-200 text-gray-700 hover:border-emerald-300"
+                      }`}
+                    >
+                      🤲 Zorgvrager
+                    </button>
+                  </div>
+                </div>
+
+                {/* Categorie */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Categorie</label>
+                  <select
+                    value={hulpCategorie}
+                    onChange={(e) => setHulpCategorie(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white"
+                    disabled={hulpSubmitting}
+                  >
+                    <option value="">-- Selecteer --</option>
+                    {hulpFormCategorieOpties.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Beschrijving</label>
+                  <textarea
+                    value={hulpBeschrijving}
+                    onChange={(e) => setHulpBeschrijving(e.target.value)}
+                    placeholder="Beschrijving van de hulpbron"
+                    rows={2}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-vertical"
+                    disabled={hulpSubmitting}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Telefoon</label>
+                    <input
+                      type="text"
+                      value={hulpTelefoon}
+                      onChange={(e) => setHulpTelefoon(e.target.value)}
+                      placeholder="Telefoonnummer"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                      disabled={hulpSubmitting}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={hulpEmail}
+                      onChange={(e) => setHulpEmail(e.target.value)}
+                      placeholder="email@voorbeeld.nl"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                      disabled={hulpSubmitting}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                    <input
+                      type="url"
+                      value={hulpWebsite}
+                      onChange={(e) => setHulpWebsite(e.target.value)}
+                      placeholder="https://..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                      disabled={hulpSubmitting}
+                    />
+                  </div>
+                </div>
+
+                {hulpSubmitError && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <p className="text-red-700 text-sm">{hulpSubmitError}</p>
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={hulpSubmitting}
+                    className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                  >
+                    {hulpSubmitting ? "Toevoegen..." : "Hulpbron toevoegen"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowHulpForm(false)}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    Annuleren
+                  </button>
+                </div>
+              </form>
             </div>
           )}
 
-          {submitSuccess && (
+          {hulpSubmitSuccess && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-3">
               <p className="text-green-700 text-sm">Hulpbron succesvol toegevoegd!</p>
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {submitting ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Toevoegen...
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Hulpbron toevoegen
-              </>
-            )}
-          </button>
-        </form>
-      </div>
-
-      {/* Loading / Error state */}
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
-            <span className="text-gray-500 text-sm">Hulpbronnen laden...</span>
-          </div>
-        </div>
-      ) : error ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 text-center">
-          <p className="text-red-700 text-sm">{error}</p>
-        </div>
-      ) : (
-        <>
-          {/* Lokale hulpbronnen */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">Lokale hulpbronnen</h2>
-                <p className="text-sm text-gray-500">
-                  {data?.lokaal.length || 0} hulpbron{(data?.lokaal.length || 0) !== 1 ? "nen" : ""} in {data?.gemeenteNaam || "uw gemeente"}
-                </p>
+          {/* Hulpbronnen lijst */}
+          {hulpLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
+                <span className="text-gray-500 text-sm">Hulpbronnen laden...</span>
               </div>
             </div>
-
-            {data?.lokaal.length === 0 ? (
-              <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                  </svg>
+          ) : hulpError ? (
+            <div className="bg-white rounded-xl border border-gray-200 p-6 text-center">
+              <p className="text-red-700 text-sm">{hulpError}</p>
+            </div>
+          ) : hulpbronnen.length === 0 ? (
+            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+              <p className="text-gray-500">
+                {doelgroep
+                  ? `Geen hulpbronnen gevonden voor ${doelgroep === "MANTELZORGER" ? "mantelzorgers" : "zorgvragers"}.`
+                  : "Geen hulpbronnen gevonden."}
+              </p>
+              <p className="text-gray-400 text-sm mt-1">Kies een doelgroep of voeg een nieuwe hulpbron toe.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Hulpbronnen ({hulpbronnen.length})
+              </h2>
+              {hulpbronnen.map((item) => (
+                <div key={item.id} className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold text-gray-900">{item.naam}</h3>
+                        {item.doelgroep === "MANTELZORGER" && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-700">Mantelzorger</span>
+                        )}
+                        {item.doelgroep === "ZORGVRAGER" && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-700">Zorgvrager</span>
+                        )}
+                        {item.dekkingNiveau === "LANDELIJK" && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-700">Landelijk</span>
+                        )}
+                      </div>
+                      {item.beschrijving && (
+                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">{item.beschrijving}</p>
+                      )}
+                      <div className="flex items-center gap-3 mt-2 text-xs text-gray-400 flex-wrap">
+                        {item.onderdeelTest && (
+                          <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-600">{item.onderdeelTest}</span>
+                        )}
+                        {item.telefoon && <span>📞 {item.telefoon}</span>}
+                        {item.email && <span>📧 {item.email}</span>}
+                        {item.website && (
+                          <a
+                            href={item.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-emerald-600 hover:text-emerald-700 hover:underline truncate max-w-[200px]"
+                          >
+                            🌐 {item.website.replace(/^https?:\/\//, "")}
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-gray-500">Nog geen lokale hulpbronnen.</p>
-                <p className="text-gray-400 text-sm mt-1">Voeg hierboven uw eerste lokale hulpbron toe.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {data?.lokaal.map((resource) => (
-                  <ResourceCard key={resource.id} resource={resource} />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Nationale hulpbronnen */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">Nationale hulpbronnen</h2>
-                <p className="text-sm text-gray-500">
-                  {data?.nationaal.length || 0} landelijke hulpbron{(data?.nationaal.length || 0) !== 1 ? "nen" : ""}
-                </p>
-              </div>
+              ))}
             </div>
-
-            {data?.nationaal.length === 0 ? (
-              <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-                <p className="text-gray-500">Geen nationale hulpbronnen beschikbaar.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {data?.nationaal.map((resource) => (
-                  <ResourceCard key={resource.id} resource={resource} />
-                ))}
-              </div>
-            )}
-          </div>
-        </>
+          )}
+        </div>
       )}
     </div>
   )
