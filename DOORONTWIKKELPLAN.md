@@ -1,7 +1,7 @@
 # MatenBuddy - Doorontwikkelplan & Verbeteringsoverzicht
 
-**Datum:** 15 februari 2026
-**Versie:** 1.0
+**Datum:** 22 februari 2026
+**Versie:** 1.1 (bijgewerkt bij baseline v2.5.0)
 **Project:** MatenBuddy (Mantelzorg-app)
 
 ---
@@ -23,22 +23,39 @@
 
 ## 1. Huidige Status
 
+> **Baseline versie: v2.5.0** (22 februari 2026)
+> Deze versie is getagd in Git en kan altijd worden teruggezet als referentiepunt.
+
 ### Wat er nu is
 
 | Onderdeel | Status | Toelichting |
 |-----------|--------|-------------|
 | Registratie & Login | Werkend | Email/wachtwoord, magic links, WhatsApp login |
-| Belastbaarheidstest | Werkend | 11 vragen, 4 categorieen, scoreberekening |
-| Dashboard | Basis werkend | Welzijnsoverzicht, taken, tips |
-| Hulpvragen | Basis werkend | Zoeken op gemeente, koppeling aan organisaties |
-| Leren-sectie | Werkend | Artikelen per categorie, gemeentenieuws |
-| Favorieten | Werkend | Bookmarken van hulpbronnen en artikelen |
+| Belastbaarheidstest | Werkend | 11 vragen, 4 categorieën, scoreberekening |
+| Dashboard | Werkend | Welzijnsoverzicht, thermometer, dynamische vervolgstappen, score-trends |
+| Hulpvragen | Werkend | Zoeken op gemeente, koppeling aan organisaties, kleur-indicatoren per taakstatus |
+| Leren/Informatie-sectie | Werkend | 44 artikelen met B1-inhoud, klikbare kaarten met detail-modal, sub-hoofdstukken, bronlabels |
+| Gemeente-nieuws | Werkend | Per-item gelezen markering, "alles gelezen" knop, nieuw-bolletje |
+| Favorieten | Werkend | Bookmarken van hulpbronnen en artikelen, afvinken als afgerond |
 | WhatsApp Bot | Werkend | Belastbaarheidstest, registratie, menu via Twilio |
+| ContentModal | Werkend | Bottom sheet (mobiel), centered popup (desktop), ESC-toets, Bellen/Website knoppen |
 | MantelBuddy aanmelding | Alleen registratieformulier | Geen matching, taken, of beoordelingen |
 | Beheeromgeving | Minimaal | Alleen hulpbronnen beheer, geen gebruikersbeheer |
 | Gemeenteportaal | Niet aanwezig | - |
 | Maandelijkse check-in | Basis werkend | 5-puntsschaal welzijnscheck |
 | PDF Rapport | Werkend | Download belastbaarheidstest resultaten |
+| Balanstest overzicht | Werkend | Score verloop grafiek, thermometer, trend-indicator |
+
+### Wat recent is verbeterd (v2.5.0)
+
+- **Content-architectuur**: Artikelen nu database-driven i.p.v. hardcoded, met seed routes voor initialisatie
+- **B1 taalniveau**: Alle 44 artikelinhouden herschreven in begrijpelijk Nederlands
+- **TypeScript type-safety**: Proper interfaces voor alle state-variabelen (geen `any` meer in dashboard-pagina's)
+- **Error logging**: Alle stille `catch {}` blokken vervangen door `console.error` voor debugging
+- **Database performance**: Indexes toegevoegd op veelgebruikte query-kolommen (Account, Session, Notification, BelastbaarheidTest, HelpRequest)
+- **Naamgeving**: "Respijtzorg" overal vervangen door "Vervangende mantelzorg"
+- **Modal UX**: Dubbele sluiten-knop verwijderd, ESC-toets toegevoegd, dark mode fix
+- **Productie-config**: ngrok-header alleen in development
 
 ### Wat ontbreekt
 
@@ -75,7 +92,7 @@
 
 **Doel:** Alle informatie, tips, hulpbronnen en artikelen beheren zonder code-aanpassingen.
 
-**Huidig:** Artikelen staan hardcoded in `src/data/artikelen.ts` (304 regels). Hulpbronnen worden via de API beheerd maar met beperkte interface.
+**Huidig (v2.5.0):** Artikelen staan nu in de database (Prisma `Artikel` model) met B1-niveau inhoud. Seed routes vullen de database met 44 artikelen. Hulpbronnen worden via de API beheerd maar met beperkte interface. De hardcoded `artikelen.ts` is vervangen door database-queries.
 
 **Te bouwen:**
 
@@ -90,7 +107,7 @@
   - Doelgroep (alle mantelzorgers / specifieke situatie)
 - **Media-upload** voor afbeeldingen bij artikelen
 - **Preview-functie** om te zien hoe het artikel eruitziet voor de gebruiker
-- **Database migratie** - Artikelen verplaatsen van `artikelen.ts` naar database
+- ~~**Database migratie** - Artikelen verplaatsen van `artikelen.ts` naar database~~ ✅ **Gedaan (v2.5.0)** - Artikelen nu in Prisma database met seed routes
 
 #### A2.2 Hulpbronnen & Organisaties Beheer
 - **Uitbreiding bestaand beheer** (`/beheer/hulpbronnen`):
@@ -765,15 +782,17 @@ Automatisch berekend op basis van:
 
 ### T1. Code-kwaliteit
 
-| Verbetering | Prioriteit | Toelichting |
-|------------|-----------|-------------|
-| Test framework (Vitest) toevoegen | Hoog | Geen geautomatiseerde tests aanwezig |
-| Input validatie met Zod | Hoog | Nu handmatige validatie per route |
-| Rate limiting (API) | Hoog | Brute-force bescherming op auth endpoints |
-| Dashboard route opsplitsen | Middel | `dashboard/route.ts` is 1700+ regels |
-| WhatsApp webhook opsplitsen | Middel | `webhook/route.ts` is 550+ regels |
-| Error boundary componenten | Middel | Crash-bescherming voor gebruikers |
-| Logging framework (Pino/Winston) | Middel | Gestructureerde logging i.p.v. console.log |
+| Verbetering | Prioriteit | Status | Toelichting |
+|------------|-----------|--------|-------------|
+| Test framework (Vitest) toevoegen | Hoog | Open | Geen geautomatiseerde tests aanwezig |
+| Input validatie met Zod | Hoog | Open | Nu handmatige validatie per route |
+| Rate limiting (API) | Hoog | Open | Brute-force bescherming op auth endpoints |
+| Dashboard route opsplitsen | Middel | Open | `dashboard/route.ts` is 1700+ regels |
+| WhatsApp webhook opsplitsen | Middel | Open | `webhook/route.ts` is 550+ regels |
+| Error boundary componenten | Middel | Open | Crash-bescherming voor gebruikers |
+| Logging framework (Pino/Winston) | Middel | Open | Gestructureerde logging i.p.v. console.log |
+| TypeScript type-safety | Middel | **Gedaan (v2.5.0)** | `any` types vervangen door interfaces in dashboard-pagina's |
+| Error logging in catch-blokken | Laag | **Gedaan (v2.5.0)** | Stille catches vervangen door `console.error` |
 
 ### T2. Infrastructuur
 
@@ -788,12 +807,12 @@ Automatisch berekend op basis van:
 
 ### T3. Database
 
-| Verbetering | Prioriteit | Toelichting |
-|------------|-----------|-------------|
-| Database indexen optimaliseren | Middel | Performance bij groeiend gebruikersbestand |
-| Soft deletes implementeren | Middel | Data behouden voor audit/compliance |
-| Database backups automatiseren | Hoog | Data-verlies voorkomen |
-| Row Level Security activeren | Middel | `rls-enable.sql` bestaat maar is niet actief |
+| Verbetering | Prioriteit | Status | Toelichting |
+|------------|-----------|--------|-------------|
+| Database indexen optimaliseren | Middel | **Gedaan (v2.5.0)** | Indexes op Account, Session, Notification, BelastbaarheidTest, HelpRequest |
+| Soft deletes implementeren | Middel | Open | Data behouden voor audit/compliance |
+| Database backups automatiseren | Hoog | Open | Data-verlies voorkomen |
+| Row Level Security activeren | Middel | Open | `rls-enable.sql` bestaat maar is niet actief |
 
 ### T4. Beveiliging
 
@@ -904,5 +923,14 @@ Automatisch berekend op basis van:
 - Geen vendor lock-in op Twilio (abstractielaag overwegen)
 
 ---
+
+---
+
+## Versiehistorie van dit document
+
+| Versie | Datum | Wijzigingen |
+|--------|-------|-------------|
+| 1.0 | 15 feb 2026 | Eerste versie met alle modules A-F |
+| 1.1 | 22 feb 2026 | Status bijgewerkt voor baseline v2.5.0: content-architectuur database-driven, B1 taalniveau, type-safety, database indexen, bugfixes |
 
 *Dit document is een levend document en zal worden bijgewerkt naarmate de ontwikkeling vordert.*

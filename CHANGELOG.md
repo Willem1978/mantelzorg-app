@@ -5,6 +5,42 @@ Alle belangrijke wijzigingen aan MantelBuddy worden hier gedocumenteerd.
 Het formaat is gebaseerd op [Keep a Changelog](https://keepachangelog.com/nl/1.0.0/),
 en dit project volgt [Semantic Versioning](https://semver.org/lang/nl/).
 
+## [2.5.0] - 2026-02-22 ⭐ Baseline release
+
+Volledig gedocumenteerde baseline-versie. Deze tag (`v2.5.0`) kan altijd worden teruggezet als referentiepunt.
+
+### Toegevoegd
+- **ContentModal component**: Klikbare artikelkaarten openen een detail-modal (bottom sheet op mobiel, centered popup op desktop)
+- **B1-niveau artikelinhoud**: 44 artikelen met volledige inhoud in begrijpelijk Nederlands (B1 taalniveau) voor alle categorieën
+- **Artikelinhoud databestanden**: `artikel-inhoud.ts` en `artikel-inhoud-2.ts` met rijke markdown content per artikel
+- **Bronlabels op artikelen**: Visuele labels (Landelijk, Gemeente/Wmo, Zorgverzekeraar/Zvw, Wlz) met kleurcodering
+- **ESC-toets modal sluiten**: Keyboard accessibility - modal sluit bij drukken op Escape
+- **TypeScript interfaces**: Proper types voor Categorie, CategorieGroep, HulpvraagCategorie, LerenCategorie (vervangt `any`)
+- **Error logging**: `console.error` in alle catch-blokken voor betere debugging (vervangt stille catches)
+- **Database indexen**: Indexes op Account.userId, Session.userId, Notification.userId, Notification.userId+isRead, BelastbaarheidTest.caregiverId, HelpRequest.caregiverId
+
+### Gewijzigd
+- **"Respijtzorg" → "Vervangende mantelzorg"**: Overal in de app hernoemd naar de correcte term
+- **ContentModal footer**: Dubbele "Sluiten" knop verwijderd, alleen X rechtsboven behouden. Bellen/Website knoppen blijven onderaan
+- **FavorietButton**: Null-check toegevoegd op API response (`data?.favoriet?.id`)
+- **Hulpvragen moeilijkheid**: Case-insensitive vergelijking met `.toUpperCase()` voor WhatsApp/web compatibiliteit
+- **Hulpvragen dark mode**: `bg-white` vervangen door `bg-card` voor correcte dark mode weergave
+- **Gemeente-nieuws**: `formatDatum` functie buiten component geplaatst voor performance
+- **next.config.ts**: ngrok-header alleen in development-modus (niet in productie)
+
+### Opgelost
+- Fix: Unused `taken` variabele verwijderd in `getTaakStatus`
+- Fix: Null pointer bij favorieten toggle wanneer API geen `favoriet` object retourneert
+- Fix: Moeilijkheidsniveau check faalde bij hoofdletter-variaties uit WhatsApp
+
+### Technisch
+- Content-architectuur: Database-driven i.p.v. hardcoded content
+- Seed routes beschikbaar voor database-initialisatie
+- Prisma schema geoptimaliseerd met performance indexes
+- Alle dashboard-pagina's voorzien van TypeScript interfaces
+
+---
+
 ## [2.4.0] - 2026-02-10
 
 ### Toegevoegd
