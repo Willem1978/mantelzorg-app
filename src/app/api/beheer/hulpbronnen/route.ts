@@ -30,12 +30,12 @@ export async function GET(request: NextRequest) {
     } else if (modus === 'gemeentelijk') {
       if (gemeente) {
         where.OR = [
-          { gemeente },
-          { gemeente: null, woonplaats: { contains: gemeente, mode: 'insensitive' as const } },
+          { gemeente: { equals: gemeente, mode: 'insensitive' as const } },
+          { gemeente: null },
         ]
       }
     } else {
-      if (gemeente) where.gemeente = gemeente
+      if (gemeente) where.gemeente = { equals: gemeente, mode: 'insensitive' as const }
       if (landelijk === 'true') where.gemeente = null
     }
 
