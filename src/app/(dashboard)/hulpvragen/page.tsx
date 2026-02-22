@@ -77,6 +77,25 @@ interface HelpRequest {
   response?: string
 }
 
+interface Categorie {
+  naam: string
+  icon: string
+  kort: string
+  routeLabel?: string | null
+}
+
+interface CategorieGroep {
+  groep: string
+  categorieen: Categorie[]
+}
+
+interface HulpvraagCategorie {
+  value: string
+  label: string
+  icon: string
+  hint: string
+}
+
 type TabType = 'voor-jou' | 'voor-naaste'
 
 // Wrapper component voor Suspense boundary (nodig voor useSearchParams)
@@ -104,16 +123,16 @@ function HulpPageContent() {
   const [initializedFromUrl, setInitializedFromUrl] = useState(false)
 
   // Content state - fetched from API
-  const [CATEGORIEEN_ZORGVRAGER_GROEPEN, setCategorieenZorgvragerGroepen] = useState<any[]>([])
-  const [CATEGORIEEN_MANTELZORGER, setCategorieenMantelzorger] = useState<any[]>([])
+  const [CATEGORIEEN_ZORGVRAGER_GROEPEN, setCategorieenZorgvragerGroepen] = useState<CategorieGroep[]>([])
+  const [CATEGORIEEN_MANTELZORGER, setCategorieenMantelzorger] = useState<Categorie[]>([])
   const [TAAK_NAAR_CATEGORIE, setTaakNaarCategorie] = useState<Record<string, string>>({})
-  const [hulpvraagCategories, setHulpvraagCategories] = useState<any[]>([])
+  const [hulpvraagCategories, setHulpvraagCategories] = useState<HulpvraagCategorie[]>([])
   const [contentLoading, setContentLoading] = useState(true)
   const [contentError, setContentError] = useState<string | null>(null)
   const hasFetchedContent = useRef(false)
 
   // Derived: flat list for backwards compatibility
-  const CATEGORIEEN_ZORGVRAGER = CATEGORIEEN_ZORGVRAGER_GROEPEN.flatMap((g: any) => g.categorieen)
+  const CATEGORIEEN_ZORGVRAGER = CATEGORIEEN_ZORGVRAGER_GROEPEN.flatMap((g) => g.categorieen)
 
   // Favorieten state
   const [favorieten, setFavorieten] = useState<Record<string, string>>({})
@@ -150,7 +169,7 @@ function HulpPageContent() {
         const mappingsData = await mappingsRes.json()
 
         // Reconstruct CATEGORIEEN_ZORGVRAGER_GROEPEN by grouping on metadata.groep
-        const groepMap: Record<string, any[]> = {}
+        const groepMap: Record<string, Categorie[]> = {}
         for (const c of (zorgvragerData.categorieen || [])) {
           const groep = c.metadata?.groep || 'Overig'
           if (!groepMap[groep]) groepMap[groep] = []
@@ -161,14 +180,14 @@ function HulpPageContent() {
             routeLabel: c.metadata?.routeLabel || null,
           })
         }
-        const mappedGroepen = Object.entries(groepMap).map(([groep, categorieen]) => ({
+        const mappedGroepen: CategorieGroep[] = Object.entries(groepMap).map(([groep, categorieen]) => ({
           groep,
           categorieen,
         }))
         setCategorieenZorgvragerGroepen(mappedGroepen)
 
         // Map mantelzorger categories
-        const mappedMantelzorger = (mantelzorgerData.categorieen || []).map((c: any) => ({
+        const mappedMantelzorger: Categorie[] = (mantelzorgerData.categorieen || []).map((c: { naam: string; icon: string; hint: string }) => ({
           naam: c.naam,
           icon: c.icon,
           kort: c.hint,
@@ -176,7 +195,7 @@ function HulpPageContent() {
         setCategorieenMantelzorger(mappedMantelzorger)
 
         // Map hulpvraag categories
-        const mappedHulpvraag = (hulpvraagData.categorieen || []).map((c: any) => ({
+        const mappedHulpvraag: HulpvraagCategorie[] = (hulpvraagData.categorieen || []).map((c: { slug: string; naam: string; icon: string; hint: string }) => ({
           value: c.slug.toUpperCase().replace(/-/g, '_'),
           label: c.naam,
           icon: c.icon,
@@ -309,8 +328,8 @@ function HulpPageContent() {
           const data = await res.json()
           setFavorieten(data.favorited || {})
         }
-      } catch {
-        // Silently fail
+      } catch (error) {
+        console.error("Fout bij laden favorieten:", error)
       }
     }
 
@@ -881,7 +900,7 @@ function HulpPageContent() {
               <div key={groep.groep}>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{groep.groep}</p>
                 <div className="grid grid-cols-2 gap-3">
-                  {groep.categorieen.map((cat: { naam: string; icon: string; kort: string; routeLabel: string | null }) => {
+                  {groep.categorieen.map((cat) => {
                     const taakStatus = getTaakStatus(cat.naam)
                     const aantalHulp = hulpData?.perCategorie?.[cat.naam]?.length || 0
                     const isSelected = selectedCategorie === cat.naam

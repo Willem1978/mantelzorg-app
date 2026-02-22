@@ -93,8 +93,8 @@ export default function GemeenteNieuwsPage() {
             setFavorieten(favData.favorited || {})
           }
         }
-      } catch {
-        // Silently fail
+      } catch (error) {
+        console.error("Fout bij laden gemeente nieuws:", error)
       } finally {
         setLoading(false)
       }
