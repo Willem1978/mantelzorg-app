@@ -327,6 +327,12 @@ function NieuwsGroep({
   )
 }
 
+function formatDatum(datum: string | null): string {
+  if (!datum) return ""
+  const d = new Date(datum)
+  return d.toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" })
+}
+
 function NieuwsCard({
   item,
   favorieten,
@@ -343,12 +349,6 @@ function NieuwsCard({
   const favKey = `INFORMATIE:${item.id}`
   const isFavorited = !!favorieten[favKey]
   const favorietId = favorieten[favKey]
-
-  const formatDatum = (datum: string | null) => {
-    if (!datum) return ""
-    const d = new Date(datum)
-    return d.toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" })
-  }
 
   const [modalOpen, setModalOpen] = useState(false)
 

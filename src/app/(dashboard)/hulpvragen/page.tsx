@@ -394,10 +394,6 @@ function HulpPageContent() {
   // Bepaal welke categorieën zware taken hebben en hun niveau
   // Ondersteunt zowel web format (MOEILIJK/GEMIDDELD) als WhatsApp format (JA/SOMS)
   const getTaakStatus = (categorieNaam: string): 'zwaar' | 'gemiddeld' | 'licht' | null => {
-    // Filter taken die bij deze categorie horen
-    const taken = hulpData?.zwareTaken?.filter(t => t.categorie === categorieNaam) || []
-
-    // Check ook taken zonder categorie maar met naam die matcht
     const alleTaken = hulpData?.zwareTaken || []
     const takenVoorCategorie = alleTaken.filter(t => {
       // Direct categorie match
@@ -407,12 +403,13 @@ function HulpPageContent() {
       return mappedCategorie === categorieNaam
     })
 
+    const upper = (m: string | null) => m?.toUpperCase() || ''
     const isZwaar = (m: string | null) =>
-      m === 'MOEILIJK' || m === 'ZEER_MOEILIJK' || m === 'JA' || m === 'ja'
+      upper(m) === 'MOEILIJK' || upper(m) === 'ZEER_MOEILIJK' || upper(m) === 'JA'
     const isMatig = (m: string | null) =>
-      m === 'GEMIDDELD' || m === 'SOMS' || m === 'soms'
+      upper(m) === 'GEMIDDELD' || upper(m) === 'SOMS'
     const isLicht = (m: string | null) =>
-      m === 'MAKKELIJK' || m === 'NEE' || m === 'nee' || !m
+      upper(m) === 'MAKKELIJK' || upper(m) === 'NEE' || !m
 
     if (takenVoorCategorie.some(t => isZwaar(t.moeilijkheid))) {
       return 'zwaar'
@@ -1103,7 +1100,7 @@ function LandelijkeHulpCard({ hulp, favorieten, categorie }: {
   return (
     <>
       <div
-        className="flex items-center justify-between py-3 px-3 bg-white dark:bg-card rounded-lg border border-border cursor-pointer hover:shadow-md transition-shadow"
+        className="flex items-center justify-between py-3 px-3 bg-card rounded-lg border border-border cursor-pointer hover:shadow-md transition-shadow"
         onClick={() => setModalOpen(true)}
       >
         <div className="flex-1 min-w-0">

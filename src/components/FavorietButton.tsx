@@ -77,7 +77,7 @@ export function FavorietButton({
         })
         if (!res.ok) throw new Error()
         const data = await res.json()
-        setFavorietId(data.favoriet.id)
+        setFavorietId(data?.favoriet?.id)
       }
 
       onToggle?.(!wasFavorited)

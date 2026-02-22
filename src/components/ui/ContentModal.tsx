@@ -37,17 +37,25 @@ export function ContentModal({
   kosten,
   doelgroep,
 }: ContentModalProps) {
-  // Voorkom scrollen van achtergrond
+  // Voorkom scrollen van achtergrond + ESC toets
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden"
+      const handleEsc = (e: KeyboardEvent) => {
+        if (e.key === "Escape") onClose()
+      }
+      document.addEventListener("keydown", handleEsc)
+      return () => {
+        document.body.style.overflow = ""
+        document.removeEventListener("keydown", handleEsc)
+      }
     } else {
       document.body.style.overflow = ""
     }
     return () => {
       document.body.style.overflow = ""
     }
-  }, [isOpen])
+  }, [isOpen, onClose])
 
   if (!isOpen) return null
 
