@@ -51,6 +51,7 @@ const CATEGORIEEN_ZORGVRAGER = [
   "Plannen en organiseren",
   "Sociaal contact en activiteiten",
   "Vervoer",
+  "Huisdieren",
 ]
 
 const CATEGORIEEN_MANTELZORGER = [
@@ -68,11 +69,16 @@ const ONDERDEEL_OPTIES = [
 ]
 
 const SOORT_HULP_OPTIES = [
+  "Belangenorganisatie",
   "Educatie",
   "Emotionele steun",
+  "Financiele regelingen",
+  "Hulplijn",
   "Informatie en advies",
+  "Overheid en financieel",
   "Persoonlijke begeleiding",
   "Praktische hulp",
+  "Professionele zorg",
   "Vervangende mantelzorg",
 ]
 

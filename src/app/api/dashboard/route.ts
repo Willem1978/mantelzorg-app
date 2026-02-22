@@ -177,14 +177,11 @@ async function getHulpbronnenVoorTaken(
     },
   }) : []
 
-  // Landelijke mantelzorgondersteuning
+  // Landelijke mantelzorgondersteuning - filter op onderdeelTest (niet soortHulp)
   const landelijkMantelzorger = await prisma.zorgorganisatie.findMany({
     where: {
       isActief: true,
-      OR: [
-        { onderdeelTest: 'Mantelzorgondersteuning' },
-        { soortHulp: { in: ['Emotionele steun', 'Vervangende mantelzorg', 'Lotgenotencontact', 'Educatie', 'Leren en training'] } },
-      ],
+      onderdeelTest: { in: ['Mantelzorgondersteuning', 'Emotionele steun', 'Vervangende mantelzorg', 'Lotgenotencontact', 'Leren en training'] },
       gemeente: null,
       AND: niveauFilter,
     },
