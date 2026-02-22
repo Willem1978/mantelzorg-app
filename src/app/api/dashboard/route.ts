@@ -124,7 +124,7 @@ async function getHulpbronnenVoorTaken(
           where: {
             isActief: true,
             onderdeelTest: onderdeel,
-            gemeente: zorgvragerGemeente,
+            gemeente: { equals: zorgvragerGemeente, mode: "insensitive" as const },
             AND: niveauFilter,
           },
           orderBy: { naam: 'asc' },
@@ -161,7 +161,7 @@ async function getHulpbronnenVoorTaken(
     where: {
       isActief: true,
       onderdeelTest: 'Mantelzorgondersteuning',
-      gemeente: mantelzorgerGemeente,
+      gemeente: { equals: mantelzorgerGemeente, mode: "insensitive" as const },
       AND: niveauFilter,
     },
     orderBy: { naam: 'asc' },
@@ -237,9 +237,12 @@ async function getHulpbronnenVoorTaken(
           where: {
             isActief: true,
             onderdeelTest: onderdeel,
-            gemeente: ['Mantelzorgondersteuning', 'Vervangende mantelzorg', 'Emotionele steun', 'Lotgenotencontact', 'Leren en training'].includes(onderdeel)
-              ? mantelzorgerGemeente
-              : zorgvragerGemeente,
+            gemeente: {
+              equals: ['Mantelzorgondersteuning', 'Vervangende mantelzorg', 'Emotionele steun', 'Lotgenotencontact', 'Leren en training'].includes(onderdeel)
+                ? mantelzorgerGemeente
+                : zorgvragerGemeente,
+              mode: "insensitive" as const,
+            },
             AND: niveauFilter,
           },
           orderBy: { naam: 'asc' },

@@ -41,25 +41,35 @@ export async function GET(request: NextRequest) {
 
     if (onderdeelTest) where.onderdeelTest = onderdeelTest
     if (soortHulp) where.soortHulp = soortHulp
-    if (doelgroep) where.doelgroep = doelgroep
     if (actief === 'true') where.isActief = true
     if (actief === 'false') where.isActief = false
 
+    // Bouw AND-condities op (doelgroep + zoek + eventueel bestaande OR)
+    const andConditions: Record<string, unknown>[] = []
+
+    // Doelgroep filter: toon ook records zonder doelgroep (null = voor iedereen)
+    if (doelgroep) {
+      andConditions.push({ OR: [{ doelgroep }, { doelgroep: null }] })
+    }
+
     if (zoek) {
-      const zoekCondition = {
+      andConditions.push({
         OR: [
           { naam: { contains: zoek, mode: 'insensitive' as const } },
           { beschrijving: { contains: zoek, mode: 'insensitive' as const } },
           { gemeente: { contains: zoek, mode: 'insensitive' as const } },
         ],
-      }
+      })
+    }
+
+    // Als er AND-condities zijn EN een bestaande OR (van modus/gemeente), combineer alles
+    if (andConditions.length > 0) {
       if (where.OR) {
         const existingOR = where.OR
         delete where.OR
-        where.AND = [{ OR: existingOR }, zoekCondition]
-      } else {
-        where.OR = zoekCondition.OR
+        andConditions.unshift({ OR: existingOR })
       }
+      where.AND = andConditions
     }
 
     const hulpbronnen = await prisma.zorgorganisatie.findMany({
