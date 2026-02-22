@@ -47,6 +47,7 @@ model Account {
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Session {
@@ -55,6 +56,8 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model VerificationToken {
@@ -271,6 +274,9 @@ model Notification {
   scheduledFor DateTime?
   sentAt       DateTime?
   createdAt    DateTime         @default(now())
+
+  @@index([userId])
+  @@index([userId, isRead])
 }
 
 model HelpRequest {
@@ -290,6 +296,8 @@ model HelpRequest {
   updatedAt      DateTime      @updatedAt
   caregiver      Caregiver     @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
   organisation   Organisation? @relation(fields: [organisationId], references: [id])
+
+  @@index([caregiverId])
 }
 
 model CalendarEvent {
@@ -341,6 +349,8 @@ model BelastbaarheidTest {
   rapporten            BelastbaarheidRapport[]
   caregiver            Caregiver?               @relation(fields: [caregiverId], references: [id])
   taakSelecties        ZorgtaakSelectie[]
+
+  @@index([caregiverId])
 }
 
 model BelastbaarheidAntwoord {
