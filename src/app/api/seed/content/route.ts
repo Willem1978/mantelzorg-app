@@ -85,6 +85,11 @@ export async function POST(request: Request) {
     for (const c of catMantelzorger) {
       await prisma.contentCategorie.upsert({ where: { type_slug: { type: "HULP_MANTELZORGER", slug: c.slug } }, create: { type: "HULP_MANTELZORGER", ...c }, update: { naam: c.naam, icon: c.icon, hint: c.hint, volgorde: c.volgorde } })
     }
+    // Verwijder oude/hernoemde categorieën (bijv. Respijtzorg → Vervangende mantelzorg)
+    const geldigeSlugs = catMantelzorger.map(c => c.slug)
+    await prisma.contentCategorie.deleteMany({
+      where: { type: "HULP_MANTELZORGER", slug: { notIn: geldigeSlugs } },
+    })
 
     // Hulpvraag
     const catHulpvraag = [
