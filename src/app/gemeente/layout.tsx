@@ -26,12 +26,24 @@ export default function GemeenteLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // Login pagina heeft geen sidebar
   if (pathname === "/gemeente/login") {
     return <>{children}</>
+  }
+
+  // Wacht tot sessie geladen is om hydration errors te voorkomen
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
+          <span className="text-gray-500 text-sm">Portaal laden...</span>
+        </div>
+      </div>
+    )
   }
 
   const gemeenteNaam = (session?.user as any)?.gemeenteNaam || "Gemeente"

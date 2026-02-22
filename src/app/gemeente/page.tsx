@@ -64,8 +64,11 @@ export default function GemeenteDashboard() {
 
   useEffect(() => {
     fetch("/api/gemeente/dashboard")
-      .then((res) => {
-        if (!res.ok) throw new Error("Kon data niet ophalen")
+      .then(async (res) => {
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}))
+          throw new Error(body.error || "Kon data niet ophalen")
+        }
         return res.json()
       })
       .then(setData)
