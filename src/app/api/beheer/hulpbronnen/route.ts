@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
   const landelijk = searchParams.get('landelijk') // 'true' for gemeente IS NULL
   const modus = searchParams.get('modus') // 'landelijk' or 'gemeentelijk'
   const provincie = searchParams.get('provincie')
+  const doelgroep = searchParams.get('doelgroep') // 'MANTELZORGER' or 'ZORGVRAGER'
   const debug = searchParams.get('debug')
 
   try {
@@ -40,6 +41,7 @@ export async function GET(request: NextRequest) {
 
     if (onderdeelTest) where.onderdeelTest = onderdeelTest
     if (soortHulp) where.soortHulp = soortHulp
+    if (doelgroep) where.doelgroep = doelgroep
     if (actief === 'true') where.isActief = true
     if (actief === 'false') where.isActief = false
 
@@ -154,7 +156,7 @@ export async function POST(request: NextRequest) {
     zichtbaarBijGemiddeld: body.zichtbaarBijGemiddeld ?? false,
     zichtbaarBijHoog: body.zichtbaarBijHoog ?? true,
     kosten: body.kosten || null,
-    doelgroep: body.doelgroep || null,
+    doelgroep: body.doelgroep || null, // MANTELZORGER or ZORGVRAGER
     aanmeldprocedure: body.aanmeldprocedure || null,
     verschijntIn: body.verschijntIn || [],
     routeLabel: body.routeLabel || null,
