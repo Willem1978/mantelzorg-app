@@ -4,11 +4,13 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import Link from "next/link"
 import { FavorietButton } from "@/components/FavorietButton"
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs"
+import { ContentModal } from "@/components/ui/ContentModal"
 
 interface GemeenteNieuws {
   id: string
   titel: string
   beschrijving: string
+  inhoud: string | null
   gemeente: string
   publicatieDatum: string | null
   url: string | null
@@ -348,74 +350,83 @@ function NieuwsCard({
     return d.toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" })
   }
 
+  const [modalOpen, setModalOpen] = useState(false)
+
   return (
-    <div className={`ker-card py-4 relative transition-all ${isGezien ? "opacity-60" : ""}`}>
-      {/* Hartje rechtsboven */}
-      <div className="absolute top-3 right-3">
-        <FavorietButton
-          type="INFORMATIE"
-          itemId={item.id}
-          titel={item.titel}
-          beschrijving={item.beschrijving}
-          categorie="Gemeente nieuws"
-          url={item.url || undefined}
-          icon={item.emoji || undefined}
-          initialFavorited={isFavorited}
-          initialFavorietId={favorietId}
-          size="sm"
-        />
-      </div>
-
-      <div className="pr-12">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-xl">{item.emoji || "📰"}</span>
-          <h2 className="font-semibold text-base">{item.titel}</h2>
-          {!isGezien && (
-            <span className="w-2 h-2 bg-[var(--accent-red)] rounded-full flex-shrink-0 animate-pulse" />
-          )}
+    <>
+      <div
+        className={`ker-card py-4 relative transition-all cursor-pointer hover:shadow-md ${isGezien ? "opacity-60" : ""}`}
+        onClick={() => setModalOpen(true)}
+      >
+        {/* Hartje rechtsboven */}
+        <div className="absolute top-3 right-3" onClick={(e) => e.stopPropagation()}>
+          <FavorietButton
+            type="INFORMATIE"
+            itemId={item.id}
+            titel={item.titel}
+            beschrijving={item.beschrijving}
+            categorie="Gemeente nieuws"
+            url={item.url || undefined}
+            icon={item.emoji || undefined}
+            initialFavorited={isFavorited}
+            initialFavorietId={favorietId}
+            size="sm"
+          />
         </div>
-        <p className="text-sm text-muted-foreground pl-7 mb-1">
-          {formatDatum(item.publicatieDatum)} — {item.gemeente}
-        </p>
-        <p className="text-sm text-muted-foreground leading-relaxed pl-7 mb-3">
-          {item.beschrijving}
-        </p>
 
-        {/* Acties rij: link + gezien knop */}
-        <div className="flex items-center justify-between pl-7">
-          {item.url ? (
-            <a
-              href={item.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-primary hover:underline font-medium flex items-center gap-1"
-            >
-              🌐 Meer informatie
-            </a>
-          ) : <span />}
+        <div className="pr-12">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xl">{item.emoji || "📰"}</span>
+            <h2 className="font-semibold text-base">{item.titel}</h2>
+            {!isGezien && (
+              <span className="w-2 h-2 bg-[var(--accent-red)] rounded-full flex-shrink-0 animate-pulse" />
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground pl-7 mb-1">
+            {formatDatum(item.publicatieDatum)} — {item.gemeente}
+          </p>
+          <p className="text-sm text-muted-foreground leading-relaxed pl-7 mb-2 line-clamp-2">
+            {item.beschrijving}
+          </p>
 
-          {/* Gezien knop */}
-          {!isGezien ? (
-            <button
-              onClick={onGezien}
-              className="flex items-center justify-center gap-1.5 py-2 px-4 rounded-lg bg-primary/10 text-primary font-medium text-sm hover:bg-primary/20 transition-colors min-h-[44px]"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-              Gezien
-            </button>
-          ) : (
-            <button
-              onClick={onNietGezien}
-              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-border text-muted-foreground text-sm hover:bg-muted transition-colors min-h-[44px]"
-            >
-              Markeer als nieuw
-            </button>
-          )}
+          {/* Acties rij */}
+          <div className="flex items-center justify-between pl-7" onClick={(e) => e.stopPropagation()}>
+            <span className="text-xs text-primary font-medium">Lees meer →</span>
+
+            {/* Gezien knop */}
+            {!isGezien ? (
+              <button
+                onClick={onGezien}
+                className="flex items-center justify-center gap-1.5 py-2 px-4 rounded-lg bg-primary/10 text-primary font-medium text-sm hover:bg-primary/20 transition-colors min-h-[44px]"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                Gezien
+              </button>
+            ) : (
+              <button
+                onClick={onNietGezien}
+                className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg border border-border text-muted-foreground text-sm hover:bg-muted transition-colors min-h-[44px]"
+              >
+                Markeer als nieuw
+              </button>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      <ContentModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        titel={item.titel}
+        emoji={item.emoji}
+        beschrijving={item.beschrijving}
+        inhoud={item.inhoud}
+        url={item.url}
+        gemeente={item.gemeente}
+      />
+    </>
   )
 }

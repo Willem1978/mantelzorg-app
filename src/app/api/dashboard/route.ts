@@ -128,7 +128,7 @@ async function getHulpbronnenVoorTaken(
             AND: niveauFilter,
           },
           orderBy: { naam: 'asc' },
-          select: { naam: true, telefoon: true, website: true, beschrijving: true, gemeente: true },
+          select: { naam: true, telefoon: true, website: true, beschrijving: true, gemeente: true, doelgroep: true, kosten: true },
         }) : Promise.resolve([]),
         prisma.zorgorganisatie.findMany({
           where: {
@@ -138,7 +138,7 @@ async function getHulpbronnenVoorTaken(
             AND: niveauFilter,
           },
           orderBy: { naam: 'asc' },
-          select: { naam: true, telefoon: true, website: true, beschrijving: true, gemeente: true },
+          select: { naam: true, telefoon: true, website: true, beschrijving: true, gemeente: true, doelgroep: true, kosten: true },
         }),
       ])
       return { lokaleHulp, landelijkeHulp }
@@ -172,6 +172,8 @@ async function getHulpbronnenVoorTaken(
       beschrijving: true,
       soortHulp: true,
       gemeente: true,
+      doelgroep: true,
+      kosten: true,
     },
   }) : []
 
@@ -194,6 +196,8 @@ async function getHulpbronnenVoorTaken(
       beschrijving: true,
       soortHulp: true,
       gemeente: true,
+      doelgroep: true,
+      kosten: true,
     },
   })
 
@@ -245,6 +249,8 @@ async function getHulpbronnenVoorTaken(
             website: true,
             beschrijving: true,
             gemeente: true,
+            doelgroep: true,
+            kosten: true,
           },
         }),
         // Landelijk
@@ -262,6 +268,8 @@ async function getHulpbronnenVoorTaken(
             website: true,
             beschrijving: true,
             gemeente: true,
+            doelgroep: true,
+            kosten: true,
           },
         }),
       ])
