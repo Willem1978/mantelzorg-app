@@ -47,21 +47,30 @@ export async function GET(request: NextRequest) {
     // Bouw AND-condities op (doelgroep + zoek + eventueel bestaande OR)
     const andConditions: Record<string, unknown>[] = []
 
-    // Doelgroep filter: vertaal "MANTELZORGER"/"ZORGVRAGER" naar onderdeelTest categorieën
-    // Het doelgroep-veld in de database bevat vrije tekst, niet enum waarden
+    // Doelgroep filter: gebruik het doelgroep-veld in de database
+    // Bij import wordt doelgroep nu correct als MANTELZORGER/ZORGVRAGER opgeslagen
     const MANTELZORGER_CATEGORIEEN = [
       'Mantelzorgondersteuning',
       'Vervangende mantelzorg',
       'Emotionele steun',
       'Lotgenotencontact',
       'Leren en training',
+      'Respijtzorg',
+      'Mantelzorgsteunpunt',
+      'Mantelzorgwaardering',
     ]
     if (doelgroep === "MANTELZORGER") {
-      andConditions.push({ onderdeelTest: { in: MANTELZORGER_CATEGORIEEN } })
+      andConditions.push({ OR: [
+        { doelgroep: { equals: 'MANTELZORGER', mode: 'insensitive' as const } },
+        { onderdeelTest: { in: MANTELZORGER_CATEGORIEEN } },
+      ] })
     } else if (doelgroep === "ZORGVRAGER") {
       andConditions.push({ OR: [
-        { onderdeelTest: { notIn: MANTELZORGER_CATEGORIEEN } },
-        { onderdeelTest: null },
+        { doelgroep: { equals: 'ZORGVRAGER', mode: 'insensitive' as const } },
+        { AND: [
+          { onderdeelTest: { notIn: MANTELZORGER_CATEGORIEEN } },
+          { OR: [{ doelgroep: null }, { doelgroep: { not: 'MANTELZORGER' } }] },
+        ] },
       ] })
     }
 
