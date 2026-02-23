@@ -30,6 +30,8 @@ interface Hulpbron {
   kosten: string | null
   doelgroep: string | null
   aanmeldprocedure: string | null
+  bronLabel: string | null
+  zorgverzekeraar: boolean
 }
 
 interface ScrapedResult {
@@ -103,6 +105,15 @@ const DEKKING_NIVEAUS = [
   { value: "WIJK", label: "Specifieke wijken" },
 ]
 
+const BRON_LABEL_OPTIES = [
+  "Landelijk",
+  "Gemeente",
+  "Zvw",
+  "Wlz",
+  "Wmo",
+  "Overig",
+]
+
 const EMPTY_FORM: Partial<Hulpbron> = {
   naam: "",
   beschrijving: "",
@@ -128,6 +139,8 @@ const EMPTY_FORM: Partial<Hulpbron> = {
   kosten: "",
   doelgroep: "",
   aanmeldprocedure: "",
+  bronLabel: "",
+  zorgverzekeraar: false,
 }
 
 export default function BeheerHulpbronnenPage() {
@@ -1755,6 +1768,22 @@ export default function BeheerHulpbronnenPage() {
                   {!item.dekkingNiveau && item.gemeente && (
                     <span className="ker-badge text-[10px]">{item.gemeente}</span>
                   )}
+                  {item.bronLabel && (
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                      item.bronLabel === "Landelijk"
+                        ? "bg-amber-100 text-amber-700"
+                        : item.bronLabel === "Gemeente"
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-gray-100 text-gray-700"
+                    }`}>
+                      {item.bronLabel}
+                    </span>
+                  )}
+                  {item.zorgverzekeraar && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 font-medium">
+                      Zorgverzekeraar
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 flex-wrap mt-1">
                   {item.onderdeelTest && (
@@ -2373,6 +2402,43 @@ export default function BeheerHulpbronnenPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Bron label (Landelijk/Lokaal) */}
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                  Bron
+                </label>
+                <select
+                  value={editItem.bronLabel || ""}
+                  onChange={(e) =>
+                    setEditItem({ ...editItem, bronLabel: e.target.value })
+                  }
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+                >
+                  <option value="">-- Geen --</option>
+                  {BRON_LABEL_OPTIES.map((b) => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Zorgverzekeraar */}
+              <div className="flex items-center gap-2 py-2">
+                <input
+                  type="checkbox"
+                  id="zorgverzekeraar"
+                  checked={editItem.zorgverzekeraar ?? false}
+                  onChange={(e) =>
+                    setEditItem({ ...editItem, zorgverzekeraar: e.target.checked })
+                  }
+                  className="w-4 h-4 rounded border-[var(--border)] text-indigo-600"
+                />
+                <label htmlFor="zorgverzekeraar" className="text-sm text-foreground">
+                  Zorgverzekeraar
+                </label>
               </div>
 
               {/* Telefoon */}

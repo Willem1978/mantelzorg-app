@@ -1,8 +1,55 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
+
+interface ImportResultaat {
+  success?: boolean
+  toegevoegd?: number
+  fouten?: number
+  totaalRijen?: number
+  foutDetails?: string[]
+  error?: string
+}
+
+function parseCSV(text: string): Record<string, string>[] {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim())
+  if (lines.length < 2) return []
+
+  // Detect separator: tab, semicolon, or comma
+  const firstLine = lines[0]
+  const separator = firstLine.includes("\t") ? "\t" : firstLine.includes(";") ? ";" : ","
+
+  const headers = lines[0].split(separator).map((h) => h.trim().replace(/^["']|["']$/g, ""))
+  const rows: Record<string, string>[] = []
+
+  for (let i = 1; i < lines.length; i++) {
+    const values = lines[i].split(separator).map((v) => v.trim().replace(/^["']|["']$/g, ""))
+    const row: Record<string, string> = {}
+    headers.forEach((h, j) => {
+      if (h && values[j]) row[h] = values[j]
+    })
+    if (Object.keys(row).length > 0) rows.push(row)
+  }
+  return rows
+}
+
+const VERWACHTE_KOLOMMEN = [
+  { naam: "Doelgroep", verplicht: false, toelichting: "MANTELZORGER of ZORGVRAGER" },
+  { naam: "Categorie", verplicht: false, toelichting: "Bijv. Persoonlijke verzorging, Emotionele steun" },
+  { naam: "Soort hulp", verplicht: false, toelichting: "Bijv. Praktische hulp, Informatie en advies" },
+  { naam: "Gemeente", verplicht: false, toelichting: "Naam gemeente (bijv. Zutphen)" },
+  { naam: "Naam organisatie", verplicht: true, toelichting: "Naam van de organisatie" },
+  { naam: "Soort organisatie", verplicht: false, toelichting: "GEMEENTE, THUISZORG, VRIJWILLIGERS, OVERIG, etc." },
+  { naam: "Naam dienst", verplicht: false, toelichting: "Naam van de specifieke dienst" },
+  { naam: "Omschrijving dienst", verplicht: false, toelichting: "Omschrijving van de dienst" },
+  { naam: "Telefonisch te bereiken op", verplicht: false, toelichting: "Wanneer telefonisch bereikbaar" },
+  { naam: "Telefoonnummer", verplicht: false, toelichting: "Telefoonnummer" },
+  { naam: "Website", verplicht: false, toelichting: "URL van de website" },
+  { naam: "Kosten", verplicht: false, toelichting: "Bijv. Gratis, Eigen bijdrage" },
+]
 
 export default function DataUpdatePage() {
+  // Zutphen update
   const [bezig, setBezig] = useState(false)
   const [resultaat, setResultaat] = useState<{
     success?: boolean
@@ -13,14 +60,19 @@ export default function DataUpdatePage() {
     error?: string
   } | null>(null)
 
+  // CSV Import
+  const [importBezig, setImportBezig] = useState(false)
+  const [importResultaat, setImportResultaat] = useState<ImportResultaat | null>(null)
+  const [csvRows, setCsvRows] = useState<Record<string, string>[]>([])
+  const [csvHeaders, setCsvHeaders] = useState<string[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const handleUpdate = async () => {
     if (!confirm("Weet je zeker dat je de Zutphen hulpbronnen wilt bijwerken? De oude worden verwijderd en vervangen door de nieuwe.")) {
       return
     }
-
     setBezig(true)
     setResultaat(null)
-
     try {
       const res = await fetch("/api/seed/zutphen", { method: "POST" })
       const data = await res.json()
@@ -32,17 +84,238 @@ export default function DataUpdatePage() {
     }
   }
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setImportResultaat(null)
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string
+      const rows = parseCSV(text)
+      setCsvRows(rows)
+      if (rows.length > 0) {
+        setCsvHeaders(Object.keys(rows[0]))
+      }
+    }
+    reader.readAsText(file, "utf-8")
+  }
+
+  const handleImport = async () => {
+    if (csvRows.length === 0) return
+    if (!confirm(`Weet je zeker dat je ${csvRows.length} hulpbronnen wilt importeren?`)) {
+      return
+    }
+
+    setImportBezig(true)
+    setImportResultaat(null)
+    try {
+      const res = await fetch("/api/beheer/hulpbronnen/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows: csvRows }),
+      })
+      const data = await res.json()
+      setImportResultaat(data)
+    } catch {
+      setImportResultaat({ error: "Er ging iets mis bij het importeren." })
+    } finally {
+      setImportBezig(false)
+    }
+  }
+
+  const resetImport = () => {
+    setCsvRows([])
+    setCsvHeaders([])
+    setImportResultaat(null)
+    if (fileInputRef.current) fileInputRef.current.value = ""
+  }
+
+  // Check welke verwachte kolommen gevonden zijn
+  const gevondenKolommen = VERWACHTE_KOLOMMEN.filter((k) =>
+    csvHeaders.some((h) => h.toLowerCase() === k.naam.toLowerCase())
+  )
+  const ontbrekendeVerplicht = VERWACHTE_KOLOMMEN.filter(
+    (k) => k.verplicht && !csvHeaders.some((h) => h.toLowerCase() === k.naam.toLowerCase())
+  )
+
   return (
-    <div className="p-6 max-w-2xl">
+    <div className="p-6 max-w-3xl">
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Data bijwerken</h1>
       <p className="text-gray-600 mb-8">
-        Hier kun je de hulpbronnen in de database bijwerken.
+        Hulpbronnen bijwerken of importeren via CSV-bestand.
       </p>
+
+      {/* CSV Import */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">
+          CSV importeren
+        </h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Importeer hulpbronnen vanuit een CSV-bestand (komma, puntkomma of tab-gescheiden).
+          De kolom <code className="bg-gray-100 px-1 rounded">Naam organisatie</code> is verplicht.
+        </p>
+
+        {/* Verwachte kolommen */}
+        <details className="mb-4">
+          <summary className="text-sm font-medium text-blue-600 cursor-pointer hover:underline">
+            Welke kolommen moet het bestand bevatten?
+          </summary>
+          <div className="mt-2 overflow-x-auto">
+            <table className="w-full text-xs border border-gray-200 rounded">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="text-left px-3 py-1.5 border-b">Kolom</th>
+                  <th className="text-left px-3 py-1.5 border-b">Verplicht</th>
+                  <th className="text-left px-3 py-1.5 border-b">Toelichting</th>
+                </tr>
+              </thead>
+              <tbody>
+                {VERWACHTE_KOLOMMEN.map((k) => (
+                  <tr key={k.naam} className="border-b border-gray-100">
+                    <td className="px-3 py-1.5 font-medium">{k.naam}</td>
+                    <td className="px-3 py-1.5">{k.verplicht ? "Ja" : "Nee"}</td>
+                    <td className="px-3 py-1.5 text-gray-600">{k.toelichting}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
+
+        {/* Bestand kiezen */}
+        <div className="mb-4">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,.tsv,.txt"
+            onChange={handleFileSelect}
+            className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          />
+        </div>
+
+        {/* Kolom-check na bestand laden */}
+        {csvRows.length > 0 && (
+          <div className="mb-4">
+            {/* Kolom-match samenvatting */}
+            <div className="mb-3 p-3 rounded-lg bg-gray-50 border border-gray-200 text-xs">
+              <p className="font-medium text-gray-700 mb-1">
+                Herkende kolommen ({gevondenKolommen.length} van {VERWACHTE_KOLOMMEN.length}):
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {VERWACHTE_KOLOMMEN.map((k) => {
+                  const found = csvHeaders.some((h) => h.toLowerCase() === k.naam.toLowerCase())
+                  return (
+                    <span
+                      key={k.naam}
+                      className={`px-2 py-0.5 rounded text-[10px] font-medium ${
+                        found
+                          ? "bg-green-100 text-green-700"
+                          : k.verplicht
+                          ? "bg-red-100 text-red-700"
+                          : "bg-gray-200 text-gray-500"
+                      }`}
+                    >
+                      {k.naam} {found ? "✓" : "—"}
+                    </span>
+                  )
+                })}
+              </div>
+              {ontbrekendeVerplicht.length > 0 && (
+                <p className="mt-2 text-red-600 font-medium">
+                  Verplichte kolom ontbreekt: {ontbrekendeVerplicht.map((k) => k.naam).join(", ")}
+                </p>
+              )}
+            </div>
+
+            {/* Preview tabel */}
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-gray-700">
+                {csvRows.length} rijen gevonden
+              </p>
+              <button
+                onClick={resetImport}
+                className="text-xs text-gray-500 hover:text-gray-700"
+              >
+                Wissen
+              </button>
+            </div>
+            <div className="overflow-x-auto max-h-48 border border-gray-200 rounded-lg">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-gray-50 sticky top-0">
+                    <th className="px-2 py-1.5 text-left text-gray-500">#</th>
+                    {csvHeaders.map((h) => (
+                      <th key={h} className="px-2 py-1.5 text-left font-medium whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {csvRows.slice(0, 5).map((row, i) => (
+                    <tr key={i} className="border-t border-gray-100">
+                      <td className="px-2 py-1 text-gray-400">{i + 1}</td>
+                      {csvHeaders.map((h) => (
+                        <td key={h} className="px-2 py-1 max-w-[200px] truncate">{row[h] || ""}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {csvRows.length > 5 && (
+                <p className="text-xs text-gray-400 px-2 py-1 bg-gray-50">
+                  ...en {csvRows.length - 5} meer
+                </p>
+              )}
+            </div>
+
+            <button
+              onClick={handleImport}
+              disabled={importBezig || ontbrekendeVerplicht.length > 0}
+              className={`mt-3 px-5 py-2.5 rounded-lg font-medium text-white ${
+                importBezig || ontbrekendeVerplicht.length > 0
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700"
+              }`}
+            >
+              {importBezig ? "Bezig met importeren..." : `${csvRows.length} hulpbronnen importeren`}
+            </button>
+          </div>
+        )}
+
+        {/* Import resultaat */}
+        {importResultaat && (
+          <div className={`mt-4 p-4 rounded-lg ${importResultaat.error ? "bg-red-50 border border-red-200" : "bg-green-50 border border-green-200"}`}>
+            {importResultaat.error ? (
+              <p className="text-red-700">{importResultaat.error}</p>
+            ) : (
+              <div className="text-green-800">
+                <p className="font-medium mb-2">Import afgerond!</p>
+                <ul className="text-sm space-y-1">
+                  <li>Toegevoegd: {importResultaat.toegevoegd} van {importResultaat.totaalRijen}</li>
+                  {(importResultaat.fouten ?? 0) > 0 && (
+                    <li className="text-red-600">Fouten: {importResultaat.fouten}</li>
+                  )}
+                </ul>
+                {importResultaat.foutDetails && importResultaat.foutDetails.length > 0 && (
+                  <details className="mt-2">
+                    <summary className="text-xs text-red-600 cursor-pointer">Foutdetails bekijken</summary>
+                    <ul className="mt-1 text-xs space-y-0.5 text-red-600">
+                      {importResultaat.foutDetails.map((f, i) => (
+                        <li key={i}>{f}</li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Zutphen update */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-2">
-          Zutphen hulpbronnen
+          Zutphen hulpbronnen (hardcoded data)
         </h2>
         <p className="text-sm text-gray-600 mb-4">
           Vervangt alle Zutphen hulpbronnen door de data uit de Sociale Kaart Zutphen 2026.
@@ -52,18 +325,13 @@ export default function DataUpdatePage() {
         <button
           onClick={handleUpdate}
           disabled={bezig}
-          className={`
-            px-5 py-2.5 rounded-lg font-medium text-white
-            ${bezig
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700"
-            }
-          `}
+          className={`px-5 py-2.5 rounded-lg font-medium text-white ${
+            bezig ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+          }`}
         >
           {bezig ? "Bezig met bijwerken..." : "Zutphen data bijwerken"}
         </button>
 
-        {/* Resultaat */}
         {resultaat && (
           <div className={`mt-4 p-4 rounded-lg ${resultaat.error ? "bg-red-50 border border-red-200" : "bg-green-50 border border-green-200"}`}>
             {resultaat.error ? (
