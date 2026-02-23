@@ -45,6 +45,30 @@ function mapType(soortOrganisatie: string | undefined): ZorgorganisatieType {
   return ZorgorganisatieType.OVERIG
 }
 
+// Categorieën die bij mantelzorger horen
+const MANTELZORGER_CATEGORIEEN = [
+  'mantelzorgondersteuning', 'vervangende mantelzorg', 'emotionele steun',
+  'lotgenotencontact', 'leren en training', 'respijtzorg',
+  'mantelzorgsteunpunt', 'mantelzorgwaardering',
+]
+
+function mapDoelgroep(doelgroepCsv: string | undefined, categorie: string | undefined): string | null {
+  // Als de CSV expliciet een doelgroep heeft, normaliseer die
+  if (doelgroepCsv) {
+    const lower = doelgroepCsv.toLowerCase()
+    if (lower.includes('mantelzorg')) return 'MANTELZORGER'
+    if (lower.includes('zorgvrager') || lower.includes('cliënt') || lower.includes('client')) return 'ZORGVRAGER'
+    // Tekst bevat beide of iets anders -> bewaar als vrije tekst
+    return doelgroepCsv
+  }
+  // Anders: afleiden uit categorie
+  if (categorie) {
+    const lower = categorie.toLowerCase()
+    if (MANTELZORGER_CATEGORIEEN.some((mc) => lower.includes(mc))) return 'MANTELZORGER'
+  }
+  return null
+}
+
 function mapRow(csvRow: Record<string, string>): Record<string, string> {
   const mapped: Record<string, string> = {}
   for (const [csvKolom, dbVeld] of Object.entries(KOLOM_MAPPING)) {
@@ -98,7 +122,7 @@ export async function POST(request: NextRequest) {
             beschrijving: row.beschrijving || null,
             type: mapType(row.type),
             locatieOmschrijving: row.type || null, // Originele "Soort organisatie" tekst bewaren
-            doelgroep: row.doelgroep || null,
+            doelgroep: mapDoelgroep(row.doelgroep, row.categorie),
             onderdeelTest: row.categorie || null,
             soortHulp: row.soortHulp || null,
             dienst: row.dienst || null,

@@ -55,6 +55,13 @@ const CATEGORIEEN_ZORGVRAGER = [
   "Sociaal contact en activiteiten",
   "Vervoer",
   "Huisdieren",
+  // Categorieën uit CSV-import
+  "Dagbesteding",
+  "Thuiszorg",
+  "Verpleging en verzorging",
+  "Huisarts",
+  "Maatschappelijk werk",
+  "Sociaal wijkteam",
 ]
 
 const CATEGORIEEN_MANTELZORGER = [
@@ -63,12 +70,21 @@ const CATEGORIEEN_MANTELZORGER = [
   "Emotionele steun",
   "Lotgenotencontact",
   "Leren en training",
+  // Categorieën uit CSV-import
+  "Respijtzorg",
+  "Mantelzorgsteunpunt",
+  "Mantelzorgwaardering",
 ]
 
-// Alle onderdelen (voor backwards compatibility)
+// Alle onderdelen (standaardlijst + dynamisch aangevuld vanuit database)
 const ONDERDEEL_OPTIES = [
   ...CATEGORIEEN_ZORGVRAGER,
   ...CATEGORIEEN_MANTELZORGER.filter((c) => !CATEGORIEEN_ZORGVRAGER.includes(c)),
+]
+
+// Categorieën die automatisch doelgroep MANTELZORGER krijgen
+const MANTELZORGER_CATEGORIEEN = [
+  ...CATEGORIEEN_MANTELZORGER,
 ]
 
 const SOORT_HULP_OPTIES = [
@@ -674,12 +690,20 @@ export default function BeheerHulpbronnenPage() {
   const actiefCount = gefilterdeHulpbronnen.filter((h) => h.isActief).length
   const inactiefCount = gefilterdeHulpbronnen.filter((h) => !h.isActief).length
 
-  // Categorieën afhankelijk van doelgroep
+  // Categorieën: combineer hardcoded + dynamisch uit database
+  const alleCategorieOpties = useMemo(() => {
+    const basis = [...ONDERDEEL_OPTIES]
+    for (const o of filterOnderdelen) {
+      if (!basis.includes(o)) basis.push(o)
+    }
+    return basis.sort((a, b) => a.localeCompare(b, "nl"))
+  }, [filterOnderdelen])
+
   const categorieOpties = filterDoelgroep === "ZORGVRAGER"
     ? CATEGORIEEN_ZORGVRAGER
     : filterDoelgroep === "MANTELZORGER"
     ? CATEGORIEEN_MANTELZORGER
-    : ONDERDEEL_OPTIES
+    : alleCategorieOpties
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 pb-24">
@@ -2509,7 +2533,7 @@ export default function BeheerHulpbronnenPage() {
                     ? CATEGORIEEN_ZORGVRAGER
                     : editItem.doelgroep === "MANTELZORGER"
                     ? CATEGORIEEN_MANTELZORGER
-                    : ONDERDEEL_OPTIES
+                    : alleCategorieOpties
                   ).map((o) => (
                     <option key={o} value={o}>
                       {o}
