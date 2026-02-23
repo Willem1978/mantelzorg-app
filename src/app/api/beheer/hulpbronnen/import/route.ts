@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import prisma from '@/lib/prisma'
+import { ZorgorganisatieType } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,21 +28,21 @@ const VALID_TYPES = [
   'OVERIG', 'LANDELIJK',
 ]
 
-function mapType(soortOrganisatie: string | undefined): string {
-  if (!soortOrganisatie) return 'OVERIG'
+function mapType(soortOrganisatie: string | undefined): ZorgorganisatieType {
+  if (!soortOrganisatie) return ZorgorganisatieType.OVERIG
   const upper = soortOrganisatie.toUpperCase().replace(/\s+/g, '_')
-  if (VALID_TYPES.includes(upper)) return upper
+  if (VALID_TYPES.includes(upper)) return upper as ZorgorganisatieType
   // Probeer fuzzy match
-  if (upper.includes('THUISZORG')) return 'THUISZORG'
-  if (upper.includes('MANTELZORG')) return 'MANTELZORGSTEUNPUNT'
-  if (upper.includes('RESPIJT')) return 'RESPIJTZORG'
-  if (upper.includes('DAGBESTEDING')) return 'DAGBESTEDING'
-  if (upper.includes('HUISARTS')) return 'HUISARTS'
-  if (upper.includes('WIJKTEAM') || upper.includes('SOCIAAL')) return 'SOCIAAL_WIJKTEAM'
-  if (upper.includes('VRIJWILLIG')) return 'VRIJWILLIGERS'
-  if (upper.includes('GEMEENTE')) return 'GEMEENTE'
-  if (upper.includes('LANDELIJK')) return 'LANDELIJK'
-  return 'OVERIG'
+  if (upper.includes('THUISZORG')) return ZorgorganisatieType.THUISZORG
+  if (upper.includes('MANTELZORG')) return ZorgorganisatieType.MANTELZORGSTEUNPUNT
+  if (upper.includes('RESPIJT')) return ZorgorganisatieType.RESPIJTZORG
+  if (upper.includes('DAGBESTEDING')) return ZorgorganisatieType.DAGBESTEDING
+  if (upper.includes('HUISARTS')) return ZorgorganisatieType.HUISARTS
+  if (upper.includes('WIJKTEAM') || upper.includes('SOCIAAL')) return ZorgorganisatieType.SOCIAAL_WIJKTEAM
+  if (upper.includes('VRIJWILLIG')) return ZorgorganisatieType.VRIJWILLIGERS
+  if (upper.includes('GEMEENTE')) return ZorgorganisatieType.GEMEENTE
+  if (upper.includes('LANDELIJK')) return ZorgorganisatieType.LANDELIJK
+  return ZorgorganisatieType.OVERIG
 }
 
 function mapRow(csvRow: Record<string, string>): Record<string, string> {
