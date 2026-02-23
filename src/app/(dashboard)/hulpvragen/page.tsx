@@ -456,11 +456,11 @@ function HulpPageContent() {
     if (!hulpData?.landelijk) return []
 
     const mapping: Record<string, string[]> = {
-      'Mantelzorgondersteuning': ['ondersteuning', 'mantelzorg'],
+      'Ondersteuning': ['ondersteuning', 'mantelzorg'],
       'Vervangende mantelzorg': ['respijt'],
-      'Emotionele steun': ['emotioneel', 'steun'],
-      'Lotgenotencontact': ['lotgenoot', 'lotgenoten'],
-      'Leren en training': ['educatie', 'training', 'cursus', 'leren'],
+      'Praten & steun': ['emotioneel', 'steun'],
+      'Lotgenoten': ['lotgenoot', 'lotgenoten'],
+      'Leren & training': ['educatie', 'training', 'cursus', 'leren'],
     }
 
     const keywords = mapping[categorieNaam] || []

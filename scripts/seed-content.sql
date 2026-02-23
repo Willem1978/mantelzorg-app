@@ -204,15 +204,15 @@ ON CONFLICT ("taakId") DO UPDATE SET
 
 INSERT INTO "ContentCategorie" (id, type, slug, naam, icon, hint, metadata, volgorde, "isActief", "createdAt", "updatedAt")
 VALUES
-  (gen_random_uuid()::text, 'HULP_ZORGVRAGER', 'persoonlijke-verzorging', 'Persoonlijke verzorging', '🛁', 'Verzorging', '{"groep": "Dagelijks leven", "routeLabel": "Wmo/Zvw/Wlz"}', 1, true, now(), now()),
-  (gen_random_uuid()::text, 'HULP_ZORGVRAGER', 'maaltijden', 'Bereiden en/of nuttigen van maaltijden', '🍽️', 'Maaltijden', '{"groep": "Dagelijks leven", "routeLabel": "Gemeente"}', 2, true, now(), now()),
+  (gen_random_uuid()::text, 'HULP_ZORGVRAGER', 'administratie', 'Administratie', '📋', 'Administratie', '{"groep": "Organisatie & regelwerk", "routeLabel": "Landelijk"}', 1, true, now(), now()),
+  (gen_random_uuid()::text, 'HULP_ZORGVRAGER', 'plannen', 'Plannen', '📅', 'Plannen', '{"groep": "Organisatie & regelwerk", "routeLabel": null}', 2, true, now(), now()),
   (gen_random_uuid()::text, 'HULP_ZORGVRAGER', 'boodschappen', 'Boodschappen', '🛒', 'Boodschappen', '{"groep": "Dagelijks leven", "routeLabel": "Gemeente"}', 3, true, now(), now()),
-  (gen_random_uuid()::text, 'HULP_ZORGVRAGER', 'huishoudelijke-taken', 'Huishoudelijke taken', '🧹', 'Huishouden', '{"groep": "In en om het huis", "routeLabel": "Wmo"}', 4, true, now(), now()),
-  (gen_random_uuid()::text, 'HULP_ZORGVRAGER', 'klusjes', 'Klusjes in en om het huis', '🔧', 'Klusjes', '{"groep": "In en om het huis", "routeLabel": "Gemeente"}', 5, true, now(), now()),
-  (gen_random_uuid()::text, 'HULP_ZORGVRAGER', 'administratie', 'Administratie en aanvragen', '📋', 'Administratie', '{"groep": "Organisatie & regelwerk", "routeLabel": "Landelijk"}', 6, true, now(), now()),
-  (gen_random_uuid()::text, 'HULP_ZORGVRAGER', 'plannen', 'Plannen en organiseren', '📅', 'Plannen', '{"groep": "Organisatie & regelwerk", "routeLabel": null}', 7, true, now(), now()),
-  (gen_random_uuid()::text, 'HULP_ZORGVRAGER', 'sociaal-contact', 'Sociaal contact en activiteiten', '👥', 'Sociaal', '{"groep": "Welzijn & mobiliteit", "routeLabel": "Wmo"}', 8, true, now(), now()),
-  (gen_random_uuid()::text, 'HULP_ZORGVRAGER', 'vervoer', 'Vervoer', '🚗', 'Vervoer', '{"groep": "Welzijn & mobiliteit", "routeLabel": "Landelijk"}', 9, true, now(), now()),
+  (gen_random_uuid()::text, 'HULP_ZORGVRAGER', 'sociaal-contact', 'Sociaal & activiteiten', '👥', 'Sociaal & activiteiten', '{"groep": "Welzijn & mobiliteit", "routeLabel": "Wmo"}', 4, true, now(), now()),
+  (gen_random_uuid()::text, 'HULP_ZORGVRAGER', 'vervoer', 'Vervoer', '🚗', 'Vervoer', '{"groep": "Welzijn & mobiliteit", "routeLabel": "Landelijk"}', 5, true, now(), now()),
+  (gen_random_uuid()::text, 'HULP_ZORGVRAGER', 'persoonlijke-verzorging', 'Verzorging', '🛁', 'Verzorging', '{"groep": "Dagelijks leven", "routeLabel": "Wmo/Zvw/Wlz"}', 6, true, now(), now()),
+  (gen_random_uuid()::text, 'HULP_ZORGVRAGER', 'maaltijden', 'Maaltijden', '🍽️', 'Maaltijden', '{"groep": "Dagelijks leven", "routeLabel": "Gemeente"}', 7, true, now(), now()),
+  (gen_random_uuid()::text, 'HULP_ZORGVRAGER', 'huishoudelijke-taken', 'Huishouden', '🧹', 'Huishouden', '{"groep": "In en om het huis", "routeLabel": "Wmo"}', 8, true, now(), now()),
+  (gen_random_uuid()::text, 'HULP_ZORGVRAGER', 'klusjes', 'Klusjes', '🔧', 'Klusjes', '{"groep": "In en om het huis", "routeLabel": "Gemeente"}', 9, true, now(), now()),
   (gen_random_uuid()::text, 'HULP_ZORGVRAGER', 'huisdieren', 'Huisdieren', '🐕', 'Huisdieren', '{"groep": "Overig", "routeLabel": null}', 10, true, now(), now())
 ON CONFLICT (type, slug) DO UPDATE SET
   naam = EXCLUDED.naam, icon = EXCLUDED.icon, hint = EXCLUDED.hint,
@@ -220,11 +220,11 @@ ON CONFLICT (type, slug) DO UPDATE SET
 
 INSERT INTO "ContentCategorie" (id, type, slug, naam, icon, hint, volgorde, "isActief", "createdAt", "updatedAt")
 VALUES
-  (gen_random_uuid()::text, 'HULP_MANTELZORGER', 'mantelzorgondersteuning', 'Mantelzorgondersteuning', '💜', 'Ondersteuning', 1, true, now(), now()),
+  (gen_random_uuid()::text, 'HULP_MANTELZORGER', 'mantelzorgondersteuning', 'Ondersteuning', '💜', 'Ondersteuning', 1, true, now(), now()),
   (gen_random_uuid()::text, 'HULP_MANTELZORGER', 'vervangende-mantelzorg', 'Vervangende mantelzorg', '🏠', 'Vervangende mantelzorg', 2, true, now(), now()),
-  (gen_random_uuid()::text, 'HULP_MANTELZORGER', 'emotionele-steun', 'Emotionele steun', '💚', 'Praten & steun', 3, true, now(), now()),
-  (gen_random_uuid()::text, 'HULP_MANTELZORGER', 'lotgenotencontact', 'Lotgenotencontact', '👥', 'Lotgenoten', 4, true, now(), now()),
-  (gen_random_uuid()::text, 'HULP_MANTELZORGER', 'leren-en-training', 'Leren en training', '🎓', 'Leren & training', 5, true, now(), now())
+  (gen_random_uuid()::text, 'HULP_MANTELZORGER', 'emotionele-steun', 'Praten & steun', '💚', 'Praten & steun', 3, true, now(), now()),
+  (gen_random_uuid()::text, 'HULP_MANTELZORGER', 'lotgenotencontact', 'Lotgenoten', '👥', 'Lotgenoten', 4, true, now(), now()),
+  (gen_random_uuid()::text, 'HULP_MANTELZORGER', 'leren-en-training', 'Leren & training', '🎓', 'Leren & training', 5, true, now(), now())
 ON CONFLICT (type, slug) DO UPDATE SET
   naam = EXCLUDED.naam, icon = EXCLUDED.icon, hint = EXCLUDED.hint,
   volgorde = EXCLUDED.volgorde, "updatedAt" = now();

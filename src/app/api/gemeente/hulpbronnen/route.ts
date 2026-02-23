@@ -38,11 +38,11 @@ export async function GET(request: NextRequest) {
     // Doelgroep filter: vertaal "MANTELZORGER"/"ZORGVRAGER" naar onderdeelTest categorieën
     // Het doelgroep-veld in de database bevat vrije tekst, niet enum waarden
     const MANTELZORGER_CATEGORIEEN = [
-      'Mantelzorgondersteuning',
+      'Ondersteuning',
       'Vervangende mantelzorg',
-      'Emotionele steun',
-      'Lotgenotencontact',
-      'Leren en training',
+      'Praten & steun',
+      'Lotgenoten',
+      'Leren & training',
     ]
     const doelgroepFilter = doelgroep === "MANTELZORGER"
       ? [{ onderdeelTest: { in: MANTELZORGER_CATEGORIEEN } }]

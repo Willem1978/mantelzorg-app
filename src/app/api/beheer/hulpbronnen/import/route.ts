@@ -21,6 +21,37 @@ const KOLOM_MAPPING: Record<string, string> = {
   'Kosten': 'kosten',
 }
 
+// Mapping van CSV-categorienamen naar gestandaardiseerde categorienamen
+const CATEGORIE_MAPPING: Record<string, string> = {
+  // Oude lange zorgvrager-namen → nieuw
+  'persoonlijke verzorging': 'Verzorging',
+  'bereiden en/of nuttigen van maaltijden': 'Maaltijden',
+  'huishoudelijke taken': 'Huishouden',
+  'klusjes in en om het huis': 'Klusjes',
+  'administratie en aanvragen': 'Administratie',
+  'plannen en organiseren': 'Plannen',
+  'sociaal contact en activiteiten': 'Sociaal & activiteiten',
+  // Oude lange mantelzorger-namen → nieuw
+  'mantelzorgondersteuning': 'Ondersteuning',
+  'emotionele steun': 'Praten & steun',
+  'lotgenotencontact': 'Lotgenoten',
+  'leren en training': 'Leren & training',
+  // CSV-import varianten
+  'respijtzorg': 'Vervangende mantelzorg',
+  'mantelzorgsteunpunt': 'Ondersteuning',
+  'dagbesteding': 'Sociaal & activiteiten',
+  'thuiszorg': 'Verzorging',
+  'verpleging en verzorging': 'Verzorging',
+  'maatschappelijk werk': 'Ondersteuning',
+  'sociaal wijkteam': 'Ondersteuning',
+}
+
+// Gestandaardiseerde mantelzorger-categorieën
+const MANTELZORGER_CATEGORIEEN = [
+  'ondersteuning', 'vervangende mantelzorg', 'praten & steun',
+  'lotgenoten', 'leren & training',
+]
+
 // Geldige ZorgorganisatieType enum-waarden
 const VALID_TYPES = [
   'GEMEENTE', 'THUISZORG', 'MANTELZORGSTEUNPUNT', 'RESPIJTZORG',
@@ -45,12 +76,14 @@ function mapType(soortOrganisatie: string | undefined): ZorgorganisatieType {
   return ZorgorganisatieType.OVERIG
 }
 
-// Categorieën die bij mantelzorger horen
-const MANTELZORGER_CATEGORIEEN = [
-  'mantelzorgondersteuning', 'vervangende mantelzorg', 'emotionele steun',
-  'lotgenotencontact', 'leren en training', 'respijtzorg',
-  'mantelzorgsteunpunt', 'mantelzorgwaardering',
-]
+function mapCategorie(categorie: string | undefined): string | null {
+  if (!categorie) return null
+  const lower = categorie.toLowerCase().trim()
+  // Bekijk of er een mapping is
+  if (CATEGORIE_MAPPING[lower]) return CATEGORIE_MAPPING[lower]
+  // Als het al een bekende standaard-categorie is, gebruik die (case-preserving)
+  return categorie
+}
 
 function mapDoelgroep(doelgroepCsv: string | undefined, categorie: string | undefined): string | null {
   // Als de CSV expliciet een doelgroep heeft, normaliseer die
@@ -58,13 +91,12 @@ function mapDoelgroep(doelgroepCsv: string | undefined, categorie: string | unde
     const lower = doelgroepCsv.toLowerCase()
     if (lower.includes('mantelzorg')) return 'MANTELZORGER'
     if (lower.includes('zorgvrager') || lower.includes('cliënt') || lower.includes('client')) return 'ZORGVRAGER'
-    // Tekst bevat beide of iets anders -> bewaar als vrije tekst
     return doelgroepCsv
   }
-  // Anders: afleiden uit categorie
+  // Anders: afleiden uit de gemapte categorie
   if (categorie) {
-    const lower = categorie.toLowerCase()
-    if (MANTELZORGER_CATEGORIEEN.some((mc) => lower.includes(mc))) return 'MANTELZORGER'
+    const mapped = mapCategorie(categorie)
+    if (mapped && MANTELZORGER_CATEGORIEEN.includes(mapped.toLowerCase())) return 'MANTELZORGER'
   }
   return null
 }
@@ -114,6 +146,7 @@ export async function POST(request: NextRequest) {
       }
 
       const gemeente = row.gemeente || null
+      const categorie = mapCategorie(row.categorie)
 
       try {
         await prisma.zorgorganisatie.create({
@@ -121,9 +154,9 @@ export async function POST(request: NextRequest) {
             naam,
             beschrijving: row.beschrijving || null,
             type: mapType(row.type),
-            locatieOmschrijving: row.type || null, // Originele "Soort organisatie" tekst bewaren
+            locatieOmschrijving: row.type || null,
             doelgroep: mapDoelgroep(row.doelgroep, row.categorie),
-            onderdeelTest: row.categorie || null,
+            onderdeelTest: categorie,
             soortHulp: row.soortHulp || null,
             dienst: row.dienst || null,
             telefoon: row.telefoon || null,

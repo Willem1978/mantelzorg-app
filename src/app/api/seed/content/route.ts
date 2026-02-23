@@ -59,15 +59,15 @@ export async function POST(request: Request) {
     // 4. CONTENT CATEGORIEEN
     // Zorgvrager
     const catZorgvrager = [
-      { slug: "persoonlijke-verzorging", naam: "Persoonlijke verzorging", icon: "\u{1F6C1}", hint: "Verzorging", metadata: { groep: "Dagelijks leven", routeLabel: "Wmo/Zvw/Wlz" }, volgorde: 1 },
-      { slug: "maaltijden", naam: "Bereiden en/of nuttigen van maaltijden", icon: "\u{1F37D}\uFE0F", hint: "Maaltijden", metadata: { groep: "Dagelijks leven", routeLabel: "Gemeente" }, volgorde: 2 },
+      { slug: "administratie", naam: "Administratie", icon: "\u{1F4CB}", hint: "Administratie", metadata: { groep: "Organisatie & regelwerk", routeLabel: "Landelijk" }, volgorde: 1 },
+      { slug: "plannen", naam: "Plannen", icon: "\u{1F4C5}", hint: "Plannen", metadata: { groep: "Organisatie & regelwerk", routeLabel: null }, volgorde: 2 },
       { slug: "boodschappen", naam: "Boodschappen", icon: "\u{1F6D2}", hint: "Boodschappen", metadata: { groep: "Dagelijks leven", routeLabel: "Gemeente" }, volgorde: 3 },
-      { slug: "huishoudelijke-taken", naam: "Huishoudelijke taken", icon: "\u{1F9F9}", hint: "Huishouden", metadata: { groep: "In en om het huis", routeLabel: "Wmo" }, volgorde: 4 },
-      { slug: "klusjes", naam: "Klusjes in en om het huis", icon: "\u{1F527}", hint: "Klusjes", metadata: { groep: "In en om het huis", routeLabel: "Gemeente" }, volgorde: 5 },
-      { slug: "administratie", naam: "Administratie en aanvragen", icon: "\u{1F4CB}", hint: "Administratie", metadata: { groep: "Organisatie & regelwerk", routeLabel: "Landelijk" }, volgorde: 6 },
-      { slug: "plannen", naam: "Plannen en organiseren", icon: "\u{1F4C5}", hint: "Plannen", metadata: { groep: "Organisatie & regelwerk", routeLabel: null }, volgorde: 7 },
-      { slug: "sociaal-contact", naam: "Sociaal contact en activiteiten", icon: "\u{1F465}", hint: "Sociaal", metadata: { groep: "Welzijn & mobiliteit", routeLabel: "Wmo" }, volgorde: 8 },
-      { slug: "vervoer", naam: "Vervoer", icon: "\u{1F697}", hint: "Vervoer", metadata: { groep: "Welzijn & mobiliteit", routeLabel: "Landelijk" }, volgorde: 9 },
+      { slug: "sociaal-contact", naam: "Sociaal & activiteiten", icon: "\u{1F465}", hint: "Sociaal & activiteiten", metadata: { groep: "Welzijn & mobiliteit", routeLabel: "Wmo" }, volgorde: 4 },
+      { slug: "vervoer", naam: "Vervoer", icon: "\u{1F697}", hint: "Vervoer", metadata: { groep: "Welzijn & mobiliteit", routeLabel: "Landelijk" }, volgorde: 5 },
+      { slug: "persoonlijke-verzorging", naam: "Verzorging", icon: "\u{1F6C1}", hint: "Verzorging", metadata: { groep: "Dagelijks leven", routeLabel: "Wmo/Zvw/Wlz" }, volgorde: 6 },
+      { slug: "maaltijden", naam: "Maaltijden", icon: "\u{1F37D}\uFE0F", hint: "Maaltijden", metadata: { groep: "Dagelijks leven", routeLabel: "Gemeente" }, volgorde: 7 },
+      { slug: "huishoudelijke-taken", naam: "Huishouden", icon: "\u{1F9F9}", hint: "Huishouden", metadata: { groep: "In en om het huis", routeLabel: "Wmo" }, volgorde: 8 },
+      { slug: "klusjes", naam: "Klusjes", icon: "\u{1F527}", hint: "Klusjes", metadata: { groep: "In en om het huis", routeLabel: "Gemeente" }, volgorde: 9 },
       { slug: "huisdieren", naam: "Huisdieren", icon: "\u{1F415}", hint: "Huisdieren", metadata: { groep: "Overig", routeLabel: null }, volgorde: 10 },
     ]
     for (const c of catZorgvrager) {
@@ -76,11 +76,11 @@ export async function POST(request: Request) {
 
     // Mantelzorger
     const catMantelzorger = [
-      { slug: "mantelzorgondersteuning", naam: "Mantelzorgondersteuning", icon: "\u{1F49C}", hint: "Ondersteuning", volgorde: 1 },
+      { slug: "mantelzorgondersteuning", naam: "Ondersteuning", icon: "\u{1F49C}", hint: "Ondersteuning", volgorde: 1 },
       { slug: "vervangende-mantelzorg", naam: "Vervangende mantelzorg", icon: "\u{1F3E0}", hint: "Vervangende mantelzorg", volgorde: 2 },
-      { slug: "emotionele-steun", naam: "Emotionele steun", icon: "\u{1F49A}", hint: "Praten & steun", volgorde: 3 },
-      { slug: "lotgenotencontact", naam: "Lotgenotencontact", icon: "\u{1F465}", hint: "Lotgenoten", volgorde: 4 },
-      { slug: "leren-en-training", naam: "Leren en training", icon: "\u{1F393}", hint: "Leren & training", volgorde: 5 },
+      { slug: "emotionele-steun", naam: "Praten & steun", icon: "\u{1F49A}", hint: "Praten & steun", volgorde: 3 },
+      { slug: "lotgenotencontact", naam: "Lotgenoten", icon: "\u{1F465}", hint: "Lotgenoten", volgorde: 4 },
+      { slug: "leren-en-training", naam: "Leren & training", icon: "\u{1F393}", hint: "Leren & training", volgorde: 5 },
     ]
     for (const c of catMantelzorger) {
       await prisma.contentCategorie.upsert({ where: { type_slug: { type: "HULP_MANTELZORGER", slug: c.slug } }, create: { type: "HULP_MANTELZORGER", ...c }, update: { naam: c.naam, icon: c.icon, hint: c.hint, volgorde: c.volgorde } })

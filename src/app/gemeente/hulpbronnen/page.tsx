@@ -36,24 +36,24 @@ interface Artikel {
 
 // Categorieën per doelgroep
 const CATEGORIEEN_ZORGVRAGER = [
-  { label: "Verzorging", value: "Persoonlijke verzorging", emoji: "🧴" },
-  { label: "Maaltijden", value: "Bereiden en/of nuttigen van maaltijden", emoji: "🍽️" },
+  { label: "Administratie", value: "Administratie", emoji: "📋" },
+  { label: "Plannen", value: "Plannen", emoji: "📅" },
   { label: "Boodschappen", value: "Boodschappen", emoji: "🛒" },
-  { label: "Huishouden", value: "Huishoudelijke taken", emoji: "🧹" },
-  { label: "Klusjes", value: "Klusjes in en om het huis", emoji: "🔧" },
-  { label: "Administratie", value: "Administratie en aanvragen", emoji: "📋" },
-  { label: "Plannen", value: "Plannen en organiseren", emoji: "📅" },
-  { label: "Sociaal", value: "Sociaal contact en activiteiten", emoji: "👥" },
+  { label: "Sociaal & activiteiten", value: "Sociaal & activiteiten", emoji: "👥" },
   { label: "Vervoer", value: "Vervoer", emoji: "🚗" },
+  { label: "Verzorging", value: "Verzorging", emoji: "🧴" },
+  { label: "Maaltijden", value: "Maaltijden", emoji: "🍽️" },
+  { label: "Huishouden", value: "Huishouden", emoji: "🧹" },
+  { label: "Klusjes", value: "Klusjes", emoji: "🔧" },
   { label: "Huisdieren", value: "Huisdieren", emoji: "🐕" },
 ]
 
 const CATEGORIEEN_MANTELZORGER = [
-  { label: "Ondersteuning", value: "Mantelzorgondersteuning", emoji: "💜" },
-  { label: "Vervangende zorg", value: "Vervangende mantelzorg", emoji: "🔄" },
-  { label: "Praten & steun", value: "Emotionele steun", emoji: "💬" },
-  { label: "Lotgenoten", value: "Lotgenotencontact", emoji: "🤝" },
-  { label: "Leren & training", value: "Leren en training", emoji: "📚" },
+  { label: "Ondersteuning", value: "Ondersteuning", emoji: "💜" },
+  { label: "Vervangende mantelzorg", value: "Vervangende mantelzorg", emoji: "🔄" },
+  { label: "Praten & steun", value: "Praten & steun", emoji: "💬" },
+  { label: "Lotgenoten", value: "Lotgenoten", emoji: "🤝" },
+  { label: "Leren & training", value: "Leren & training", emoji: "📚" },
 ]
 
 export default function GemeenteHulpbronnen() {

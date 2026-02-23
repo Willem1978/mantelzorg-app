@@ -231,19 +231,20 @@ async function main() {
   console.log('Seeding hulpvraag categorieën...')
 
   const categorieenZorgvrager = [
-    // Dagelijks leven
-    { slug: "persoonlijke-verzorging", naam: "Persoonlijke verzorging", icon: "🛁", kort: "Verzorging", groep: "Dagelijks leven", routeLabel: "Wmo/Zvw/Wlz", volgorde: 1 },
-    { slug: "maaltijden", naam: "Bereiden en/of nuttigen van maaltijden", icon: "🍽️", kort: "Maaltijden", groep: "Dagelijks leven", routeLabel: "Gemeente", volgorde: 2 },
-    { slug: "boodschappen", naam: "Boodschappen", icon: "🛒", kort: "Boodschappen", groep: "Dagelijks leven", routeLabel: "Gemeente", volgorde: 3 },
-    // In en om het huis
-    { slug: "huishoudelijke-taken", naam: "Huishoudelijke taken", icon: "🧹", kort: "Huishouden", groep: "In en om het huis", routeLabel: "Wmo", volgorde: 4 },
-    { slug: "klusjes", naam: "Klusjes in en om het huis", icon: "🔧", kort: "Klusjes", groep: "In en om het huis", routeLabel: "Gemeente", volgorde: 5 },
     // Organisatie & regelwerk
-    { slug: "administratie", naam: "Administratie en aanvragen", icon: "📋", kort: "Administratie", groep: "Organisatie & regelwerk", routeLabel: "Landelijk", volgorde: 6 },
-    { slug: "plannen", naam: "Plannen en organiseren", icon: "📅", kort: "Plannen", groep: "Organisatie & regelwerk", routeLabel: null, volgorde: 7 },
+    { slug: "administratie", naam: "Administratie", icon: "📋", kort: "Administratie", groep: "Organisatie & regelwerk", routeLabel: "Landelijk", volgorde: 1 },
+    { slug: "plannen", naam: "Plannen", icon: "📅", kort: "Plannen", groep: "Organisatie & regelwerk", routeLabel: null, volgorde: 2 },
+    // Dagelijks leven
+    { slug: "boodschappen", naam: "Boodschappen", icon: "🛒", kort: "Boodschappen", groep: "Dagelijks leven", routeLabel: "Gemeente", volgorde: 3 },
     // Welzijn & mobiliteit
-    { slug: "sociaal-contact", naam: "Sociaal contact en activiteiten", icon: "👥", kort: "Sociaal", groep: "Welzijn & mobiliteit", routeLabel: "Wmo", volgorde: 8 },
-    { slug: "vervoer", naam: "Vervoer", icon: "🚗", kort: "Vervoer", groep: "Welzijn & mobiliteit", routeLabel: "Landelijk", volgorde: 9 },
+    { slug: "sociaal-contact", naam: "Sociaal & activiteiten", icon: "👥", kort: "Sociaal & activiteiten", groep: "Welzijn & mobiliteit", routeLabel: "Wmo", volgorde: 4 },
+    { slug: "vervoer", naam: "Vervoer", icon: "🚗", kort: "Vervoer", groep: "Welzijn & mobiliteit", routeLabel: "Landelijk", volgorde: 5 },
+    // Dagelijks leven
+    { slug: "persoonlijke-verzorging", naam: "Verzorging", icon: "🛁", kort: "Verzorging", groep: "Dagelijks leven", routeLabel: "Wmo/Zvw/Wlz", volgorde: 6 },
+    { slug: "maaltijden", naam: "Maaltijden", icon: "🍽️", kort: "Maaltijden", groep: "Dagelijks leven", routeLabel: "Gemeente", volgorde: 7 },
+    // In en om het huis
+    { slug: "huishoudelijke-taken", naam: "Huishouden", icon: "🧹", kort: "Huishouden", groep: "In en om het huis", routeLabel: "Wmo", volgorde: 8 },
+    { slug: "klusjes", naam: "Klusjes", icon: "🔧", kort: "Klusjes", groep: "In en om het huis", routeLabel: "Gemeente", volgorde: 9 },
     // Overig
     { slug: "huisdieren", naam: "Huisdieren", icon: "🐕", kort: "Huisdieren", groep: "Overig", routeLabel: null, volgorde: 10 },
   ]
@@ -273,11 +274,11 @@ async function main() {
 
   // Categorieën mantelzorger
   const categorieenMantelzorger = [
-    { slug: "mantelzorgondersteuning", naam: "Mantelzorgondersteuning", icon: "💜", kort: "Ondersteuning", volgorde: 1 },
+    { slug: "mantelzorgondersteuning", naam: "Ondersteuning", icon: "💜", kort: "Ondersteuning", volgorde: 1 },
     { slug: "vervangende-mantelzorg", naam: "Vervangende mantelzorg", icon: "🏠", kort: "Vervangende mantelzorg", volgorde: 2 },
-    { slug: "emotionele-steun", naam: "Emotionele steun", icon: "💚", kort: "Praten & steun", volgorde: 3 },
-    { slug: "lotgenotencontact", naam: "Lotgenotencontact", icon: "👥", kort: "Lotgenoten", volgorde: 4 },
-    { slug: "leren-en-training", naam: "Leren en training", icon: "🎓", kort: "Leren & training", volgorde: 5 },
+    { slug: "emotionele-steun", naam: "Praten & steun", icon: "💚", kort: "Praten & steun", volgorde: 3 },
+    { slug: "lotgenotencontact", naam: "Lotgenoten", icon: "👥", kort: "Lotgenoten", volgorde: 4 },
+    { slug: "leren-en-training", naam: "Leren & training", icon: "🎓", kort: "Leren & training", volgorde: 5 },
   ]
 
   for (const cat of categorieenMantelzorger) {
@@ -449,49 +450,49 @@ async function main() {
 
   // We linken zorgtaken aan de hulp_zorgvrager categorieën waar ze bij horen
   const taakMappings: { bronNaam: string; doelCategorie: string }[] = [
-    // Persoonlijke verzorging
-    { bronNaam: "Wassen/aankleden", doelCategorie: "Persoonlijke verzorging" },
-    { bronNaam: "Wassen en aankleden", doelCategorie: "Persoonlijke verzorging" },
-    { bronNaam: "Persoonlijke verzorging", doelCategorie: "Persoonlijke verzorging" },
-    { bronNaam: "Toiletgang", doelCategorie: "Persoonlijke verzorging" },
-    { bronNaam: "Medicijnen", doelCategorie: "Persoonlijke verzorging" },
-    { bronNaam: "Toezicht", doelCategorie: "Persoonlijke verzorging" },
-    { bronNaam: "Medische zorg", doelCategorie: "Persoonlijke verzorging" },
-    // Huishoudelijke taken
-    { bronNaam: "Huishouden", doelCategorie: "Huishoudelijke taken" },
-    { bronNaam: "Huishoudelijke taken", doelCategorie: "Huishoudelijke taken" },
+    // Verzorging
+    { bronNaam: "Wassen/aankleden", doelCategorie: "Verzorging" },
+    { bronNaam: "Wassen en aankleden", doelCategorie: "Verzorging" },
+    { bronNaam: "Persoonlijke verzorging", doelCategorie: "Verzorging" },
+    { bronNaam: "Toiletgang", doelCategorie: "Verzorging" },
+    { bronNaam: "Medicijnen", doelCategorie: "Verzorging" },
+    { bronNaam: "Toezicht", doelCategorie: "Verzorging" },
+    { bronNaam: "Medische zorg", doelCategorie: "Verzorging" },
+    // Huishouden
+    { bronNaam: "Huishouden", doelCategorie: "Huishouden" },
+    { bronNaam: "Huishoudelijke taken", doelCategorie: "Huishouden" },
     // Vervoer
     { bronNaam: "Vervoer", doelCategorie: "Vervoer" },
     { bronNaam: "Vervoer/begeleiding", doelCategorie: "Vervoer" },
     { bronNaam: "Vervoer naar afspraken", doelCategorie: "Vervoer" },
     // Administratie
-    { bronNaam: "Administratie", doelCategorie: "Administratie en aanvragen" },
-    { bronNaam: "Administratie en aanvragen", doelCategorie: "Administratie en aanvragen" },
-    { bronNaam: "Administratie en geldzaken", doelCategorie: "Administratie en aanvragen" },
-    // Plannen en organiseren
-    { bronNaam: "Plannen en organiseren", doelCategorie: "Plannen en organiseren" },
-    { bronNaam: "Regelen en afspraken maken", doelCategorie: "Plannen en organiseren" },
-    { bronNaam: "Plannen", doelCategorie: "Plannen en organiseren" },
-    { bronNaam: "Organiseren", doelCategorie: "Plannen en organiseren" },
-    // Sociaal contact
-    { bronNaam: "Sociaal contact", doelCategorie: "Sociaal contact en activiteiten" },
-    { bronNaam: "Sociaal contact en activiteiten", doelCategorie: "Sociaal contact en activiteiten" },
-    { bronNaam: "Activiteiten", doelCategorie: "Sociaal contact en activiteiten" },
-    { bronNaam: "Bezoek en gezelschap", doelCategorie: "Sociaal contact en activiteiten" },
-    { bronNaam: "Bezoek en uitjes", doelCategorie: "Sociaal contact en activiteiten" },
+    { bronNaam: "Administratie", doelCategorie: "Administratie" },
+    { bronNaam: "Administratie en aanvragen", doelCategorie: "Administratie" },
+    { bronNaam: "Administratie en geldzaken", doelCategorie: "Administratie" },
+    // Plannen
+    { bronNaam: "Plannen en organiseren", doelCategorie: "Plannen" },
+    { bronNaam: "Regelen en afspraken maken", doelCategorie: "Plannen" },
+    { bronNaam: "Plannen", doelCategorie: "Plannen" },
+    { bronNaam: "Organiseren", doelCategorie: "Plannen" },
+    // Sociaal & activiteiten
+    { bronNaam: "Sociaal contact", doelCategorie: "Sociaal & activiteiten" },
+    { bronNaam: "Sociaal contact en activiteiten", doelCategorie: "Sociaal & activiteiten" },
+    { bronNaam: "Activiteiten", doelCategorie: "Sociaal & activiteiten" },
+    { bronNaam: "Bezoek en gezelschap", doelCategorie: "Sociaal & activiteiten" },
+    { bronNaam: "Bezoek en uitjes", doelCategorie: "Sociaal & activiteiten" },
     // Maaltijden
-    { bronNaam: "Maaltijden", doelCategorie: "Bereiden en/of nuttigen van maaltijden" },
-    { bronNaam: "Eten maken", doelCategorie: "Bereiden en/of nuttigen van maaltijden" },
-    { bronNaam: "Eten en drinken", doelCategorie: "Bereiden en/of nuttigen van maaltijden" },
+    { bronNaam: "Maaltijden", doelCategorie: "Maaltijden" },
+    { bronNaam: "Eten maken", doelCategorie: "Maaltijden" },
+    { bronNaam: "Eten en drinken", doelCategorie: "Maaltijden" },
     // Boodschappen
     { bronNaam: "Boodschappen", doelCategorie: "Boodschappen" },
     { bronNaam: "Boodschappen doen", doelCategorie: "Boodschappen" },
     // Klusjes
-    { bronNaam: "Klusjes", doelCategorie: "Klusjes in en om het huis" },
-    { bronNaam: "Klusjes in huis", doelCategorie: "Klusjes in en om het huis" },
-    { bronNaam: "Klusjes in en om huis", doelCategorie: "Klusjes in en om het huis" },
-    { bronNaam: "Klusjes in/om huis", doelCategorie: "Klusjes in en om het huis" },
-    { bronNaam: "Klusjes in en om het huis", doelCategorie: "Klusjes in en om het huis" },
+    { bronNaam: "Klusjes", doelCategorie: "Klusjes" },
+    { bronNaam: "Klusjes in huis", doelCategorie: "Klusjes" },
+    { bronNaam: "Klusjes in en om huis", doelCategorie: "Klusjes" },
+    { bronNaam: "Klusjes in/om huis", doelCategorie: "Klusjes" },
+    { bronNaam: "Klusjes in en om het huis", doelCategorie: "Klusjes" },
     // Huisdieren
     { bronNaam: "Huisdieren", doelCategorie: "Huisdieren" },
     { bronNaam: "Huisdieren verzorgen", doelCategorie: "Huisdieren" },
@@ -501,15 +502,15 @@ async function main() {
   // Gebruik de eerste zorgtaak die match als zorgtaakId (via de naam van de doelCategorie)
   // We moeten eerst een zorgtaak per categorie hebben
   const categorieNaarZorgtaak: Record<string, string> = {
-    "Persoonlijke verzorging": "t6",
-    "Huishoudelijke taken": "t8",
+    "Verzorging": "t6",
+    "Huishouden": "t8",
     "Vervoer": "t5",
-    "Administratie en aanvragen": "t1",
-    "Plannen en organiseren": "t2",
-    "Sociaal contact en activiteiten": "t4",
-    "Bereiden en/of nuttigen van maaltijden": "t7",
+    "Administratie": "t1",
+    "Plannen": "t2",
+    "Sociaal & activiteiten": "t4",
+    "Maaltijden": "t7",
     "Boodschappen": "t3",
-    "Klusjes in en om het huis": "t9",
+    "Klusjes": "t9",
     "Huisdieren": "t4", // Fallback naar bezoek
   }
 

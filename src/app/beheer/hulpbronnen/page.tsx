@@ -45,35 +45,24 @@ interface ScrapedResult {
 
 // Categorieën per doelgroep
 const CATEGORIEEN_ZORGVRAGER = [
-  "Persoonlijke verzorging",
-  "Bereiden en/of nuttigen van maaltijden",
+  "Administratie",
+  "Plannen",
   "Boodschappen",
-  "Huishoudelijke taken",
-  "Klusjes in en om het huis",
-  "Administratie en aanvragen",
-  "Plannen en organiseren",
-  "Sociaal contact en activiteiten",
+  "Sociaal & activiteiten",
   "Vervoer",
+  "Verzorging",
+  "Maaltijden",
+  "Huishouden",
+  "Klusjes",
   "Huisdieren",
-  // Categorieën uit CSV-import
-  "Dagbesteding",
-  "Thuiszorg",
-  "Verpleging en verzorging",
-  "Huisarts",
-  "Maatschappelijk werk",
-  "Sociaal wijkteam",
 ]
 
 const CATEGORIEEN_MANTELZORGER = [
-  "Mantelzorgondersteuning",
+  "Ondersteuning",
   "Vervangende mantelzorg",
-  "Emotionele steun",
-  "Lotgenotencontact",
-  "Leren en training",
-  // Categorieën uit CSV-import
-  "Respijtzorg",
-  "Mantelzorgsteunpunt",
-  "Mantelzorgwaardering",
+  "Praten & steun",
+  "Lotgenoten",
+  "Leren & training",
 ]
 
 // Alle onderdelen (standaardlijst + dynamisch aangevuld vanuit database)

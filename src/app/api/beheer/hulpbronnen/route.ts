@@ -50,14 +50,11 @@ export async function GET(request: NextRequest) {
     // Doelgroep filter: gebruik het doelgroep-veld in de database
     // Bij import wordt doelgroep nu correct als MANTELZORGER/ZORGVRAGER opgeslagen
     const MANTELZORGER_CATEGORIEEN = [
-      'Mantelzorgondersteuning',
+      'Ondersteuning',
       'Vervangende mantelzorg',
-      'Emotionele steun',
-      'Lotgenotencontact',
-      'Leren en training',
-      'Respijtzorg',
-      'Mantelzorgsteunpunt',
-      'Mantelzorgwaardering',
+      'Praten & steun',
+      'Lotgenoten',
+      'Leren & training',
     ]
     if (doelgroep === "MANTELZORGER") {
       andConditions.push({ OR: [
