@@ -30,6 +30,7 @@ interface Hulpbron {
   kosten: string | null
   doelgroep: string | null
   aanmeldprocedure: string | null
+  dienst: string | null
   bronLabel: string | null
   zorgverzekeraar: boolean
 }
@@ -139,6 +140,7 @@ const EMPTY_FORM: Partial<Hulpbron> = {
   kosten: "",
   doelgroep: "",
   aanmeldprocedure: "",
+  dienst: "",
   bronLabel: "",
   zorgverzekeraar: false,
 }
@@ -438,7 +440,16 @@ export default function BeheerHulpbronnenPage() {
       : "/api/beheer/hulpbronnen"
 
     const body = {
-      ...editItem,
+      naam: editItem.naam,
+      beschrijving: editItem.beschrijving || null,
+      type: editItem.type || "OVERIG",
+      dienst: editItem.dienst || null,
+      telefoon: editItem.telefoon || null,
+      email: editItem.email || null,
+      website: editItem.website || null,
+      adres: editItem.adres || null,
+      postcode: editItem.postcode || null,
+      woonplaats: editItem.woonplaats || null,
       gemeente: editItem.gemeente || null,
       provincie: editItem.provincie || null,
       dekkingNiveau: editItem.dekkingNiveau || "GEMEENTE",
@@ -448,9 +459,18 @@ export default function BeheerHulpbronnenPage() {
       dekkingWijken: editItem.dekkingWijken && editItem.dekkingWijken.length > 0
         ? editItem.dekkingWijken
         : null,
+      isActief: editItem.isActief ?? false,
       onderdeelTest: editItem.onderdeelTest || null,
       soortHulp: editItem.soortHulp || null,
+      openingstijden: editItem.openingstijden || null,
+      zichtbaarBijLaag: editItem.zichtbaarBijLaag ?? false,
+      zichtbaarBijGemiddeld: editItem.zichtbaarBijGemiddeld ?? false,
+      zichtbaarBijHoog: editItem.zichtbaarBijHoog ?? true,
+      kosten: editItem.kosten || null,
       doelgroep: editItem.doelgroep || null,
+      aanmeldprocedure: editItem.aanmeldprocedure || null,
+      bronLabel: editItem.bronLabel || null,
+      zorgverzekeraar: editItem.zorgverzekeraar ?? false,
     }
 
     const res = await fetch(url, {
@@ -1732,6 +1752,9 @@ export default function BeheerHulpbronnenPage() {
                   <span className="font-bold text-sm text-foreground">
                     {item.naam}
                   </span>
+                  {item.dienst && (
+                    <span className="text-xs text-muted-foreground">— {item.dienst}</span>
+                  )}
                   {item.isActief ? (
                     <span className="ker-badge ker-badge-green text-[10px]">Actief</span>
                   ) : (
@@ -2291,10 +2314,25 @@ export default function BeheerHulpbronnenPage() {
                 />
               </div>
 
-              {/* Beschrijving */}
+              {/* Naam dienst */}
               <div className="sm:col-span-2">
                 <label className="block text-xs font-medium text-muted-foreground mb-1">
-                  Beschrijving
+                  Naam dienst
+                </label>
+                <input
+                  type="text"
+                  value={editItem.dienst || ""}
+                  onChange={(e) =>
+                    setEditItem({ ...editItem, dienst: e.target.value })
+                  }
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+                />
+              </div>
+
+              {/* Omschrijving dienst */}
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                  Omschrijving dienst
                 </label>
                 <textarea
                   value={editItem.beschrijving || ""}

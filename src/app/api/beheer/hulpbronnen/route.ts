@@ -160,6 +160,7 @@ export async function POST(request: NextRequest) {
     naam: body.naam,
     beschrijving: body.beschrijving || null,
     type: body.type || 'OVERIG',
+    dienst: body.dienst || null,
     telefoon: body.telefoon || null,
     email: body.email || null,
     website: body.website || null,

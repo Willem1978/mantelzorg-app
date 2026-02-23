@@ -21,6 +21,7 @@ export async function PUT(
       naam: body.naam,
       beschrijving: body.beschrijving ?? null,
       type: body.type,
+      dienst: body.dienst ?? null,
       telefoon: body.telefoon ?? null,
       email: body.email ?? null,
       website: body.website ?? null,
