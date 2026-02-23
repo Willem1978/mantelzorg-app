@@ -20,6 +20,30 @@ const KOLOM_MAPPING: Record<string, string> = {
   'Kosten': 'kosten',
 }
 
+// Geldige ZorgorganisatieType enum-waarden
+const VALID_TYPES = [
+  'GEMEENTE', 'THUISZORG', 'MANTELZORGSTEUNPUNT', 'RESPIJTZORG',
+  'DAGBESTEDING', 'HUISARTS', 'SOCIAAL_WIJKTEAM', 'VRIJWILLIGERS',
+  'OVERIG', 'LANDELIJK',
+]
+
+function mapType(soortOrganisatie: string | undefined): string {
+  if (!soortOrganisatie) return 'OVERIG'
+  const upper = soortOrganisatie.toUpperCase().replace(/\s+/g, '_')
+  if (VALID_TYPES.includes(upper)) return upper
+  // Probeer fuzzy match
+  if (upper.includes('THUISZORG')) return 'THUISZORG'
+  if (upper.includes('MANTELZORG')) return 'MANTELZORGSTEUNPUNT'
+  if (upper.includes('RESPIJT')) return 'RESPIJTZORG'
+  if (upper.includes('DAGBESTEDING')) return 'DAGBESTEDING'
+  if (upper.includes('HUISARTS')) return 'HUISARTS'
+  if (upper.includes('WIJKTEAM') || upper.includes('SOCIAAL')) return 'SOCIAAL_WIJKTEAM'
+  if (upper.includes('VRIJWILLIG')) return 'VRIJWILLIGERS'
+  if (upper.includes('GEMEENTE')) return 'GEMEENTE'
+  if (upper.includes('LANDELIJK')) return 'LANDELIJK'
+  return 'OVERIG'
+}
+
 function mapRow(csvRow: Record<string, string>): Record<string, string> {
   const mapped: Record<string, string> = {}
   for (const [csvKolom, dbVeld] of Object.entries(KOLOM_MAPPING)) {
@@ -71,7 +95,8 @@ export async function POST(request: NextRequest) {
           data: {
             naam,
             beschrijving: row.beschrijving || null,
-            type: row.type || 'OVERIG',
+            type: mapType(row.type),
+            locatieOmschrijving: row.type || null, // Originele "Soort organisatie" tekst bewaren
             doelgroep: row.doelgroep || null,
             onderdeelTest: row.categorie || null,
             soortHulp: row.soortHulp || null,
