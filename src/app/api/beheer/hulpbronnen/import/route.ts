@@ -4,6 +4,36 @@ import prisma from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
 
+// Mapping van CSV-kolomnamen naar database-velden
+const KOLOM_MAPPING: Record<string, string> = {
+  'Naam organisatie': 'naam',
+  'Naam dienst': 'dienst',
+  'Omschrijving dienst': 'beschrijving',
+  'Doelgroep': 'doelgroep',
+  'Categorie': 'categorie',
+  'Soort hulp': 'soortHulp',
+  'Gemeente': 'gemeente',
+  'Soort organisatie': 'type',
+  'Telefoonnummer': 'telefoon',
+  'Telefonisch te bereiken op': 'openingstijden',
+  'Website': 'website',
+  'Kosten': 'kosten',
+}
+
+function mapRow(csvRow: Record<string, string>): Record<string, string> {
+  const mapped: Record<string, string> = {}
+  for (const [csvKolom, dbVeld] of Object.entries(KOLOM_MAPPING)) {
+    // Case-insensitive match op kolomnaam
+    const key = Object.keys(csvRow).find(
+      (k) => k.trim().toLowerCase() === csvKolom.toLowerCase()
+    )
+    if (key && csvRow[key]?.trim()) {
+      mapped[dbVeld] = csvRow[key].trim()
+    }
+  }
+  return mapped
+}
+
 // POST /api/beheer/hulpbronnen/import - Import CSV hulpbronnen
 export async function POST(request: NextRequest) {
   const session = await auth()
@@ -13,11 +43,8 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { rows, gemeente, dekkingNiveau, provincie } = body as {
+    const { rows } = body as {
       rows: Record<string, string>[]
-      gemeente: string | null
-      dekkingNiveau: string
-      provincie: string | null
     }
 
     if (!rows || !Array.isArray(rows) || rows.length === 0) {
@@ -29,44 +56,33 @@ export async function POST(request: NextRequest) {
     const foutDetails: string[] = []
 
     for (let i = 0; i < rows.length; i++) {
-      const row = rows[i]
-      const naam = (row.naam || '').trim()
+      const row = mapRow(rows[i])
+      const naam = row.naam || ''
       if (!naam) {
         fouten++
-        foutDetails.push(`Rij ${i + 2}: Naam ontbreekt`)
+        foutDetails.push(`Rij ${i + 2}: "Naam organisatie" ontbreekt`)
         continue
       }
 
-      const jaValues = ['ja', 'yes', 'true', '1', 'waar']
-      const isZorgverzekeraar = jaValues.includes((row.zorgverzekeraar || '').toLowerCase().trim())
-      const isActief = row.isActief
-        ? jaValues.includes(row.isActief.toLowerCase().trim())
-        : true // default actief
+      const gemeente = row.gemeente || null
 
       try {
         await prisma.zorgorganisatie.create({
           data: {
             naam,
-            beschrijving: row.beschrijving?.trim() || null,
-            type: row.type?.trim() || 'OVERIG',
-            doelgroep: row.doelgroep?.trim() || null,
-            onderdeelTest: row.categorie?.trim() || null,
-            soortHulp: row.soortHulp?.trim() || null,
-            telefoon: row.telefoon?.trim() || null,
-            email: row.email?.trim() || null,
-            website: row.website?.trim() || null,
-            adres: row.adres?.trim() || null,
-            postcode: row.postcode?.trim() || null,
-            woonplaats: row.woonplaats?.trim() || null,
-            gemeente: gemeente || null,
-            provincie: provincie || null,
-            dekkingNiveau: dekkingNiveau || 'GEMEENTE',
-            openingstijden: row.openingstijden?.trim() || null,
-            kosten: row.kosten?.trim() || null,
-            aanmeldprocedure: row.aanmeldprocedure?.trim() || null,
-            bronLabel: row.bronLabel?.trim() || null,
-            zorgverzekeraar: isZorgverzekeraar,
-            isActief,
+            beschrijving: row.beschrijving || null,
+            type: row.type || 'OVERIG',
+            doelgroep: row.doelgroep || null,
+            onderdeelTest: row.categorie || null,
+            soortHulp: row.soortHulp || null,
+            dienst: row.dienst || null,
+            telefoon: row.telefoon || null,
+            website: row.website || null,
+            openingstijden: row.openingstijden || null,
+            kosten: row.kosten || null,
+            gemeente,
+            dekkingNiveau: gemeente ? 'GEMEENTE' : 'LANDELIJK',
+            isActief: true,
             zichtbaarBijLaag: false,
             zichtbaarBijGemiddeld: false,
             zichtbaarBijHoog: true,
@@ -85,7 +101,7 @@ export async function POST(request: NextRequest) {
       toegevoegd,
       fouten,
       totaalRijen: rows.length,
-      foutDetails: foutDetails.slice(0, 20), // max 20 fouten teruggeven
+      foutDetails: foutDetails.slice(0, 20),
     })
   } catch (error) {
     console.error('Import error:', error)

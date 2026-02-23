@@ -33,6 +33,21 @@ function parseCSV(text: string): Record<string, string>[] {
   return rows
 }
 
+const VERWACHTE_KOLOMMEN = [
+  { naam: "Doelgroep", verplicht: false, toelichting: "MANTELZORGER of ZORGVRAGER" },
+  { naam: "Categorie", verplicht: false, toelichting: "Bijv. Persoonlijke verzorging, Emotionele steun" },
+  { naam: "Soort hulp", verplicht: false, toelichting: "Bijv. Praktische hulp, Informatie en advies" },
+  { naam: "Gemeente", verplicht: false, toelichting: "Naam gemeente (bijv. Zutphen)" },
+  { naam: "Naam organisatie", verplicht: true, toelichting: "Naam van de organisatie" },
+  { naam: "Soort organisatie", verplicht: false, toelichting: "GEMEENTE, THUISZORG, VRIJWILLIGERS, OVERIG, etc." },
+  { naam: "Naam dienst", verplicht: false, toelichting: "Naam van de specifieke dienst" },
+  { naam: "Omschrijving dienst", verplicht: false, toelichting: "Omschrijving van de dienst" },
+  { naam: "Telefonisch te bereiken op", verplicht: false, toelichting: "Wanneer telefonisch bereikbaar" },
+  { naam: "Telefoonnummer", verplicht: false, toelichting: "Telefoonnummer" },
+  { naam: "Website", verplicht: false, toelichting: "URL van de website" },
+  { naam: "Kosten", verplicht: false, toelichting: "Bijv. Gratis, Eigen bijdrage" },
+]
+
 export default function DataUpdatePage() {
   // Zutphen update
   const [bezig, setBezig] = useState(false)
@@ -50,8 +65,6 @@ export default function DataUpdatePage() {
   const [importResultaat, setImportResultaat] = useState<ImportResultaat | null>(null)
   const [csvRows, setCsvRows] = useState<Record<string, string>[]>([])
   const [csvHeaders, setCsvHeaders] = useState<string[]>([])
-  const [importGemeente, setImportGemeente] = useState("")
-  const [importDekkingNiveau, setImportDekkingNiveau] = useState("GEMEENTE")
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleUpdate = async () => {
@@ -90,10 +103,6 @@ export default function DataUpdatePage() {
 
   const handleImport = async () => {
     if (csvRows.length === 0) return
-    if (!importGemeente && importDekkingNiveau !== "LANDELIJK") {
-      alert("Vul een gemeente in of kies 'Landelijk' als dekkingsgebied.")
-      return
-    }
     if (!confirm(`Weet je zeker dat je ${csvRows.length} hulpbronnen wilt importeren?`)) {
       return
     }
@@ -104,12 +113,7 @@ export default function DataUpdatePage() {
       const res = await fetch("/api/beheer/hulpbronnen/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          rows: csvRows,
-          gemeente: importDekkingNiveau === "LANDELIJK" ? null : importGemeente,
-          dekkingNiveau: importDekkingNiveau,
-          provincie: null,
-        }),
+        body: JSON.stringify({ rows: csvRows }),
       })
       const data = await res.json()
       setImportResultaat(data)
@@ -127,26 +131,13 @@ export default function DataUpdatePage() {
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
-  const verwachteKolommen = [
-    { naam: "naam", verplicht: true, toelichting: "Naam van de organisatie" },
-    { naam: "beschrijving", verplicht: false, toelichting: "Korte omschrijving" },
-    { naam: "doelgroep", verplicht: false, toelichting: "MANTELZORGER of ZORGVRAGER" },
-    { naam: "categorie", verplicht: false, toelichting: "Bijv. Persoonlijke verzorging, Emotionele steun" },
-    { naam: "soortHulp", verplicht: false, toelichting: "Bijv. Praktische hulp, Informatie en advies" },
-    { naam: "type", verplicht: false, toelichting: "GEMEENTE, THUISZORG, VRIJWILLIGERS, OVERIG, etc." },
-    { naam: "telefoon", verplicht: false, toelichting: "Telefoonnummer" },
-    { naam: "email", verplicht: false, toelichting: "E-mailadres" },
-    { naam: "website", verplicht: false, toelichting: "URL" },
-    { naam: "adres", verplicht: false, toelichting: "Straat + huisnummer" },
-    { naam: "postcode", verplicht: false, toelichting: "Bijv. 7201 AA" },
-    { naam: "woonplaats", verplicht: false, toelichting: "Vestigingsplaats" },
-    { naam: "openingstijden", verplicht: false, toelichting: "Bijv. Ma-Vr 9:00-17:00" },
-    { naam: "kosten", verplicht: false, toelichting: "Bijv. Gratis, Eigen bijdrage" },
-    { naam: "aanmeldprocedure", verplicht: false, toelichting: "Bijv. Via website, Bel direct" },
-    { naam: "bronLabel", verplicht: false, toelichting: "Landelijk, Gemeente, Zvw, Wlz, Wmo, Overig" },
-    { naam: "zorgverzekeraar", verplicht: false, toelichting: "ja of nee" },
-    { naam: "isActief", verplicht: false, toelichting: "ja of nee (standaard: ja)" },
-  ]
+  // Check welke verwachte kolommen gevonden zijn
+  const gevondenKolommen = VERWACHTE_KOLOMMEN.filter((k) =>
+    csvHeaders.some((h) => h.toLowerCase() === k.naam.toLowerCase())
+  )
+  const ontbrekendeVerplicht = VERWACHTE_KOLOMMEN.filter(
+    (k) => k.verplicht && !csvHeaders.some((h) => h.toLowerCase() === k.naam.toLowerCase())
+  )
 
   return (
     <div className="p-6 max-w-3xl">
@@ -162,13 +153,13 @@ export default function DataUpdatePage() {
         </h2>
         <p className="text-sm text-gray-600 mb-4">
           Importeer hulpbronnen vanuit een CSV-bestand (komma, puntkomma of tab-gescheiden).
-          Alleen de kolom <code className="bg-gray-100 px-1 rounded">naam</code> is verplicht.
+          De kolom <code className="bg-gray-100 px-1 rounded">Naam organisatie</code> is verplicht.
         </p>
 
         {/* Verwachte kolommen */}
         <details className="mb-4">
           <summary className="text-sm font-medium text-blue-600 cursor-pointer hover:underline">
-            Welke kolommen kan het bestand bevatten?
+            Welke kolommen moet het bestand bevatten?
           </summary>
           <div className="mt-2 overflow-x-auto">
             <table className="w-full text-xs border border-gray-200 rounded">
@@ -180,9 +171,9 @@ export default function DataUpdatePage() {
                 </tr>
               </thead>
               <tbody>
-                {verwachteKolommen.map((k) => (
+                {VERWACHTE_KOLOMMEN.map((k) => (
                   <tr key={k.naam} className="border-b border-gray-100">
-                    <td className="px-3 py-1.5 font-mono">{k.naam}</td>
+                    <td className="px-3 py-1.5 font-medium">{k.naam}</td>
                     <td className="px-3 py-1.5">{k.verplicht ? "Ja" : "Nee"}</td>
                     <td className="px-3 py-1.5 text-gray-600">{k.toelichting}</td>
                   </tr>
@@ -192,42 +183,8 @@ export default function DataUpdatePage() {
           </div>
         </details>
 
-        {/* Dekkingsgebied + Gemeente */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Dekkingsgebied voor alle rijen
-            </label>
-            <select
-              value={importDekkingNiveau}
-              onChange={(e) => setImportDekkingNiveau(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm"
-            >
-              <option value="LANDELIJK">Landelijk</option>
-              <option value="GEMEENTE">Gemeente</option>
-            </select>
-          </div>
-          {importDekkingNiveau !== "LANDELIJK" && (
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
-                Gemeente
-              </label>
-              <input
-                type="text"
-                value={importGemeente}
-                onChange={(e) => setImportGemeente(e.target.value)}
-                placeholder="Bijv. Zutphen"
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm"
-              />
-            </div>
-          )}
-        </div>
-
         {/* Bestand kiezen */}
         <div className="mb-4">
-          <label className="block text-xs font-medium text-gray-600 mb-1">
-            CSV-bestand
-          </label>
           <input
             ref={fileInputRef}
             type="file"
@@ -237,12 +194,44 @@ export default function DataUpdatePage() {
           />
         </div>
 
-        {/* Preview */}
+        {/* Kolom-check na bestand laden */}
         {csvRows.length > 0 && (
           <div className="mb-4">
+            {/* Kolom-match samenvatting */}
+            <div className="mb-3 p-3 rounded-lg bg-gray-50 border border-gray-200 text-xs">
+              <p className="font-medium text-gray-700 mb-1">
+                Herkende kolommen ({gevondenKolommen.length} van {VERWACHTE_KOLOMMEN.length}):
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {VERWACHTE_KOLOMMEN.map((k) => {
+                  const found = csvHeaders.some((h) => h.toLowerCase() === k.naam.toLowerCase())
+                  return (
+                    <span
+                      key={k.naam}
+                      className={`px-2 py-0.5 rounded text-[10px] font-medium ${
+                        found
+                          ? "bg-green-100 text-green-700"
+                          : k.verplicht
+                          ? "bg-red-100 text-red-700"
+                          : "bg-gray-200 text-gray-500"
+                      }`}
+                    >
+                      {k.naam} {found ? "✓" : "—"}
+                    </span>
+                  )
+                })}
+              </div>
+              {ontbrekendeVerplicht.length > 0 && (
+                <p className="mt-2 text-red-600 font-medium">
+                  Verplichte kolom ontbreekt: {ontbrekendeVerplicht.map((k) => k.naam).join(", ")}
+                </p>
+              )}
+            </div>
+
+            {/* Preview tabel */}
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-medium text-gray-700">
-                {csvRows.length} rijen gevonden, {csvHeaders.length} kolommen: {csvHeaders.join(", ")}
+                {csvRows.length} rijen gevonden
               </p>
               <button
                 onClick={resetImport}
@@ -257,7 +246,7 @@ export default function DataUpdatePage() {
                   <tr className="bg-gray-50 sticky top-0">
                     <th className="px-2 py-1.5 text-left text-gray-500">#</th>
                     {csvHeaders.map((h) => (
-                      <th key={h} className="px-2 py-1.5 text-left font-medium">{h}</th>
+                      <th key={h} className="px-2 py-1.5 text-left font-medium whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -281,9 +270,11 @@ export default function DataUpdatePage() {
 
             <button
               onClick={handleImport}
-              disabled={importBezig}
+              disabled={importBezig || ontbrekendeVerplicht.length > 0}
               className={`mt-3 px-5 py-2.5 rounded-lg font-medium text-white ${
-                importBezig ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+                importBezig || ontbrekendeVerplicht.length > 0
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700"
               }`}
             >
               {importBezig ? "Bezig met importeren..." : `${csvRows.length} hulpbronnen importeren`}
