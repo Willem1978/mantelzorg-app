@@ -1,7 +1,7 @@
 "use client"
 
 import { useSession } from "next-auth/react"
-import { useEffect, useState, useCallback, useMemo } from "react"
+import { useEffect, useState, useCallback, useMemo, useRef } from "react"
 
 // Types
 interface Hulpbron {
@@ -207,6 +207,11 @@ export default function BeheerHulpbronnenPage() {
 
   // Delete confirm
   const [deleteId, setDeleteId] = useState<string | null>(null)
+
+  // CSV Import
+  const csvInputRef = useRef<HTMLInputElement>(null)
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState<{ toegevoegd: number; fouten: number; totaalRijen: number; foutDetails?: string[] } | null>(null)
 
   // Data enrichment
   const [verrijking, setVerrijking] = useState(false)
@@ -493,6 +498,59 @@ export default function BeheerHulpbronnenPage() {
     fetchData()
   }
 
+  const handleCsvImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImporting(true)
+    setImportResult(null)
+
+    try {
+      const text = await file.text()
+      const lines = text.split(/\r?\n/)
+      if (lines.length < 2) {
+        setImportResult({ toegevoegd: 0, fouten: 1, totaalRijen: 0, foutDetails: ["Bestand is leeg of heeft geen header"] })
+        setImporting(false)
+        return
+      }
+
+      // Parse CSV: split op ; (Excel NL) of , (standaard)
+      const separator = lines[0].includes(";") ? ";" : ","
+      const headers = lines[0].split(separator).map((h) => h.trim().replace(/^"|"$/g, ""))
+      const rows: Record<string, string>[] = []
+
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim()
+        if (!line) continue
+        const values = line.split(separator).map((v) => v.trim().replace(/^"|"$/g, ""))
+        const row: Record<string, string> = {}
+        headers.forEach((h, idx) => {
+          if (values[idx]) row[h] = values[idx]
+        })
+        if (Object.keys(row).length > 0) rows.push(row)
+      }
+
+      const res = await fetch("/api/beheer/hulpbronnen/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows }),
+      })
+
+      const data = await res.json()
+      if (res.ok) {
+        setImportResult(data)
+        fetchData()
+      } else {
+        setImportResult({ toegevoegd: 0, fouten: 1, totaalRijen: 0, foutDetails: [data.error || "Import mislukt"] })
+      }
+    } catch (err) {
+      setImportResult({ toegevoegd: 0, fouten: 1, totaalRijen: 0, foutDetails: [err instanceof Error ? err.message : "Onbekende fout"] })
+    }
+
+    setImporting(false)
+    // Reset file input zodat hetzelfde bestand opnieuw gekozen kan worden
+    if (csvInputRef.current) csvInputRef.current.value = ""
+  }
+
   const handleToggleActief = async (item: Hulpbron) => {
     await fetch(`/api/beheer/hulpbronnen/${item.id}`, {
       method: "PUT",
@@ -644,6 +702,20 @@ export default function BeheerHulpbronnenPage() {
         </div>
         {isLoggedIn && activeTab === "hulp" && beheerModus && (
           <div className="flex gap-2 flex-wrap">
+            <input
+              ref={csvInputRef}
+              type="file"
+              accept=".csv"
+              onChange={handleCsvImport}
+              className="hidden"
+            />
+            <button
+              onClick={() => csvInputRef.current?.click()}
+              disabled={importing}
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--accent-blue,#3b82f6)] text-white hover:opacity-90 transition disabled:opacity-50"
+            >
+              {importing ? "Importeren..." : "CSV Import"}
+            </button>
             <button
               onClick={handleVerrijk}
               disabled={verrijking}
@@ -715,6 +787,31 @@ export default function BeheerHulpbronnenPage() {
               )}
             </div>
             <button onClick={() => setVerrijkResult(null)} className="text-muted-foreground hover:text-foreground text-lg leading-none">&times;</button>
+          </div>
+        </div>
+      )}
+
+      {/* Import resultaat banner */}
+      {importResult && (
+        <div className={`ker-card mb-4 border-l-4 ${importResult.fouten > 0 ? "border-[var(--accent-red,#ef4444)]" : "border-[var(--accent-green)]"}`}>
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="font-medium text-foreground">
+                CSV Import: {importResult.toegevoegd} van {importResult.totaalRijen} rijen toegevoegd
+                {importResult.fouten > 0 && ` (${importResult.fouten} fouten)`}
+              </p>
+              {importResult.foutDetails && importResult.foutDetails.length > 0 && (
+                <details className="mt-2">
+                  <summary className="text-sm text-muted-foreground cursor-pointer">
+                    Bekijk details ({importResult.foutDetails.length})
+                  </summary>
+                  <ul className="mt-1 text-xs text-muted-foreground space-y-0.5 max-h-40 overflow-y-auto">
+                    {importResult.foutDetails.map((d, i) => <li key={i}>{d}</li>)}
+                  </ul>
+                </details>
+              )}
+            </div>
+            <button onClick={() => setImportResult(null)} className="text-muted-foreground hover:text-foreground text-lg leading-none">&times;</button>
           </div>
         </div>
       )}
