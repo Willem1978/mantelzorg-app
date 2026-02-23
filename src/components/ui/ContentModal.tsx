@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import { ensureAbsoluteUrl } from "@/lib/utils"
 
 interface ContentModalProps {
   isOpen: boolean
@@ -202,7 +203,7 @@ export function ContentModal({
             )}
             {(url || website) && (
               <a
-                href={url || website || ""}
+                href={ensureAbsoluteUrl(url || website)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={`ker-btn w-full flex items-center justify-center gap-2 ${telefoon ? "ker-btn-secondary" : "ker-btn-primary"}`}

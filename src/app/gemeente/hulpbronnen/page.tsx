@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import { ensureAbsoluteUrl } from "@/lib/utils"
 
 interface Hulpbron {
   id: string
@@ -856,7 +857,7 @@ export default function GemeenteHulpbronnen() {
                     {selectedHulpbron.website && (
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <span className="text-gray-400">Website:</span>
-                        <a href={selectedHulpbron.website} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline truncate">{selectedHulpbron.website.replace(/^https?:\/\//, "")}</a>
+                        <a href={ensureAbsoluteUrl(selectedHulpbron.website)} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline truncate">{selectedHulpbron.website.replace(/^https?:\/\//, "")}</a>
                       </div>
                     )}
                     {!selectedHulpbron.telefoon && !selectedHulpbron.email && !selectedHulpbron.website && (
