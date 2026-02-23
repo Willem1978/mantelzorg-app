@@ -415,7 +415,7 @@ model Zorgorganisatie {
   verschijntIn          String[]            // Array van plekken waar dit item verschijnt (voor cross-referencing)
   routeLabel            String?             // Wet/route label: Wmo, Zvw, Wlz (voor display op hulpkaarten)
   bronLabel             String?             // Bronlabel: Landelijk, Gemeente, Zvw, Wlz, Overig
-  zorgverzekeraar       String?             // Zorgverzekeraar: CZ, VGZ, Menzis, Zilveren Kruis, etc.
+  zorgverzekeraar       Boolean             @default(false) // Tag: valt onder zorgverzekeraar
 
   @@index([isActief, gemeente])
   @@index([isActief, onderdeelTest])

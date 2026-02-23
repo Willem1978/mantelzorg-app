@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
     verschijntIn: body.verschijntIn || [],
     routeLabel: body.routeLabel || null,
     bronLabel: body.bronLabel || null,
-    zorgverzekeraar: body.zorgverzekeraar || null,
+    zorgverzekeraar: body.zorgverzekeraar ?? false,
   }
 
   try {
