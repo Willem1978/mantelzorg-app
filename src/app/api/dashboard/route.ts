@@ -208,7 +208,7 @@ async function getHulpbronnenVoorTaken(
   ]
 
   // Alle hulpbronnen per categorie (voor hulp zoeken sectie)
-  // Inclusief nieuwe "Voor jou" categorieën
+  // onderdeelTest waarden in de database:
   const alleOnderdelen = [
     // Voor naaste
     'Persoonlijke verzorging',
@@ -228,6 +228,27 @@ async function getHulpbronnenVoorTaken(
     'Lotgenotencontact',
     'Leren en training',
   ]
+
+  // Map onderdeelTest (database) → ContentCategorie.naam (frontend weergave)
+  // perCategorie keys moeten matchen met de categorienamen die de frontend gebruikt
+  const ONDERDEEL_NAAR_DISPLAY: Record<string, string> = {
+    'Persoonlijke verzorging': 'Verzorging',
+    'Huishoudelijke taken': 'Huishouden',
+    'Vervoer': 'Vervoer',
+    'Administratie en aanvragen': 'Administratie',
+    'Plannen en organiseren': 'Plannen',
+    'Sociaal contact en activiteiten': 'Sociaal & activiteiten',
+    'Bereiden en/of nuttigen van maaltijden': 'Maaltijden',
+    'Boodschappen': 'Boodschappen',
+    'Klusjes in en om het huis': 'Klusjes',
+    'Huisdieren': 'Huisdieren',
+    // Mantelzorger-categorieën
+    'Mantelzorgondersteuning': 'Ondersteuning',
+    'Vervangende mantelzorg': 'Vervangende mantelzorg',
+    'Emotionele steun': 'Praten & steun',
+    'Lotgenotencontact': 'Lotgenoten',
+    'Leren en training': 'Leren & training',
+  }
 
   // Alle categorieën PARALLEL ophalen (ipv sequentieel in for-loop)
   // Mantelzorger-categorieën → gemeente mantelzorger, zorgvrager-categorieën → gemeente zorgvrager
@@ -293,7 +314,9 @@ async function getHulpbronnenVoorTaken(
   const perCategorie: Record<string, HulpbronResult[]> = {}
   for (const { onderdeel, gecombineerd } of categorieResultaten) {
     if (gecombineerd.length > 0) {
-      perCategorie[onderdeel] = gecombineerd
+      // Gebruik de weergavenaam als key (matcht met frontend categorienamen)
+      const displayNaam = ONDERDEEL_NAAR_DISPLAY[onderdeel] || onderdeel
+      perCategorie[displayNaam] = gecombineerd
     }
   }
 
