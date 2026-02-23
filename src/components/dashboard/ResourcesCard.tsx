@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { Card, CardHeader, CardTitle, CardContent, Button } from "@/components/ui"
+import { ensureAbsoluteUrl } from "@/lib/utils"
 
 interface Resource {
   id: string
@@ -44,7 +45,7 @@ export function ResourcesCard({ resources, title = "Hulp & Informatie" }: Resour
           {resources.slice(0, 3).map((resource) => (
             <a
               key={resource.id}
-              href={resource.url || `/hulp/${resource.id}`}
+              href={resource.url ? ensureAbsoluteUrl(resource.url) : `/hulp/${resource.id}`}
               className="block p-3 bg-gray-50 rounded-lg hover:bg-teal-50 transition-colors group"
             >
               <div className="flex items-start space-x-3">

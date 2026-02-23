@@ -2,6 +2,7 @@
 
 import { useSession } from "next-auth/react"
 import { useEffect, useState, useCallback, useMemo, useRef } from "react"
+import { ensureAbsoluteUrl } from "@/lib/utils"
 
 // Types
 interface Hulpbron {
@@ -1944,7 +1945,7 @@ export default function BeheerHulpbronnenPage() {
                   {item.telefoon && <span>📞 {item.telefoon}</span>}
                   {item.website && (
                     <a
-                      href={item.website}
+                      href={ensureAbsoluteUrl(item.website)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[var(--primary)] hover:underline truncate max-w-[200px]"

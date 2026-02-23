@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { cn } from "@/lib/utils"
+import { cn, ensureAbsoluteUrl } from "@/lib/utils"
 import Link from "next/link"
 
 interface Favoriet {
@@ -386,7 +386,7 @@ function FavorietCard({
             )}
             {fav.url && (
               <a
-                href={fav.url}
+                href={ensureAbsoluteUrl(fav.url)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-full bg-primary/8 text-primary text-sm font-medium hover:bg-primary/15 transition-colors"

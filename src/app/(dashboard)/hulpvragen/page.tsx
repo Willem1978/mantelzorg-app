@@ -865,24 +865,24 @@ function HulpPageContent() {
               <span className="font-medium">💝 Hulp voor je naaste.</span> Hier vind je hulp voor de taken
               die je voor je naaste doet.
               {hulpData?.zwareTaken && hulpData.zwareTaken.length > 0
-                ? " Rode en oranje taken zijn het zwaarst voor jou. Daar kun je het beste eerst hulp bij zoeken."
+                ? " De kleuren laten zien hoe zwaar een taak voor jou is."
                 : ""}
             </p>
           </div>
           {!hulpData?.zwareTaken?.length && (
-            <div className="ker-card text-center py-6 border-2 border-dashed border-border">
-              <span className="text-3xl block mb-2">📊</span>
-              <p className="text-foreground font-medium mb-1">Nog geen zorgtaken bekend</p>
-              <p className="text-sm text-muted-foreground mb-3">
-                Doe de balanstest zodat we kunnen zien welke taken zwaar zijn en waar je hulp bij kunt krijgen.
-              </p>
-              <Link href="/belastbaarheidstest" className="ker-btn ker-btn-primary inline-flex items-center gap-2">
-                Doe de balanstest
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
-            </div>
+            <Link
+              href="/belastbaarheidstest"
+              className="flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/20 hover:bg-primary/10 transition-colors"
+            >
+              <span className="text-2xl">📊</span>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-foreground">Doe de balanstest</p>
+                <p className="text-xs text-muted-foreground">Dan kleuren we de tegels op basis van wat jij zwaar vindt.</p>
+              </div>
+              <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
           )}
           {locatieZorgvrager ? (
             <p className="text-sm text-muted-foreground flex items-center gap-1">

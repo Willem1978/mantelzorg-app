@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { FavorietButton } from "@/components/FavorietButton"
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs"
+import { ensureAbsoluteUrl } from "@/lib/utils"
 
 interface LandelijkeHulpbron {
   naam: string
@@ -203,7 +204,7 @@ function HulpCard({ hulp, favorieten, categorie }: {
           )}
           {hulp.website && (
             <a
-              href={hulp.website}
+              href={ensureAbsoluteUrl(hulp.website)}
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:text-primary/80"
