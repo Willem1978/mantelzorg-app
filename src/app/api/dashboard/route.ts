@@ -3,15 +3,19 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
 // Mapping van taak IDs naar "Onderdeel mantelzorgtest" waarden in de database
+// t1=Administratie en geldzaken, t2=Regelen en afspraken maken, t3=Boodschappen doen,
+// t4=Bezoek en gezelschap, t5=Vervoer naar afspraken, t6=Persoonlijke verzorging,
+// t7=Eten en drinken, t8=Huishouden, t9=Klusjes in en om huis
 const TAAK_NAAR_ONDERDEEL: Record<string, string> = {
-  t1: 'Persoonlijke verzorging',
-  t2: 'Huishoudelijke taken',
-  t3: 'Persoonlijke verzorging', // Medicijnen
-  t4: 'Vervoer',
-  t5: 'Administratie en aanvragen',
-  t6: 'Sociaal contact en activiteiten',
-  t7: 'Persoonlijke verzorging', // Toezicht
-  t8: 'Persoonlijke verzorging', // Medische zorg
+  t1: 'Administratie en aanvragen',
+  t2: 'Plannen en organiseren',
+  t3: 'Boodschappen',
+  t4: 'Sociaal contact en activiteiten',
+  t5: 'Vervoer',
+  t6: 'Persoonlijke verzorging',
+  t7: 'Bereiden en/of nuttigen van maaltijden',
+  t8: 'Huishoudelijke taken',
+  t9: 'Klusjes in en om het huis',
 }
 
 // Hulpbron interface voor type safety
@@ -226,33 +230,48 @@ async function getHulpbronnenVoorTaken(
   ]
 
   // Alle categorieën PARALLEL ophalen (ipv sequentieel in for-loop)
+  // Bouw gemeente-filter: mantelzorger-categorieën → gemeente mantelzorger,
+  // zorgvrager-categorieën → beide gemeenten (mantelzorger + zorgvrager)
+  const mantelzorgerOnderdelen = ['Mantelzorgondersteuning', 'Vervangende mantelzorg', 'Emotionele steun', 'Lotgenotencontact', 'Leren en training']
+
   const categorieResultaten = await Promise.all(
     alleOnderdelen.map(async (onderdeel) => {
+      const isMantelzorgerCat = mantelzorgerOnderdelen.includes(onderdeel)
+
+      // Bepaal gemeenten om op te filteren
+      const gemeenten: string[] = []
+      if (isMantelzorgerCat) {
+        if (mantelzorgerGemeente) gemeenten.push(mantelzorgerGemeente)
+      } else {
+        // Zorgvrager-categorieën: hulp uit beide gemeenten
+        if (zorgvragerGemeente) gemeenten.push(zorgvragerGemeente)
+        if (mantelzorgerGemeente && mantelzorgerGemeente !== zorgvragerGemeente) {
+          gemeenten.push(mantelzorgerGemeente)
+        }
+      }
+
       const [lokaal, landelijkCat] = await Promise.all([
-        // Lokaal bij zorgvrager (behalve mantelzorger-categorieën, die zijn bij mantelzorger)
-        prisma.zorgorganisatie.findMany({
-          where: {
-            isActief: true,
-            onderdeelTest: onderdeel,
-            gemeente: {
-              equals: ['Mantelzorgondersteuning', 'Vervangende mantelzorg', 'Emotionele steun', 'Lotgenotencontact', 'Leren en training'].includes(onderdeel)
-                ? mantelzorgerGemeente
-                : zorgvragerGemeente,
-              mode: "insensitive" as const,
-            },
-            AND: niveauFilter,
-          },
-          orderBy: { naam: 'asc' },
-          select: {
-            naam: true,
-            telefoon: true,
-            website: true,
-            beschrijving: true,
-            gemeente: true,
-            doelgroep: true,
-            kosten: true,
-          },
-        }),
+        // Lokaal: hulp uit relevante gemeente(n)
+        gemeenten.length > 0
+          ? prisma.zorgorganisatie.findMany({
+              where: {
+                isActief: true,
+                onderdeelTest: onderdeel,
+                gemeente: { in: gemeenten, mode: "insensitive" as const },
+                AND: niveauFilter,
+              },
+              orderBy: { naam: 'asc' },
+              select: {
+                naam: true,
+                telefoon: true,
+                website: true,
+                beschrijving: true,
+                gemeente: true,
+                doelgroep: true,
+                kosten: true,
+              },
+            })
+          : Promise.resolve([]),
         // Landelijk
         prisma.zorgorganisatie.findMany({
           where: {
