@@ -230,34 +230,22 @@ async function getHulpbronnenVoorTaken(
   ]
 
   // Alle categorieën PARALLEL ophalen (ipv sequentieel in for-loop)
-  // Bouw gemeente-filter: mantelzorger-categorieën → gemeente mantelzorger,
-  // zorgvrager-categorieën → beide gemeenten (mantelzorger + zorgvrager)
+  // Mantelzorger-categorieën → gemeente mantelzorger, zorgvrager-categorieën → gemeente zorgvrager
   const mantelzorgerOnderdelen = ['Mantelzorgondersteuning', 'Vervangende mantelzorg', 'Emotionele steun', 'Lotgenotencontact', 'Leren en training']
 
   const categorieResultaten = await Promise.all(
     alleOnderdelen.map(async (onderdeel) => {
       const isMantelzorgerCat = mantelzorgerOnderdelen.includes(onderdeel)
-
-      // Bepaal gemeenten om op te filteren
-      const gemeenten: string[] = []
-      if (isMantelzorgerCat) {
-        if (mantelzorgerGemeente) gemeenten.push(mantelzorgerGemeente)
-      } else {
-        // Zorgvrager-categorieën: hulp uit beide gemeenten
-        if (zorgvragerGemeente) gemeenten.push(zorgvragerGemeente)
-        if (mantelzorgerGemeente && mantelzorgerGemeente !== zorgvragerGemeente) {
-          gemeenten.push(mantelzorgerGemeente)
-        }
-      }
+      const gemeente = isMantelzorgerCat ? mantelzorgerGemeente : zorgvragerGemeente
 
       const [lokaal, landelijkCat] = await Promise.all([
-        // Lokaal: hulp uit relevante gemeente(n)
-        gemeenten.length > 0
+        // Lokaal: hulp uit relevante gemeente
+        gemeente
           ? prisma.zorgorganisatie.findMany({
               where: {
                 isActief: true,
                 onderdeelTest: onderdeel,
-                gemeente: { in: gemeenten, mode: "insensitive" as const },
+                gemeente: { equals: gemeente, mode: "insensitive" as const },
                 AND: niveauFilter,
               },
               orderBy: { naam: 'asc' },
