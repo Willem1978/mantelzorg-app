@@ -1180,31 +1180,22 @@ function HulpPageContent() {
       )}
 
       {/* MantelBuddy inschakelen - altijd zichtbaar onderaan */}
-      <div className="mt-8">
-        <div className="ker-card bg-gradient-to-r from-primary/5 to-primary/10">
-          <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-              <span className="text-2xl">🤝</span>
+      <div className="mt-6">
+        <button
+          onClick={() => setShowVragenTab(true)}
+          className="w-full ker-card bg-gradient-to-r from-primary/5 to-primary/10 hover:from-primary/10 hover:to-primary/15 transition-colors cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🤝</span>
+            <div className="flex-1 text-left">
+              <h3 className="font-semibold text-foreground text-sm">Hulp van een vrijwilliger?</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Een MantelBuddy helpt met kleine taken bij jou in de buurt</p>
             </div>
-            <div className="flex-1">
-              <h3 className="font-bold text-foreground text-lg">Wil je hulp van een vrijwilliger?</h3>
-              <p className="text-sm text-muted-foreground mt-2">
-                Een MantelBuddy is een vrijwilliger bij jou in de buurt.
-                Die kan je helpen met kleine taken. Of gewoon even met je praten.
-                Zo krijg jij meer tijd en ruimte voor jezelf.
-              </p>
-              <button
-                onClick={() => setShowVragenTab(true)}
-                className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity"
-              >
-                Vraag hulp aan een MantelBuddy
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
+            <svg className="w-4 h-4 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </div>
-        </div>
+        </button>
       </div>
     </div>
   )
