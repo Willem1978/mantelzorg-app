@@ -292,8 +292,10 @@ export default function GemeenteHulpbronnen() {
       doelgroep: item.doelgroep || "",
       onderdeelTest: item.onderdeelTest || "",
       telefoon: item.telefoon || "",
+      openingstijden: item.openingstijden || "",
       email: item.email || "",
       website: item.website || "",
+      kosten: item.kosten || "",
     })
   }
 
@@ -771,6 +773,13 @@ export default function GemeenteHulpbronnen() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
                     </div>
                     <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Bereikbaarheid</label>
+                      <input type="text" value={editData.openingstijden || ""}
+                        onChange={(e) => setEditData({ ...editData, openingstijden: e.target.value })}
+                        placeholder="bijv. Ma-Vr 9:00-17:00"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
+                    </div>
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                       <input type="email" value={editData.email || ""}
                         onChange={(e) => setEditData({ ...editData, email: e.target.value })}
@@ -780,6 +789,13 @@ export default function GemeenteHulpbronnen() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
                       <input type="url" value={editData.website || ""}
                         onChange={(e) => setEditData({ ...editData, website: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Kosten</label>
+                      <input type="text" value={editData.kosten || ""}
+                        onChange={(e) => setEditData({ ...editData, kosten: e.target.value })}
+                        placeholder="bijv. Gratis, Eigen bijdrage"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
                     </div>
                   </div>

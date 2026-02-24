@@ -1915,7 +1915,7 @@ export default function BeheerHulpbronnenPage() {
                   )}
                   {item.zorgverzekeraar && (
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 font-medium">
-                      Zorgverzekeraar
+                      Vergoed
                     </span>
                   )}
                 </div>
@@ -1943,6 +1943,7 @@ export default function BeheerHulpbronnenPage() {
                 )}
                 <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                   {item.telefoon && <span>📞 {item.telefoon}</span>}
+                  {item.openingstijden && <span>🕐 {item.openingstijden}</span>}
                   {item.website && (
                     <a
                       href={ensureAbsoluteUrl(item.website)}
@@ -1953,6 +1954,7 @@ export default function BeheerHulpbronnenPage() {
                       🌐 {item.website.replace("https://", "").replace("http://", "")}
                     </a>
                   )}
+                  {item.kosten && <span>💰 {item.kosten}</span>}
                 </div>
               </div>
 
@@ -2575,19 +2577,20 @@ export default function BeheerHulpbronnenPage() {
               </div>
 
               {/* Zorgverzekeraar */}
-              <div className="flex items-center gap-2 py-2">
-                <input
-                  type="checkbox"
-                  id="zorgverzekeraar"
-                  checked={editItem.zorgverzekeraar ?? false}
-                  onChange={(e) =>
-                    setEditItem({ ...editItem, zorgverzekeraar: e.target.checked })
-                  }
-                  className="w-4 h-4 rounded border-[var(--border)] text-indigo-600"
-                />
-                <label htmlFor="zorgverzekeraar" className="text-sm text-foreground">
-                  Zorgverzekeraar
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                  Vergoed door zorgverzekeraar
                 </label>
+                <select
+                  value={editItem.zorgverzekeraar ? "ja" : "nee"}
+                  onChange={(e) =>
+                    setEditItem({ ...editItem, zorgverzekeraar: e.target.value === "ja" })
+                  }
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+                >
+                  <option value="nee">Nee</option>
+                  <option value="ja">Ja</option>
+                </select>
               </div>
 
               {/* Telefoon */}
@@ -2601,6 +2604,22 @@ export default function BeheerHulpbronnenPage() {
                   onChange={(e) =>
                     setEditItem({ ...editItem, telefoon: e.target.value })
                   }
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+                />
+              </div>
+
+              {/* Openingstijden / Telefonische bereikbaarheid */}
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                  Telefonische bereikbaarheid
+                </label>
+                <input
+                  type="text"
+                  value={editItem.openingstijden || ""}
+                  onChange={(e) =>
+                    setEditItem({ ...editItem, openingstijden: e.target.value })
+                  }
+                  placeholder="bijv. Ma-Vr 9:00-17:00"
                   className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
                 />
               </div>
@@ -2631,6 +2650,22 @@ export default function BeheerHulpbronnenPage() {
                   onChange={(e) =>
                     setEditItem({ ...editItem, website: e.target.value })
                   }
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+                />
+              </div>
+
+              {/* Kosten */}
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                  Kosten
+                </label>
+                <input
+                  type="text"
+                  value={editItem.kosten || ""}
+                  onChange={(e) =>
+                    setEditItem({ ...editItem, kosten: e.target.value })
+                  }
+                  placeholder="bijv. Gratis, Eigen bijdrage, Via zorgverzekeraar"
                   className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
                 />
               </div>
