@@ -224,7 +224,7 @@ export function ContentModal({
           )}
 
           {/* Details als één samenhangend blok */}
-          {(organisatieNaam || gemeente || doelgroepLabel || kosten || openingstijden) && (
+          {(organisatieNaam || gemeente || doelgroepLabel || kosten || openingstijden || soortHulp || telefoon) && (
             <div className="space-y-2 text-sm">
               {gemeente && (
                 <div className="flex gap-2">
@@ -250,12 +250,10 @@ export function ContentModal({
                   <span className="text-foreground">{kosten}</span>
                 </div>
               )}
-              {openingstijden && (
-                <div className="flex gap-2">
-                  <span className="text-muted-foreground w-28 flex-shrink-0">Bereikbaar op</span>
-                  <span className="text-foreground">{openingstijden}</span>
-                </div>
-              )}
+              <div className="flex gap-2">
+                <span className="text-muted-foreground w-28 flex-shrink-0">Bereikbaar</span>
+                <span className="text-foreground">{openingstijden || "Neem contact op voor bereikbaarheid"}</span>
+              </div>
             </div>
           )}
 
