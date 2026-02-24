@@ -2,20 +2,19 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
-// Mapping van taak IDs naar "Onderdeel mantelzorgtest" waarden in de database
-// t1=Administratie en geldzaken, t2=Regelen en afspraken maken, t3=Boodschappen doen,
-// t4=Bezoek en gezelschap, t5=Vervoer naar afspraken, t6=Persoonlijke verzorging,
-// t7=Eten en drinken, t8=Huishouden, t9=Klusjes in en om huis
-const TAAK_NAAR_ONDERDEEL: Record<string, string> = {
-  t1: 'Administratie en aanvragen',
-  t2: 'Plannen en organiseren',
-  t3: 'Boodschappen',
-  t4: 'Sociaal contact en activiteiten',
-  t5: 'Vervoer',
-  t6: 'Persoonlijke verzorging',
-  t7: 'Bereiden en/of nuttigen van maaltijden',
-  t8: 'Huishoudelijke taken',
-  t9: 'Klusjes in en om het huis',
+// Mapping van taak IDs naar alle mogelijke onderdeelTest waarden in de database
+// De beheeromgeving slaat KORTE namen op, seed scripts LANGE namen.
+// We zoeken op ALLE varianten zodat beide werken.
+const TAAK_NAAR_ONDERDEEL_VARIANTEN: Record<string, string[]> = {
+  t1: ['Administratie', 'Administratie en aanvragen'],
+  t2: ['Plannen', 'Plannen en organiseren'],
+  t3: ['Boodschappen'],
+  t4: ['Sociaal & activiteiten', 'Sociaal contact en activiteiten'],
+  t5: ['Vervoer'],
+  t6: ['Verzorging', 'Persoonlijke verzorging'],
+  t7: ['Maaltijden', 'Bereiden en/of nuttigen van maaltijden'],
+  t8: ['Huishouden', 'Huishoudelijke taken'],
+  t9: ['Klusjes', 'Klusjes in en om het huis'],
 }
 
 // Hulpbron interface voor type safety
@@ -118,16 +117,16 @@ async function getHulpbronnenVoorTaken(
 
   // Hulpbronnen per zware taak - PARALLEL ophalen (ipv sequentieel in for-loop)
   const taakOnderdelen = zwareTaken
-    .map((taak: any) => ({ taak, onderdeel: TAAK_NAAR_ONDERDEEL[taak.taakId] }))
-    .filter(({ onderdeel }: any) => onderdeel)
+    .map((taak: any) => ({ taak, varianten: TAAK_NAAR_ONDERDEEL_VARIANTEN[taak.taakId] }))
+    .filter(({ varianten }: any) => varianten?.length > 0)
 
   const taakResultaten = await Promise.all(
-    taakOnderdelen.map(async ({ onderdeel }: any) => {
+    taakOnderdelen.map(async ({ varianten }: any) => {
       const [lokaleHulp, landelijkeHulp] = await Promise.all([
         zorgvragerGemeente ? prisma.zorgorganisatie.findMany({
           where: {
             isActief: true,
-            onderdeelTest: onderdeel,
+            onderdeelTest: { in: varianten },
             gemeente: { equals: zorgvragerGemeente, mode: "insensitive" as const },
             AND: niveauFilter,
           },
@@ -137,7 +136,7 @@ async function getHulpbronnenVoorTaken(
         prisma.zorgorganisatie.findMany({
           where: {
             isActief: true,
-            onderdeelTest: onderdeel,
+            onderdeelTest: { in: varianten },
             gemeente: null,
             AND: niveauFilter,
           },
@@ -164,7 +163,7 @@ async function getHulpbronnenVoorTaken(
   const lokaalMantelzorger = mantelzorgerGemeente ? await prisma.zorgorganisatie.findMany({
     where: {
       isActief: true,
-      onderdeelTest: 'Mantelzorgondersteuning',
+      onderdeelTest: { in: ['Ondersteuning', 'Mantelzorgondersteuning'] },
       gemeente: { equals: mantelzorgerGemeente, mode: "insensitive" as const },
       AND: niveauFilter,
     },
@@ -185,7 +184,13 @@ async function getHulpbronnenVoorTaken(
   const landelijkMantelzorger = await prisma.zorgorganisatie.findMany({
     where: {
       isActief: true,
-      onderdeelTest: { in: ['Mantelzorgondersteuning', 'Emotionele steun', 'Vervangende mantelzorg', 'Lotgenotencontact', 'Leren en training'] },
+      onderdeelTest: { in: [
+        'Ondersteuning', 'Mantelzorgondersteuning',
+        'Praten & steun', 'Emotionele steun',
+        'Vervangende mantelzorg',
+        'Lotgenoten', 'Lotgenotencontact',
+        'Leren & training', 'Leren en training',
+      ] },
       gemeente: null,
       AND: niveauFilter,
     },
@@ -207,65 +212,46 @@ async function getHulpbronnenVoorTaken(
     ...landelijkMantelzorger.map(h => ({ ...h, isLandelijk: true })),
   ]
 
-  // Alle hulpbronnen per categorie (voor hulp zoeken sectie)
-  // onderdeelTest waarden in de database:
-  const alleOnderdelen = [
-    // Voor naaste
-    'Persoonlijke verzorging',
-    'Huishoudelijke taken',
-    'Vervoer',
-    'Administratie en aanvragen',
-    'Plannen en organiseren',
-    'Sociaal contact en activiteiten',
-    'Bereiden en/of nuttigen van maaltijden',
-    'Boodschappen',
-    'Klusjes in en om het huis',
-    'Huisdieren',
+  // Alle categorieën met hun mogelijke onderdeelTest waarden
+  // De beheeromgeving slaat KORTE namen op (bijv. "Klusjes"),
+  // maar seed scripts gebruiken LANGE namen (bijv. "Klusjes in en om het huis").
+  // We zoeken op BEIDE zodat alle data gevonden wordt.
+  const CATEGORIEEN: {
+    display: string           // Frontend weergavenaam (= ContentCategorie.naam)
+    onderdeelVarianten: string[] // Alle mogelijke onderdeelTest waarden in de DB
+    isMantelzorger: boolean
+  }[] = [
+    // Voor naaste (zorgvrager)
+    { display: 'Verzorging',             onderdeelVarianten: ['Verzorging', 'Persoonlijke verzorging'],                      isMantelzorger: false },
+    { display: 'Huishouden',             onderdeelVarianten: ['Huishouden', 'Huishoudelijke taken'],                         isMantelzorger: false },
+    { display: 'Vervoer',                onderdeelVarianten: ['Vervoer'],                                                    isMantelzorger: false },
+    { display: 'Administratie',          onderdeelVarianten: ['Administratie', 'Administratie en aanvragen'],                isMantelzorger: false },
+    { display: 'Plannen',                onderdeelVarianten: ['Plannen', 'Plannen en organiseren'],                           isMantelzorger: false },
+    { display: 'Sociaal & activiteiten', onderdeelVarianten: ['Sociaal & activiteiten', 'Sociaal contact en activiteiten'],  isMantelzorger: false },
+    { display: 'Maaltijden',             onderdeelVarianten: ['Maaltijden', 'Bereiden en/of nuttigen van maaltijden'],        isMantelzorger: false },
+    { display: 'Boodschappen',           onderdeelVarianten: ['Boodschappen'],                                               isMantelzorger: false },
+    { display: 'Klusjes',                onderdeelVarianten: ['Klusjes', 'Klusjes in en om het huis'],                        isMantelzorger: false },
+    { display: 'Huisdieren',             onderdeelVarianten: ['Huisdieren'],                                                 isMantelzorger: false },
     // Voor jou (mantelzorger)
-    'Mantelzorgondersteuning',
-    'Vervangende mantelzorg',
-    'Emotionele steun',
-    'Lotgenotencontact',
-    'Leren en training',
+    { display: 'Ondersteuning',          onderdeelVarianten: ['Ondersteuning', 'Mantelzorgondersteuning'],                   isMantelzorger: true },
+    { display: 'Vervangende mantelzorg', onderdeelVarianten: ['Vervangende mantelzorg'],                                     isMantelzorger: true },
+    { display: 'Praten & steun',         onderdeelVarianten: ['Praten & steun', 'Emotionele steun'],                         isMantelzorger: true },
+    { display: 'Lotgenoten',             onderdeelVarianten: ['Lotgenoten', 'Lotgenotencontact'],                             isMantelzorger: true },
+    { display: 'Leren & training',       onderdeelVarianten: ['Leren & training', 'Leren en training'],                       isMantelzorger: true },
   ]
 
-  // Map onderdeelTest (database) → ContentCategorie.naam (frontend weergave)
-  // perCategorie keys moeten matchen met de categorienamen die de frontend gebruikt
-  const ONDERDEEL_NAAR_DISPLAY: Record<string, string> = {
-    'Persoonlijke verzorging': 'Verzorging',
-    'Huishoudelijke taken': 'Huishouden',
-    'Vervoer': 'Vervoer',
-    'Administratie en aanvragen': 'Administratie',
-    'Plannen en organiseren': 'Plannen',
-    'Sociaal contact en activiteiten': 'Sociaal & activiteiten',
-    'Bereiden en/of nuttigen van maaltijden': 'Maaltijden',
-    'Boodschappen': 'Boodschappen',
-    'Klusjes in en om het huis': 'Klusjes',
-    'Huisdieren': 'Huisdieren',
-    // Mantelzorger-categorieën
-    'Mantelzorgondersteuning': 'Ondersteuning',
-    'Vervangende mantelzorg': 'Vervangende mantelzorg',
-    'Emotionele steun': 'Praten & steun',
-    'Lotgenotencontact': 'Lotgenoten',
-    'Leren en training': 'Leren & training',
-  }
-
-  // Alle categorieën PARALLEL ophalen (ipv sequentieel in for-loop)
-  // Mantelzorger-categorieën → gemeente mantelzorger, zorgvrager-categorieën → gemeente zorgvrager
-  const mantelzorgerOnderdelen = ['Mantelzorgondersteuning', 'Vervangende mantelzorg', 'Emotionele steun', 'Lotgenotencontact', 'Leren en training']
-
+  // Alle categorieën PARALLEL ophalen
   const categorieResultaten = await Promise.all(
-    alleOnderdelen.map(async (onderdeel) => {
-      const isMantelzorgerCat = mantelzorgerOnderdelen.includes(onderdeel)
-      const gemeente = isMantelzorgerCat ? mantelzorgerGemeente : zorgvragerGemeente
+    CATEGORIEEN.map(async (cat) => {
+      const gemeente = cat.isMantelzorger ? mantelzorgerGemeente : zorgvragerGemeente
 
       const [lokaal, landelijkCat] = await Promise.all([
-        // Lokaal: hulp uit relevante gemeente
+        // Lokaal: hulp uit relevante gemeente (zoek op alle varianten)
         gemeente
           ? prisma.zorgorganisatie.findMany({
               where: {
                 isActief: true,
-                onderdeelTest: onderdeel,
+                onderdeelTest: { in: cat.onderdeelVarianten },
                 gemeente: { equals: gemeente, mode: "insensitive" as const },
                 AND: niveauFilter,
               },
@@ -281,11 +267,11 @@ async function getHulpbronnenVoorTaken(
               },
             })
           : Promise.resolve([]),
-        // Landelijk
+        // Landelijk (zoek op alle varianten)
         prisma.zorgorganisatie.findMany({
           where: {
             isActief: true,
-            onderdeelTest: onderdeel,
+            onderdeelTest: { in: cat.onderdeelVarianten },
             gemeente: null,
             AND: niveauFilter,
           },
@@ -307,16 +293,14 @@ async function getHulpbronnenVoorTaken(
         ...landelijkCat.map(h => ({ ...h, isLandelijk: true })),
       ]
 
-      return { onderdeel, gecombineerd }
+      return { display: cat.display, gecombineerd }
     })
   )
 
   const perCategorie: Record<string, HulpbronResult[]> = {}
-  for (const { onderdeel, gecombineerd } of categorieResultaten) {
+  for (const { display, gecombineerd } of categorieResultaten) {
     if (gecombineerd.length > 0) {
-      // Gebruik de weergavenaam als key (matcht met frontend categorienamen)
-      const displayNaam = ONDERDEEL_NAAR_DISPLAY[onderdeel] || onderdeel
-      perCategorie[displayNaam] = gecombineerd
+      perCategorie[display] = gecombineerd
     }
   }
 
