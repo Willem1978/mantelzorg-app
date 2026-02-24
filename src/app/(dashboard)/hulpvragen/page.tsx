@@ -851,29 +851,45 @@ function HulpPageContent() {
                   <h2 className="font-bold text-foreground leading-tight">{catInfo?.kort || selectedCategorie}</h2>
                 </div>
 
-                {/* Filter toggle - altijd zichtbaar, gelijke grootte */}
+                {/* Filter toggle - altijd zichtbaar, gelijke grootte, met aantallen */}
                 <div className="flex gap-1 bg-muted p-1 rounded-lg">
                   <button
                     onClick={() => setBereikFilter('lokaal')}
                     className={cn(
-                      "flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-all text-center",
+                      "flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-all flex items-center justify-center gap-2",
                       bereikFilter === 'lokaal'
                         ? "bg-card text-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
                     Lokaal
+                    <span className={cn(
+                      "w-5 h-5 rounded-full text-xs flex items-center justify-center",
+                      bereikFilter === 'lokaal'
+                        ? "bg-primary text-white"
+                        : "bg-muted-foreground/20 text-muted-foreground"
+                    )}>
+                      {lokaleHulp.length}
+                    </span>
                   </button>
                   <button
                     onClick={() => setBereikFilter('alle')}
                     className={cn(
-                      "flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-all text-center",
+                      "flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-all flex items-center justify-center gap-2",
                       bereikFilter === 'alle'
                         ? "bg-card text-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
                     Alles
+                    <span className={cn(
+                      "w-5 h-5 rounded-full text-xs flex items-center justify-center",
+                      bereikFilter === 'alle'
+                        ? "bg-primary text-white"
+                        : "bg-muted-foreground/20 text-muted-foreground"
+                    )}>
+                      {lokaleHulp.length + uniekeLandelijk.length}
+                    </span>
                   </button>
                 </div>
 
@@ -1072,29 +1088,45 @@ function HulpPageContent() {
                   )}
                 </div>
 
-                {/* Filter toggle - altijd zichtbaar, gelijke grootte */}
+                {/* Filter toggle - altijd zichtbaar, gelijke grootte, met aantallen */}
                 <div className="flex gap-1 bg-muted p-1 rounded-lg">
                   <button
                     onClick={() => setBereikFilter('lokaal')}
                     className={cn(
-                      "flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-all text-center",
+                      "flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-all flex items-center justify-center gap-2",
                       bereikFilter === 'lokaal'
                         ? "bg-card text-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
                     Lokaal
+                    <span className={cn(
+                      "w-5 h-5 rounded-full text-xs flex items-center justify-center",
+                      bereikFilter === 'lokaal'
+                        ? "bg-primary text-white"
+                        : "bg-muted-foreground/20 text-muted-foreground"
+                    )}>
+                      {lokaleHulp.length}
+                    </span>
                   </button>
                   <button
                     onClick={() => setBereikFilter('alle')}
                     className={cn(
-                      "flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-all text-center",
+                      "flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-all flex items-center justify-center gap-2",
                       bereikFilter === 'alle'
                         ? "bg-card text-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
                     Alles
+                    <span className={cn(
+                      "w-5 h-5 rounded-full text-xs flex items-center justify-center",
+                      bereikFilter === 'alle'
+                        ? "bg-primary text-white"
+                        : "bg-muted-foreground/20 text-muted-foreground"
+                    )}>
+                      {lokaleHulp.length + landelijkeHulp.length}
+                    </span>
                   </button>
                 </div>
 
