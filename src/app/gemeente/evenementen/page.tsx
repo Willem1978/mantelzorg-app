@@ -125,7 +125,7 @@ export default function GemeenteEvenementen() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Evenementen</h1>
-        <p className="text-gray-500 mt-1">Beheer evenementen voor mantelzorgers in uw gemeente</p>
+        <p className="text-gray-500 mt-1">Beheer evenementen voor mantelzorgers in je gemeente</p>
       </div>
 
       {/* Nieuw evenement form */}

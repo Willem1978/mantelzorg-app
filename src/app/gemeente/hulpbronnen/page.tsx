@@ -356,7 +356,7 @@ export default function GemeenteHulpbronnen() {
         <div className="space-y-6">
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
             <p className="text-sm text-blue-700">
-              Hier beheert u gemeentenieuws voor mantelzorgers in {gemeenteNaam || "uw gemeente"}.
+              Hier beheer je gemeentenieuws voor mantelzorgers in {gemeenteNaam || "je gemeente"}.
               Landelijke informatie-artikelen worden centraal beheerd door de beheerder.
             </p>
           </div>
@@ -394,7 +394,7 @@ export default function GemeenteHulpbronnen() {
           ) : artikelenError ? (
             <ErrorBox tekst={artikelenError} />
           ) : artikelen.length === 0 ? (
-            <EmptyState tekst="Nog geen gemeentenieuws." sub="Voeg hierboven uw eerste nieuwsbericht toe." />
+            <EmptyState tekst="Nog geen gemeentenieuws." sub="Voeg hierboven je eerste nieuwsbericht toe." />
           ) : (
             <div className="space-y-3">
               <h2 className="text-lg font-semibold text-gray-900">Gemeentenieuws ({artikelen.length})</h2>

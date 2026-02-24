@@ -332,8 +332,8 @@ export default function BelastbaarheidstestPage() {
     setGegevensError("")
     if (!gegevens.naam.trim()) { setGegevensError("Vul je naam in"); return }
     if (!gegevens.email.trim() || !gegevens.email.includes("@")) { setGegevensError("Vul een geldig e-mailadres in"); return }
-    if (!gegevens.mantelzorgerStraat) { setGegevensError("Selecteer je adres via de zoekfunctie"); return }
-    if (!gegevens.zorgvragerStraat) { setGegevensError("Selecteer de woonplaats van je naaste via de zoekfunctie"); return }
+    if (!gegevens.mantelzorgerStraat) { setGegevensError("Kies je adres uit de lijst. Begin met typen en tik op het juiste adres."); return }
+    if (!gegevens.zorgvragerStraat) { setGegevensError("Kies het adres van je naaste uit de lijst. Begin met typen en tik op het juiste adres."); return }
     setCurrentStep("account")
   }
 
@@ -509,7 +509,7 @@ export default function BelastbaarheidstestPage() {
                   <ul className="space-y-2 text-sm">
                     <li className="flex items-start gap-2">
                       <span className="font-bold text-primary">1.</span>
-                      <span>Vragen over hoe jij je voelt. Over je energie, je gevoel en je tijd.</span>
+                      <span>Vragen over hoe je je voelt. Over je energie, je gevoel en je tijd.</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="font-bold text-primary">2.</span>
@@ -519,7 +519,7 @@ export default function BelastbaarheidstestPage() {
                 </div>
 
                 <p className="font-medium text-primary">
-                  Er zijn geen goede of foute antwoorden. Het gaat om hoe jij het ervaart.
+                  Er zijn geen goede of foute antwoorden. Het gaat om hoe je het ervaart.
                 </p>
               </div>
 
@@ -684,9 +684,9 @@ export default function BelastbaarheidstestPage() {
           <div className="max-w-md mx-auto flex items-start gap-4">
             <GerAvatar size="md" />
             <div className="pt-1">
-              <h2 className="text-xl font-bold text-foreground">Wat doe jij voor je naaste?</h2>
+              <h2 className="text-xl font-bold text-foreground">Wat doe je voor je naaste?</h2>
               <p className="text-muted-foreground text-sm mt-1">
-                Vink aan welke taken jij doet. Je mag meerdere dingen aankruisen.
+                Vink aan welke taken je doet. Je mag meerdere dingen aankruisen.
               </p>
             </div>
           </div>

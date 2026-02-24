@@ -757,7 +757,7 @@ function HulpPageContent() {
               <div className="bg-primary/10 rounded-xl p-4 mb-2">
                 <p className="text-sm text-foreground">
                   <span className="font-medium">💜 Hulp voor jou als mantelzorger.</span> Mantelzorgen is zwaar werk.
-                  Ook jij hebt soms hulp nodig. Hier vind je organisaties die jou kunnen helpen.
+                  Ook je hebt soms hulp nodig. Hier vind je organisaties die je kunnen helpen.
                 </p>
               </div>
               {locatieMantelzorger ? (
@@ -963,7 +963,7 @@ function HulpPageContent() {
                   <span className="text-2xl">📊</span>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-foreground">Doe de balanstest</p>
-                    <p className="text-xs text-muted-foreground">Dan kleuren we de tegels op basis van wat jij zwaar vindt.</p>
+                    <p className="text-xs text-muted-foreground">Dan kleuren we de tegels op basis van wat je zwaar vindt.</p>
                   </div>
                   <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

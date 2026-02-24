@@ -157,12 +157,15 @@ export default function RapportPage() {
           </div>
         </div>
 
-        <div className="ker-card text-center">
-          <div className="w-16 h-16 bg-[var(--accent-amber-bg)] rounded-full mx-auto mb-4 flex items-center justify-center">
-            <span className="text-3xl">📋</span>
+        <div className="ker-card text-center bg-primary/5">
+          <div className="w-20 h-20 bg-primary/10 rounded-full mx-auto mb-4 flex items-center justify-center">
+            <span className="text-4xl">📋</span>
           </div>
-          <p className="text-foreground mb-6">
-            Doe eerst de balanstest. Dan zie je hier je resultaten.
+          <p className="text-foreground mb-2">
+            Doe eerst de balanstest.
+          </p>
+          <p className="text-sm text-muted-foreground mb-6">
+            Dan zie je hier je resultaten en tips die bij je passen.
           </p>
           <Link href="/belastbaarheidstest" className="ker-btn ker-btn-primary inline-block">
             Start de Balanstest

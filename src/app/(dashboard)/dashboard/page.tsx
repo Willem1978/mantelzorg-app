@@ -217,19 +217,19 @@ function DashboardContent() {
   if (!data && status === "unauthenticated") {
     return (
       <div className="ker-page-content">
-        <div className="flex items-center gap-4 mb-6">
-          <GerAvatar size="lg" />
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Welkom!</h1>
-            <p className="text-muted-foreground mt-1">Log in om je dashboard te zien.</p>
+        <div className="ker-card bg-primary/5 text-center">
+          <div className="flex justify-center mb-4">
+            <GerAvatar size="lg" />
           </div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Welkom bij MantelBuddy!</h1>
+          <p className="text-muted-foreground mb-6">Log in om je dashboard te zien. Hier vind je je resultaten, tips en hulp bij jou in de buurt.</p>
+          <Link
+            href="/api/auth/signin"
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:opacity-90 transition-opacity"
+          >
+            Inloggen
+          </Link>
         </div>
-        <Link
-          href="/api/auth/signin"
-          className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:opacity-90 transition-opacity"
-        >
-          Inloggen
-        </Link>
       </div>
     )
   }

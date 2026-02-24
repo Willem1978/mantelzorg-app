@@ -31,13 +31,11 @@ export default function GlobalError({
               Er ging iets mis
             </h1>
             <p style={{ color: "#6b7280", fontSize: "0.875rem", marginBottom: "0.5rem" }}>
-              {error.message || "Er is een onverwachte fout opgetreden."}
+              Er ging iets mis bij het laden van de pagina. Probeer het opnieuw.
             </p>
-            {error.digest && (
-              <p style={{ color: "#9ca3af", fontSize: "0.75rem", marginBottom: "1rem" }}>
-                Foutcode: {error.digest}
-              </p>
-            )}
+            <p style={{ color: "#9ca3af", fontSize: "0.75rem", marginBottom: "1rem" }}>
+              Lukt het niet? Sluit de app en open hem opnieuw.
+            </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginTop: "1.5rem" }}>
               <button
                 onClick={reset}

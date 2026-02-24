@@ -78,7 +78,7 @@ export default function RegisterPage() {
     }
 
     if (formData.phoneNumber && !validatePhoneNumber(formData.phoneNumber)) {
-      setError("Vul een geldig telefoonnummer in (06 + 8 cijfers)")
+      setError("Je telefoonnummer klopt niet. Gebruik het formaat: 06 12345678")
       return
     }
 
@@ -163,7 +163,7 @@ export default function RegisterPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || "Het is niet gelukt")
+        throw new Error(data.error || "Je account kon niet worden aangemaakt. Probeer het later opnieuw.")
       }
 
       // Automatisch inloggen na registratie
@@ -347,7 +347,7 @@ export default function RegisterPage() {
                 </div>
 
                 <AddressSearch
-                  label="Waar woon jij?"
+                  label="Waar woon je?"
                   value={formData.address}
                   onChange={(address) => setFormData({ ...formData, address })}
                   placeholder="Begin met typen, bijv. Kerkstraat of 1234AB"
@@ -435,7 +435,8 @@ export default function RegisterPage() {
                       Ik ga akkoord met de{" "}
                       <Link href="/privacy" className="text-primary hover:underline">
                         privacyregels
-                      </Link>
+                      </Link>{" "}
+                      <span className="text-muted-foreground">(we delen je gegevens nooit met anderen)</span>
                     </span>
                   </label>
 

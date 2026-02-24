@@ -114,7 +114,7 @@ export default function GemeenteContent() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Content</h1>
-        <p className="text-gray-500 mt-1">Beheer artikelen en informatiecontent voor uw gemeente</p>
+        <p className="text-gray-500 mt-1">Beheer artikelen en informatiecontent voor je gemeente</p>
       </div>
 
       {/* Nieuw artikel form */}
@@ -212,7 +212,7 @@ export default function GemeenteContent() {
               </svg>
             </div>
             <p className="text-gray-500">Nog geen artikelen aangemaakt.</p>
-            <p className="text-gray-400 text-sm mt-1">Gebruik het formulier hierboven om uw eerste artikel aan te maken.</p>
+            <p className="text-gray-400 text-sm mt-1">Gebruik het formulier hierboven om je eerste artikel aan te maken.</p>
           </div>
         ) : (
           <div className="divide-y divide-gray-100">

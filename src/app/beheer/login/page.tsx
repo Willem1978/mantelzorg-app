@@ -26,7 +26,7 @@ function BeheerLoginContent() {
       })
 
       if (result?.error) {
-        setError("Ongeldige inloggegevens")
+        setError("Je e-mail of wachtwoord is niet goed. Probeer het opnieuw.")
         setLoading(false)
         return
       }
@@ -102,7 +102,7 @@ function BeheerLoginContent() {
             disabled={loading}
             className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
           >
-            {loading ? "Bezig met inloggen..." : "Inloggen"}
+            {loading ? "Even geduld..." : "Inloggen"}
           </button>
         </form>
       </div>

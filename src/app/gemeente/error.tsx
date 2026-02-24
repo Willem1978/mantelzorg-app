@@ -24,11 +24,11 @@ export default function GemeenteError({
           </div>
           <h1 className="text-xl font-bold text-gray-900 mb-2">Er ging iets mis</h1>
           <p className="text-gray-500 text-sm mb-2">
-            {error.message || "Er is een onverwachte fout opgetreden in het gemeenteportaal."}
+            Er ging iets mis in het gemeenteportaal. Probeer het opnieuw.
           </p>
-          {error.digest && (
-            <p className="text-gray-400 text-xs mb-4">Foutcode: {error.digest}</p>
-          )}
+          <p className="text-gray-400 text-xs mb-4">
+            Lukt het niet? Log opnieuw in of neem contact op met de beheerder.
+          </p>
           <div className="flex flex-col gap-3 mt-6">
             <button
               onClick={reset}
