@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { AdminSpinner } from "@/components/admin"
 
 interface AlarmenData {
   gemeenteNaam: string
@@ -58,14 +59,7 @@ export default function GemeenteAlarmen() {
   }, [])
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
-          <span className="text-gray-500 text-sm">Alarmen laden...</span>
-        </div>
-      </div>
-    )
+    return <AdminSpinner tekst="Alarmen laden..." />
   }
 
   if (error) {

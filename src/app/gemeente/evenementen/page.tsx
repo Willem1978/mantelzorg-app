@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { AdminSpinner, AdminEmptyState } from "@/components/admin"
 
 interface Evenement {
   id: string
@@ -125,7 +126,7 @@ export default function GemeenteEvenementen() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Evenementen</h1>
-        <p className="text-gray-500 mt-1">Beheer evenementen voor mantelzorgers in uw gemeente</p>
+        <p className="text-gray-500 mt-1">Beheer evenementen voor mantelzorgers in je gemeente</p>
       </div>
 
       {/* Nieuw evenement form */}
@@ -215,12 +216,7 @@ export default function GemeenteEvenementen() {
 
       {/* Loading / Error state */}
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
-            <span className="text-gray-500 text-sm">Evenementen laden...</span>
-          </div>
-        </div>
+        <AdminSpinner tekst="Evenementen laden..." />
       ) : error ? (
         <div className="bg-white rounded-xl border border-gray-200 p-6 text-center">
           <p className="text-red-700 text-sm">{error}</p>
@@ -244,15 +240,11 @@ export default function GemeenteEvenementen() {
             </div>
 
             {upcomingEvenementen.length === 0 ? (
-              <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <p className="text-gray-500">Geen aankomende evenementen.</p>
-                <p className="text-gray-400 text-sm mt-1">Maak hierboven een nieuw evenement aan.</p>
-              </div>
+              <AdminEmptyState
+                icon="📅"
+                titel="Geen aankomende evenementen"
+                beschrijving="Maak hierboven een nieuw evenement aan."
+              />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {upcomingEvenementen.map((evenement) => (

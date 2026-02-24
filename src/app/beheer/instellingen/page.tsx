@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { AdminSpinner } from "@/components/admin"
+import { useToast } from "@/components/ui/Toast"
 
 interface SysteemInfo {
   aantalGebruikers: number
@@ -19,6 +21,7 @@ export default function InstellingenPage() {
     gemiddeldMax: 60,
   })
   const [opgeslagen, setOpgeslagen] = useState(false)
+  const { showSuccess, showError } = useToast()
 
   useEffect(() => {
     const laadInfo = async () => {
@@ -48,14 +51,18 @@ export default function InstellingenPage() {
       if (res.ok) {
         setOpgeslagen(true)
         setTimeout(() => setOpgeslagen(false), 3000)
+        showSuccess("Instellingen succesvol opgeslagen")
+      } else {
+        showError("Instellingen konden niet worden opgeslagen")
       }
     } catch (error) {
       console.error(error)
+      showError("Er ging iets mis bij het opslaan")
     }
   }
 
   if (loading) {
-    return <div className="p-8 text-center text-gray-500">Laden...</div>
+    return <AdminSpinner tekst="Instellingen laden..." />
   }
 
   return (

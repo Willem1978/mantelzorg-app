@@ -2,71 +2,40 @@ import { NextRequest, NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import crypto from "crypto"
 import { prisma } from "@/lib/prisma"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import { registerSchema, validateBody } from "@/lib/validations"
+import { sendVerificationEmail } from "@/lib/email"
 
 export const dynamic = 'force-dynamic'
 
-interface RegisterBody {
-  name?: string
-  email: string
-  password: string
-  phoneNumber?: string  // Voor WhatsApp koppeling
-  // Eigen adres
-  postalCode?: string
-  street?: string
-  city?: string
-  municipality: {
-    code: string
-    name: string
-    provinceCode: string
-    provinceName: string
-  }
-  // Naaste info
-  careRecipientName?: string
-  careRecipientRelation?: string
-  careRecipientStreet?: string
-  careRecipientCity?: string
-  careRecipientMunicipality?: string
-  // Privacy
-  privacyConsent: boolean
-  dataProcessingConsent: boolean
-}
-
 export async function POST(request: NextRequest) {
   try {
-    const body: RegisterBody = await request.json()
-
-    // Validatie
-    if (!body.email || !body.password) {
+    // Rate limiting
+    const ip = getClientIp(request)
+    const limit = checkRateLimit(ip, "register")
+    if (!limit.allowed) {
       return NextResponse.json(
-        { error: "E-mail en wachtwoord zijn verplicht" },
+        { error: `Te veel pogingen. Probeer het over ${Math.ceil(limit.resetIn / 60)} minuten opnieuw.` },
+        { status: 429 }
+      )
+    }
+
+    const body = await request.json()
+
+    // Zod validatie
+    const validation = validateBody(body, registerSchema)
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error },
         { status: 400 }
       )
     }
 
-    if (body.password.length < 8) {
-      return NextResponse.json(
-        { error: "Wachtwoord moet minimaal 8 tekens bevatten" },
-        { status: 400 }
-      )
-    }
-
-    if (!body.municipality) {
-      return NextResponse.json(
-        { error: "Gemeente is verplicht" },
-        { status: 400 }
-      )
-    }
-
-    if (!body.privacyConsent || !body.dataProcessingConsent) {
-      return NextResponse.json(
-        { error: "Je moet akkoord gaan met de voorwaarden" },
-        { status: 400 }
-      )
-    }
+    const data = validation.data
 
     // Check if email already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email: body.email }
+      where: { email: data.email }
     })
 
     if (existingUser) {
@@ -77,15 +46,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Hash password
-    const passwordHash = await bcrypt.hash(body.password, 12)
+    const passwordHash = await bcrypt.hash(data.password, 12)
 
     // Create user and caregiver profile in a transaction
     const result = await prisma.$transaction(async (tx) => {
       // Create user
       const user = await tx.user.create({
         data: {
-          email: body.email,
-          name: body.name || null,
+          email: data.email,
+          name: data.name || null,
           password: passwordHash,
           role: "CAREGIVER",
         }
@@ -95,27 +64,24 @@ export async function POST(request: NextRequest) {
       const caregiver = await tx.caregiver.create({
         data: {
           userId: user.id,
-          phoneNumber: body.phoneNumber || null,
-          // Eigen locatie
-          postalCode: body.postalCode || null,
-          street: body.street || null,
-          city: body.city || null,
-          municipality: body.municipality.name,
-          // Naaste info
-          careRecipientName: body.careRecipientName || null,
-          careRecipient: body.careRecipientRelation || null,
-          careRecipientStreet: body.careRecipientStreet || null,
-          careRecipientCity: body.careRecipientCity || null,
-          careRecipientMunicipality: body.careRecipientMunicipality || null,
-          // Status
+          phoneNumber: data.phoneNumber || null,
+          postalCode: data.postalCode || null,
+          street: data.street || null,
+          city: data.city || null,
+          municipality: data.municipality.name,
+          careRecipientName: data.careRecipientName || null,
+          careRecipient: data.careRecipientRelation || null,
+          careRecipientStreet: data.careRecipientStreet || null,
+          careRecipientCity: data.careRecipientCity || null,
+          careRecipientMunicipality: data.careRecipientMunicipality || null,
           intakeCompleted: false,
-          profileCompleted: !!(body.postalCode && body.careRecipientName), // Profiel compleet als adres en naaste ingevuld
+          profileCompleted: !!(data.postalCode && data.careRecipientName),
         }
       })
 
       // Generate email verification token
       const verificationToken = crypto.randomBytes(32).toString("hex")
-      const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+      const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000)
 
       await tx.verificationToken.create({
         data: {
@@ -128,18 +94,13 @@ export async function POST(request: NextRequest) {
       return { user, caregiver, verificationToken }
     })
 
-    // In production, send verification email
-    const verifyUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/auth/verify-email?token=${result.verificationToken}`
-    if (process.env.NODE_ENV === "development") {
-      console.log("Email verification link:", verifyUrl)
-    }
+    // Verstuur verificatie-email
+    await sendVerificationEmail(data.email, result.verificationToken)
 
     return NextResponse.json({
       success: true,
       message: "Account aangemaakt. Check je e-mail om je account te bevestigen.",
       userId: result.user.id,
-      // Only in development:
-      ...(process.env.NODE_ENV === "development" && { verifyUrl })
     })
 
   } catch (error) {

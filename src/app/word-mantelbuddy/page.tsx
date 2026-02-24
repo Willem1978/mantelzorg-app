@@ -131,7 +131,7 @@ export default function WordMantelBuddyPage() {
                   Word MantelBuddy
                 </h1>
                 <p className="text-muted-foreground">
-                  Help mantelzorgers in je buurt. Eenmalig of als vast maatje - jij kiest hoe je wilt helpen!
+                  Help mantelzorgers in je buurt. Eenmalig of als vast maatje - je kiest hoe je wilt helpen!
                 </p>
               </div>
 

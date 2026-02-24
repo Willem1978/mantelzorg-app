@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { AdminSpinner } from "@/components/admin"
 
 interface Stats {
   gebruikers: {
@@ -45,11 +46,7 @@ export default function BeheerDashboard() {
   }, [])
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Laden...</div>
-      </div>
-    )
+    return <AdminSpinner tekst="Dashboard laden..." />
   }
 
   if (!stats) {

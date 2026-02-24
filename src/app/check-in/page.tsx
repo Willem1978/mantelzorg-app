@@ -330,7 +330,7 @@ export default function CheckInPage() {
                 "text-xl font-bold mb-2",
                 mood.kleur === "green" && "text-[#2E7D32]",
                 mood.kleur === "amber" && "text-[#F57F17]",
-                mood.kleur === "red" && "text-[#C62828]"
+                mood.kleur === "red" && "text-[var(--accent-red)]"
               )}>
                 {mood.label}
               </h3>
@@ -351,8 +351,8 @@ export default function CheckInPage() {
                     <span className="text-white text-sm font-bold">!</span>
                   </div>
                   <div>
-                    <p className="font-medium text-[#C62828] mb-1">Wil je met iemand praten?</p>
-                    <p className="text-sm lg:text-base text-[#C62828]">
+                    <p className="font-medium text-[var(--accent-red)] mb-1">Wil je met iemand praten?</p>
+                    <p className="text-sm lg:text-base text-[var(--accent-red)]">
                       Bel de Mantelzorglijn: <a href="tel:0302059059" className="font-bold underline">030 - 205 90 59</a>
                     </p>
                   </div>

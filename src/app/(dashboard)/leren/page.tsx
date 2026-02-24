@@ -289,13 +289,13 @@ export default function LerenPage() {
         <span className="text-3xl">🌍</span>
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-0.5">
-            <h2 className="font-bold text-lg">Landelijke hulp & wegwijzers</h2>
+            <h2 className="font-bold text-lg">Landelijke hulplijnen</h2>
             <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2.5 py-0.5 rounded-full font-medium">
               🌍 Landelijk
             </span>
           </div>
           <p className="text-sm text-muted-foreground">
-            Hulplijnen, adviespunten en wegwijzers
+            Hier vind je hulplijnen en informatie voor heel Nederland
           </p>
         </div>
         {/* Pijl rechts */}

@@ -104,8 +104,8 @@ export default function BalanstestOverzichtPage() {
           <h1 className="text-2xl font-bold text-foreground">Balanstest</h1>
           <p className="text-muted-foreground mt-1">
             {hasTests
-              ? "Hier zie je al je resultaten en hoe het verloop is."
-              : "Doe de balanstest om inzicht te krijgen in je belasting."}
+              ? "Hier zie je je scores van elke keer dat je de test hebt gedaan."
+              : "Ontdek hoe het met je gaat en waar je hulp bij kunt krijgen."}
           </p>
         </div>
       </div>
@@ -139,14 +139,16 @@ export default function BalanstestOverzichtPage() {
 
       {/* Geen tests */}
       {!hasTests && (
-        <div className="ker-card text-center">
-          <div className="w-16 h-16 bg-muted rounded-full mx-auto mb-4 flex items-center justify-center">
-            <span className="text-3xl">📊</span>
+        <div className="ker-card text-center bg-primary/5">
+          <div className="w-20 h-20 bg-primary/10 rounded-full mx-auto mb-4 flex items-center justify-center">
+            <span className="text-4xl">📊</span>
           </div>
           <h2 className="font-bold text-xl text-foreground mb-2">Nog geen test gedaan</h2>
-          <p className="text-muted-foreground mb-6">
-            Doe de mantelzorg balanstest om te ontdekken hoe het met je gaat
-            en waar je hulp bij kunt krijgen.
+          <p className="text-muted-foreground mb-2">
+            Doe de balanstest om te zien hoe het met je gaat.
+          </p>
+          <p className="text-sm text-muted-foreground mb-6">
+            Het duurt maar 5 minuten en je krijgt direct tips.
           </p>
           <Link
             href="/belastbaarheidstest"
@@ -160,11 +162,11 @@ export default function BalanstestOverzichtPage() {
         </div>
       )}
 
-      {/* Score verloop grafiek */}
+      {/* Je scores over tijd grafiek */}
       {tests.length > 1 && (
         <section className="mb-6">
           <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-            <span className="text-2xl">📈</span> Score verloop
+            <span className="text-2xl">📈</span> Je scores over tijd
           </h2>
           <div className="ker-card">
             <div className="flex items-end gap-3 h-48">
@@ -219,25 +221,30 @@ export default function BalanstestOverzichtPage() {
             </div>
 
             {/* Legenda */}
-            <div className="flex justify-center gap-4 mt-4 pt-4 border-t border-border/50">
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-[var(--accent-green)]" />
-                <span className="text-xs text-muted-foreground">Laag (0-6)</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-[var(--accent-amber)]" />
-                <span className="text-xs text-muted-foreground">Gemiddeld (7-12)</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full bg-[var(--accent-red)]" />
-                <span className="text-xs text-muted-foreground">Hoog (13-24)</span>
+            <div className="mt-4 pt-4 border-t border-border/50">
+              <p className="text-xs text-muted-foreground text-center mb-3">
+                Hoe hoger de score, hoe zwaarder de zorg voor je is.
+              </p>
+              <div className="flex justify-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-[var(--accent-green)]" />
+                  <span className="text-xs text-muted-foreground">Laag (0-6)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-[var(--accent-amber)]" />
+                  <span className="text-xs text-muted-foreground">Gemiddeld (7-12)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-[var(--accent-red)]" />
+                  <span className="text-xs text-muted-foreground">Hoog (13-24)</span>
+                </div>
               </div>
             </div>
           </div>
         </section>
       )}
 
-      {/* Zorguren verloop - gestapelde staafdiagram */}
+      {/* Je zorguren over tijd - gestapelde staafdiagram */}
       {tests.length > 0 && tests.some((t) => t.taken.length > 0) && (() => {
         // Bereken per test de uren per moeilijkheidsgraad
         const testsMetUren = [...tests].reverse().slice(-8).map((test) => {
@@ -277,7 +284,7 @@ export default function BalanstestOverzichtPage() {
         return (
           <section className="mb-6">
             <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-              <span className="text-2xl">⏱️</span> Zorguren verloop
+              <span className="text-2xl">⏱️</span> Je zorguren over tijd
             </h2>
             <div className="ker-card">
               <div className="flex items-end gap-3 h-52">
@@ -380,25 +387,30 @@ export default function BalanstestOverzichtPage() {
               </div>
 
               {/* Legenda */}
-              <div className="flex justify-center gap-4 mt-4 pt-4 border-t border-border/50">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-[var(--accent-green)]" />
-                  <span className="text-xs text-muted-foreground">Niet zwaar</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-[var(--accent-amber)]" />
-                  <span className="text-xs text-muted-foreground">Soms zwaar</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-[var(--accent-red)]" />
-                  <span className="text-xs text-muted-foreground">Zwaar</span>
+              <div className="mt-4 pt-4 border-t border-border/50">
+                <p className="text-xs text-muted-foreground text-center mb-3">
+                  De kleuren laten zien hoe zwaar je elke taak vindt.
+                </p>
+                <div className="flex justify-center gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-[var(--accent-green)]" />
+                    <span className="text-xs text-muted-foreground">Niet zwaar</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-[var(--accent-amber)]" />
+                    <span className="text-xs text-muted-foreground">Soms zwaar</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-[var(--accent-red)]" />
+                    <span className="text-xs text-muted-foreground">Zwaar</span>
+                  </div>
                 </div>
               </div>
 
               {/* Detail lijst laatste test */}
               {laatsteTest && laatsteTest.taken.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-border/50">
-                  <p className="text-xs font-medium text-muted-foreground mb-2">Taken laatste test:</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Dit waren je taken:</p>
                   <div className="space-y-1">
                     {laatsteTest.taken
                       .filter((t) => t.uren > 0)
@@ -494,7 +506,7 @@ export default function BalanstestOverzichtPage() {
               href="/rapport"
               className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-border/50 text-sm font-medium text-primary hover:underline"
             >
-              Bekijk volledig rapport
+              Bekijk je volledige resultaten
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
@@ -586,7 +598,7 @@ export default function BalanstestOverzichtPage() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    Bekijken
+                    Bekijk resultaat
                   </Link>
                   <PdfDownloadButton testId={test.id} size="sm" variant="button" />
                   <button

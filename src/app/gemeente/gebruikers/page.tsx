@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import { AdminSpinner, AdminEmptyState } from "@/components/admin"
 
 interface GemeenteGebruiker {
   id: string
@@ -238,9 +239,13 @@ export default function GemeenteGebruikersPage() {
           <h2 className="text-sm font-semibold text-gray-700">Actieve medewerkers</h2>
         </div>
         {loading ? (
-          <div className="p-8 text-center text-gray-500">Laden...</div>
+          <AdminSpinner tekst="Medewerkers laden..." />
         ) : gebruikers.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">Nog geen medewerkers. Nodig iemand uit om te beginnen.</div>
+          <AdminEmptyState
+            icon="👤"
+            titel="Nog geen medewerkers"
+            beschrijving="Nodig iemand uit om te beginnen."
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

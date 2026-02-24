@@ -47,12 +47,12 @@ function ResetPasswordForm() {
       const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(data.error || "Er ging iets mis")
+        throw new Error(data.error || "Er ging iets mis. Probeer het later opnieuw.")
       }
 
       setIsSuccess(true)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Er ging iets mis")
+      setError(err instanceof Error ? err.message : "Er ging iets mis. Probeer het later opnieuw.")
     } finally {
       setIsLoading(false)
     }

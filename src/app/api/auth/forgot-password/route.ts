@@ -1,20 +1,36 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import crypto from "crypto"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import { forgotPasswordSchema, validateBody } from "@/lib/validations"
+import { sendPasswordResetEmail } from "@/lib/email"
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { email } = body
-
-    if (!email) {
+    // Rate limiting
+    const ip = getClientIp(request)
+    const limit = checkRateLimit(ip, "forgot-password")
+    if (!limit.allowed) {
       return NextResponse.json(
-        { error: "E-mailadres is verplicht" },
+        { error: `Te veel pogingen. Probeer het over ${Math.ceil(limit.resetIn / 60)} minuten opnieuw.` },
+        { status: 429 }
+      )
+    }
+
+    const body = await request.json()
+
+    // Zod validatie
+    const validation = validateBody(body, forgotPasswordSchema)
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error },
         { status: 400 }
       )
     }
+
+    const { email } = validation.data
 
     // Check if user exists
     const user = await prisma.user.findUnique({
@@ -47,29 +63,12 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // In production, send email here
-    const resetUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/wachtwoord-reset?token=${token}`
-    if (process.env.NODE_ENV === "development") {
-      console.log("Password reset link:", resetUrl)
-    }
-
-    // TODO: Send email with reset link
-    // await sendEmail({
-    //   to: email,
-    //   subject: "Wachtwoord resetten - MantelzorgApp",
-    //   html: `
-    //     <h1>Wachtwoord resetten</h1>
-    //     <p>Klik op de onderstaande link om je wachtwoord te resetten:</p>
-    //     <a href="${resetUrl}">${resetUrl}</a>
-    //     <p>Deze link is 1 uur geldig.</p>
-    //   `
-    // })
+    // Verstuur reset email
+    await sendPasswordResetEmail(email.toLowerCase(), token)
 
     return NextResponse.json({
       success: true,
       message: "Als dit e-mailadres bij ons bekend is, ontvang je een reset link.",
-      // Only in development:
-      ...(process.env.NODE_ENV === "development" && { resetUrl })
     })
 
   } catch (error) {

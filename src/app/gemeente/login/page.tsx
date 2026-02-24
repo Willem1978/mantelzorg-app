@@ -26,7 +26,7 @@ function GemeenteLoginForm() {
       })
 
       if (result?.error) {
-        setError("E-mailadres of wachtwoord is onjuist")
+        setError("Je e-mail of wachtwoord is niet goed. Probeer het opnieuw.")
       } else {
         router.push(callbackUrl)
         router.refresh()

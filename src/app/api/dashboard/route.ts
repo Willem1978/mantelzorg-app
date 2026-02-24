@@ -1,476 +1,11 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { getHulpbronnenVoorTaken } from "@/lib/dashboard/hulpbronnen"
+import { getAanbevolenArtikelen } from "@/lib/dashboard/artikelen"
+import { buildMijlpalen } from "@/lib/dashboard/mijlpalen"
 
-// Mapping van taak IDs naar alle mogelijke onderdeelTest waarden in de database
-// De beheeromgeving slaat KORTE namen op, seed scripts LANGE namen.
-// We zoeken op ALLE varianten zodat beide werken.
-const TAAK_NAAR_ONDERDEEL_VARIANTEN: Record<string, string[]> = {
-  t1: ['Administratie', 'Administratie en aanvragen'],
-  t2: ['Plannen', 'Plannen en organiseren'],
-  t3: ['Boodschappen'],
-  t4: ['Sociaal & activiteiten', 'Sociaal contact en activiteiten'],
-  t5: ['Vervoer'],
-  t6: ['Verzorging', 'Persoonlijke verzorging'],
-  t7: ['Maaltijden', 'Bereiden en/of nuttigen van maaltijden'],
-  t8: ['Huishouden', 'Huishoudelijke taken'],
-  t9: ['Klusjes', 'Klusjes in en om het huis'],
-}
-
-// Hulpbron interface voor type safety
-interface HulpbronResult {
-  naam: string
-  telefoon: string | null
-  website: string | null
-  beschrijving: string | null
-  gemeente: string | null
-  isLandelijk: boolean
-  dienst: string | null
-  openingstijden: string | null
-  soortHulp: string | null
-  kosten: string | null
-  bronLabel: string | null
-}
-
-interface AlgemeenHulpbron extends HulpbronResult {
-  // Overerft van HulpbronResult
-}
-
-interface LandelijkHulpbron {
-  naam: string
-  telefoon: string | null
-  website: string | null
-  beschrijving: string | null
-  soortHulp: string | null
-  dienst: string | null
-  openingstijden: string | null
-  kosten: string | null
-  bronLabel: string | null
-}
-
-interface CategorieHulpbron extends HulpbronResult {
-  // Overerft van HulpbronResult
-}
-
-// Haal hulpbronnen op - gescheiden voor mantelzorger en zorgvrager locaties
-// Filtert op belastingniveau (zichtbaarBijLaag/Gemiddeld/Hoog)
-async function getHulpbronnenVoorTaken(
-  latestTest: any,
-  mantelzorgerGemeente: string | null,
-  zorgvragerGemeente: string | null,
-  belastingNiveau: string | null
-): Promise<{
-  // Hulp voor zorgvrager (per taak, gebaseerd op locatie zorgvrager)
-  perTaak: Record<string, HulpbronResult[]>
-  // Hulp voor mantelzorger (gebaseerd op locatie mantelzorger)
-  voorMantelzorger: AlgemeenHulpbron[]
-  // Landelijke hulplijnen (altijd beschikbaar)
-  landelijk: LandelijkHulpbron[]
-  // Alle hulpbronnen per categorie (voor hulp zoeken)
-  perCategorie: Record<string, HulpbronResult[]>
-  // Context info
-  mantelzorgerGemeente: string | null
-  zorgvragerGemeente: string | null
-}> {
-  // Belastingniveau-filter: toon hulpbronnen die passen bij het niveau
-  // TODO: activeren zodra beheer-UI beschikbaar is om zichtbaarBijLaag/Gemiddeld/Hoog
-  // per hulpbron in te stellen. Nu uitgeschakeld omdat de schema-defaults
-  // (laag=false, gemiddeld=false, hoog=true) hulpbronnen onzichtbaar maken
-  // voor LAAG/GEMIDDELD gebruikers terwijl beheerders ze nog niet kunnen configureren.
-  const niveauFilter: Record<string, unknown>[] = []
-  // Toekomstige filter logica (bewaard voor later):
-  // LAAG:      [{ OR: [{ zichtbaarBijLaag: true }, { zichtbaarBijLaag: false, zichtbaarBijGemiddeld: false, zichtbaarBijHoog: true }] }]
-  // GEMIDDELD: [{ OR: [{ zichtbaarBijGemiddeld: true }, { zichtbaarBijLaag: false, zichtbaarBijGemiddeld: false, zichtbaarBijHoog: true }] }]
-  // HOOG:      [{ zichtbaarBijHoog: true }]
-  void belastingNiveau // bewust niet gebruikt tot beheer-UI er is
-
-  // Landelijke hulplijnen (altijd zichtbaar) - zonder filter op soortHulp
-  const landelijk = await prisma.zorgorganisatie.findMany({
-    where: {
-      isActief: true,
-      gemeente: null,
-      AND: niveauFilter,
-    },
-    orderBy: { naam: 'asc' },
-    select: {
-      naam: true,
-      telefoon: true,
-      website: true,
-      beschrijving: true,
-      soortHulp: true,
-      dienst: true,
-      openingstijden: true,
-      kosten: true,
-      bronLabel: true,
-    },
-  })
-
-  if (!latestTest) {
-    return {
-      perTaak: {},
-      voorMantelzorger: [],
-      landelijk,
-      perCategorie: {},
-      mantelzorgerGemeente,
-      zorgvragerGemeente
-    }
-  }
-
-  // Vind zware taken
-  // Ondersteunt zowel web format (MOEILIJK/GEMIDDELD) als WhatsApp format (JA/SOMS)
-  const isZwaarOfMatig = (m: string | null) =>
-    m === 'MOEILIJK' || m === 'ZEER_MOEILIJK' || m === 'GEMIDDELD' ||
-    m === 'JA' || m === 'ja' || m === 'SOMS' || m === 'soms'
-
-  const zwareTaken = latestTest.taakSelecties?.filter(
-    (t: any) => t.isGeselecteerd && isZwaarOfMatig(t.moeilijkheid)
-  ) || []
-
-  const perTaak: Record<string, HulpbronResult[]> = {}
-
-  // Hulpbronnen per zware taak - PARALLEL ophalen (ipv sequentieel in for-loop)
-  const taakOnderdelen = zwareTaken
-    .map((taak: any) => ({ taak, varianten: TAAK_NAAR_ONDERDEEL_VARIANTEN[taak.taakId] }))
-    .filter(({ varianten }: any) => varianten?.length > 0)
-
-  const taakResultaten = await Promise.all(
-    taakOnderdelen.map(async ({ varianten }: any) => {
-      const [lokaleHulp, landelijkeHulp] = await Promise.all([
-        zorgvragerGemeente ? prisma.zorgorganisatie.findMany({
-          where: {
-            isActief: true,
-            onderdeelTest: { in: varianten },
-            gemeente: { equals: zorgvragerGemeente, mode: "insensitive" as const },
-            AND: niveauFilter,
-          },
-          orderBy: { naam: 'asc' },
-          select: { naam: true, telefoon: true, website: true, beschrijving: true, gemeente: true, doelgroep: true, kosten: true, dienst: true, openingstijden: true, soortHulp: true, bronLabel: true },
-        }) : Promise.resolve([]),
-        prisma.zorgorganisatie.findMany({
-          where: {
-            isActief: true,
-            onderdeelTest: { in: varianten },
-            gemeente: null,
-            AND: niveauFilter,
-          },
-          orderBy: { naam: 'asc' },
-          select: { naam: true, telefoon: true, website: true, beschrijving: true, gemeente: true, doelgroep: true, kosten: true, dienst: true, openingstijden: true, soortHulp: true, bronLabel: true },
-        }),
-      ])
-      return { lokaleHulp, landelijkeHulp }
-    })
-  )
-
-  taakOnderdelen.forEach(({ taak }: any, i: number) => {
-    const { lokaleHulp, landelijkeHulp } = taakResultaten[i]
-    const gecombineerd: HulpbronResult[] = [
-      ...lokaleHulp.map((h: any) => ({ ...h, isLandelijk: false })),
-      ...landelijkeHulp.map((h: any) => ({ ...h, isLandelijk: true })),
-    ]
-    if (gecombineerd.length > 0) {
-      perTaak[taak.taakNaam] = gecombineerd
-    }
-  })
-
-  // Hulpbronnen voor mantelzorger - lokaal OF landelijk
-  const lokaalMantelzorger = mantelzorgerGemeente ? await prisma.zorgorganisatie.findMany({
-    where: {
-      isActief: true,
-      onderdeelTest: { in: ['Ondersteuning', 'Mantelzorgondersteuning'] },
-      gemeente: { equals: mantelzorgerGemeente, mode: "insensitive" as const },
-      AND: niveauFilter,
-    },
-    orderBy: { naam: 'asc' },
-    select: {
-      naam: true,
-      telefoon: true,
-      website: true,
-      beschrijving: true,
-      soortHulp: true,
-      gemeente: true,
-      doelgroep: true,
-      kosten: true,
-      dienst: true,
-      openingstijden: true,
-      bronLabel: true,
-    },
-  }) : []
-
-  // Landelijke mantelzorgondersteuning - filter op onderdeelTest (niet soortHulp)
-  const landelijkMantelzorger = await prisma.zorgorganisatie.findMany({
-    where: {
-      isActief: true,
-      onderdeelTest: { in: [
-        'Ondersteuning', 'Mantelzorgondersteuning',
-        'Praten & steun', 'Emotionele steun',
-        'Vervangende mantelzorg',
-        'Lotgenoten', 'Lotgenotencontact',
-        'Leren & training', 'Leren en training',
-      ] },
-      gemeente: null,
-      AND: niveauFilter,
-    },
-    orderBy: { naam: 'asc' },
-    select: {
-      naam: true,
-      telefoon: true,
-      website: true,
-      beschrijving: true,
-      soortHulp: true,
-      gemeente: true,
-      doelgroep: true,
-      kosten: true,
-      dienst: true,
-      openingstijden: true,
-      bronLabel: true,
-    },
-  })
-
-  const voorMantelzorger: AlgemeenHulpbron[] = [
-    ...lokaalMantelzorger.map(h => ({ ...h, isLandelijk: false })),
-    ...landelijkMantelzorger.map(h => ({ ...h, isLandelijk: true })),
-  ]
-
-  // Alle categorieën met hun mogelijke onderdeelTest waarden
-  // De beheeromgeving slaat KORTE namen op (bijv. "Klusjes"),
-  // maar seed scripts gebruiken LANGE namen (bijv. "Klusjes in en om het huis").
-  // We zoeken op BEIDE zodat alle data gevonden wordt.
-  const CATEGORIEEN: {
-    display: string           // Frontend weergavenaam (= ContentCategorie.naam)
-    onderdeelVarianten: string[] // Alle mogelijke onderdeelTest waarden in de DB
-    isMantelzorger: boolean
-  }[] = [
-    // Voor naaste (zorgvrager)
-    { display: 'Verzorging',             onderdeelVarianten: ['Verzorging', 'Persoonlijke verzorging'],                      isMantelzorger: false },
-    { display: 'Huishouden',             onderdeelVarianten: ['Huishouden', 'Huishoudelijke taken'],                         isMantelzorger: false },
-    { display: 'Vervoer',                onderdeelVarianten: ['Vervoer'],                                                    isMantelzorger: false },
-    { display: 'Administratie',          onderdeelVarianten: ['Administratie', 'Administratie en aanvragen'],                isMantelzorger: false },
-    { display: 'Plannen',                onderdeelVarianten: ['Plannen', 'Plannen en organiseren'],                           isMantelzorger: false },
-    { display: 'Sociaal & activiteiten', onderdeelVarianten: ['Sociaal & activiteiten', 'Sociaal contact en activiteiten'],  isMantelzorger: false },
-    { display: 'Maaltijden',             onderdeelVarianten: ['Maaltijden', 'Bereiden en/of nuttigen van maaltijden'],        isMantelzorger: false },
-    { display: 'Boodschappen',           onderdeelVarianten: ['Boodschappen'],                                               isMantelzorger: false },
-    { display: 'Klusjes',                onderdeelVarianten: ['Klusjes', 'Klusjes in en om het huis'],                        isMantelzorger: false },
-    { display: 'Huisdieren',             onderdeelVarianten: ['Huisdieren'],                                                 isMantelzorger: false },
-    // Voor jou (mantelzorger)
-    { display: 'Ondersteuning',          onderdeelVarianten: ['Ondersteuning', 'Mantelzorgondersteuning'],                   isMantelzorger: true },
-    { display: 'Vervangende mantelzorg', onderdeelVarianten: ['Vervangende mantelzorg'],                                     isMantelzorger: true },
-    { display: 'Praten & steun',         onderdeelVarianten: ['Praten & steun', 'Emotionele steun'],                         isMantelzorger: true },
-    { display: 'Lotgenoten',             onderdeelVarianten: ['Lotgenoten', 'Lotgenotencontact'],                             isMantelzorger: true },
-    { display: 'Leren & training',       onderdeelVarianten: ['Leren & training', 'Leren en training'],                       isMantelzorger: true },
-  ]
-
-  // Alle categorieën PARALLEL ophalen
-  const categorieResultaten = await Promise.all(
-    CATEGORIEEN.map(async (cat) => {
-      const gemeente = cat.isMantelzorger ? mantelzorgerGemeente : zorgvragerGemeente
-
-      const [lokaal, landelijkCat] = await Promise.all([
-        // Lokaal: hulp uit relevante gemeente (zoek op alle varianten)
-        gemeente
-          ? prisma.zorgorganisatie.findMany({
-              where: {
-                isActief: true,
-                onderdeelTest: { in: cat.onderdeelVarianten },
-                gemeente: { equals: gemeente, mode: "insensitive" as const },
-                AND: niveauFilter,
-              },
-              orderBy: { naam: 'asc' },
-              select: {
-                naam: true,
-                telefoon: true,
-                website: true,
-                beschrijving: true,
-                gemeente: true,
-                doelgroep: true,
-                kosten: true,
-                dienst: true,
-                openingstijden: true,
-                soortHulp: true,
-                bronLabel: true,
-              },
-            })
-          : Promise.resolve([]),
-        // Landelijk (zoek op alle varianten)
-        prisma.zorgorganisatie.findMany({
-          where: {
-            isActief: true,
-            onderdeelTest: { in: cat.onderdeelVarianten },
-            gemeente: null,
-            AND: niveauFilter,
-          },
-          orderBy: { naam: 'asc' },
-          select: {
-            naam: true,
-            telefoon: true,
-            website: true,
-            beschrijving: true,
-            gemeente: true,
-            doelgroep: true,
-            kosten: true,
-            dienst: true,
-            openingstijden: true,
-            soortHulp: true,
-            bronLabel: true,
-          },
-        }),
-      ])
-
-      const gecombineerd: HulpbronResult[] = [
-        ...lokaal.map(h => ({ ...h, isLandelijk: false })),
-        ...landelijkCat.map(h => ({ ...h, isLandelijk: true })),
-      ]
-
-      return { display: cat.display, gecombineerd }
-    })
-  )
-
-  const perCategorie: Record<string, HulpbronResult[]> = {}
-  for (const { display, gecombineerd } of categorieResultaten) {
-    if (gecombineerd.length > 0) {
-      perCategorie[display] = gecombineerd
-    }
-  }
-
-  return {
-    perTaak,
-    voorMantelzorger,
-    landelijk,
-    perCategorie,
-    mantelzorgerGemeente,
-    zorgvragerGemeente
-  }
-}
-
-// Haal aanbevolen artikelen op basis van belastingniveau
-async function getAanbevolenArtikelen(
-  belastingNiveau: string | null,
-  gemeente: string | null
-) {
-  try {
-    // Bepaal categorieën op basis van niveau
-    let categorieen: string[] = []
-    if (belastingNiveau === "LAAG") {
-      categorieen = ["zelfzorg", "praktische-tips"]
-    } else if (belastingNiveau === "GEMIDDELD") {
-      categorieen = ["rechten", "praktische-tips", "zelfzorg"]
-    } else if (belastingNiveau === "HOOG") {
-      categorieen = ["zelfzorg", "rechten", "financieel"]
-    } else {
-      categorieen = ["praktische-tips", "zelfzorg"]
-    }
-
-    const artikelen = await prisma.artikel.findMany({
-      where: {
-        isActief: true,
-        status: "GEPUBLICEERD",
-        type: "ARTIKEL",
-        categorie: { in: categorieen },
-        OR: [
-          { publicatieDatum: null },
-          { publicatieDatum: { lte: new Date() } },
-        ],
-      },
-      orderBy: [{ sorteerVolgorde: "asc" }, { createdAt: "desc" }],
-      take: 3,
-      select: {
-        id: true,
-        titel: true,
-        beschrijving: true,
-        emoji: true,
-        categorie: true,
-        url: true,
-      },
-    })
-
-    return artikelen
-  } catch {
-    return []
-  }
-}
-
-// Bouw mijlpalen tijdlijn
-function buildMijlpalen(
-  registratieDatum: Date,
-  eersteTestDatum: Date | null,
-  eersteCheckInDatum: Date | null,
-  eersteFavorietDatum: Date | null,
-  profielCompleet: boolean,
-  belastingNiveau: string | null,
-  testTrend: "improved" | "same" | "worse" | null
-) {
-  const mijlpalen: {
-    id: string
-    titel: string
-    beschrijving: string
-    emoji: string
-    datum: Date | null
-    behaald: boolean
-  }[] = []
-
-  // Geregistreerd
-  mijlpalen.push({
-    id: "registratie",
-    titel: "Account aangemaakt",
-    beschrijving: "Je hebt de eerste stap gezet!",
-    emoji: "🎉",
-    datum: registratieDatum,
-    behaald: true,
-  })
-
-  // Profiel compleet
-  mijlpalen.push({
-    id: "profiel",
-    titel: "Profiel ingevuld",
-    beschrijving: "Zo kunnen we je beter helpen",
-    emoji: "👤",
-    datum: profielCompleet ? registratieDatum : null,
-    behaald: profielCompleet,
-  })
-
-  // Eerste test
-  mijlpalen.push({
-    id: "eerste-test",
-    titel: "Eerste balanstest gedaan",
-    beschrijving: "Nu weet je hoe het met je gaat",
-    emoji: "📊",
-    datum: eersteTestDatum,
-    behaald: !!eersteTestDatum,
-  })
-
-  // Eerste favoriet
-  mijlpalen.push({
-    id: "eerste-favoriet",
-    titel: "Eerste favoriet bewaard",
-    beschrijving: "Handig om later terug te lezen",
-    emoji: "❤️",
-    datum: eersteFavorietDatum,
-    behaald: !!eersteFavorietDatum,
-  })
-
-  // Eerste check-in
-  mijlpalen.push({
-    id: "eerste-checkin",
-    titel: "Eerste check-in gedaan",
-    beschrijving: "Zo houd je bij hoe het gaat",
-    emoji: "✅",
-    datum: eersteCheckInDatum,
-    behaald: !!eersteCheckInDatum,
-  })
-
-  // Score verbeterd (alleen als er een trend is)
-  if (testTrend === "improved") {
-    mijlpalen.push({
-      id: "score-verbeterd",
-      titel: "Score verbeterd!",
-      beschrijving: "Je balans is erop vooruit gegaan",
-      emoji: "📈",
-      datum: new Date(),
-      behaald: true,
-    })
-  }
-
-  return mijlpalen
-}
+export const dynamic = "force-dynamic"
 
 // GET: Dashboard data ophalen
 export async function GET() {
@@ -493,15 +28,12 @@ export async function GET() {
       selfCareTasks,
       favorieten,
     ] = await Promise.all([
-      // Caregiver profiel
       prisma.caregiver.findUnique({
         where: { id: caregiverId },
         include: {
           user: { select: { name: true, email: true } },
         },
       }),
-
-      // Meest recente test
       prisma.belastbaarheidTest.findFirst({
         where: { caregiverId },
         orderBy: { completedAt: "desc" },
@@ -510,12 +42,10 @@ export async function GET() {
           taakSelecties: true,
         },
       }),
-
-      // Alle tests voor vergelijking
       prisma.belastbaarheidTest.findMany({
         where: { caregiverId, isCompleted: true },
         orderBy: { completedAt: "desc" },
-        take: 4, // Laatste 4 kwartalen
+        take: 4,
         select: {
           id: true,
           totaleBelastingScore: true,
@@ -523,27 +53,19 @@ export async function GET() {
           completedAt: true,
         },
       }),
-
-      // Check-ins laatste 3 maanden
       prisma.monthlyCheckIn.findMany({
         where: { caregiverId },
         orderBy: { month: "desc" },
         take: 12,
       }),
-
-      // Alle taken (zorgtaken)
       prisma.task.findMany({
         where: { caregiverId },
         orderBy: [{ priority: "desc" }, { dueDate: "asc" }],
       }),
-
-      // Zelfzorg taken (specifiek)
       prisma.task.findMany({
         where: { caregiverId, category: "SELF_CARE" },
         orderBy: { dueDate: "asc" },
       }),
-
-      // Favorieten (voor mijlpalen)
       prisma.favoriet.findFirst({
         where: { caregiverId },
         orderBy: { createdAt: "asc" },
@@ -562,7 +84,6 @@ export async function GET() {
       ? Math.floor((now.getTime() - new Date(lastTestDate).getTime()) / (1000 * 60 * 60 * 24))
       : null
 
-    // Bepaal of nieuwe test nodig is (kwartaal = 90 dagen)
     const needsNewTest = !lastTestDate || daysSinceLastTest! >= 90
 
     // Vergelijking met vorige test
@@ -578,8 +99,6 @@ export async function GET() {
     // Check-in statistieken
     const thisWeek = new Date()
     thisWeek.setDate(thisWeek.getDate() - 7)
-    const thisMonth = new Date()
-    thisMonth.setDate(1)
 
     const weeklyCheckIn = recentCheckIns.find(
       (c) => new Date(c.createdAt) >= thisWeek
@@ -592,7 +111,7 @@ export async function GET() {
 
     // Urgentie bepalen
     let urgencyLevel: "low" | "medium" | "high" | "critical" = "low"
-    let urgencyMessages: string[] = []
+    const urgencyMessages: string[] = []
 
     if (latestTest?.belastingNiveau === "HOOG") {
       urgencyLevel = "high"
@@ -640,14 +159,12 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      // Gebruiker info
       user: {
         name: caregiver.user.name,
         email: caregiver.user.email,
         profileCompleted: caregiver.profileCompleted,
       },
 
-      // Test resultaten
       test: latestTest
         ? {
             hasTest: true,
@@ -662,14 +179,12 @@ export async function GET() {
               niveau: t.belastingNiveau,
               date: t.completedAt,
             })),
-            // Aandachtspunten uit de test
             highScoreAreas: latestTest.antwoorden
               .filter((a) => a.score === 2)
               .map((a) => ({
                 vraag: a.vraagTekst,
                 antwoord: a.antwoord,
               })),
-            // Zorgtaken uit de test
             zorgtaken: latestTest.taakSelecties
               .filter((t) => t.isGeselecteerd)
               .map((t) => ({
@@ -684,7 +199,6 @@ export async function GET() {
             needsNewTest: true,
           },
 
-      // Check-ins
       checkIns: {
         weeklyDone: !!weeklyCheckIn,
         monthlyDone: !!monthlyCheckIn,
@@ -693,7 +207,6 @@ export async function GET() {
         recentScores: wellbeingScores,
       },
 
-      // Taken overzicht
       tasks: {
         total: tasks.length,
         open: openTasks.length,
@@ -716,15 +229,13 @@ export async function GET() {
         })),
       },
 
-      // Urgentie
       urgency: {
         level: urgencyLevel,
         messages: urgencyMessages,
       },
 
-      // Zelfzorg doelen
       selfCare: {
-        weeklyGoal: 3, // Standaard: 3 zelfzorg activiteiten per week
+        weeklyGoal: 3,
         completed: completedSelfCareThisWeek.length,
         upcoming: openSelfCareTasks.slice(0, 3).map((t) => ({
           id: t.id,
@@ -733,24 +244,18 @@ export async function GET() {
         })),
       },
 
-      // Hulpbronnen uit de Sociale Kaart
-      // - perTaak: hulp bij zorgtaken, gebaseerd op locatie ZORGVRAGER
-      // - voorMantelzorger: hulp voor mantelzorger, gebaseerd op locatie MANTELZORGER
-      // - gefilterd op belastingniveau (zichtbaarBijLaag/Gemiddeld/Hoog)
       hulpbronnen: await getHulpbronnenVoorTaken(
         latestTest,
-        caregiver.municipality,            // Locatie mantelzorger
-        caregiver.careRecipientMunicipality, // Locatie zorgvrager
-        latestTest?.belastingNiveau || null  // Belastingniveau voor filtering
+        caregiver.municipality,
+        caregiver.careRecipientMunicipality,
+        latestTest?.belastingNiveau || null
       ),
 
-      // Aanbevolen artikelen op basis van belastingniveau
       aanbevolenArtikelen: await getAanbevolenArtikelen(
         latestTest?.belastingNiveau || null,
         caregiver.municipality
       ),
 
-      // Mijlpalen ("Jouw reis")
       mijlpalen: buildMijlpalen(
         caregiver.createdAt,
         allTests.length > 0 ? allTests[allTests.length - 1].completedAt : null,
@@ -761,7 +266,6 @@ export async function GET() {
         testTrend
       ),
 
-      // Locatie info voor UI
       locatie: {
         mantelzorger: {
           straat: caregiver.street,

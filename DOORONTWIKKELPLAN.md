@@ -1,7 +1,7 @@
 # MatenBuddy - Doorontwikkelplan & Verbeteringsoverzicht
 
-**Datum:** 22 februari 2026
-**Versie:** 1.1 (bijgewerkt bij baseline v2.5.0)
+**Datum:** 24 februari 2026
+**Versie:** 1.3 (bijgewerkt na infrastructuur & architectuur verbeteringen)
 **Project:** MatenBuddy (Mantelzorg-app)
 
 ---
@@ -31,20 +31,21 @@
 | Onderdeel | Status | Toelichting |
 |-----------|--------|-------------|
 | Registratie & Login | Werkend | Email/wachtwoord, magic links, WhatsApp login |
-| Belastbaarheidstest | Werkend | 11 vragen, 4 categorieën, scoreberekening |
-| Dashboard | Werkend | Welzijnsoverzicht, thermometer, dynamische vervolgstappen, score-trends |
-| Hulpvragen | Werkend | Zoeken op gemeente, koppeling aan organisaties, kleur-indicatoren per taakstatus |
+| Belastbaarheidstest | Werkend | 11 vragen, 4 categorieën, scoreberekening, B1-teksten, helptekst bij velden |
+| Dashboard | Werkend | Welzijnsoverzicht, thermometer, compact MantelBuddy blok, warme welkomst |
+| Hulpvragen | Werkend | Zoeken op gemeente, filterbadges met aantallen, kleur-indicatoren per taakstatus |
 | Leren/Informatie-sectie | Werkend | 44 artikelen met B1-inhoud, klikbare kaarten met detail-modal, sub-hoofdstukken, bronlabels |
 | Gemeente-nieuws | Werkend | Per-item gelezen markering, "alles gelezen" knop, nieuw-bolletje |
 | Favorieten | Werkend | Bookmarken van hulpbronnen en artikelen, afvinken als afgerond |
 | WhatsApp Bot | Werkend | Belastbaarheidstest, registratie, menu via Twilio |
 | ContentModal | Werkend | Bottom sheet (mobiel), centered popup (desktop), ESC-toets, Bellen/Website knoppen |
 | MantelBuddy aanmelding | Alleen registratieformulier | Geen matching, taken, of beoordelingen |
-| Beheeromgeving | Minimaal | Alleen hulpbronnen beheer, geen gebruikersbeheer |
-| Gemeenteportaal | Niet aanwezig | - |
+| Beheeromgeving | Basis werkend | Hulpbronnen beheer met openingstijden, kosten, zorgverzekeraar; CSV-import; gebruikersbeheer, artikelenbeheer, alarmen |
+| Gemeenteportaal | Basis werkend | Hulpbronnen beheer, gebruikersbeheer, gemeentenieuws, evenementen, content; k-anonimiteit dashboard |
 | Maandelijkse check-in | Basis werkend | 5-puntsschaal welzijnscheck |
 | PDF Rapport | Werkend | Download belastbaarheidstest resultaten |
-| Balanstest overzicht | Werkend | Score verloop grafiek, thermometer, trend-indicator |
+| Balanstest overzicht | Werkend | Score verloop grafiek met legenda-uitleg, thermometer, takengrafieken |
+| Profiel | Werkend | Persoonsgegevens, naaste-info, Jouw reis mijlpalen tijdlijn |
 
 ### Wat recent is verbeterd (v2.5.0)
 
@@ -57,16 +58,79 @@
 - **Modal UX**: Dubbele sluiten-knop verwijderd, ESC-toets toegevoegd, dark mode fix
 - **Productie-config**: ngrok-header alleen in development
 
-### Wat ontbreekt
+### Wat recent is verbeterd (na v2.5.0, 24 feb 2026)
 
-- Volledige beheeromgeving met gebruikersbeheer
-- Klantreis-begeleiding en stapsgewijze onboarding
+#### Dashboard & Navigatie
+- **Dashboard opgeschoond**: Trend-banner, vervolgstappen en welzijnsgrafiek verwijderd voor overzichtelijkheid
+- **Jouw reis verplaatst**: Mijlpalen-tijdlijn verplaatst van dashboard naar profielpagina
+- **MantelBuddy blok compact**: Van groot kaartblok naar compacte klikbare rij
+- **Filterbadges hulpvragen**: Lokaal/Alles filterknoppen tonen nu aantallen in bolletjes
+
+#### Beheeromgeving (Admin & Gemeente)
+- **Openingstijden veld**: Toegevoegd aan zowel beheer als gemeente hulpbronnenpagina's
+- **Kosten veld**: Zichtbaar en bewerkbaar in beide beheeromgevingen
+- **Zorgverzekeraar dropdown**: Van checkbox naar Ja/Nee dropdown
+- **CSV-import uitgebreid**: Kolommen "Telefonisch te bereiken op", "Wanneer en/of Openingstijden", "Openingstijden" worden nu allemaal gemapped
+- **Gemeente API**: PUT endpoint uitgebreid met openingstijden en kosten
+
+#### UI/UX Toegankelijkheid (65+ doelgroep)
+- **WCAG AA kleuren**: Amber (#F57C00 → #C86800) en rood (#C62828 → #B71C1C) contrastverbeteringen
+- **Touch targets**: Alle knoppen minimaal 44px, radio buttons vergroot naar 2rem
+- **Navigatie-tekst**: Mobiele navigatie lettergrootte verhoogd naar 0.875rem
+- **B1-teksten app-breed**: Alle pagina-teksten herschreven: kort, helder, max 15 woorden per zin
+- **Grafieklegenda's**: Uitleg toegevoegd boven score- en takengrafieken
+- **Aanspreekvorm consistent**: "uw/u" → "je" in gemeente-pagina's, "jij" → "je" door hele app
+- **Foutmeldingen gestandaardiseerd**: Geen technische details meer aan gebruikers, consistent B1 Nederlands
+- **Warme illustraties**: Zachte primaire kleur achtergronden bij lege states
+- **Helptekst formuliervelden**: Privacy-uitleg, betere validatiemeldingen
+
+### Wat recent is verbeterd (v1.3, 24 feb 2026 - infrastructuur & architectuur)
+
+#### Admin UI verbeteringen (punten 3-6)
+- **AdminSpinner component**: Gedeelde animated spinner vervangt subtiele "Laden..." tekst in alle 17 beheer- en 10 gemeentepagina's
+- **AdminEmptyState component**: Begeleiding bij lege lijsten met icon, titel, beschrijving en actieknop
+- **AdminModal component**: Herbruikbare modal met ARIA role="dialog", aria-modal, aria-labelledby, focus trap, ESC-toets, backdrop click
+- **Formulier feedback**: Toast notificaties voor success/error na CRUD-operaties in admin-formulieren
+
+#### Infrastructuur & Beveiliging (punten 7-9)
+- **Email service** (`src/lib/email.ts`): SMTP via nodemailer met fallback naar console.log; HTML-templates voor verificatie, wachtwoord-reset en welkomstmail
+- **Rate limiting** (`src/lib/rate-limit.ts`): In-memory rate limiter op alle auth endpoints (login: 5/5min, register: 3/10min, forgot-password: 3/10min)
+- **Zod validatie** (`src/lib/validations.ts`): Zod v4 schema's voor login, register, forgot-password, reset-password, artikel, hulpbron, check-in; `validateBody()` helper
+
+#### Klantreis & Dashboard (punten 10-13)
+- **Onboarding flow**: Reeds aanwezig - 5-staps welkomstflow in `src/components/Onboarding.tsx`
+- **Gepersonaliseerde aanbevelingen**: Reeds aanwezig - dashboard toont relevante hulpbronnen en artikelen op basis van score
+- **Check-in smart frequency**: Reeds aanwezig - LAAG: maandelijks, GEMIDDELD: tweewekelijks, HOOG: wekelijks
+- **Dynamisch advies engine** (`src/lib/dashboard/advies.ts`): Geprioriteerde adviezen op basis van belastingniveau, trend, wellbeing en activiteit
+
+#### Technische Architectuur (punten 14-16)
+- **Vitest test framework**: 29 tests in 3 testbestanden (rate-limit, validations, advies); `vitest.config.ts` met @ alias support
+- **Redis session store** (`src/lib/session-store.ts`): Abstract `SessionStore<T>` interface met in-memory en Redis backends; auto-detectie via REDIS_URL
+- **Dashboard route gesplitst**: Van 782 → ~260 regels; modules geëxtraheerd naar `src/lib/dashboard/` (hulpbronnen, artikelen, mijlpalen, advies)
+
+### Wat ontbreekt / nog te verbeteren
+
+#### Hoge prioriteit
+- ~~**ContentModal velden tonen**~~ ✅ **Gedaan** - soortHulp, doelgroep en bronLabel worden nu getoond
+- ~~**ContentModal ARIA-attributen**~~ ✅ **Gedaan** - role="dialog", aria-modal, aria-labelledby, focus trap
+- ~~**E-mailnotificaties**~~ ✅ **Gedaan** - SMTP email service met HTML-templates
+- ~~**Geautomatiseerde tests**~~ ✅ **Gedaan** - Vitest met 29 tests
+- ~~**Input validatie met Zod**~~ ✅ **Gedaan** - Zod v4 schema's op auth routes
+- ~~**Rate limiting op API endpoints**~~ ✅ **Gedaan** - In-memory rate limiter op alle auth endpoints
+
+#### Gemiddelde prioriteit
+- ~~**Admin laadstaten**~~ ✅ **Gedaan** - AdminSpinner in alle beheer/gemeente pagina's
+- ~~**Admin lege states**~~ ✅ **Gedaan** - AdminEmptyState met begeleiding in alle pagina's
+- ~~**Herbruikbare AdminModal**~~ ✅ **Gedaan** - Gedeeld component met ARIA en focus trap
+- **Admin tabellen mobiel**: Horizontaal scrollen op tablets/mobiel is lastig
+- ~~**Formulier feedback**~~ ✅ **Gedaan** - Toast notificaties na CRUD-operaties
+
+#### Toekomstig (ongewijzigd)
+- Klantreis-begeleiding en stapsgewijze progressieve onboarding
 - MantelBuddy marktplaats en matching
-- Gemeenteportaal met inzichten
-- E-mailnotificaties (tokens worden aangemaakt maar niet verzonden)
-- Geautomatiseerde tests
-- Input validatie met schema's (Zod)
-- Rate limiting op API endpoints
+- Gemeenteportaal met demografische inzichten en trend-analyses
+- Noodknop / SOS-functie
+- Mantelzorg-dagboek
 
 ---
 
@@ -76,7 +140,7 @@
 
 **Doel:** Veilige, rolgebaseerde toegang tot de beheeromgeving.
 
-**Huidig:** Er bestaat een `UserRole` enum met `ADMIN`, `ORG_ADMIN`, `ORG_MEMBER`, maar er is geen volledige admin-interface.
+**Huidig:** Er bestaat een `UserRole` enum met `ADMIN`, `ORG_ADMIN`, `ORG_MEMBER`. Admin login (`/beheer/login`) is werkend met rolcontrole. Basis admin-interface aanwezig met hulpbronnen, artikelen, gebruikers, alarmen, categorieën, formulieropties en app-content beheer.
 
 **Te bouwen:**
 - **Admin login pagina** (`/beheer/login`) met extra beveiligingslaag (2FA optioneel)
@@ -111,11 +175,13 @@
 
 #### A2.2 Hulpbronnen & Organisaties Beheer
 - **Uitbreiding bestaand beheer** (`/beheer/hulpbronnen`):
-  - Bulk import/export (CSV/Excel)
+  - ~~Bulk import/export (CSV/Excel)~~ ✅ **Gedaan** - CSV-import met kolomherkenning (naam, dienst, telefoon, openingstijden, kosten, categorie, gemeente, type, website)
   - Filteren en zoeken op gemeente, categorie, status
   - Contactgegevens validatie
-  - Openingstijden en beschikbaarheid
-  - Koppeling aan specifieke hulpcategorieen
+  - ~~Openingstijden en beschikbaarheid~~ ✅ **Gedaan** - Openingstijden veld in beheer + gemeente, vanuit CSV-import
+  - ~~Koppeling aan specifieke hulpcategorieen~~ ✅ **Gedaan** - Categorie-mapping en onderdeel mantelzorgtest
+  - ~~Kosten veld~~ ✅ **Gedaan** - Kosten zichtbaar en bewerkbaar in beheer + gemeente
+  - ~~Zorgverzekeraar veld~~ ✅ **Gedaan** - Dropdown (Ja/Nee) i.p.v. checkbox
 - **Organisatie-verificatie workflow** - Nieuwe organisaties controleren voor publicatie
 - **Zorgorganisatie-kaart** - Visuele kaart met alle hulpbronnen per gemeente
 
@@ -326,15 +392,13 @@ Op basis van de belastbaarheidsscore automatisch de juiste content tonen:
 - **Koppen:** Duidelijk hierarchie, 24-32px
 - **Regelafstand:** Minimaal 1.6 (nu soms 1.4)
 - **Lettertype:** Blijf bij sans-serif, overweeg lettertype specifiek geoptimaliseerd voor leesbaarheid (bv. Atkinson Hyperlegible)
-- **Contrast:** WCAG AAA niveau nastreven (7:1 ratio voor tekst)
+- ~~**Contrast:** WCAG AA niveau~~ ✅ **Gedaan** - Amber (#C86800) en rood (#B71C1C) aangepast voor WCAG AA compliance
 
 #### C1.2 Knoppen & Interactie-elementen
-- **Minimale klikgrootte:** 48x48px (al deels aanwezig, consequent doorvoeren)
+- ~~**Minimale klikgrootte:** 44x44px consequent doorvoeren~~ ✅ **Gedaan** - ker-btn-sm min-height 44px, radio buttons 2rem met 3px border
 - **Duidelijke hover/focus states** - Zichtbare rand bij focus (toetsenbordgebruik)
 - **Knoppen:** Altijd met tekst, nooit alleen een icoon
-- **Actieknoppen:** Groot, opvallend, met duidelijke actie-tekst
-  - Niet: "Submit" -> Wel: "Verstuur mijn antwoord"
-  - Niet: "Next" -> Wel: "Ga verder"
+- ~~**Actieknoppen:** Duidelijke actie-tekst~~ ✅ **Gedaan** - "Doe de test" → "Start de balanstest", "Bekijken" → "Bekijk resultaat", etc.
 - **Bevestiging bij destructieve acties** - Extra stap bij verwijderen/annuleren
 
 #### C1.3 Kleurgebruik
@@ -359,31 +423,24 @@ Op basis van de belastbaarheidsscore automatisch de juiste content tonen:
 
 **Te bouwen:**
 
-#### C2.1 Pagina-introductieteksten
-Elke pagina begint met een kort, warm welkomstblok:
+#### C2.1 Pagina-introductieteksten ✅ Gedaan
+Elke pagina begint met een kort, warm welkomstblok (via `<PageIntro>` component):
 
-**Dashboard:**
-> "Welkom terug, [voornaam]! Hier zie je in een oogopslag hoe het met je gaat en wat je kunt doen."
+- **Dashboard:** "Hier zie je hoe het met je gaat. Scrol naar beneden voor tips en hulp."
+- **Belastbaarheidstest:** Introductietekst met 2-delige uitleg en B1-taal
+- **Hulpvragen:** Intro per tab met uitleg over lokale/landelijke hulp
+- **Leren:** "Hier vind je artikelen en tips die passen bij je situatie."
+- **Rapport:** "Doe eerst de balanstest. Dan zie je hier je resultaten en tips die bij je passen."
 
-**Belastbaarheidstest:**
-> "Met deze korte vragenlijst kijken we samen hoe het met je gaat. Er zijn geen goede of foute antwoorden. Wees eerlijk - dat helpt ons om je beter te helpen."
-
-**Hulpvragen:**
-> "Hier vind je organisaties bij jou in de buurt die je kunnen helpen. Je hoeft niet alles alleen te doen."
-
-**Leren:**
-> "Hier vind je artikelen en tips die passen bij jouw situatie. We hebben ze voor je geselecteerd."
-
-**MantelBuddy:**
-> "Een MantelBuddy is een vrijwilliger uit je buurt die je wil helpen. Dat kan een boodschap doen zijn, of gewoon even een kopje koffie drinken."
-
-#### C2.2 Contextuele Hulpteksten
-- **Tooltips** bij elk invoerveld ("Vul hier je e-mailadres in, bijvoorbeeld jan@gmail.com")
-- **Foutmeldingen** in begrijpelijke taal:
-  - Niet: "Invalid email format" -> Wel: "Dit e-mailadres klopt niet. Controleer of je een @ hebt gebruikt."
-  - Niet: "Field required" -> Wel: "Vergeet niet om je naam in te vullen"
-- **Stap-indicatoren** bij formulieren ("Stap 2 van 4 - Je bent al halverwege!")
-- **Bevestigingsmeldingen** na acties ("Je antwoord is opgeslagen. Goed gedaan!")
+#### C2.2 Contextuele Hulpteksten (deels gedaan)
+- ~~**Foutmeldingen** in begrijpelijke taal~~ ✅ **Gedaan** - Alle foutmeldingen in B1 Nederlands, geen technische details
+  - "Je e-mail of wachtwoord is niet goed. Probeer het opnieuw."
+  - "Je telefoonnummer klopt niet. Gebruik het formaat: 06 12345678"
+  - Global error: "Er ging iets mis bij het laden van de pagina. Lukt het niet? Sluit de app en open hem opnieuw."
+- ~~**Helptekst bij formuliervelden**~~ ✅ **Gedaan** - Labels, placeholders, en helptekst bij email, wachtwoord, adres, privacy
+- **Stap-indicatoren** bij formulieren ✅ Aanwezig ("stap X van 3")
+- **Tooltips** bij elk invoerveld - Nog uit te breiden
+- **Bevestigingsmeldingen** na acties - Deels aanwezig (toast bij login/registratie)
 
 #### C2.3 Hulp & Uitleg Systeem
 - **"Hoe werkt dit?"** knop op elke pagina
@@ -398,12 +455,12 @@ Elke pagina begint met een kort, warm welkomstblok:
 ### C3. Toegankelijkheid (Accessibility)
 
 **Te bouwen/verbeteren:**
-- **Volledige WCAG 2.1 AA** compliance
-- **Screen reader** ondersteuning met aria-labels
-- **Toetsenbordnavigatie** - Alle functies bereikbaar zonder muis
-- **Tekst vergrotingsmodus** - Schakelaar voor extra groot lettertype
-- **Verminder animaties** optie voor gebruikers die daar gevoelig voor zijn
-- **Taalgebruik audit** - Alle teksten laten controleren op B1-niveau
+- **WCAG 2.1 AA kleurcontrast** ✅ **Gedaan** - Amber en rood kleuren aangepast
+- **Screen reader ondersteuning** - aria-labels aanwezig; ContentModal en AdminModal hebben role="dialog", aria-modal, aria-labelledby, focus trap ✅
+- **Toetsenbordnavigatie** - ESC-toets op modals ✅; verdere toetsenbordnavigatie nog nodig
+- **Tekst vergrotingsmodus** - AccessibilityProvider aanwezig met high-contrast, large-text, reduce-motion
+- ~~**Taalgebruik audit** - Alle teksten B1-niveau~~ ✅ **Gedaan** - Alle pagina's herschreven in B1 Nederlands, consistent "je" aanspreekvorm
+- **Mobiele navigatie lettergrootte** ✅ **Gedaan** - Verhoogd naar 0.875rem
 
 ### C4. Mobiele Ervaring
 
@@ -426,9 +483,9 @@ Elke pagina begint met een kort, warm welkomstblok:
 
 **Te bouwen:**
 
-#### D1.1 Gemeente Login & Autorisatie
-- **Aparte login** voor gemeentemedewerkers (`/gemeente/login`)
-- **Rol:** `GEMEENTE_ADMIN` met toegang tot alleen eigen gemeente-data
+#### D1.1 Gemeente Login & Autorisatie ✅ Gedaan
+- ~~**Aparte login** voor gemeentemedewerkers (`/gemeente/login`)~~ ✅ Werkend
+- ~~**Rol:** `GEMEENTE_ADMIN` met toegang tot eigen gemeente-data~~ ✅ Werkend
 - **Meerdere gebruikers per gemeente** mogelijk
 - **Koppeling aan gemeente** via gemeentecode of postcode-reeks
 
@@ -476,13 +533,12 @@ Elke pagina begint met een kort, warm welkomstblok:
 - **Benchmark** - Vergelijking met landelijke gemiddelden (als data beschikbaar)
 - **Automatische rapportage** via email aan gemeente-contactpersoon
 
-### D2. Gemeente Content Management
+### D2. Gemeente Content Management (deels gedaan)
 
-**Te bouwen:**
-- **Gemeentenieuws publiceren** - Lokale evenementen, regelingen, contactmomenten
-- **Lokale hulpbronnen beheren** - Organisaties in de gemeente toevoegen/wijzigen
+- ~~**Gemeentenieuws publiceren**~~ ✅ **Gedaan** - Gemeente kan nieuws toevoegen en beheren via `/gemeente/hulpbronnen` (informatie-tab)
+- ~~**Lokale hulpbronnen beheren**~~ ✅ **Gedaan** - CRUD voor hulporganisaties met openingstijden, kosten, bereikbaarheid
 - **Mantelzorgwaardering** - Informatie over gemeentelijke waardering publiceren
-- **Evenementen** - Lokale bijeenkomsten voor mantelzorgers publiceren
+- ~~**Evenementen**~~ ✅ **Gedaan** - Evenementenpagina voor lokale bijeenkomsten (`/gemeente/evenementen`)
 
 ### D3. Gemeente API & Data Privacy
 
@@ -784,12 +840,12 @@ Automatisch berekend op basis van:
 
 | Verbetering | Prioriteit | Status | Toelichting |
 |------------|-----------|--------|-------------|
-| Test framework (Vitest) toevoegen | Hoog | Open | Geen geautomatiseerde tests aanwezig |
-| Input validatie met Zod | Hoog | Open | Nu handmatige validatie per route |
-| Rate limiting (API) | Hoog | Open | Brute-force bescherming op auth endpoints |
-| Dashboard route opsplitsen | Middel | Open | `dashboard/route.ts` is 1700+ regels |
+| Test framework (Vitest) toevoegen | Hoog | **Gedaan** | Vitest met 29 tests (rate-limit, validations, advies) |
+| Input validatie met Zod | Hoog | **Gedaan** | Zod v4 schema's op alle auth routes |
+| Rate limiting (API) | Hoog | **Gedaan** | In-memory rate limiter op auth endpoints |
+| Dashboard route opsplitsen | Middel | **Gedaan** | Van 782 → ~260 regels, modules in `src/lib/dashboard/` |
 | WhatsApp webhook opsplitsen | Middel | Open | `webhook/route.ts` is 550+ regels |
-| Error boundary componenten | Middel | Open | Crash-bescherming voor gebruikers |
+| Error boundary componenten | Middel | **Verbeterd** | global-error.tsx en gemeente/error.tsx tonen nu gebruiksvriendelijke meldingen i.p.v. technische foutcodes |
 | Logging framework (Pino/Winston) | Middel | Open | Gestructureerde logging i.p.v. console.log |
 | TypeScript type-safety | Middel | **Gedaan (v2.5.0)** | `any` types vervangen door interfaces in dashboard-pagina's |
 | Error logging in catch-blokken | Laag | **Gedaan (v2.5.0)** | Stille catches vervangen door `console.error` |
@@ -798,8 +854,8 @@ Automatisch berekend op basis van:
 
 | Verbetering | Prioriteit | Toelichting |
 |------------|-----------|-------------|
-| Redis voor sessie/cache | Hoog | WhatsApp sessies nu in-memory (gaan verloren bij restart) |
-| Email service (Resend/SendGrid) | Hoog | Email verificatie en wachtwoord-reset werken niet |
+| Redis voor sessie/cache | Hoog | **Gedaan** - `SessionStore` interface met in-memory + Redis backends, auto-detectie via REDIS_URL |
+| Email service (nodemailer/SMTP) | Hoog | **Gedaan** - SMTP email met HTML-templates, fallback naar console.log |
 | Background jobs (Bull/Agenda) | Middel | Alarmen en notificaties synchroon in API |
 | CDN voor statische assets | Laag | Performance-verbetering |
 | CI/CD pipeline | Middel | Geautomatiseerd testen en deployen |
@@ -828,14 +884,14 @@ Automatisch berekend op basis van:
 
 ## 9. Prioritering & Fasering
 
-### Fase 1: Fundament (maand 1-2)
+### Fase 1: Fundament (maand 1-2) ✅ Grotendeels afgerond
 **Focus:** Technische basis en beveiliging versterken
 
-1. Email service implementeren (verificatie + wachtwoord reset)
-2. Rate limiting op auth endpoints
-3. Input validatie met Zod
-4. Test framework opzetten (Vitest) + eerste tests
-5. Redis voor WhatsApp sessies
+1. ~~Email service implementeren (verificatie + wachtwoord reset)~~ ✅ **Gedaan**
+2. ~~Rate limiting op auth endpoints~~ ✅ **Gedaan**
+3. ~~Input validatie met Zod~~ ✅ **Gedaan**
+4. ~~Test framework opzetten (Vitest) + eerste tests~~ ✅ **Gedaan**
+5. ~~Redis voor WhatsApp sessies~~ ✅ **Gedaan** (SessionStore met Redis backend)
 6. Versienummer synchroniseren
 
 ### Fase 2: Beheeromgeving (maand 2-4)
@@ -852,11 +908,11 @@ Automatisch berekend op basis van:
 **Focus:** Gebruikerservaring optimaliseren
 
 1. Onboarding flow (stapsgewijze welkomst)
-2. UI-verbeteringen voor oudere gebruikers (typografie, knoppen, contrast)
-3. Tekstuele begeleiding (pagina-intro's, hulpteksten, foutmeldingen)
-4. Gepersonaliseerde aanbevelingen op dashboard
-5. Check-in systeem uitbreiden
-6. Dynamisch hulpadvies op basis van score
+2. ~~UI-verbeteringen voor oudere gebruikers (typografie, knoppen, contrast)~~ ✅ **Grotendeels gedaan** - WCAG AA kleuren, 44px touch targets, B1-teksten, grafieklegenda's, warme lege states
+3. ~~Tekstuele begeleiding (pagina-intro's, hulpteksten, foutmeldingen)~~ ✅ **Gedaan** - PageIntro component op alle pagina's, foutmeldingen in B1 Nederlands, helptekst bij formulieren
+4. ~~Gepersonaliseerde aanbevelingen op dashboard~~ ✅ **Reeds aanwezig**
+5. ~~Check-in systeem uitbreiden~~ ✅ **Reeds aanwezig** (smart frequency)
+6. ~~Dynamisch hulpadvies op basis van score~~ ✅ **Gedaan** (advies engine)
 
 ### Fase 4: MantelBuddy Marktplaats (maand 4-7)
 **Focus:** Vrijwilligersplatform bouwen
@@ -932,5 +988,7 @@ Automatisch berekend op basis van:
 |--------|-------|-------------|
 | 1.0 | 15 feb 2026 | Eerste versie met alle modules A-F |
 | 1.1 | 22 feb 2026 | Status bijgewerkt voor baseline v2.5.0: content-architectuur database-driven, B1 taalniveau, type-safety, database indexen, bugfixes |
+| 1.2 | 24 feb 2026 | Uitgebreide update na UI/UX review en beheeromgeving verbeteringen: WCAG AA kleuren, B1-teksten app-breed, consistent "je" aanspreekvorm, beheer velden (openingstijden/kosten/zorgverzekeraar), CSV-import uitgebreid, grafieklegenda's, foutmeldingen gestandaardiseerd, warme lege states, dashboard opgeschoond, Jouw reis naar profiel, filterbadges hulpvragen |
+| 1.3 | 24 feb 2026 | Infrastructuur & architectuur verbeteringen (punten 3-16): AdminSpinner/AdminEmptyState/AdminModal componenten in alle beheer/gemeente pagina's, email service (nodemailer SMTP), rate limiting op auth endpoints, Zod v4 validatie, dynamisch advies engine, Vitest test framework (29 tests), Redis session store, dashboard route gesplitst (782→260 regels) |
 
 *Dit document is een levend document en zal worden bijgewerkt naarmate de ontwikkeling vordert.*

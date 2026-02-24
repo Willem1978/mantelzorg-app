@@ -531,7 +531,7 @@ function RegisterWhatsAppForm() {
           <div className="pt-2">
             <h1 className="text-2xl font-bold text-foreground">
               {step === 1 && "Maak je account"}
-              {step === 2 && "Waar woon jij?"}
+              {step === 2 && "Waar woon je?"}
               {step === 3 && "Voor wie zorg je?"}
             </h1>
             <p className="text-muted-foreground mt-1">

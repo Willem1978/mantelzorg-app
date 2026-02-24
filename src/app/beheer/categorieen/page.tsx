@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { AdminSpinner, AdminEmptyState } from "@/components/admin"
 
 interface ContentCategorie {
   id: string
@@ -374,14 +375,9 @@ export default function CategorieenPage() {
       {/* Tabel */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-gray-500">Laden...</div>
+          <AdminSpinner tekst="Categorieën laden..." />
         ) : items.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            <p>Geen categorieen gevonden</p>
-            <button onClick={handleNieuw} className="mt-2 text-blue-600 text-sm hover:underline">
-              Maak de eerste categorie aan
-            </button>
-          </div>
+          <AdminEmptyState icon="🗂️" titel="Geen categorieën gevonden" actieLabel="Nieuwe categorie aanmaken" onActie={handleNieuw} />
         ) : (
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">

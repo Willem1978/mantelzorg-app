@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useRef, useCallback } from "react"
 import { ensureAbsoluteUrl } from "@/lib/utils"
 
 interface ContentModalProps {
@@ -32,26 +32,69 @@ export function ContentModal({
   beschrijving,
   inhoud,
   bron,
+  bronLabel,
   url,
   telefoon,
   website,
   gemeente,
+  soortHulp,
   kosten,
+  doelgroep,
   dienst,
   openingstijden,
   organisatie,
 }: ContentModalProps) {
-  // Voorkom scrollen van achtergrond + ESC toets
+  const modalRef = useRef<HTMLDivElement>(null)
+  const previousFocusRef = useRef<HTMLElement | null>(null)
+
+  // Focus trap: houd focus binnen de modal
+  const handleTabKey = useCallback((e: KeyboardEvent) => {
+    if (e.key !== "Tab" || !modalRef.current) return
+
+    const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
+    )
+    if (focusable.length === 0) return
+
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+  }, [])
+
+  // Voorkom scrollen van achtergrond + ESC toets + focus trap
   useEffect(() => {
     if (isOpen) {
+      // Bewaar huidige focus om later te herstellen
+      previousFocusRef.current = document.activeElement as HTMLElement
       document.body.style.overflow = "hidden"
-      const handleEsc = (e: KeyboardEvent) => {
+
+      const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === "Escape") onClose()
+        handleTabKey(e)
       }
-      document.addEventListener("keydown", handleEsc)
+      document.addEventListener("keydown", handleKeyDown)
+
+      // Focus de modal na openen
+      requestAnimationFrame(() => {
+        modalRef.current?.focus()
+      })
+
       return () => {
         document.body.style.overflow = ""
-        document.removeEventListener("keydown", handleEsc)
+        document.removeEventListener("keydown", handleKeyDown)
+        // Herstel focus naar vorig element
+        previousFocusRef.current?.focus()
       }
     } else {
       document.body.style.overflow = ""
@@ -59,7 +102,7 @@ export function ContentModal({
     return () => {
       document.body.style.overflow = ""
     }
-  }, [isOpen, onClose])
+  }, [isOpen, onClose, handleTabKey])
 
   if (!isOpen) return null
 
@@ -111,17 +154,29 @@ export function ContentModal({
   // Organisatienaam: als dienst de titel is, dan is 'titel' de organisatienaam
   const organisatieNaam = organisatie || (dienst ? titel : null)
 
+  // Doelgroep label vertalen
+  const doelgroepLabel = doelgroep === "MANTELZORGER"
+    ? "Voor mantelzorgers"
+    : doelgroep === "ZORGVRAGER"
+      ? "Voor zorgvragers"
+      : doelgroep
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="content-modal-titel"
       onClick={onClose}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50" />
+      <div className="absolute inset-0 bg-black/50" aria-hidden="true" />
 
       {/* Modal content */}
       <div
-        className="relative bg-background rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg max-h-[85vh] overflow-hidden flex flex-col"
+        ref={modalRef}
+        tabIndex={-1}
+        className="relative bg-background rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg max-h-[85vh] overflow-hidden flex flex-col outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Handle bar (mobiel) */}
@@ -131,9 +186,15 @@ export function ContentModal({
 
         {/* Header */}
         <div className="flex items-start gap-3 px-5 pt-3 pb-3 border-b border-border">
-          {emoji && <span className="text-3xl flex-shrink-0 mt-0.5">{emoji}</span>}
+          {emoji && <span className="text-3xl flex-shrink-0 mt-0.5" aria-hidden="true">{emoji}</span>}
           <div className="flex-1 min-w-0">
-            <h2 className="font-bold text-lg text-foreground leading-tight">{weergaveTitel}</h2>
+            <h2 id="content-modal-titel" className="font-bold text-lg text-foreground leading-tight">{weergaveTitel}</h2>
+            {/* Soort hulp als badge onder de titel */}
+            {soortHulp && (
+              <span className="inline-block mt-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                {soortHulp}
+              </span>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -163,29 +224,35 @@ export function ContentModal({
           )}
 
           {/* Details als één samenhangend blok */}
-          {(organisatieNaam || gemeente || kosten || openingstijden) && (
+          {(organisatieNaam || gemeente || doelgroepLabel || kosten || openingstijden) && (
             <div className="space-y-2 text-sm">
               {gemeente && (
                 <div className="flex gap-2">
-                  <span className="text-muted-foreground w-24 flex-shrink-0">Locatie</span>
+                  <span className="text-muted-foreground w-28 flex-shrink-0">Locatie</span>
                   <span className="text-foreground">{gemeente}</span>
                 </div>
               )}
               {organisatieNaam && (
                 <div className="flex gap-2">
-                  <span className="text-muted-foreground w-24 flex-shrink-0">Organisatie</span>
+                  <span className="text-muted-foreground w-28 flex-shrink-0">Organisatie</span>
                   <span className="text-foreground">{organisatieNaam}</span>
+                </div>
+              )}
+              {doelgroepLabel && (
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground w-28 flex-shrink-0">Voor wie</span>
+                  <span className="text-foreground">{doelgroepLabel}</span>
                 </div>
               )}
               {kosten && (
                 <div className="flex gap-2">
-                  <span className="text-muted-foreground w-24 flex-shrink-0">Kosten</span>
+                  <span className="text-muted-foreground w-28 flex-shrink-0">Kosten</span>
                   <span className="text-foreground">{kosten}</span>
                 </div>
               )}
               {openingstijden && (
                 <div className="flex gap-2">
-                  <span className="text-muted-foreground w-24 flex-shrink-0">Bereikbaar op</span>
+                  <span className="text-muted-foreground w-28 flex-shrink-0">Bereikbaar op</span>
                   <span className="text-foreground">{openingstijden}</span>
                 </div>
               )}
@@ -193,9 +260,9 @@ export function ContentModal({
           )}
 
           {/* Bron */}
-          {bron && (
+          {(bron || bronLabel) && (
             <p className="text-xs text-muted-foreground mt-3">
-              Bron: {bron}
+              Bron: {bronLabel || bron}
             </p>
           )}
         </div>
@@ -218,7 +285,7 @@ export function ContentModal({
                 rel="noopener noreferrer"
                 className={`ker-btn w-full flex items-center justify-center gap-2 ${telefoon ? "ker-btn-secondary" : "ker-btn-primary"}`}
               >
-                🌐 {bron ? `Lees meer op ${bron}` : "Bekijk website"}
+                🌐 {bronLabel ? `Lees meer op ${bronLabel}` : bron ? `Lees meer op ${bron}` : "Bekijk website"}
               </a>
             )}
           </div>

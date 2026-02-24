@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import { useEffect, useMemo, useState } from "react"
+import { AdminSpinner } from "@/components/admin"
 
 // Mapping van menu-items naar vereiste gemeente subrollen
 // Items zonder 'rollen' zijn altijd zichtbaar voor de hoofdadmin
@@ -19,18 +20,6 @@ const alleMenuItems = [
   { href: "/gemeente/evenementen", label: "Evenementen", icon: "📅", rollen: ["COMMUNICATIE"] },
   { href: "/gemeente/gebruikers", label: "Gebruikers", icon: "👤", rollen: [] },
 ]
-
-// Spinner component om herhaling te voorkomen
-function LoadingSpinner({ tekst }: { tekst: string }) {
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
-        <span className="text-gray-500 text-sm">{tekst}</span>
-      </div>
-    </div>
-  )
-}
 
 export default function GemeenteLayout({
   children,
@@ -64,12 +53,20 @@ export default function GemeenteLayout({
 
   // Wacht tot sessie geladen is
   if (status === "loading") {
-    return <LoadingSpinner tekst="Portaal laden..." />
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <AdminSpinner tekst="Portaal laden..." />
+      </div>
+    )
   }
 
   // Redirect is bezig
   if (redirecting || status === "unauthenticated") {
-    return <LoadingSpinner tekst="Doorsturen naar login..." />
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <AdminSpinner tekst="Doorsturen naar login..." />
+      </div>
+    )
   }
 
   // Rolcontrole

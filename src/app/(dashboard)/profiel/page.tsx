@@ -738,7 +738,7 @@ export default function ProfielPage() {
               </div>
 
               <StreetSearch
-                label="Waar woon jij?"
+                label="Waar woon je?"
                 value={profile.adres}
                 onChange={(adres) => setProfile({ ...profile, adres })}
                 placeholder="Begin met typen, bijv. Kerkstraat"

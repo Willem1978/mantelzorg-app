@@ -331,7 +331,7 @@ function StapWieBenJij({
     <div className="pt-6">
       <div className="text-center mb-6">
         <span className="text-5xl">👤</span>
-        <h2 className="text-xl font-bold mt-3">Wie ben jij?</h2>
+        <h2 className="text-xl font-bold mt-3">Wie ben je?</h2>
         <p className="text-sm text-muted-foreground mt-1">
           Zodat we hulp bij jou in de buurt kunnen vinden.
         </p>

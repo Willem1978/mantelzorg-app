@@ -1,29 +1,39 @@
 import { NextRequest, NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import { loginSchema, validateBody } from "@/lib/validations"
 
 export const dynamic = 'force-dynamic'
 
-interface LoginBody {
-  email: string
-  password: string
-}
-
 export async function POST(request: NextRequest) {
   try {
-    const body: LoginBody = await request.json()
-
-    // Validatie
-    if (!body.email || !body.password) {
+    // Rate limiting
+    const ip = getClientIp(request)
+    const limit = checkRateLimit(ip, "login")
+    if (!limit.allowed) {
       return NextResponse.json(
-        { error: "E-mail en wachtwoord zijn verplicht" },
+        { error: `Te veel pogingen. Probeer het over ${Math.ceil(limit.resetIn / 60)} minuten opnieuw.` },
+        { status: 429 }
+      )
+    }
+
+    const body = await request.json()
+
+    // Zod validatie
+    const validation = validateBody(body, loginSchema)
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: validation.error },
         { status: 400 }
       )
     }
 
+    const { email, password } = validation.data
+
     // Find user in database
     const user = await prisma.user.findUnique({
-      where: { email: body.email },
+      where: { email },
       include: {
         caregiver: true,
         orgMember: true,
@@ -37,7 +47,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const isPasswordValid = await bcrypt.compare(body.password, user.password)
+    const isPasswordValid = await bcrypt.compare(password, user.password)
 
     if (!isPasswordValid) {
       return NextResponse.json(
@@ -45,9 +55,6 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       )
     }
-
-    // Note: In production, use NextAuth signIn() for proper session management
-    // This endpoint is mainly for validation, actual session is handled by NextAuth
 
     return NextResponse.json({
       success: true,

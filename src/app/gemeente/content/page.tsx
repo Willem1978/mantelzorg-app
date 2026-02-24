@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { AdminSpinner, AdminEmptyState } from "@/components/admin"
 
 interface Article {
   id: string
@@ -114,7 +115,7 @@ export default function GemeenteContent() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Content</h1>
-        <p className="text-gray-500 mt-1">Beheer artikelen en informatiecontent voor uw gemeente</p>
+        <p className="text-gray-500 mt-1">Beheer artikelen en informatiecontent voor je gemeente</p>
       </div>
 
       {/* Nieuw artikel form */}
@@ -194,26 +195,17 @@ export default function GemeenteContent() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
-              <span className="text-gray-500 text-sm">Artikelen laden...</span>
-            </div>
-          </div>
+          <AdminSpinner tekst="Artikelen laden..." />
         ) : error ? (
           <div className="p-6 text-center">
             <p className="text-red-700 text-sm">{error}</p>
           </div>
         ) : articles.length === 0 ? (
-          <div className="p-8 text-center">
-            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-              <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            </div>
-            <p className="text-gray-500">Nog geen artikelen aangemaakt.</p>
-            <p className="text-gray-400 text-sm mt-1">Gebruik het formulier hierboven om uw eerste artikel aan te maken.</p>
-          </div>
+          <AdminEmptyState
+            icon="📝"
+            titel="Nog geen artikelen aangemaakt"
+            beschrijving="Gebruik het formulier hierboven om je eerste artikel aan te maken."
+          />
         ) : (
           <div className="divide-y divide-gray-100">
             {articles.map((article) => (

@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
+import { AdminSpinner, AdminEmptyState } from "@/components/admin"
+import { useToast } from "@/components/ui/Toast"
 
 interface Gebruiker {
   id: string
@@ -52,6 +54,7 @@ function GebruikersContent() {
   const [gemeenteZoek, setGemeenteZoek] = useState("")
   const searchParams = useSearchParams()
   const router = useRouter()
+  const { showSuccess, showError } = useToast()
 
   const rol = searchParams.get("rol") || ""
   const zoek = searchParams.get("zoek") || ""
@@ -135,6 +138,7 @@ function GebruikersContent() {
 
       if (!res.ok) {
         setNieuwFout(data.error || "Er ging iets mis")
+        showError(data.error || "Er ging iets mis bij het aanmaken")
         return
       }
 
@@ -142,9 +146,11 @@ function GebruikersContent() {
       setNieuwFormulier({ email: "", name: "", password: "", role: "CAREGIVER", gemeenteNaam: "" })
       setGemeenteZoek("")
       setGemeenteSuggesties([])
+      showSuccess("Gebruiker succesvol aangemaakt")
       laadGebruikers()
     } catch {
       setNieuwFout("Er ging iets mis bij het aanmaken")
+      showError("Er ging iets mis bij het aanmaken")
     } finally {
       setNieuwLaden(false)
     }
@@ -341,9 +347,9 @@ function GebruikersContent() {
       {/* Tabel */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-gray-500">Laden...</div>
+          <AdminSpinner tekst="Gebruikers laden..." />
         ) : gebruikers.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">Geen gebruikers gevonden</div>
+          <AdminEmptyState icon="👥" titel="Geen gebruikers gevonden" />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -429,7 +435,7 @@ function GebruikersContent() {
 
 export default function GebruikersPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-gray-500">Laden...</div>}>
+    <Suspense fallback={<AdminSpinner tekst="Gebruikers laden..." />}>
       <GebruikersContent />
     </Suspense>
   )
