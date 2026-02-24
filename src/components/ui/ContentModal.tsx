@@ -19,6 +19,9 @@ interface ContentModalProps {
   soortHulp?: string | null
   kosten?: string | null
   doelgroep?: string | null
+  dienst?: string | null
+  openingstijden?: string | null
+  organisatie?: string | null
 }
 
 export function ContentModal({
@@ -37,6 +40,9 @@ export function ContentModal({
   soortHulp,
   kosten,
   doelgroep,
+  dienst,
+  openingstijden,
+  organisatie,
 }: ContentModalProps) {
   // Voorkom scrollen van achtergrond + ESC toets
   useEffect(() => {
@@ -103,6 +109,11 @@ export function ContentModal({
     })
   }
 
+  // Bepaal de weergavetitel: dienst als die er is, anders originele titel
+  const weergaveTitel = dienst || titel
+  // Organisatienaam: als dienst de titel is, dan is 'titel' de organisatienaam
+  const organisatieNaam = organisatie || (dienst ? titel : null)
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
@@ -125,14 +136,9 @@ export function ContentModal({
         <div className="flex items-start gap-3 px-5 pt-3 pb-3 border-b border-border">
           {emoji && <span className="text-3xl flex-shrink-0 mt-0.5">{emoji}</span>}
           <div className="flex-1 min-w-0">
-            <h2 className="font-bold text-lg text-foreground leading-tight">{titel}</h2>
-            {bronLabel && (
-              <span className={`inline-block text-xs px-2 py-0.5 rounded-full mt-1 ${bronLabelKleur(bronLabel)}`}>
-                {bronLabel}
-              </span>
-            )}
+            <h2 className="font-bold text-lg text-foreground leading-tight">{weergaveTitel}</h2>
             {soortHulp && (
-              <span className="inline-block text-xs px-2 py-0.5 rounded-full mt-1 bg-primary/10 text-primary ml-1">
+              <span className="inline-block text-xs px-2 py-0.5 rounded-full mt-1 bg-primary/10 text-primary">
                 {soortHulp}
               </span>
             )}
@@ -150,9 +156,9 @@ export function ContentModal({
 
         {/* Scrollable content */}
         <div className="overflow-y-auto px-5 py-4 flex-1">
-          {/* Korte beschrijving */}
+          {/* Beschrijving (niet cursief) */}
           {beschrijving && (
-            <p className="text-sm text-muted-foreground leading-relaxed mb-4 italic">
+            <p className="text-sm text-foreground leading-relaxed mb-4">
               {beschrijving}
             </p>
           )}
@@ -164,19 +170,57 @@ export function ContentModal({
             </div>
           )}
 
-          {/* Info-blokken voor organisaties */}
-          {(gemeente || kosten) && (
-            <div className="space-y-2 mb-4">
-              {gemeente && (
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-muted-foreground">📍</span>
-                  <span className="text-foreground">{gemeente}</span>
+          {/* Praktische informatie */}
+          {(openingstijden || kosten) && (
+            <div className="space-y-3 mb-4">
+              {/* Bereikbaarheid */}
+              {openingstijden && (
+                <div className="bg-muted/50 rounded-lg p-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                    Bereikbaarheid
+                  </p>
+                  <p className="text-sm text-foreground">{openingstijden}</p>
                 </div>
               )}
+
+              {/* Kosten */}
               {kosten && (
+                <div className="bg-muted/50 rounded-lg p-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                    Kosten
+                  </p>
+                  <p className="text-sm text-foreground">{kosten}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Organisatie & locatie onderaan */}
+          {(organisatieNaam || gemeente || bronLabel) && (
+            <div className="border-t border-border pt-3 mt-2 space-y-1.5">
+              {organisatieNaam && (
                 <div className="flex items-center gap-2 text-sm">
-                  <span className="text-muted-foreground">💰</span>
-                  <span className="text-foreground">{kosten}</span>
+                  <span className="text-muted-foreground text-xs w-20 flex-shrink-0">Organisatie</span>
+                  <span className="text-foreground font-medium">{organisatieNaam}</span>
+                </div>
+              )}
+              {gemeente && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-muted-foreground text-xs w-20 flex-shrink-0">Locatie</span>
+                  <span className="text-foreground">📍 {gemeente}</span>
+                  {bronLabel && bronLabel !== "Landelijk" && (
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${bronLabelKleur(bronLabel)}`}>
+                      {bronLabel}
+                    </span>
+                  )}
+                </div>
+              )}
+              {!gemeente && bronLabel && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-muted-foreground text-xs w-20 flex-shrink-0">Bereik</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${bronLabelKleur(bronLabel)}`}>
+                    {bronLabel}
+                  </span>
                 </div>
               )}
             </div>
@@ -184,7 +228,7 @@ export function ContentModal({
 
           {/* Bron */}
           {bron && (
-            <p className="text-xs text-muted-foreground mb-4">
+            <p className="text-xs text-muted-foreground mt-3">
               Bron: {bron}
             </p>
           )}
@@ -222,6 +266,7 @@ function bronLabelKleur(label: string | null): string {
   if (!label) return "bg-muted text-muted-foreground"
   switch (label) {
     case "Landelijk": return "bg-primary/10 text-primary"
+    case "Gemeente": return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
     case "Gemeente (Wmo)": return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
     case "Zorgverzekeraar (Zvw)": return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
     case "Wlz": return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
