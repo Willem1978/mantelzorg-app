@@ -1,7 +1,7 @@
 # MatenBuddy - Doorontwikkelplan & Verbeteringsoverzicht
 
 **Datum:** 24 februari 2026
-**Versie:** 1.2 (bijgewerkt na UI/UX review & beheeromgeving verbeteringen)
+**Versie:** 1.3 (bijgewerkt na infrastructuur & architectuur verbeteringen)
 **Project:** MatenBuddy (Mantelzorg-app)
 
 ---
@@ -84,22 +84,46 @@
 - **Warme illustraties**: Zachte primaire kleur achtergronden bij lege states
 - **Helptekst formuliervelden**: Privacy-uitleg, betere validatiemeldingen
 
+### Wat recent is verbeterd (v1.3, 24 feb 2026 - infrastructuur & architectuur)
+
+#### Admin UI verbeteringen (punten 3-6)
+- **AdminSpinner component**: Gedeelde animated spinner vervangt subtiele "Laden..." tekst in alle 17 beheer- en 10 gemeentepagina's
+- **AdminEmptyState component**: Begeleiding bij lege lijsten met icon, titel, beschrijving en actieknop
+- **AdminModal component**: Herbruikbare modal met ARIA role="dialog", aria-modal, aria-labelledby, focus trap, ESC-toets, backdrop click
+- **Formulier feedback**: Toast notificaties voor success/error na CRUD-operaties in admin-formulieren
+
+#### Infrastructuur & Beveiliging (punten 7-9)
+- **Email service** (`src/lib/email.ts`): SMTP via nodemailer met fallback naar console.log; HTML-templates voor verificatie, wachtwoord-reset en welkomstmail
+- **Rate limiting** (`src/lib/rate-limit.ts`): In-memory rate limiter op alle auth endpoints (login: 5/5min, register: 3/10min, forgot-password: 3/10min)
+- **Zod validatie** (`src/lib/validations.ts`): Zod v4 schema's voor login, register, forgot-password, reset-password, artikel, hulpbron, check-in; `validateBody()` helper
+
+#### Klantreis & Dashboard (punten 10-13)
+- **Onboarding flow**: Reeds aanwezig - 5-staps welkomstflow in `src/components/Onboarding.tsx`
+- **Gepersonaliseerde aanbevelingen**: Reeds aanwezig - dashboard toont relevante hulpbronnen en artikelen op basis van score
+- **Check-in smart frequency**: Reeds aanwezig - LAAG: maandelijks, GEMIDDELD: tweewekelijks, HOOG: wekelijks
+- **Dynamisch advies engine** (`src/lib/dashboard/advies.ts`): Geprioriteerde adviezen op basis van belastingniveau, trend, wellbeing en activiteit
+
+#### Technische Architectuur (punten 14-16)
+- **Vitest test framework**: 29 tests in 3 testbestanden (rate-limit, validations, advies); `vitest.config.ts` met @ alias support
+- **Redis session store** (`src/lib/session-store.ts`): Abstract `SessionStore<T>` interface met in-memory en Redis backends; auto-detectie via REDIS_URL
+- **Dashboard route gesplitst**: Van 782 → ~260 regels; modules geëxtraheerd naar `src/lib/dashboard/` (hulpbronnen, artikelen, mijlpalen, advies)
+
 ### Wat ontbreekt / nog te verbeteren
 
 #### Hoge prioriteit
-- **ContentModal velden tonen**: soortHulp, doelgroep en bronLabel worden als props geaccepteerd maar niet getoond in de modal UI
-- **ContentModal ARIA-attributen**: Mist role="dialog", aria-modal="true", aria-labelledby, en focus trap voor toegankelijkheid
-- **E-mailnotificaties**: Tokens worden aangemaakt maar niet verzonden
-- **Geautomatiseerde tests**: Geen test framework aanwezig
-- **Input validatie met Zod**: Nu handmatige validatie per route
-- **Rate limiting op API endpoints**: Brute-force bescherming ontbreekt
+- ~~**ContentModal velden tonen**~~ ✅ **Gedaan** - soortHulp, doelgroep en bronLabel worden nu getoond
+- ~~**ContentModal ARIA-attributen**~~ ✅ **Gedaan** - role="dialog", aria-modal, aria-labelledby, focus trap
+- ~~**E-mailnotificaties**~~ ✅ **Gedaan** - SMTP email service met HTML-templates
+- ~~**Geautomatiseerde tests**~~ ✅ **Gedaan** - Vitest met 29 tests
+- ~~**Input validatie met Zod**~~ ✅ **Gedaan** - Zod v4 schema's op auth routes
+- ~~**Rate limiting op API endpoints**~~ ✅ **Gedaan** - In-memory rate limiter op alle auth endpoints
 
 #### Gemiddelde prioriteit
-- **Admin laadstaten**: Beheer/gemeente pagina's tonen te subtiele "Laden..." tekst
-- **Admin lege states**: Sommige pagina's missen begeleiding bij geen data
-- **Herbruikbare AdminModal**: Elke beheerpagina implementeert eigen modal
+- ~~**Admin laadstaten**~~ ✅ **Gedaan** - AdminSpinner in alle beheer/gemeente pagina's
+- ~~**Admin lege states**~~ ✅ **Gedaan** - AdminEmptyState met begeleiding in alle pagina's
+- ~~**Herbruikbare AdminModal**~~ ✅ **Gedaan** - Gedeeld component met ARIA en focus trap
 - **Admin tabellen mobiel**: Horizontaal scrollen op tablets/mobiel is lastig
-- **Formulier feedback**: Sommige admin-formulieren geven geen success/error melding
+- ~~**Formulier feedback**~~ ✅ **Gedaan** - Toast notificaties na CRUD-operaties
 
 #### Toekomstig (ongewijzigd)
 - Klantreis-begeleiding en stapsgewijze progressieve onboarding
@@ -432,7 +456,7 @@ Elke pagina begint met een kort, warm welkomstblok (via `<PageIntro>` component)
 
 **Te bouwen/verbeteren:**
 - **WCAG 2.1 AA kleurcontrast** ✅ **Gedaan** - Amber en rood kleuren aangepast
-- **Screen reader ondersteuning** - aria-labels deels aanwezig; ContentModal mist nog role="dialog", aria-modal, aria-labelledby, focus trap
+- **Screen reader ondersteuning** - aria-labels aanwezig; ContentModal en AdminModal hebben role="dialog", aria-modal, aria-labelledby, focus trap ✅
 - **Toetsenbordnavigatie** - ESC-toets op modals ✅; verdere toetsenbordnavigatie nog nodig
 - **Tekst vergrotingsmodus** - AccessibilityProvider aanwezig met high-contrast, large-text, reduce-motion
 - ~~**Taalgebruik audit** - Alle teksten B1-niveau~~ ✅ **Gedaan** - Alle pagina's herschreven in B1 Nederlands, consistent "je" aanspreekvorm
@@ -816,10 +840,10 @@ Automatisch berekend op basis van:
 
 | Verbetering | Prioriteit | Status | Toelichting |
 |------------|-----------|--------|-------------|
-| Test framework (Vitest) toevoegen | Hoog | Open | Geen geautomatiseerde tests aanwezig |
-| Input validatie met Zod | Hoog | Open | Nu handmatige validatie per route |
-| Rate limiting (API) | Hoog | Open | Brute-force bescherming op auth endpoints |
-| Dashboard route opsplitsen | Middel | Open | `dashboard/route.ts` is 1700+ regels |
+| Test framework (Vitest) toevoegen | Hoog | **Gedaan** | Vitest met 29 tests (rate-limit, validations, advies) |
+| Input validatie met Zod | Hoog | **Gedaan** | Zod v4 schema's op alle auth routes |
+| Rate limiting (API) | Hoog | **Gedaan** | In-memory rate limiter op auth endpoints |
+| Dashboard route opsplitsen | Middel | **Gedaan** | Van 782 → ~260 regels, modules in `src/lib/dashboard/` |
 | WhatsApp webhook opsplitsen | Middel | Open | `webhook/route.ts` is 550+ regels |
 | Error boundary componenten | Middel | **Verbeterd** | global-error.tsx en gemeente/error.tsx tonen nu gebruiksvriendelijke meldingen i.p.v. technische foutcodes |
 | Logging framework (Pino/Winston) | Middel | Open | Gestructureerde logging i.p.v. console.log |
@@ -830,8 +854,8 @@ Automatisch berekend op basis van:
 
 | Verbetering | Prioriteit | Toelichting |
 |------------|-----------|-------------|
-| Redis voor sessie/cache | Hoog | WhatsApp sessies nu in-memory (gaan verloren bij restart) |
-| Email service (Resend/SendGrid) | Hoog | Email verificatie en wachtwoord-reset werken niet |
+| Redis voor sessie/cache | Hoog | **Gedaan** - `SessionStore` interface met in-memory + Redis backends, auto-detectie via REDIS_URL |
+| Email service (nodemailer/SMTP) | Hoog | **Gedaan** - SMTP email met HTML-templates, fallback naar console.log |
 | Background jobs (Bull/Agenda) | Middel | Alarmen en notificaties synchroon in API |
 | CDN voor statische assets | Laag | Performance-verbetering |
 | CI/CD pipeline | Middel | Geautomatiseerd testen en deployen |
@@ -860,14 +884,14 @@ Automatisch berekend op basis van:
 
 ## 9. Prioritering & Fasering
 
-### Fase 1: Fundament (maand 1-2)
+### Fase 1: Fundament (maand 1-2) ✅ Grotendeels afgerond
 **Focus:** Technische basis en beveiliging versterken
 
-1. Email service implementeren (verificatie + wachtwoord reset)
-2. Rate limiting op auth endpoints
-3. Input validatie met Zod
-4. Test framework opzetten (Vitest) + eerste tests
-5. Redis voor WhatsApp sessies
+1. ~~Email service implementeren (verificatie + wachtwoord reset)~~ ✅ **Gedaan**
+2. ~~Rate limiting op auth endpoints~~ ✅ **Gedaan**
+3. ~~Input validatie met Zod~~ ✅ **Gedaan**
+4. ~~Test framework opzetten (Vitest) + eerste tests~~ ✅ **Gedaan**
+5. ~~Redis voor WhatsApp sessies~~ ✅ **Gedaan** (SessionStore met Redis backend)
 6. Versienummer synchroniseren
 
 ### Fase 2: Beheeromgeving (maand 2-4)
@@ -886,9 +910,9 @@ Automatisch berekend op basis van:
 1. Onboarding flow (stapsgewijze welkomst)
 2. ~~UI-verbeteringen voor oudere gebruikers (typografie, knoppen, contrast)~~ ✅ **Grotendeels gedaan** - WCAG AA kleuren, 44px touch targets, B1-teksten, grafieklegenda's, warme lege states
 3. ~~Tekstuele begeleiding (pagina-intro's, hulpteksten, foutmeldingen)~~ ✅ **Gedaan** - PageIntro component op alle pagina's, foutmeldingen in B1 Nederlands, helptekst bij formulieren
-4. Gepersonaliseerde aanbevelingen op dashboard
-5. Check-in systeem uitbreiden
-6. Dynamisch hulpadvies op basis van score
+4. ~~Gepersonaliseerde aanbevelingen op dashboard~~ ✅ **Reeds aanwezig**
+5. ~~Check-in systeem uitbreiden~~ ✅ **Reeds aanwezig** (smart frequency)
+6. ~~Dynamisch hulpadvies op basis van score~~ ✅ **Gedaan** (advies engine)
 
 ### Fase 4: MantelBuddy Marktplaats (maand 4-7)
 **Focus:** Vrijwilligersplatform bouwen
@@ -965,5 +989,6 @@ Automatisch berekend op basis van:
 | 1.0 | 15 feb 2026 | Eerste versie met alle modules A-F |
 | 1.1 | 22 feb 2026 | Status bijgewerkt voor baseline v2.5.0: content-architectuur database-driven, B1 taalniveau, type-safety, database indexen, bugfixes |
 | 1.2 | 24 feb 2026 | Uitgebreide update na UI/UX review en beheeromgeving verbeteringen: WCAG AA kleuren, B1-teksten app-breed, consistent "je" aanspreekvorm, beheer velden (openingstijden/kosten/zorgverzekeraar), CSV-import uitgebreid, grafieklegenda's, foutmeldingen gestandaardiseerd, warme lege states, dashboard opgeschoond, Jouw reis naar profiel, filterbadges hulpvragen |
+| 1.3 | 24 feb 2026 | Infrastructuur & architectuur verbeteringen (punten 3-16): AdminSpinner/AdminEmptyState/AdminModal componenten in alle beheer/gemeente pagina's, email service (nodemailer SMTP), rate limiting op auth endpoints, Zod v4 validatie, dynamisch advies engine, Vitest test framework (29 tests), Redis session store, dashboard route gesplitst (782→260 regels) |
 
 *Dit document is een levend document en zal worden bijgewerkt naarmate de ontwikkeling vordert.*
