@@ -32,14 +32,11 @@ export function ContentModal({
   beschrijving,
   inhoud,
   bron,
-  bronLabel,
   url,
   telefoon,
   website,
   gemeente,
-  soortHulp,
   kosten,
-  doelgroep,
   dienst,
   openingstijden,
   organisatie,
@@ -166,7 +163,7 @@ export function ContentModal({
           )}
 
           {/* Details als één samenhangend blok */}
-          {(organisatieNaam || gemeente || kosten || openingstijden || telefoon || doelgroep) && (
+          {(organisatieNaam || gemeente || kosten || openingstijden) && (
             <div className="space-y-2 text-sm">
               {gemeente && (
                 <div className="flex gap-2">
@@ -180,37 +177,25 @@ export function ContentModal({
                   <span className="text-foreground">{organisatieNaam}</span>
                 </div>
               )}
-              {telefoon && (
-                <div className="flex gap-2">
-                  <span className="text-muted-foreground w-24 flex-shrink-0">Telefoon</span>
-                  <span className="text-foreground">{telefoon}</span>
-                </div>
-              )}
-              {openingstijden && (
-                <div className="flex gap-2">
-                  <span className="text-muted-foreground w-24 flex-shrink-0">Bereikbaar</span>
-                  <span className="text-foreground">{openingstijden}</span>
-                </div>
-              )}
-              {doelgroep && (
-                <div className="flex gap-2">
-                  <span className="text-muted-foreground w-24 flex-shrink-0">Doelgroep</span>
-                  <span className="text-foreground">{doelgroep}</span>
-                </div>
-              )}
               {kosten && (
                 <div className="flex gap-2">
                   <span className="text-muted-foreground w-24 flex-shrink-0">Kosten</span>
                   <span className="text-foreground">{kosten}</span>
                 </div>
               )}
+              {openingstijden && (
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground w-24 flex-shrink-0">Bereikbaar op</span>
+                  <span className="text-foreground">{openingstijden}</span>
+                </div>
+              )}
             </div>
           )}
 
           {/* Bron */}
-          {(bron || bronLabel) && (
+          {bron && (
             <p className="text-xs text-muted-foreground mt-3">
-              Bron: {bron || bronLabel}
+              Bron: {bron}
             </p>
           )}
         </div>
@@ -233,7 +218,7 @@ export function ContentModal({
                 rel="noopener noreferrer"
                 className={`ker-btn w-full flex items-center justify-center gap-2 ${telefoon ? "ker-btn-secondary" : "ker-btn-primary"}`}
               >
-                🌐 {(bron || bronLabel) ? `Lees meer op ${bron || bronLabel}` : "Bekijk website"}
+                🌐 {bron ? `Lees meer op ${bron}` : "Bekijk website"}
               </a>
             )}
           </div>
