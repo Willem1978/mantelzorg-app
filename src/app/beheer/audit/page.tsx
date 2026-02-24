@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { AdminSpinner, AdminEmptyState } from "@/components/admin"
 
 interface AuditEntry {
   id: string
@@ -95,9 +96,9 @@ export default function AuditLogPage() {
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-gray-500">Laden...</div>
+          <AdminSpinner tekst="Audit log laden..." />
         ) : logs.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">Geen audit logs gevonden</div>
+          <AdminEmptyState icon="📋" titel="Geen audit logs gevonden" beschrijving="Er zijn nog geen activiteiten gelogd" />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { AdminSpinner, AdminEmptyState } from "@/components/admin"
 
 interface Alarm {
   id: string
@@ -150,10 +151,10 @@ export default function AlarmenPage() {
 
       {/* Alarmen lijst */}
       {loading ? (
-        <div className="bg-white rounded-xl border p-8 text-center text-gray-500">Laden...</div>
+        <div className="bg-white rounded-xl border"><AdminSpinner tekst="Alarmen laden..." /></div>
       ) : alarmen.length === 0 ? (
-        <div className="bg-white rounded-xl border p-8 text-center text-gray-500">
-          {statusFilter === "open" ? "Geen open alarmen - goed bezig!" : "Geen alarmen gevonden"}
+        <div className="bg-white rounded-xl border">
+          <AdminEmptyState icon="🔔" titel="Geen alarmen" beschrijving={statusFilter === "open" ? "Geen open alarmen - goed bezig!" : "Geen alarmen gevonden"} />
         </div>
       ) : (
         <div className="space-y-3">

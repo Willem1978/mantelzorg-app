@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { AdminSpinner, AdminEmptyState } from "@/components/admin"
 
 interface AppContent {
   id: string
@@ -341,14 +342,14 @@ export default function AppContentPage() {
       {/* Tabel */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-gray-500">Laden...</div>
+          <AdminSpinner tekst="App content laden..." />
         ) : items.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            <p>Geen content gevonden</p>
-            <button onClick={handleNieuw} className="mt-2 text-blue-600 text-sm hover:underline">
-              Maak het eerste content item aan
-            </button>
-          </div>
+          <AdminEmptyState
+            icon="📱"
+            titel="Geen content gevonden"
+            actieLabel="Maak het eerste content item aan"
+            onActie={handleNieuw}
+          />
         ) : (
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">

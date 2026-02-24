@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { AdminSpinner, AdminEmptyState } from "@/components/admin"
+import { useToast } from "@/components/ui/Toast"
 
 interface Artikel {
   id: string
@@ -122,6 +124,7 @@ export default function ArtikelenPage() {
   const [gemeenteZoek, setGemeenteZoek] = useState("")
   const [gemeenteOpties, setGemeenteOpties] = useState<string[]>([])
   const [showGemeenteDropdown, setShowGemeenteDropdown] = useState(false)
+  const { showSuccess, showError } = useToast()
 
   const laadArtikelen = async () => {
     setLoading(true)
@@ -212,9 +215,11 @@ export default function ArtikelenPage() {
       })
 
       setShowForm(false)
+      showSuccess(editId ? "Artikel bijgewerkt" : "Artikel aangemaakt")
       laadArtikelen()
     } catch (error) {
       console.error(error)
+      showError("Er ging iets mis. Probeer het opnieuw.")
     } finally {
       setOpslaan(false)
     }
@@ -225,9 +230,11 @@ export default function ArtikelenPage() {
 
     try {
       await fetch(`/api/beheer/artikelen/${id}`, { method: "DELETE" })
+      showSuccess("Artikel verwijderd")
       laadArtikelen()
     } catch (error) {
       console.error(error)
+      showError("Er ging iets mis. Probeer het opnieuw.")
     }
   }
 
@@ -553,14 +560,9 @@ export default function ArtikelenPage() {
       {/* Artikelen lijst */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-gray-500">Laden...</div>
+          <AdminSpinner tekst="Artikelen laden..." />
         ) : artikelen.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            <p>Geen artikelen gevonden</p>
-            <button onClick={handleNieuw} className="mt-2 text-blue-600 text-sm hover:underline">
-              Maak het eerste artikel aan
-            </button>
-          </div>
+          <AdminEmptyState icon="📝" titel="Geen artikelen gevonden" beschrijving="Voeg je eerste artikel toe" actieLabel="Nieuw artikel aanmaken" onActie={handleNieuw} />
         ) : (
           <div className="divide-y divide-gray-100">
             {artikelen.map((artikel) => (

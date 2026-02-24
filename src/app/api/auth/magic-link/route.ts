@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import { randomBytes } from 'crypto'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 const prisma = new PrismaClient()
 
@@ -14,6 +15,13 @@ export async function GET(request: NextRequest) {
 
   if (!token) {
     return NextResponse.redirect(new URL('/login?error=missing_token', request.url))
+  }
+
+  // Rate limiting
+  const ip = getClientIp(request)
+  const limit = checkRateLimit(ip, "magic-link")
+  if (!limit.allowed) {
+    return NextResponse.redirect(new URL('/login?error=rate_limited', request.url))
   }
 
   try {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { ensureAbsoluteUrl } from "@/lib/utils"
+import { AdminSpinner, AdminEmptyState } from "@/components/admin"
 
 interface Hulpbron {
   id: string
@@ -390,11 +391,17 @@ export default function GemeenteHulpbronnen() {
 
           {/* Bestaand gemeentenieuws */}
           {artikelenLoading ? (
-            <LoadingSpinner tekst="Gemeentenieuws laden..." />
+            <AdminSpinner tekst="Gemeentenieuws laden..." />
           ) : artikelenError ? (
-            <ErrorBox tekst={artikelenError} />
+            <div className="bg-white rounded-xl border border-gray-200 p-6 text-center">
+              <p className="text-red-700 text-sm">{artikelenError}</p>
+            </div>
           ) : artikelen.length === 0 ? (
-            <EmptyState tekst="Nog geen gemeentenieuws." sub="Voeg hierboven je eerste nieuwsbericht toe." />
+            <AdminEmptyState
+              icon="📰"
+              titel="Nog geen gemeentenieuws"
+              beschrijving="Voeg hierboven je eerste nieuwsbericht toe."
+            />
           ) : (
             <div className="space-y-3">
               <h2 className="text-lg font-semibold text-gray-900">Gemeentenieuws ({artikelen.length})</h2>
@@ -592,18 +599,21 @@ export default function GemeenteHulpbronnen() {
 
           {/* Hulpbronnen lijst */}
           {hulpLoading ? (
-            <LoadingSpinner tekst="Hulpbronnen laden..." />
+            <AdminSpinner tekst="Hulpbronnen laden..." />
           ) : hulpError ? (
-            <ErrorBox tekst={hulpError} />
+            <div className="bg-white rounded-xl border border-gray-200 p-6 text-center">
+              <p className="text-red-700 text-sm">{hulpError}</p>
+            </div>
           ) : hulpbronnen.length === 0 ? (
-            <EmptyState
-              tekst={categorie
-                ? `Geen hulpbronnen gevonden in "${activeCategorieList.find(c => c.value === categorie)?.label || categorie}".`
+            <AdminEmptyState
+              icon="📚"
+              titel={categorie
+                ? `Geen hulpbronnen gevonden in "${activeCategorieList.find(c => c.value === categorie)?.label || categorie}"`
                 : doelgroep
-                ? `Geen hulpbronnen gevonden voor ${doelgroep === "MANTELZORGER" ? "mantelzorgers" : "zorgvragers"}.`
-                : "Geen hulpbronnen gevonden."
+                ? `Geen hulpbronnen gevonden voor ${doelgroep === "MANTELZORGER" ? "mantelzorgers" : "zorgvragers"}`
+                : "Geen hulpbronnen gevonden"
               }
-              sub="Pas de filters aan of voeg een nieuwe hulpbron toe."
+              beschrijving="Pas de filters aan of voeg een nieuwe hulpbron toe."
             />
           ) : (
             <div className="space-y-3">
@@ -891,34 +901,6 @@ export default function GemeenteHulpbronnen() {
 }
 
 // Helper components
-function LoadingSpinner({ tekst }: { tekst: string }) {
-  return (
-    <div className="flex items-center justify-center py-12">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-8 h-8 border-4 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
-        <span className="text-gray-500 text-sm">{tekst}</span>
-      </div>
-    </div>
-  )
-}
-
-function ErrorBox({ tekst }: { tekst: string }) {
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 text-center">
-      <p className="text-red-700 text-sm">{tekst}</p>
-    </div>
-  )
-}
-
-function EmptyState({ tekst, sub }: { tekst: string; sub: string }) {
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-      <p className="text-gray-500">{tekst}</p>
-      <p className="text-gray-400 text-sm mt-1">{sub}</p>
-    </div>
-  )
-}
-
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex gap-3">

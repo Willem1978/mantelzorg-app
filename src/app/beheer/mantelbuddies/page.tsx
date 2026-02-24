@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
+import { AdminSpinner, AdminEmptyState } from "@/components/admin"
 
 interface Buddy {
   id: string
@@ -161,9 +162,9 @@ function MantelBuddiesContent() {
       {/* Buddies lijst */}
       <div className="space-y-3">
         {loading ? (
-          <div className="bg-white rounded-xl border p-8 text-center text-gray-500">Laden...</div>
+          <AdminSpinner tekst="MantelBuddies laden..." />
         ) : buddies.length === 0 ? (
-          <div className="bg-white rounded-xl border p-8 text-center text-gray-500">Geen MantelBuddies gevonden</div>
+          <AdminEmptyState icon="🤝" titel="Geen MantelBuddies gevonden" beschrijving="Er hebben zich nog geen MantelBuddies aangemeld" />
         ) : (
           buddies.map((buddy) => {
             const statusInfo = statusStappen.find((s) => s.value === buddy.status)
@@ -256,7 +257,7 @@ function MantelBuddiesContent() {
 
 export default function MantelBuddiesPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-gray-500">Laden...</div>}>
+    <Suspense fallback={<AdminSpinner tekst="MantelBuddies laden..." />}>
       <MantelBuddiesContent />
     </Suspense>
   )

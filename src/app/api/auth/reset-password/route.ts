@@ -1,27 +1,35 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+import { resetPasswordSchema, validateBody } from "@/lib/validations"
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const ip = getClientIp(request)
+    const limit = checkRateLimit(ip, "reset-password")
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { error: `Te veel pogingen. Probeer het over ${Math.ceil(limit.resetIn / 60)} minuten opnieuw.` },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
-    const { token, password } = body
 
-    if (!token || !password) {
+    // Zod validatie
+    const validation = validateBody(body, resetPasswordSchema)
+    if (!validation.success) {
       return NextResponse.json(
-        { error: "Token en wachtwoord zijn verplicht" },
+        { error: validation.error },
         { status: 400 }
       )
     }
 
-    if (password.length < 8) {
-      return NextResponse.json(
-        { error: "Wachtwoord moet minimaal 8 tekens bevatten" },
-        { status: 400 }
-      )
-    }
+    const { token, password } = validation.data
 
     // Find valid token
     const resetToken = await prisma.passwordResetToken.findUnique({
