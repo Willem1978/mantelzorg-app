@@ -25,6 +25,15 @@ interface StreetResult {
   wijknaam?: string
 }
 
+interface Mijlpaal {
+  id: string
+  titel: string
+  beschrijving: string
+  emoji: string
+  datum: string | null
+  behaald: boolean
+}
+
 interface UserProfile {
   naam: string
   email: string
@@ -207,6 +216,7 @@ export default function ProfielPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteConfirmText, setDeleteConfirmText] = useState("")
   const [isDeleting, setIsDeleting] = useState(false)
+  const [mijlpalen, setMijlpalen] = useState<Mijlpaal[]>([])
 
   useEffect(() => {
     // Laad profiel uit API
@@ -260,6 +270,22 @@ export default function ProfielPage() {
         // Negeer parse errors
       }
     }
+
+    // Laad mijlpalen vanuit dashboard API
+    const loadMijlpalen = async () => {
+      try {
+        const res = await fetch("/api/dashboard")
+        if (res.ok) {
+          const data = await res.json()
+          if (data.mijlpalen) {
+            setMijlpalen(data.mijlpalen)
+          }
+        }
+      } catch {
+        // Negeer errors
+      }
+    }
+    loadMijlpalen()
   }, [])
 
   const handleSave = async () => {
@@ -987,6 +1013,52 @@ export default function ProfielPage() {
               </div>
             </div>
           </Link>
+        )}
+
+        {/* Jouw reis (mijlpalen) */}
+        {mijlpalen.length > 0 && (
+          <div className="ker-card">
+            <h2 className="font-bold text-foreground mb-4 flex items-center gap-2">
+              <span className="text-xl">🗺️</span>
+              Jouw reis
+            </h2>
+            <div className="relative pl-6">
+              <div className="absolute left-[11px] top-2 bottom-2 w-0.5 bg-border" />
+              <div className="space-y-4">
+                {mijlpalen.map((mijlpaal, i) => (
+                  <div key={mijlpaal.id} className="relative flex items-start gap-3">
+                    <div
+                      className={cn(
+                        "absolute -left-6 w-[22px] h-[22px] rounded-full flex items-center justify-center text-xs border-2 z-10",
+                        mijlpaal.behaald
+                          ? "bg-primary border-primary text-primary-foreground"
+                          : "bg-background border-border text-muted-foreground"
+                      )}
+                    >
+                      {mijlpaal.behaald ? "✓" : (i + 1)}
+                    </div>
+                    <div className={cn("flex-1 min-w-0", !mijlpaal.behaald && "opacity-50")}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{mijlpaal.emoji}</span>
+                        <span className="font-semibold text-sm">{mijlpaal.titel}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground ml-7">
+                        {mijlpaal.behaald
+                          ? mijlpaal.datum
+                            ? new Date(mijlpaal.datum).toLocaleDateString("nl-NL", {
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                              })
+                            : mijlpaal.beschrijving
+                          : mijlpaal.beschrijving}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         )}
 
         {/* WhatsApp koppeling */}

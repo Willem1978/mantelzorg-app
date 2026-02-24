@@ -673,22 +673,16 @@ function HulpPageContent() {
       {/* Header - compact */}
       <div className="mb-4">
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          <span className="text-3xl">💜</span> Hulp zoeken
+          <span className="text-3xl">💜</span> Hulp vinden en regelen
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
           Kies hieronder voor wie je hulp zoekt. Tik op het <span className="text-primary font-semibold">hartje</span> om iets te bewaren.
+          {hulpData?.testNiveau && (
+            <span>
+              {' '}De hulp is afgestemd op jouw situatie ({hulpData.testNiveau === "LAAG" ? "lage" : hulpData.testNiveau === "GEMIDDELD" ? "gemiddelde" : "hoge"} belasting).
+            </span>
+          )}
         </p>
-        {hulpData?.testNiveau && (
-          <p className={cn(
-            "text-xs mt-2 px-2 py-1 rounded-full inline-flex items-center gap-1",
-            hulpData.testNiveau === "LAAG" && "bg-[var(--accent-green-bg)] text-[var(--accent-green)]",
-            hulpData.testNiveau === "GEMIDDELD" && "bg-[var(--accent-amber-bg)] text-[var(--accent-amber)]",
-            hulpData.testNiveau === "HOOG" && "bg-[var(--accent-red-bg)] text-[var(--accent-red)]",
-          )}>
-            Hulp afgestemd op jouw situatie
-            ({hulpData.testNiveau === "LAAG" ? "lage" : hulpData.testNiveau === "GEMIDDELD" ? "gemiddelde" : "hoge"} belasting)
-          </p>
-        )}
       </div>
 
       {/* TWEE TABS NAAST ELKAAR */}
@@ -838,7 +832,7 @@ function HulpPageContent() {
                     onClick={handleBackToCategories}
                     className="text-primary hover:underline font-medium"
                   >
-                    Hulp zoeken
+                    Hulp
                   </button>
                   <span className="text-muted-foreground">&rsaquo;</span>
                   <button
@@ -857,29 +851,45 @@ function HulpPageContent() {
                   <h2 className="font-bold text-foreground leading-tight">{catInfo?.kort || selectedCategorie}</h2>
                 </div>
 
-                {/* Filter toggle - altijd zichtbaar, gelijke grootte */}
+                {/* Filter toggle - altijd zichtbaar, gelijke grootte, met aantallen */}
                 <div className="flex gap-1 bg-muted p-1 rounded-lg">
                   <button
                     onClick={() => setBereikFilter('lokaal')}
                     className={cn(
-                      "flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-all text-center",
+                      "flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-all flex items-center justify-center gap-2",
                       bereikFilter === 'lokaal'
                         ? "bg-card text-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
                     Lokaal
+                    <span className={cn(
+                      "w-5 h-5 rounded-full text-xs flex items-center justify-center",
+                      bereikFilter === 'lokaal'
+                        ? "bg-primary text-white"
+                        : "bg-muted-foreground/20 text-muted-foreground"
+                    )}>
+                      {lokaleHulp.length}
+                    </span>
                   </button>
                   <button
                     onClick={() => setBereikFilter('alle')}
                     className={cn(
-                      "flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-all text-center",
+                      "flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-all flex items-center justify-center gap-2",
                       bereikFilter === 'alle'
                         ? "bg-card text-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
                     Alles
+                    <span className={cn(
+                      "w-5 h-5 rounded-full text-xs flex items-center justify-center",
+                      bereikFilter === 'alle'
+                        ? "bg-primary text-white"
+                        : "bg-muted-foreground/20 text-muted-foreground"
+                    )}>
+                      {lokaleHulp.length + uniekeLandelijk.length}
+                    </span>
                   </button>
                 </div>
 
@@ -1047,7 +1057,7 @@ function HulpPageContent() {
                     onClick={handleBackToCategories}
                     className="text-primary hover:underline font-medium"
                   >
-                    Hulp zoeken
+                    Hulp
                   </button>
                   <span className="text-muted-foreground">&rsaquo;</span>
                   <button
@@ -1078,29 +1088,45 @@ function HulpPageContent() {
                   )}
                 </div>
 
-                {/* Filter toggle - altijd zichtbaar, gelijke grootte */}
+                {/* Filter toggle - altijd zichtbaar, gelijke grootte, met aantallen */}
                 <div className="flex gap-1 bg-muted p-1 rounded-lg">
                   <button
                     onClick={() => setBereikFilter('lokaal')}
                     className={cn(
-                      "flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-all text-center",
+                      "flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-all flex items-center justify-center gap-2",
                       bereikFilter === 'lokaal'
                         ? "bg-card text-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
                     Lokaal
+                    <span className={cn(
+                      "w-5 h-5 rounded-full text-xs flex items-center justify-center",
+                      bereikFilter === 'lokaal'
+                        ? "bg-primary text-white"
+                        : "bg-muted-foreground/20 text-muted-foreground"
+                    )}>
+                      {lokaleHulp.length}
+                    </span>
                   </button>
                   <button
                     onClick={() => setBereikFilter('alle')}
                     className={cn(
-                      "flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-all text-center",
+                      "flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-all flex items-center justify-center gap-2",
                       bereikFilter === 'alle'
                         ? "bg-card text-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
                     Alles
+                    <span className={cn(
+                      "w-5 h-5 rounded-full text-xs flex items-center justify-center",
+                      bereikFilter === 'alle'
+                        ? "bg-primary text-white"
+                        : "bg-muted-foreground/20 text-muted-foreground"
+                    )}>
+                      {lokaleHulp.length + landelijkeHulp.length}
+                    </span>
                   </button>
                 </div>
 
@@ -1154,31 +1180,22 @@ function HulpPageContent() {
       )}
 
       {/* MantelBuddy inschakelen - altijd zichtbaar onderaan */}
-      <div className="mt-8">
-        <div className="ker-card bg-gradient-to-r from-primary/5 to-primary/10">
-          <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-              <span className="text-2xl">🤝</span>
+      <div className="mt-6">
+        <button
+          onClick={() => setShowVragenTab(true)}
+          className="w-full ker-card bg-gradient-to-r from-primary/5 to-primary/10 hover:from-primary/10 hover:to-primary/15 transition-colors cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🤝</span>
+            <div className="flex-1 text-left">
+              <h3 className="font-semibold text-foreground text-sm">Hulp van een vrijwilliger?</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Een MantelBuddy helpt met kleine taken bij jou in de buurt</p>
             </div>
-            <div className="flex-1">
-              <h3 className="font-bold text-foreground text-lg">Wil je hulp van een vrijwilliger?</h3>
-              <p className="text-sm text-muted-foreground mt-2">
-                Een MantelBuddy is een vrijwilliger bij jou in de buurt.
-                Die kan je helpen met kleine taken. Of gewoon even met je praten.
-                Zo krijg jij meer tijd en ruimte voor jezelf.
-              </p>
-              <button
-                onClick={() => setShowVragenTab(true)}
-                className="inline-flex items-center gap-2 mt-4 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-medium hover:opacity-90 transition-opacity"
-              >
-                Vraag hulp aan een MantelBuddy
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
+            <svg className="w-4 h-4 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </div>
-        </div>
+        </button>
       </div>
     </div>
   )
