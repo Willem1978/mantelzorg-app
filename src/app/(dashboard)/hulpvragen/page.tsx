@@ -673,22 +673,16 @@ function HulpPageContent() {
       {/* Header - compact */}
       <div className="mb-4">
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          <span className="text-3xl">💜</span> Hulp zoeken
+          <span className="text-3xl">💜</span> Hulp vinden en regelen
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
           Kies hieronder voor wie je hulp zoekt. Tik op het <span className="text-primary font-semibold">hartje</span> om iets te bewaren.
+          {hulpData?.testNiveau && (
+            <span>
+              {' '}De hulp is afgestemd op jouw situatie ({hulpData.testNiveau === "LAAG" ? "lage" : hulpData.testNiveau === "GEMIDDELD" ? "gemiddelde" : "hoge"} belasting).
+            </span>
+          )}
         </p>
-        {hulpData?.testNiveau && (
-          <p className={cn(
-            "text-xs mt-2 px-2 py-1 rounded-full inline-flex items-center gap-1",
-            hulpData.testNiveau === "LAAG" && "bg-[var(--accent-green-bg)] text-[var(--accent-green)]",
-            hulpData.testNiveau === "GEMIDDELD" && "bg-[var(--accent-amber-bg)] text-[var(--accent-amber)]",
-            hulpData.testNiveau === "HOOG" && "bg-[var(--accent-red-bg)] text-[var(--accent-red)]",
-          )}>
-            Hulp afgestemd op jouw situatie
-            ({hulpData.testNiveau === "LAAG" ? "lage" : hulpData.testNiveau === "GEMIDDELD" ? "gemiddelde" : "hoge"} belasting)
-          </p>
-        )}
       </div>
 
       {/* TWEE TABS NAAST ELKAAR */}
@@ -838,7 +832,7 @@ function HulpPageContent() {
                     onClick={handleBackToCategories}
                     className="text-primary hover:underline font-medium"
                   >
-                    Hulp zoeken
+                    Hulp
                   </button>
                   <span className="text-muted-foreground">&rsaquo;</span>
                   <button
@@ -1047,7 +1041,7 @@ function HulpPageContent() {
                     onClick={handleBackToCategories}
                     className="text-primary hover:underline font-medium"
                   >
-                    Hulp zoeken
+                    Hulp
                   </button>
                   <span className="text-muted-foreground">&rsaquo;</span>
                   <button
