@@ -97,7 +97,7 @@ export default function UitnodigingPage() {
           <div className="text-4xl mb-4">!</div>
           <h1 className="text-xl font-bold text-gray-900 mb-2">Uitnodiging ongeldig</h1>
           <p className="text-gray-500">{error}</p>
-          <a href="/gemeente/login" className="inline-block mt-4 text-sm text-emerald-600 hover:text-emerald-700 font-medium">
+          <a href="/gemeente/login" className="inline-block mt-4 text-sm text-primary hover:text-primary/80 font-medium">
             Naar inlogpagina
           </a>
         </div>
@@ -114,7 +114,7 @@ export default function UitnodigingPage() {
           <p className="text-gray-500 mb-4">Je account voor gemeente {invite?.gemeenteNaam} is succesvol aangemaakt. Je kunt nu inloggen.</p>
           <button
             onClick={() => router.push("/gemeente/login")}
-            className="px-6 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700"
+            className="px-6 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90"
           >
             Naar inlogpagina
           </button>
@@ -127,7 +127,7 @@ export default function UitnodigingPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl p-8 max-w-md w-full shadow-sm border border-gray-200">
         <div className="text-center mb-6">
-          <div className="w-12 h-12 bg-emerald-600 rounded-lg flex items-center justify-center mx-auto mb-3">
+          <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mx-auto mb-3">
             <span className="text-white font-bold text-xl">M</span>
           </div>
           <h1 className="text-xl font-bold text-gray-900">Welkom bij MantelBuddy</h1>
@@ -140,7 +140,7 @@ export default function UitnodigingPage() {
           <p className="text-xs text-gray-500 mb-2">Je rollen:</p>
           <div className="flex flex-wrap gap-1">
             {invite?.gemeenteRollen.map((r) => (
-              <span key={r} className="text-xs font-medium px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">
+              <span key={r} className="text-xs font-medium px-2 py-1 rounded-full bg-primary-light text-primary">
                 {rolLabels[r] || r}
               </span>
             ))}
@@ -163,7 +163,7 @@ export default function UitnodigingPage() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary"
               placeholder="Volledige naam"
             />
           </div>
@@ -175,7 +175,7 @@ export default function UitnodigingPage() {
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary"
               placeholder="Minimaal 8 tekens"
             />
           </div>
@@ -187,7 +187,7 @@ export default function UitnodigingPage() {
               minLength={8}
               value={passwordBevestig}
               onChange={(e) => setPasswordBevestig(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary"
               placeholder="Herhaal wachtwoord"
             />
           </div>
@@ -197,7 +197,7 @@ export default function UitnodigingPage() {
           <button
             type="submit"
             disabled={submitLaden}
-            className="w-full px-4 py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
+            className="w-full px-4 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
           >
             {submitLaden ? "Account aanmaken..." : "Account aanmaken"}
           </button>

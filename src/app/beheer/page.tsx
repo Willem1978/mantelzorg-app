@@ -101,7 +101,7 @@ export default function BeheerDashboard() {
       waarde: stats.organisaties.actief,
       sub: `${stats.organisaties.totaal} totaal`,
       icon: "🏥",
-      kleur: "teal",
+      kleur: "primary",
       link: "/beheer/hulpbronnen",
     },
   ]
@@ -113,7 +113,7 @@ export default function BeheerDashboard() {
     red: "bg-red-50 border-red-200",
     gray: "bg-gray-50 border-gray-200",
     amber: "bg-amber-50 border-amber-200",
-    teal: "bg-teal-50 border-teal-200",
+    primary: "bg-primary-light border-primary/20",
   }
 
   return (

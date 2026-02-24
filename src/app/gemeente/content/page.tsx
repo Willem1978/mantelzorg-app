@@ -133,7 +133,7 @@ export default function GemeenteContent() {
               value={titel}
               onChange={(e) => setTitel(e.target.value)}
               placeholder="Titel van het artikel"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
               disabled={submitting}
             />
           </div>
@@ -148,7 +148,7 @@ export default function GemeenteContent() {
               onChange={(e) => setBeschrijving(e.target.value)}
               placeholder="Beschrijving of inhoud van het artikel"
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors resize-vertical"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors resize-vertical"
               disabled={submitting}
             />
           </div>
@@ -168,7 +168,7 @@ export default function GemeenteContent() {
           <button
             type="submit"
             disabled={submitting}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? (
               <>

@@ -256,7 +256,7 @@ export default function LerenPage() {
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-0.5">
             <h2 className="font-bold text-lg">Nieuws van de gemeente</h2>
-            <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-full font-medium">
+            <span className="text-xs bg-primary-light dark:bg-primary/20 text-primary dark:text-primary/80 px-2.5 py-0.5 rounded-full font-medium">
               📍 Lokaal
             </span>
           </div>

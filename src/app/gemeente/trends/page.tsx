@@ -174,7 +174,7 @@ export default function GemeenteTrends() {
                       <span className="text-xs text-gray-600 font-medium mb-1">{m.aantalTests}</span>
                     )}
                     <div
-                      className="w-full max-w-[40px] rounded-t bg-emerald-500 transition-all"
+                      className="w-full max-w-[40px] rounded-t bg-primary transition-all"
                       style={{ height: `${Math.max(heightPct, 2)}%` }}
                     />
                     <span className="text-xs text-gray-500 mt-2 truncate w-full text-center">
@@ -281,12 +281,12 @@ export default function GemeenteTrends() {
                     {data.effectiviteit.testNaarHulpvraag.mantelzorgersMetHulpvraag} van {data.effectiviteit.testNaarHulpvraag.totaalMetTest}
                   </p>
                 </div>
-                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5">
-                  <p className="text-sm text-emerald-700 font-medium">Score verbetering</p>
-                  <p className="text-3xl font-bold text-emerald-800 mt-1">
+                <div className="bg-primary-light border border-primary rounded-xl p-5">
+                  <p className="text-sm text-primary font-medium">Score verbetering</p>
+                  <p className="text-3xl font-bold text-primary mt-1">
                     {data.effectiviteit.scoreVerbetering}
                   </p>
-                  <p className="text-xs text-emerald-600 mt-1">
+                  <p className="text-xs text-primary/70 mt-1">
                     Mantelzorgers met lagere score bij hertest
                   </p>
                 </div>

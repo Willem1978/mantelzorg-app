@@ -27,7 +27,7 @@ export function Sidebar({ links }: SidebarProps) {
             className={cn(
               "flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors",
               pathname === link.href
-                ? "bg-teal-50 text-teal-700"
+                ? "bg-primary-light text-primary"
                 : "text-gray-600 hover:bg-gray-50"
             )}
           >

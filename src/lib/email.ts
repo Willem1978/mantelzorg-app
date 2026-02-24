@@ -73,7 +73,7 @@ function emailWrapper(content: string): string {
   <div style="max-width:480px; margin:0 auto; padding:32px 16px;">
     <div style="background:white; border-radius:16px; padding:32px; box-shadow:0 1px 3px rgba(0,0,0,.1);">
       <div style="text-align:center; margin-bottom:24px;">
-        <span style="font-size:24px; font-weight:700; color:#059669;">${APP_NAME}</span>
+        <span style="font-size:24px; font-weight:700; color:#2C7A7B;">${APP_NAME}</span>
       </div>
       ${content}
       <div style="margin-top:32px; padding-top:16px; border-top:1px solid #e5e7eb; text-align:center;">
@@ -100,13 +100,13 @@ export async function sendVerificationEmail(email: string, token: string): Promi
         Fijn dat je je hebt aangemeld. Klik op de knop om je e-mailadres te bevestigen.
       </p>
       <div style="text-align:center; margin:24px 0;">
-        <a href="${verifyUrl}" style="display:inline-block; padding:14px 32px; background:#059669; color:white; text-decoration:none; border-radius:12px; font-weight:600; font-size:16px;">
+        <a href="${verifyUrl}" style="display:inline-block; padding:14px 32px; background:#2C7A7B; color:white; text-decoration:none; border-radius:12px; font-weight:600; font-size:16px;">
           E-mailadres bevestigen
         </a>
       </div>
       <p style="font-size:13px; color:#9ca3af; margin:0;">
         Deze link is 24 uur geldig. Werkt de knop niet? Kopieer dan deze link:<br>
-        <a href="${verifyUrl}" style="color:#059669; word-break:break-all;">${verifyUrl}</a>
+        <a href="${verifyUrl}" style="color:#2C7A7B; word-break:break-all;">${verifyUrl}</a>
       </p>
     `),
     text: `Welkom bij ${APP_NAME}! Bevestig je e-mailadres via deze link: ${verifyUrl} (24 uur geldig)`,
@@ -125,14 +125,14 @@ export async function sendPasswordResetEmail(email: string, token: string): Prom
         Je hebt gevraagd om je wachtwoord te resetten. Klik op de knop om een nieuw wachtwoord in te stellen.
       </p>
       <div style="text-align:center; margin:24px 0;">
-        <a href="${resetUrl}" style="display:inline-block; padding:14px 32px; background:#059669; color:white; text-decoration:none; border-radius:12px; font-weight:600; font-size:16px;">
+        <a href="${resetUrl}" style="display:inline-block; padding:14px 32px; background:#2C7A7B; color:white; text-decoration:none; border-radius:12px; font-weight:600; font-size:16px;">
           Nieuw wachtwoord instellen
         </a>
       </div>
       <p style="font-size:13px; color:#9ca3af; margin:0;">
         Deze link is 1 uur geldig. Heb je dit niet aangevraagd? Dan kun je dit bericht negeren.<br>
         Werkt de knop niet? Kopieer dan deze link:<br>
-        <a href="${resetUrl}" style="color:#059669; word-break:break-all;">${resetUrl}</a>
+        <a href="${resetUrl}" style="color:#2C7A7B; word-break:break-all;">${resetUrl}</a>
       </p>
     `),
     text: `Wachtwoord resetten: ${resetUrl} (1 uur geldig). Heb je dit niet aangevraagd? Negeer dit bericht.`,
@@ -161,7 +161,7 @@ export async function sendWelcomeEmail(email: string, name?: string): Promise<bo
         <li>Lees tips van andere mantelzorgers</li>
       </ul>
       <div style="text-align:center; margin:24px 0;">
-        <a href="${dashboardUrl}" style="display:inline-block; padding:14px 32px; background:#059669; color:white; text-decoration:none; border-radius:12px; font-weight:600; font-size:16px;">
+        <a href="${dashboardUrl}" style="display:inline-block; padding:14px 32px; background:#2C7A7B; color:white; text-decoration:none; border-radius:12px; font-weight:600; font-size:16px;">
           Ga naar je dashboard
         </a>
       </div>

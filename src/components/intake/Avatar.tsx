@@ -55,7 +55,7 @@ export function Avatar({ name = "Mia", size = "md", className = "" }: AvatarProp
 
       {/* Name badge */}
       {name && (
-        <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 bg-teal-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
+        <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 bg-primary text-white text-xs font-medium px-2 py-0.5 rounded-full">
           {name}
         </div>
       )}

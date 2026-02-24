@@ -119,12 +119,12 @@ export default function GemeenteHulpvragen() {
   const urgentieEntries = Object.entries(data.perUrgentie || {}).filter(([, v]) => v > 0)
 
   const categorieCardColors = [
-    "bg-emerald-50 border-emerald-200 text-emerald-700",
+    "bg-primary-light border-primary text-primary",
     "bg-blue-50 border-blue-200 text-blue-700",
     "bg-purple-50 border-purple-200 text-purple-700",
     "bg-rose-50 border-rose-200 text-rose-700",
     "bg-amber-50 border-amber-200 text-amber-700",
-    "bg-teal-50 border-teal-200 text-teal-700",
+    "bg-primary-light border-primary text-primary",
   ]
 
   return (
@@ -139,9 +139,9 @@ export default function GemeenteHulpvragen() {
 
       {/* KPI cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5">
-          <p className="text-sm text-emerald-700">Totaal hulpvragen</p>
-          <p className="text-3xl font-bold text-emerald-800 mt-1">{data.totaalHulpvragen}</p>
+        <div className="bg-primary-light border border-primary rounded-xl p-5">
+          <p className="text-sm text-primary">Totaal hulpvragen</p>
+          <p className="text-3xl font-bold text-primary mt-1">{data.totaalHulpvragen}</p>
         </div>
 
         {data.onbeantwoord !== undefined && (
@@ -260,7 +260,7 @@ export default function GemeenteHulpvragen() {
                   </div>
                   <div className="w-full bg-gray-100 rounded-full h-2.5">
                     <div
-                      className="h-2.5 rounded-full bg-emerald-500"
+                      className="h-2.5 rounded-full bg-primary"
                       style={{ width: `${Math.max(pct, 2)}%` }}
                     />
                   </div>

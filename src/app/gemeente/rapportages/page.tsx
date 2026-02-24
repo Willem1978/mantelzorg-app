@@ -110,16 +110,16 @@ export default function GemeenteRapportages() {
       </div>
 
       {/* Info banner */}
-      <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5">
+      <div className="bg-primary-light border border-primary rounded-xl p-5">
         <div className="flex gap-3">
           <div className="flex-shrink-0">
-            <svg className="w-5 h-5 text-emerald-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5 text-primary mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-emerald-800">Over rapportages</h3>
-            <p className="text-sm text-emerald-700 mt-1">
+            <h3 className="text-sm font-semibold text-primary">Over rapportages</h3>
+            <p className="text-sm text-primary mt-1">
               Alle rapportages bevatten uitsluitend geanonimiseerde en geaggregeerde gegevens.
               Data wordt pas beschikbaar gesteld wanneer het k-anonimiteitsminimum is bereikt.
               Rapportages zijn beschikbaar in CSV-formaat (voor eigen analyses in Excel) en
@@ -190,7 +190,7 @@ export default function GemeenteRapportages() {
               <button
                 onClick={() => handleDownload(report)}
                 disabled={downloading === report.id}
-                className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {downloading === report.id ? (
                   <>

@@ -14,12 +14,12 @@ export function CheckInReminder({ daysUntilCheckIn, isOverdue = false }: CheckIn
   }
 
   return (
-    <div className={`rounded-xl p-6 ${isOverdue ? 'bg-amber-50 border-2 border-amber-200' : 'bg-teal-50 border border-teal-100'}`}>
+    <div className={`rounded-xl p-6 ${isOverdue ? 'bg-amber-50 border-2 border-amber-200' : 'bg-primary-light border border-primary/20'}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isOverdue ? 'bg-amber-100' : 'bg-teal-100'}`}>
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isOverdue ? 'bg-amber-100' : 'bg-primary/10'}`}>
             <svg
-              className={`w-6 h-6 ${isOverdue ? 'text-amber-600' : 'text-teal-600'}`}
+              className={`w-6 h-6 ${isOverdue ? 'text-amber-600' : 'text-primary'}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -33,10 +33,10 @@ export function CheckInReminder({ daysUntilCheckIn, isOverdue = false }: CheckIn
             </svg>
           </div>
           <div>
-            <h3 className={`font-semibold ${isOverdue ? 'text-amber-900' : 'text-teal-900'}`}>
+            <h3 className={`font-semibold ${isOverdue ? 'text-amber-900' : 'text-foreground'}`}>
               {isOverdue ? 'Maandelijkse check-in is verlopen' : 'Tijd voor je maandelijkse check-in'}
             </h3>
-            <p className={`text-sm ${isOverdue ? 'text-amber-700' : 'text-teal-700'}`}>
+            <p className={`text-sm ${isOverdue ? 'text-amber-700' : 'text-primary'}`}>
               {isOverdue
                 ? 'Neem even de tijd om te reflecteren op de afgelopen maand'
                 : `Nog ${daysUntilCheckIn} dagen tot je volgende check-in`

@@ -124,19 +124,19 @@ export function LocationSearch({
 
       {/* Selected value display */}
       {selectedDisplay && !isOpen ? (
-        <div className="flex items-center justify-between w-full px-4 py-3 bg-teal-50 border-2 border-teal-200 rounded-xl">
+        <div className="flex items-center justify-between w-full px-4 py-3 bg-primary-light border-2 border-primary/30 rounded-xl">
           <div className="flex items-center space-x-2">
-            <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            <span className="text-teal-900 font-medium">{selectedDisplay}</span>
+            <span className="text-foreground font-medium">{selectedDisplay}</span>
           </div>
           <button
             type="button"
             onClick={handleClear}
             disabled={disabled}
-            className="text-teal-600 hover:text-teal-800 disabled:opacity-50"
+            className="text-primary hover:text-primary/80 disabled:opacity-50"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -158,7 +158,7 @@ export function LocationSearch({
             disabled={disabled}
             className={cn(
               "w-full px-4 py-3 border-2 rounded-xl transition-colors",
-              "focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent",
+              "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent",
               "placeholder:text-gray-400",
               error ? "border-red-500" : "border-gray-200",
               disabled && "bg-gray-100 cursor-not-allowed"
@@ -166,7 +166,7 @@ export function LocationSearch({
           />
           {isLoading && (
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-              <svg className="animate-spin h-5 w-5 text-teal-500" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
@@ -183,7 +183,7 @@ export function LocationSearch({
               key={suggestion.id}
               type="button"
               onClick={() => handleSelect(suggestion)}
-              className="w-full px-4 py-3 text-left hover:bg-teal-50 transition-colors first:rounded-t-xl last:rounded-b-xl"
+              className="w-full px-4 py-3 text-left hover:bg-primary-light transition-colors first:rounded-t-xl last:rounded-b-xl"
             >
               <div className="flex items-center space-x-2">
                 <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1251,7 +1251,7 @@ function HulpbronCard({ hulp, favorieten, categorie }: {
               🌍 Landelijk
             </span>
           ) : hulp.gemeente && (
-            <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full font-medium">
+            <span className="text-xs bg-primary-light dark:bg-primary/20 text-primary dark:text-primary/80 px-2 py-0.5 rounded-full font-medium">
               📍 {hulp.dienst ? hulp.naam : hulp.gemeente}
             </span>
           )}

@@ -145,7 +145,7 @@ export default function GemeenteEvenementen() {
                 value={titel}
                 onChange={(e) => setTitel(e.target.value)}
                 placeholder="Naam van het evenement"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
                 disabled={submitting}
               />
             </div>
@@ -159,7 +159,7 @@ export default function GemeenteEvenementen() {
                 type="date"
                 value={datum}
                 onChange={(e) => setDatum(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
                 disabled={submitting}
               />
             </div>
@@ -175,7 +175,7 @@ export default function GemeenteEvenementen() {
               onChange={(e) => setBeschrijving(e.target.value)}
               placeholder="Beschrijving van het evenement"
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-colors resize-vertical"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors resize-vertical"
               disabled={submitting}
             />
           </div>
@@ -195,7 +195,7 @@ export default function GemeenteEvenementen() {
           <button
             type="submit"
             disabled={submitting}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? (
               <>
@@ -226,8 +226,8 @@ export default function GemeenteEvenementen() {
           {/* Aankomende evenementen */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-8 h-8 bg-primary-light rounded-lg flex items-center justify-center">
+                <svg className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
@@ -253,12 +253,12 @@ export default function GemeenteEvenementen() {
                     className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow"
                   >
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center">
-                        <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <div className="w-10 h-10 bg-primary-light rounded-lg flex items-center justify-center">
+                        <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
                       </div>
-                      <span className="text-sm font-medium text-emerald-600">
+                      <span className="text-sm font-medium text-primary">
                         {formatDate(evenement.publicatieDatum)}
                       </span>
                     </div>

@@ -46,12 +46,12 @@ export function ResourcesCard({ resources, title = "Hulp & Informatie" }: Resour
             <a
               key={resource.id}
               href={resource.url ? ensureAbsoluteUrl(resource.url) : `/hulp/${resource.id}`}
-              className="block p-3 bg-gray-50 rounded-lg hover:bg-teal-50 transition-colors group"
+              className="block p-3 bg-gray-50 rounded-lg hover:bg-primary-light transition-colors group"
             >
               <div className="flex items-start space-x-3">
                 <span className="text-xl">{typeIcons[resource.type] || "📌"}</span>
                 <div className="flex-1">
-                  <p className="font-medium text-gray-900 group-hover:text-teal-700">
+                  <p className="font-medium text-gray-900 group-hover:text-primary">
                     {resource.title}
                   </p>
                   <p className="text-sm text-gray-500 line-clamp-2">

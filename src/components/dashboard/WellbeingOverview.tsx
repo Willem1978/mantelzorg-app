@@ -134,7 +134,7 @@ export function WellbeingOverview({ categories, lastUpdated }: WellbeingOverview
       </div>
 
       {/* Action button */}
-      <button className="w-full mt-4 py-3 bg-teal-50 hover:bg-teal-100 text-teal-700 font-medium rounded-xl transition-colors">
+      <button className="w-full mt-4 py-3 bg-primary-light hover:bg-primary/10 text-primary font-medium rounded-xl transition-colors">
         Bekijk details
       </button>
     </div>

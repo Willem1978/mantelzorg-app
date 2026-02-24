@@ -118,13 +118,14 @@ export async function GET(request: Request) {
 <meta charset="UTF-8">
 <title>MantelBuddy Rapportage - ${gemeenteNaam}</title>
 <style>
-  body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 20px; color: #1a1a1a; }
-  h1 { color: #059669; border-bottom: 3px solid #059669; padding-bottom: 12px; }
-  h2 { color: #047857; margin-top: 32px; }
-  .meta { color: #6b7280; font-size: 14px; margin-bottom: 24px; }
+  :root { --primary: #2C7A7B; }
+  body { font-family: 'Montserrat', 'Open Sans', 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 20px; color: #2D3748; }
+  h1 { color: var(--primary); border-bottom: 3px solid var(--primary); padding-bottom: 12px; }
+  h2 { color: var(--primary); margin-top: 32px; }
+  .meta { color: #4A5568; font-size: 14px; margin-bottom: 24px; }
   .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 24px 0; }
-  .kpi { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 20px; text-align: center; }
-  .kpi .value { font-size: 32px; font-weight: bold; color: #059669; }
+  .kpi { background: color-mix(in srgb, var(--primary) 10%, white); border: 1px solid color-mix(in srgb, var(--primary) 30%, white); border-radius: 12px; padding: 20px; text-align: center; }
+  .kpi .value { font-size: 32px; font-weight: bold; color: var(--primary); }
   .kpi .label { font-size: 13px; color: #6b7280; margin-top: 4px; }
   table { width: 100%; border-collapse: collapse; margin: 16px 0; }
   th { background: #f9fafb; text-align: left; padding: 10px 12px; border-bottom: 2px solid #e5e7eb; font-size: 13px; color: #6b7280; text-transform: uppercase; }

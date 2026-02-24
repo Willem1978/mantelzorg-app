@@ -1,11 +1,11 @@
 {
-  "name": "MantelBuddy - Samen zorgen, samen sterk",
+  "name": "MantelBuddy - Samen lokaal sterk",
   "short_name": "MantelBuddy",
   "description": "MantelBuddy verbindt mantelzorgers met vrijwilligers uit de buurt",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#FAF5F3",
-  "theme_color": "#8B2B6B",
+  "background_color": "#F7FAFC",
+  "theme_color": "#2C7A7B",
   "orientation": "portrait-primary",
   "lang": "nl",
   "icons": [

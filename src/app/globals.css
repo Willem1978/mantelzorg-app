@@ -1,35 +1,39 @@
 @import "tailwindcss";
 
 :root {
-  /* KER Design System - Verbeterd voor ouderen */
-  /* Hoog contrast, heldere kleuren, goed leesbaar */
+  /* MantelBuddy Huisstijl v1.0 */
+  /* Oceaanblauw, Koraal, Off-White, Diepgrijs */
 
   /* Basis kleuren */
-  --background: #FAF5F3;
-  --foreground: #1A1A1A;
+  --background: #F7FAFC;
+  --foreground: #2D3748;
   --card: #FFFFFF;
-  --card-foreground: #1A1A1A;
+  --card-foreground: #2D3748;
 
-  /* Primary - KER Magenta/Paars */
-  --primary: #8B2B6B;
+  /* Primary - Oceaanblauw */
+  --primary: #2C7A7B;
   --primary-foreground: #FFFFFF;
-  --primary-light: #F3E8F0;
+  --primary-light: #E6FFFA;
+
+  /* Accent - Zacht Koraal (CTA knoppen, meldingen) */
+  --accent: #ED8936;
+  --accent-foreground: #2D3748;
 
   /* Secondary */
-  --secondary: #F5EBE8;
-  --secondary-foreground: #1A1A1A;
+  --secondary: #EDF2F7;
+  --secondary-foreground: #2D3748;
 
-  /* Muted - verbeterd contrast (was #5A5A5A = 2.8:1, nu #4A4A4A = 4.6:1) */
-  --muted: #F0E8E5;
-  --muted-foreground: #4A4A4A;
+  /* Muted */
+  --muted: #E2E8F0;
+  --muted-foreground: #4A5568;
 
   /* Border */
-  --border: #E0D5D0;
-  --border-strong: #C0B0A8;
+  --border: #CBD5E0;
+  --border-strong: #A0AEC0;
 
   /* Input */
   --input: #FFFFFF;
-  --ring: #8B2B6B;
+  --ring: #2C7A7B;
 
   /* Emoticon kleuren - Helder en duidelijk */
   --emoticon-green: #4CAF50;
@@ -46,22 +50,24 @@
 }
 
 .dark {
-  /* Dark mode - ook hoog contrast */
-  --background: #1A1518;
-  --foreground: #F5F0EE;
-  --card: #2A2025;
-  --card-foreground: #F5F0EE;
-  --primary: #D4A0C4;
-  --primary-foreground: #1A1518;
-  --primary-light: #3A2535;
-  --secondary: #2A2025;
-  --secondary-foreground: #F5F0EE;
-  --muted: #352830;
-  --muted-foreground: #B0A5A8;
-  --border: #453840;
-  --border-strong: #554850;
-  --input: #2A2025;
-  --ring: #D4A0C4;
+  /* Dark mode - MantelBuddy palette */
+  --background: #1A202C;
+  --foreground: #F7FAFC;
+  --card: #2D3748;
+  --card-foreground: #F7FAFC;
+  --primary: #4FD1C5;
+  --primary-foreground: #1A202C;
+  --primary-light: #234E52;
+  --accent: #ED8936;
+  --accent-foreground: #F7FAFC;
+  --secondary: #2D3748;
+  --secondary-foreground: #F7FAFC;
+  --muted: #4A5568;
+  --muted-foreground: #A0AEC0;
+  --border: #4A5568;
+  --border-strong: #718096;
+  --input: #2D3748;
+  --ring: #4FD1C5;
 
   --emoticon-green: #66BB6A;
   --emoticon-yellow: #FFCA28;
@@ -83,6 +89,8 @@
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary-light: var(--primary-light);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -100,29 +108,43 @@
   --color-accent-amber-bg: var(--accent-amber-bg);
   --color-accent-red: var(--accent-red);
   --color-accent-red-bg: var(--accent-red-bg);
-  --font-sans: var(--font-atkinson);
+  --font-sans: var(--font-opensans), 'Open Sans', system-ui, sans-serif;
+  --font-heading: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
   --font-mono: monospace;
 }
 
-/* Base styles - C1.1: Verhoogde leesbaarheid voor 60+ */
+/* Base styles - MantelBuddy huisstijl */
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: 'Atkinson Hyperlegible', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans), 'Open Sans', system-ui, -apple-system, sans-serif;
   font-size: 18px;
-  line-height: 1.7;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   letter-spacing: 0.01em;
 }
 
-/* C1.1: Tekst vergrotingsmodus */
+/* Koppen: Montserrat */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading), 'Montserrat', system-ui, sans-serif;
+}
+
+h1, h2 {
+  font-weight: 700;
+}
+
+h3, h4, h5, h6 {
+  font-weight: 600;
+}
+
+/* Tekst vergrotingsmodus */
 html.text-xl-mode body {
   font-size: 20px;
   line-height: 1.8;
 }
 
-/* C1.3: Hoog contrast modus */
+/* Hoog contrast modus */
 html.high-contrast {
   --muted-foreground: #2A2A2A;
   --border: #888888;
@@ -216,10 +238,11 @@ html.high-contrast.dark {
   border-radius: 0.875rem;
   font-weight: 600;
   font-size: 1rem;
+  font-family: var(--font-heading), 'Montserrat', system-ui, sans-serif;
   transition: all 0.2s ease;
   cursor: pointer;
   border: none;
-  min-height: 52px; /* Iets groter voor betere touch targets */
+  min-height: 52px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
@@ -231,18 +254,31 @@ html.high-contrast.dark {
 .ker-btn-primary {
   background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary), black 15%) 100%);
   color: var(--primary-foreground);
-  box-shadow: 0 4px 12px rgba(139, 43, 107, 0.25);
+  box-shadow: 0 4px 12px rgba(44, 122, 123, 0.25);
 }
 
 .ker-btn-primary:hover:not(:disabled) {
   background: linear-gradient(135deg, color-mix(in srgb, var(--primary), white 10%) 0%, var(--primary) 100%);
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(139, 43, 107, 0.3);
+  box-shadow: 0 6px 16px rgba(44, 122, 123, 0.3);
 }
 
 .ker-btn-primary:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(139, 43, 107, 0.2);
+  box-shadow: 0 2px 8px rgba(44, 122, 123, 0.2);
+}
+
+/* CTA / Accent button - Zacht Koraal */
+.ker-btn-accent {
+  background: var(--accent);
+  color: var(--accent-foreground);
+  box-shadow: 0 4px 12px rgba(237, 137, 54, 0.25);
+}
+
+.ker-btn-accent:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent), black 10%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(237, 137, 54, 0.3);
 }
 
 .ker-btn-secondary {
@@ -294,7 +330,7 @@ html.high-contrast.dark {
 .ker-input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(139, 43, 107, 0.1);
+  box-shadow: 0 0 0 4px rgba(44, 122, 123, 0.1);
   background: white;
 }
 
@@ -606,7 +642,7 @@ html.high-contrast.dark {
    UTILITY CLASSES
    ============================================ */
 
-/* Touch-friendly spacing - verhoogd voor ouderen (was 44px) */
+/* Touch-friendly spacing */
 .touch-target {
   min-height: 48px;
   min-width: 48px;
@@ -794,7 +830,7 @@ html {
 }
 
 /* ============================================
-   C2.1: PAGE INTRO - Warme welkomstblokken
+   PAGE INTRO - Warme welkomstblokken
    ============================================ */
 
 .ker-page-intro {
@@ -813,7 +849,7 @@ html {
 }
 
 /* ============================================
-   C1.4: BREADCRUMBS
+   BREADCRUMBS
    ============================================ */
 
 .ker-breadcrumbs {
@@ -846,7 +882,7 @@ html {
 }
 
 /* ============================================
-   C2.3: HELP BUTTON - Floating hulp knop
+   HELP BUTTON - Floating hulp knop
    ============================================ */
 
 .ker-help-float {
@@ -875,18 +911,18 @@ html {
   font-size: 0.9375rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(139, 43, 107, 0.3);
+  box-shadow: 0 4px 16px rgba(44, 122, 123, 0.3);
   transition: all 0.2s ease;
   min-height: 48px;
 }
 
 .ker-help-float-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(139, 43, 107, 0.4);
+  box-shadow: 0 6px 20px rgba(44, 122, 123, 0.4);
 }
 
 /* ============================================
-   C2.3: HELP OVERLAY
+   HELP OVERLAY
    ============================================ */
 
 .ker-help-overlay {
@@ -923,7 +959,7 @@ html {
 }
 
 /* ============================================
-   C1.2: CONFIRM DIALOG
+   CONFIRM DIALOG
    ============================================ */
 
 .ker-confirm-overlay {
@@ -948,7 +984,7 @@ html {
 }
 
 /* ============================================
-   C2.2: FORM TOOLTIPS
+   FORM TOOLTIPS
    ============================================ */
 
 .ker-tooltip-wrapper {
@@ -986,7 +1022,7 @@ html {
 }
 
 /* ============================================
-   C2.2: STEP INDICATOR
+   STEP INDICATOR
    ============================================ */
 
 .ker-step-indicator {
@@ -1021,7 +1057,7 @@ html {
 }
 
 /* ============================================
-   C2.2: BETERE FOUTMELDINGEN
+   BETERE FOUTMELDINGEN
    ============================================ */
 
 .ker-error-message {

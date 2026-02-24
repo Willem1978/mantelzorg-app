@@ -125,11 +125,11 @@ export default function GemeenteDemografie() {
   const scoreEntries = Object.entries(data.scoreVerdeling || {})
   const scoreTotaal = scoreEntries.reduce((sum, [, v]) => sum + v, 0)
 
-  const zorgurenBarColors = ["bg-emerald-400", "bg-emerald-500", "bg-amber-500", "bg-red-500"]
+  const zorgurenBarColors = ["bg-primary/70", "bg-primary", "bg-amber-500", "bg-red-500"]
   const scoreBarColors = ["bg-green-500", "bg-amber-500", "bg-red-500"]
   const leeftijdBarColors = ["bg-sky-400", "bg-sky-500", "bg-blue-500", "bg-indigo-500", "bg-purple-500", "bg-gray-400"]
   const relatieBarColors = ["bg-rose-400", "bg-pink-500", "bg-fuchsia-500", "bg-violet-500", "bg-purple-400", "bg-gray-400"]
-  const zorgduurBarColors = ["bg-teal-400", "bg-teal-500", "bg-cyan-500", "bg-blue-500", "bg-gray-400"]
+  const zorgduurBarColors = ["bg-primary/70", "bg-primary", "bg-cyan-500", "bg-blue-500", "bg-gray-400"]
 
   const leeftijdEntries = Object.entries(data.leeftijdVerdeling || {}).filter(([, v]) => v > 0)
   const leeftijdTotaal = leeftijdEntries.reduce((sum, [, v]) => sum + v, 0)
@@ -273,7 +273,7 @@ export default function GemeenteDemografie() {
                 label={label}
                 value={aantal}
                 percentage={wijkTotaal > 0 ? Math.round((aantal / wijkTotaal) * 100) : 0}
-                color={i < 5 ? "bg-emerald-500" : i < 10 ? "bg-emerald-400" : "bg-emerald-300"}
+                color={i < 5 ? "bg-primary" : i < 10 ? "bg-primary/70" : "bg-primary/50"}
               />
             ))}
           </div>

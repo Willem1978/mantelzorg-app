@@ -35,7 +35,7 @@ export function IntakeProgress({
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div
-            className="bg-teal-500 h-2 rounded-full transition-all duration-300"
+            className="bg-primary h-2 rounded-full transition-all duration-300"
             style={{ width: `${overallProgress}%` }}
           />
         </div>
@@ -55,7 +55,7 @@ export function IntakeProgress({
               onClick={() => onCategoryClick?.(category.id)}
               className={cn(
                 "w-full text-left p-3 rounded-lg transition-all",
-                isCurrent && "bg-teal-50 border-2 border-teal-200",
+                isCurrent && "bg-primary-light border-2 border-primary/30",
                 !isCurrent && "hover:bg-gray-50 border-2 border-transparent"
               )}
             >
@@ -64,8 +64,8 @@ export function IntakeProgress({
                   <span
                     className={cn(
                       "w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium",
-                      isComplete && "bg-teal-500 text-white",
-                      isCurrent && !isComplete && "bg-teal-100 text-teal-700",
+                      isComplete && "bg-primary text-white",
+                      isCurrent && !isComplete && "bg-primary/10 text-primary",
                       !isCurrent && !isComplete && "bg-gray-200 text-gray-600"
                     )}
                   >
@@ -79,7 +79,7 @@ export function IntakeProgress({
                   </span>
                   <span className={cn(
                     "text-sm font-medium",
-                    isCurrent ? "text-teal-700" : "text-gray-700"
+                    isCurrent ? "text-primary" : "text-gray-700"
                   )}>
                     {category.name}
                   </span>
@@ -92,7 +92,7 @@ export function IntakeProgress({
                 <div
                   className={cn(
                     "h-1 rounded-full transition-all duration-300",
-                    isComplete ? "bg-teal-500" : "bg-teal-300"
+                    isComplete ? "bg-primary" : "bg-primary/40"
                   )}
                   style={{ width: `${progress}%` }}
                 />

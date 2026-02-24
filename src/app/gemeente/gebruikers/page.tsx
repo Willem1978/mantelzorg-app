@@ -114,7 +114,7 @@ export default function GemeenteGebruikersPage() {
         </div>
         <button
           onClick={() => { setToonUitnodigen(true); setSucces(""); setUitnodigingsUrl(""); setFout("") }}
-          className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700"
+          className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90"
         >
           + Medewerker uitnodigen
         </button>
@@ -128,9 +128,9 @@ export default function GemeenteGebruikersPage() {
 
             {succes && uitnodigingsUrl ? (
               <div className="space-y-4">
-                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-                  <p className="text-sm text-emerald-700 font-medium">{succes}</p>
-                  <p className="text-xs text-emerald-600 mt-1">De uitnodiging is 7 dagen geldig.</p>
+                <div className="bg-primary-light border border-primary rounded-lg p-4">
+                  <p className="text-sm text-primary font-medium">{succes}</p>
+                  <p className="text-xs text-primary mt-1">De uitnodiging is 7 dagen geldig.</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Uitnodigingslink</label>
@@ -168,7 +168,7 @@ export default function GemeenteGebruikersPage() {
                     required
                     value={formulier.email}
                     onChange={(e) => setFormulier({ ...formulier, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary"
                     placeholder="medewerker@gemeente.nl"
                   />
                 </div>
@@ -178,7 +178,7 @@ export default function GemeenteGebruikersPage() {
                     type="text"
                     value={formulier.name}
                     onChange={(e) => setFormulier({ ...formulier, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary"
                     placeholder="Volledige naam"
                   />
                 </div>
@@ -190,7 +190,7 @@ export default function GemeenteGebruikersPage() {
                         key={key}
                         className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                           formulier.gemeenteRollen.includes(key)
-                            ? "border-emerald-300 bg-emerald-50"
+                            ? "border-primary bg-primary-light"
                             : "border-gray-200 hover:bg-gray-50"
                         }`}
                       >
@@ -198,7 +198,7 @@ export default function GemeenteGebruikersPage() {
                           type="checkbox"
                           checked={formulier.gemeenteRollen.includes(key)}
                           onChange={() => toggleRol(key)}
-                          className="mt-0.5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                          className="mt-0.5 rounded border-gray-300 text-primary focus:ring-primary"
                         />
                         <div>
                           <span className="text-sm font-medium text-gray-900">{label}</span>
@@ -215,7 +215,7 @@ export default function GemeenteGebruikersPage() {
                   <button
                     type="submit"
                     disabled={uitnodigenLaden || formulier.gemeenteRollen.length === 0}
-                    className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
+                    className="flex-1 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
                   >
                     {uitnodigenLaden ? "Uitnodigen..." : "Uitnodigen per e-mail"}
                   </button>
@@ -267,7 +267,7 @@ export default function GemeenteGebruikersPage() {
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
                         {g.gemeenteRollen.map((r) => (
-                          <span key={r} className="text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                          <span key={r} className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary-light text-primary">
                             {rolLabels[r] || r}
                           </span>
                         ))}
@@ -278,7 +278,7 @@ export default function GemeenteGebruikersPage() {
                     </td>
                     <td className="px-4 py-3">
                       {g.isActive ? (
-                        <span className="text-xs text-emerald-600 font-medium">Actief</span>
+                        <span className="text-xs text-primary font-medium">Actief</span>
                       ) : (
                         <span className="text-xs text-gray-400">Inactief</span>
                       )}

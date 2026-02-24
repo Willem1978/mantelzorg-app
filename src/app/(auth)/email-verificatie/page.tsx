@@ -188,7 +188,7 @@ function EmailVerificationContent() {
 
 export default function EmailVerificationPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-green-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-primary-light to-green-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center px-4 py-8">
       <Suspense fallback={
         <div className="bg-card rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xl max-w-md w-full text-center">
           <p className="text-muted-foreground">Even laden...</p>

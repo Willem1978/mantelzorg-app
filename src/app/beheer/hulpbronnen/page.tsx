@@ -950,8 +950,8 @@ export default function BeheerHulpbronnenPage() {
               }}
               className={`flex-1 py-3 px-4 rounded-lg text-center font-medium transition border-2 ${
                 filterDoelgroep === "ZORGVRAGER"
-                  ? "border-emerald-500 bg-emerald-500 text-white"
-                  : "border-[var(--border)] bg-[var(--background)] text-foreground hover:border-emerald-400 hover:bg-emerald-50"
+                  ? "border-primary bg-primary text-white"
+                  : "border-[var(--border)] bg-[var(--background)] text-foreground hover:border-primary/60 hover:bg-primary-light"
               }`}
             >
               <div className="text-lg mb-1">🤲</div>
@@ -1875,7 +1875,7 @@ export default function BeheerHulpbronnenPage() {
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-medium">Mantelzorger</span>
                   )}
                   {item.doelgroep === "ZORGVRAGER" && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 font-medium">Zorgvrager</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary-light text-primary font-medium">Zorgvrager</span>
                   )}
                   {item.dekkingNiveau === "LANDELIJK" && (
                     <span className="ker-badge ker-badge-amber text-[10px]">Landelijk</span>
@@ -2479,8 +2479,8 @@ export default function BeheerHulpbronnenPage() {
                     onClick={() => setEditItem({ ...editItem, doelgroep: "ZORGVRAGER", onderdeelTest: "" })}
                     className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition border-2 ${
                       editItem.doelgroep === "ZORGVRAGER"
-                        ? "border-emerald-500 bg-emerald-500 text-white"
-                        : "border-[var(--border)] text-foreground hover:border-emerald-400"
+                        ? "border-primary bg-primary text-white"
+                        : "border-[var(--border)] text-foreground hover:border-primary/60"
                     }`}
                   >
                     🤲 Voor de zorgvrager
