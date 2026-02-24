@@ -120,16 +120,16 @@ export default function RapportPage() {
         if (response.status === 404) {
           setError("Je hebt nog geen test gedaan.")
         } else if (response.status === 401) {
-          setError("Log in om je rapport te bekijken.")
+          setError("Log eerst in om je resultaten te bekijken.")
         } else {
-          setError("Er ging iets mis.")
+          setError("Er ging iets mis. Probeer het later opnieuw.")
         }
         return
       }
       const data = await response.json()
       setResult(data)
     } catch {
-      setError("Kan rapport niet laden.")
+      setError("Er ging iets mis bij het laden. Probeer het later opnieuw.")
     } finally {
       setLoading(false)
     }
@@ -152,7 +152,7 @@ export default function RapportPage() {
         <div className="flex items-start gap-4 mb-6">
           <GerAvatar size="md" />
           <div className="pt-1">
-            <h1 className="text-xl font-bold text-foreground">Geen rapport</h1>
+            <h1 className="text-xl font-bold text-foreground">Geen resultaten</h1>
             <p className="text-muted-foreground mt-1">{error}</p>
           </div>
         </div>
@@ -162,7 +162,7 @@ export default function RapportPage() {
             <span className="text-3xl">📋</span>
           </div>
           <p className="text-foreground mb-6">
-            Doe eerst de Balanstest om je rapport te zien.
+            Doe eerst de balanstest. Dan zie je hier je resultaten.
           </p>
           <Link href="/belastbaarheidstest" className="ker-btn ker-btn-primary inline-block">
             Start de Balanstest
@@ -193,7 +193,7 @@ export default function RapportPage() {
             Hoi {result.voornaam}
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Rapport van {new Date(result.completedAt).toLocaleDateString("nl-NL", { day: "numeric", month: "long" })}
+            Je resultaten van {new Date(result.completedAt).toLocaleDateString("nl-NL", { day: "numeric", month: "long" })}
           </p>
         </div>
       </div>

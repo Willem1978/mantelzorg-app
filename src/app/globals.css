@@ -39,9 +39,9 @@
   /* Accent kleuren voor scores */
   --accent-green: #2E7D32;
   --accent-green-bg: #E8F5E9;
-  --accent-amber: #F57C00;
+  --accent-amber: #C86800;
   --accent-amber-bg: #FFF3E0;
-  --accent-red: #C62828;
+  --accent-red: #B71C1C;
   --accent-red-bg: #FFEBEE;
 }
 
@@ -263,7 +263,7 @@ html.high-contrast.dark {
 .ker-btn-sm {
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
-  min-height: 40px;
+  min-height: 44px;
   border-radius: 0.625rem;
 }
 
@@ -321,10 +321,10 @@ html.high-contrast.dark {
 
 /* KER Radio/Checkbox style */
 .ker-radio {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 2rem;
+  height: 2rem;
   border-radius: 9999px;
-  border: 2px solid var(--border-strong);
+  border: 3px solid var(--border-strong);
   background: var(--card);
   transition: all 0.15s ease;
   display: flex;
@@ -568,7 +568,7 @@ html.high-contrast.dark {
 }
 
 .mobile-nav-item span {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 500;
   margin-top: 0.25rem;
 }

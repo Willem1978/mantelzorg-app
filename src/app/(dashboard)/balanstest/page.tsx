@@ -104,8 +104,8 @@ export default function BalanstestOverzichtPage() {
           <h1 className="text-2xl font-bold text-foreground">Balanstest</h1>
           <p className="text-muted-foreground mt-1">
             {hasTests
-              ? "Hier zie je al je resultaten en hoe het verloop is."
-              : "Doe de balanstest om inzicht te krijgen in je belasting."}
+              ? "Hier zie je je scores van elke keer dat je de test hebt gedaan."
+              : "Ontdek hoe het met je gaat en waar je hulp bij kunt krijgen."}
           </p>
         </div>
       </div>
@@ -160,11 +160,11 @@ export default function BalanstestOverzichtPage() {
         </div>
       )}
 
-      {/* Score verloop grafiek */}
+      {/* Je scores over tijd grafiek */}
       {tests.length > 1 && (
         <section className="mb-6">
           <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-            <span className="text-2xl">📈</span> Score verloop
+            <span className="text-2xl">📈</span> Je scores over tijd
           </h2>
           <div className="ker-card">
             <div className="flex items-end gap-3 h-48">
@@ -237,7 +237,7 @@ export default function BalanstestOverzichtPage() {
         </section>
       )}
 
-      {/* Zorguren verloop - gestapelde staafdiagram */}
+      {/* Je zorguren over tijd - gestapelde staafdiagram */}
       {tests.length > 0 && tests.some((t) => t.taken.length > 0) && (() => {
         // Bereken per test de uren per moeilijkheidsgraad
         const testsMetUren = [...tests].reverse().slice(-8).map((test) => {
@@ -277,7 +277,7 @@ export default function BalanstestOverzichtPage() {
         return (
           <section className="mb-6">
             <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-              <span className="text-2xl">⏱️</span> Zorguren verloop
+              <span className="text-2xl">⏱️</span> Je zorguren over tijd
             </h2>
             <div className="ker-card">
               <div className="flex items-end gap-3 h-52">
@@ -398,7 +398,7 @@ export default function BalanstestOverzichtPage() {
               {/* Detail lijst laatste test */}
               {laatsteTest && laatsteTest.taken.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-border/50">
-                  <p className="text-xs font-medium text-muted-foreground mb-2">Taken laatste test:</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Dit waren je taken:</p>
                   <div className="space-y-1">
                     {laatsteTest.taken
                       .filter((t) => t.uren > 0)
@@ -494,7 +494,7 @@ export default function BalanstestOverzichtPage() {
               href="/rapport"
               className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-border/50 text-sm font-medium text-primary hover:underline"
             >
-              Bekijk volledig rapport
+              Bekijk je volledige resultaten
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
@@ -586,7 +586,7 @@ export default function BalanstestOverzichtPage() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    Bekijken
+                    Bekijk resultaat
                   </Link>
                   <PdfDownloadButton testId={test.id} size="sm" variant="button" />
                   <button

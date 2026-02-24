@@ -88,7 +88,7 @@ function StreetSearch({ label, value, onChange, placeholder, required }: StreetS
             value={query}
             onChange={(e) => handleSearch(e.target.value)}
             onFocus={() => query.length >= 2 && setShowResults(true)}
-            placeholder={placeholder || "Zoek op straatnaam"}
+            placeholder={placeholder || "Vul je straat en plaats in"}
             className="ker-input"
           />
           {isSearching && (
@@ -1056,20 +1056,22 @@ export default function BelastbaarheidstestPage() {
 
               <div className="space-y-4">
                 <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Je naam</label>
                   <input
                     value={gegevens.naam}
                     onChange={(e) => setGegevens((prev) => ({ ...prev, naam: e.target.value }))}
-                    placeholder="Naam"
+                    placeholder="Vul je naam in"
                     className="ker-input"
                   />
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">E-mailadres</label>
                   <input
                     type="email"
                     value={gegevens.email}
                     onChange={(e) => setGegevens((prev) => ({ ...prev, email: e.target.value }))}
-                    placeholder="E-mail"
+                    placeholder="Vul je e-mailadres in"
                     className="ker-input"
                   />
                 </div>
@@ -1079,7 +1081,7 @@ export default function BelastbaarheidstestPage() {
                     label="Jouw adres"
                     value={gegevens.mantelzorgerStraat}
                     onChange={(straat) => setGegevens((prev) => ({ ...prev, mantelzorgerStraat: straat }))}
-                    placeholder="Zoek op postcode of straatnaam"
+                    placeholder="Vul je straat of postcode in"
                   />
                 </div>
 
@@ -1088,7 +1090,7 @@ export default function BelastbaarheidstestPage() {
                     label="Vul de woonplaats van je naaste hier in"
                     value={gegevens.zorgvragerStraat}
                     onChange={(straat) => setGegevens((prev) => ({ ...prev, zorgvragerStraat: straat }))}
-                    placeholder="Zoek op postcode of straatnaam"
+                    placeholder="Vul je straat of postcode in"
                   />
                 </div>
 

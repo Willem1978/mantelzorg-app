@@ -265,7 +265,7 @@ function DashboardContent() {
       </div>
 
       {/* C2.1: Warme welkomsttekst */}
-      <PageIntro tekst="Hier zie je in een oogopslag hoe het met je gaat en wat je kunt doen. Scroll naar beneden voor tips en hulp." />
+      <PageIntro tekst="Hier zie je hoe het met je gaat. Scrol naar beneden voor tips en hulp." />
 
           {/* SECTIE 1: Jouw Balans */}
           {data?.test?.hasTest ? (
@@ -285,9 +285,9 @@ function DashboardContent() {
                 </p>
               </div>
               <p className="text-sm text-muted-foreground">
-                {data.test.niveau === "LAAG" && "Goed bezig! Je balans is in orde. Blijf goed op jezelf letten en neem af en toe bewust een moment van rust. Zo houd je het vol op de lange termijn."}
-                {data.test.niveau === "GEMIDDELD" && "Je draagt veel op je schouders en dat is niet niks. Het is verstandig om te kijken of iemand je ergens mee kan helpen. Denk aan familie, buren, of professionele ondersteuning in je gemeente. Kleine stappen maken al een groot verschil."}
-                {data.test.niveau === "HOOG" && "Je hebt heel veel op je bordje en dat vraagt te veel van je. Het is belangrijk dat je hier niet alleen mee doorgaat. Neem contact op met een mantelzorgondersteuner in je gemeente of bel de Mantelzorglijn (030 - 205 90 59, gratis). Zij kunnen samen met jou kijken wat er mogelijk is."}
+                {data.test.niveau === "LAAG" && "Je balans is goed. Zorg ook goed voor jezelf. Neem af en toe rust. Zo hou je het vol."}
+                {data.test.niveau === "GEMIDDELD" && "Je hebt veel te doen. Het is goed om hulp te vragen. Denk aan familie, buren of hulp uit je gemeente. Kleine stappen helpen al veel."}
+                {data.test.niveau === "HOOG" && "Je hebt te veel op je bordje. Ga hier niet alleen mee door. Bel de Mantelzorglijn: 030 - 205 90 59 (gratis). Of neem contact op met je gemeente. Zij helpen je verder."}
               </p>
             </div>
 
@@ -352,7 +352,7 @@ function DashboardContent() {
               href="/rapport"
               className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-border/50 text-sm font-medium text-primary hover:underline"
             >
-              Bekijk volledig rapport
+              Bekijk je volledige resultaten
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
@@ -372,7 +372,7 @@ function DashboardContent() {
                   Nog geen test gedaan
                 </h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Doe de test om inzicht te krijgen in je belasting
+                  Ontdek hoe het met je gaat en waar je hulp bij kunt krijgen
                 </p>
               </div>
             </div>
@@ -380,7 +380,7 @@ function DashboardContent() {
               href="/belastbaarheidstest"
               className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:opacity-90 transition-opacity"
             >
-              Doe de test
+              Start de balanstest
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
@@ -398,8 +398,7 @@ function DashboardContent() {
                 <span className="text-2xl">📋</span> Je Zorgtaken
               </h2>
               <p className="text-sm text-muted-foreground">
-                Dit zijn de taken die je doet. Bij rode en oranje taken kun je hulp zoeken.
-                Tik op een taak voor hulp bij jou in de buurt.
+                Dit zijn je taken. Rode en oranje taken zijn zwaar. Druk op een taak om hulp te vinden.
               </p>
             </div>
 
@@ -535,7 +534,7 @@ function DashboardContent() {
                 href="/leren"
                 className="flex items-center justify-center gap-1 mt-3 text-sm font-medium text-primary hover:underline"
               >
-                Bekijk alle artikelen
+                Bekijk meer informatie
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
@@ -555,7 +554,7 @@ function DashboardContent() {
                 <h2 className="font-bold text-base text-foreground">Gebruik MantelBuddy ook via WhatsApp</h2>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
-                Scan de QR code met je telefoon, of tik op de knop als je al op je telefoon zit.
+                Scan de QR code met je telefoon. Of druk op de knop hieronder.
               </p>
 
               {/* QR Code */}

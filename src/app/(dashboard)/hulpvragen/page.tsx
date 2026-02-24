@@ -413,8 +413,8 @@ function HulpPageContent() {
     return (
       <div className="ker-page-content flex items-center justify-center min-h-[50vh]">
         <div className="text-center max-w-md mx-auto px-4">
-          <p className="text-foreground font-medium mb-2">Er ging iets mis</p>
-          <p className="text-muted-foreground text-sm mb-4">{contentError}</p>
+          <p className="text-foreground font-medium mb-2">Er ging iets mis bij het laden</p>
+          <p className="text-muted-foreground text-sm mb-4">Probeer het opnieuw. Werkt het nog steeds niet? Neem dan contact met ons op.</p>
           <button
             onClick={() => window.location.reload()}
             className="ker-btn ker-btn-primary"
