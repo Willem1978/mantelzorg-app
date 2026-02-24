@@ -832,51 +832,55 @@ function HulpPageContent() {
 
             return (
               <div className="space-y-3">
-                {/* Compacte header: terug + categorie + filter op één niveau */}
-                <div className="flex items-center gap-2">
+                {/* Breadcrumb navigatie */}
+                <nav className="flex items-center gap-1.5 text-sm" aria-label="Navigatiepad">
                   <button
                     onClick={handleBackToCategories}
-                    className="p-1.5 -ml-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors"
-                    aria-label="Terug naar categorieën"
+                    className="text-primary hover:underline font-medium"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
+                    Hulp zoeken
                   </button>
+                  <span className="text-muted-foreground">&rsaquo;</span>
+                  <button
+                    onClick={handleBackToCategories}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    Voor jou
+                  </button>
+                  <span className="text-muted-foreground">&rsaquo;</span>
+                  <span className="text-muted-foreground">{catInfo?.kort || selectedCategorie}</span>
+                </nav>
+
+                {/* Categorie header */}
+                <div className="flex items-center gap-2">
                   <span className="text-xl">{catInfo?.icon || '💜'}</span>
-                  <div className="flex-1 min-w-0">
-                    <h2 className="font-bold text-foreground leading-tight">{catInfo?.kort || selectedCategorie}</h2>
-                    {locatieMantelzorger && (
-                      <p className="text-xs text-muted-foreground">📍 {locatieMantelzorger}</p>
+                  <h2 className="font-bold text-foreground leading-tight">{catInfo?.kort || selectedCategorie}</h2>
+                </div>
+
+                {/* Filter toggle - altijd zichtbaar, gelijke grootte */}
+                <div className="flex gap-1 bg-muted p-1 rounded-lg">
+                  <button
+                    onClick={() => setBereikFilter('lokaal')}
+                    className={cn(
+                      "flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-all text-center",
+                      bereikFilter === 'lokaal'
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
                     )}
-                  </div>
-                  {/* Compacte filter toggle */}
-                  {lokaleHulp.length > 0 && uniekeLandelijk.length > 0 && (
-                    <div className="flex gap-1 bg-muted p-0.5 rounded-lg flex-shrink-0">
-                      <button
-                        onClick={() => setBereikFilter('lokaal')}
-                        className={cn(
-                          "py-1 px-2 rounded-md text-xs font-medium transition-all",
-                          bereikFilter === 'lokaal'
-                            ? "bg-card text-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        📍 Lokaal
-                      </button>
-                      <button
-                        onClick={() => setBereikFilter('alle')}
-                        className={cn(
-                          "py-1 px-2 rounded-md text-xs font-medium transition-all",
-                          bereikFilter === 'alle'
-                            ? "bg-card text-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        🌍 Alles
-                      </button>
-                    </div>
-                  )}
+                  >
+                    Lokaal
+                  </button>
+                  <button
+                    onClick={() => setBereikFilter('alle')}
+                    className={cn(
+                      "flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-all text-center",
+                      bereikFilter === 'alle'
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    Alles
+                  </button>
                 </div>
 
                 {/* Resultaten */}
@@ -895,12 +899,12 @@ function HulpPageContent() {
                     {/* Lokale hulpbronnen */}
                     {toonLokaal && (
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-[var(--accent-green)]" />
-                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                            In je buurt
-                          </p>
-                        </div>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          In je buurt
+                          {locatieMantelzorger && (
+                            <span> 📍 {locatieMantelzorger}</span>
+                          )}
+                        </p>
                         {lokaleHulp.map((hulp, i) => (
                           <HulpbronCard key={`lokaal-${i}`} hulp={hulp} favorieten={favorieten} categorie={selectedCategorie || undefined} />
                         ))}
@@ -910,12 +914,9 @@ function HulpPageContent() {
                     {/* Landelijke hulpbronnen */}
                     {toonLandelijk && (
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-primary" />
-                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                            Landelijk beschikbaar
-                          </p>
-                        </div>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          Landelijk beschikbaar
+                        </p>
                         {uniekeLandelijk.map((hulp, i) => (
                           <LandelijkeHulpCard key={`landelijk-${i}`} hulp={hulp} favorieten={favorieten} categorie={selectedCategorie || undefined} />
                         ))}
@@ -1040,65 +1041,67 @@ function HulpPageContent() {
 
             return (
               <div className="space-y-3">
-                {/* Compacte header: terug + categorie + status + filter op één niveau */}
-                <div className="flex items-center gap-2">
+                {/* Breadcrumb navigatie */}
+                <nav className="flex items-center gap-1.5 text-sm" aria-label="Navigatiepad">
                   <button
                     onClick={handleBackToCategories}
-                    className="p-1.5 -ml-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors"
-                    aria-label="Terug naar categorieën"
+                    className="text-primary hover:underline font-medium"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
+                    Hulp zoeken
                   </button>
+                  <span className="text-muted-foreground">&rsaquo;</span>
+                  <button
+                    onClick={handleBackToCategories}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    Voor naaste
+                  </button>
+                  <span className="text-muted-foreground">&rsaquo;</span>
+                  <span className="text-muted-foreground">{catInfo?.kort || selectedCategorie}</span>
+                </nav>
+
+                {/* Categorie header met status badge */}
+                <div className="flex items-center gap-2">
                   <span className="text-xl">{catInfo?.icon || '💝'}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h2 className="font-bold text-foreground leading-tight">{catInfo?.kort || selectedCategorie}</h2>
-                      {taakStatus && (
-                        <span className={cn(
-                          "text-xs font-semibold px-2 py-0.5 rounded-full",
-                          taakStatus === 'zwaar' && "bg-[var(--accent-red)]/15 text-[var(--accent-red)]",
-                          taakStatus === 'gemiddeld' && "bg-[var(--accent-amber)]/15 text-[var(--accent-amber)]",
-                          taakStatus === 'licht' && "bg-[var(--accent-green)]/15 text-[var(--accent-green)]",
-                        )}>
-                          {taakStatus === 'zwaar' && 'Zwaar'}
-                          {taakStatus === 'gemiddeld' && 'Matig'}
-                          {taakStatus === 'licht' && 'Goed'}
-                        </span>
-                      )}
-                    </div>
-                    {locatieZorgvrager && (
-                      <p className="text-xs text-muted-foreground">📍 {locatieZorgvrager}</p>
-                    )}
-                  </div>
-                  {/* Compacte filter toggle */}
-                  {lokaleHulp.length > 0 && landelijkeHulp.length > 0 && (
-                    <div className="flex gap-1 bg-muted p-0.5 rounded-lg flex-shrink-0">
-                      <button
-                        onClick={() => setBereikFilter('lokaal')}
-                        className={cn(
-                          "py-1 px-2 rounded-md text-xs font-medium transition-all",
-                          bereikFilter === 'lokaal'
-                            ? "bg-card text-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        📍 Lokaal
-                      </button>
-                      <button
-                        onClick={() => setBereikFilter('alle')}
-                        className={cn(
-                          "py-1 px-2 rounded-md text-xs font-medium transition-all",
-                          bereikFilter === 'alle'
-                            ? "bg-card text-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        🌍 Alles
-                      </button>
-                    </div>
+                  <h2 className="font-bold text-foreground leading-tight">{catInfo?.kort || selectedCategorie}</h2>
+                  {taakStatus && (
+                    <span className={cn(
+                      "text-xs font-semibold px-2 py-0.5 rounded-full",
+                      taakStatus === 'zwaar' && "bg-[var(--accent-red)]/15 text-[var(--accent-red)]",
+                      taakStatus === 'gemiddeld' && "bg-[var(--accent-amber)]/15 text-[var(--accent-amber)]",
+                      taakStatus === 'licht' && "bg-[var(--accent-green)]/15 text-[var(--accent-green)]",
+                    )}>
+                      {taakStatus === 'zwaar' && 'Zwaar'}
+                      {taakStatus === 'gemiddeld' && 'Matig'}
+                      {taakStatus === 'licht' && 'Goed'}
+                    </span>
                   )}
+                </div>
+
+                {/* Filter toggle - altijd zichtbaar, gelijke grootte */}
+                <div className="flex gap-1 bg-muted p-1 rounded-lg">
+                  <button
+                    onClick={() => setBereikFilter('lokaal')}
+                    className={cn(
+                      "flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-all text-center",
+                      bereikFilter === 'lokaal'
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    Lokaal
+                  </button>
+                  <button
+                    onClick={() => setBereikFilter('alle')}
+                    className={cn(
+                      "flex-1 py-1.5 px-3 rounded-md text-sm font-medium transition-all text-center",
+                      bereikFilter === 'alle'
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    Alles
+                  </button>
                 </div>
 
                 {/* Resultaten */}
@@ -1118,9 +1121,11 @@ function HulpPageContent() {
                     {toonLokaal && (
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-[var(--accent-green)]" />
                           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                             In de buurt van je naaste
+                            {locatieZorgvrager && (
+                              <span> 📍 {locatieZorgvrager}</span>
+                            )}
                           </p>
                         </div>
                         {lokaleHulp.map((hulp, i) => (
@@ -1132,12 +1137,9 @@ function HulpPageContent() {
                     {/* Landelijke hulpbronnen */}
                     {toonLandelijk && (
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-primary" />
-                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                            Landelijk beschikbaar
-                          </p>
-                        </div>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          Landelijk beschikbaar
+                        </p>
                         {landelijkeHulp.map((hulp, i) => (
                           <HulpbronCard key={`landelijk-${i}`} hulp={hulp} favorieten={favorieten} categorie={selectedCategorie || undefined} />
                         ))}
