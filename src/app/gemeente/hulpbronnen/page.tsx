@@ -334,7 +334,7 @@ export default function GemeenteHulpbronnen() {
           onClick={() => setActiveTab("informatie")}
           className={`px-6 py-3 text-sm font-medium border-b-2 transition ${
             activeTab === "informatie"
-              ? "border-emerald-600 text-emerald-600"
+              ? "border-primary text-primary"
               : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
           }`}
         >
@@ -344,7 +344,7 @@ export default function GemeenteHulpbronnen() {
           onClick={() => setActiveTab("hulp")}
           className={`px-6 py-3 text-sm font-medium border-b-2 transition ${
             activeTab === "hulp"
-              ? "border-emerald-600 text-emerald-600"
+              ? "border-primary text-primary"
               : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
           }`}
         >
@@ -370,20 +370,20 @@ export default function GemeenteHulpbronnen() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Titel *</label>
                 <input type="text" value={nieuwsTitel} onChange={(e) => setNieuwsTitel(e.target.value)}
                   placeholder="Titel van het nieuwsbericht"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"
                   disabled={nieuwsSubmitting} />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Beschrijving *</label>
                 <textarea value={nieuwsBeschrijving} onChange={(e) => setNieuwsBeschrijving(e.target.value)}
                   placeholder="Beschrijving van het nieuws" rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-vertical"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-vertical"
                   disabled={nieuwsSubmitting} />
               </div>
               {nieuwsError && <div className="bg-red-50 border border-red-200 rounded-lg p-3"><p className="text-red-700 text-sm">{nieuwsError}</p></div>}
               {nieuwsSuccess && <div className="bg-green-50 border border-green-200 rounded-lg p-3"><p className="text-green-700 text-sm">Gemeentenieuws toegevoegd!</p></div>}
               <button type="submit" disabled={nieuwsSubmitting}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50">
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50">
                 {nieuwsSubmitting ? "Toevoegen..." : "+ Nieuws toevoegen"}
               </button>
             </form>
@@ -450,8 +450,8 @@ export default function GemeenteHulpbronnen() {
               onClick={() => { setDoelgroep("ZORGVRAGER"); setCategorie(""); setZoek("") }}
               className={`flex-1 py-3 px-4 rounded-xl text-center font-medium transition border-2 ${
                 doelgroep === "ZORGVRAGER"
-                  ? "border-emerald-500 bg-emerald-500 text-white shadow-md"
-                  : "border-gray-200 bg-white text-gray-700 hover:border-emerald-300 hover:bg-emerald-50"
+                  ? "border-primary bg-primary text-white shadow-md"
+                  : "border-gray-200 bg-white text-gray-700 hover:border-primary/40 hover:bg-primary-light"
               }`}
             >
               <div className="text-lg mb-0.5">🤲</div>
@@ -479,7 +479,7 @@ export default function GemeenteHulpbronnen() {
                   categorie === cat.value
                     ? doelgroep === "MANTELZORGER"
                       ? "bg-purple-500 text-white border-purple-500"
-                      : "bg-emerald-500 text-white border-emerald-500"
+                      : "bg-primary text-white border-primary"
                     : "bg-white text-gray-600 border-gray-300 hover:border-gray-400"
                 }`}
               >
@@ -495,11 +495,11 @@ export default function GemeenteHulpbronnen() {
               placeholder="Zoek op naam..."
               value={zoek}
               onChange={(e) => setZoek(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"
             />
             <button
               onClick={() => { setShowHulpForm(!showHulpForm); setHulpDoelgroep(doelgroep); setHulpCategorie(categorie) }}
-              className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors whitespace-nowrap"
+              className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors whitespace-nowrap"
             >
               + Toevoegen
             </button>
@@ -507,14 +507,14 @@ export default function GemeenteHulpbronnen() {
 
           {/* Hulpbron toevoegen form */}
           {showHulpForm && (
-            <div className="bg-white rounded-xl border-2 border-emerald-200 p-6">
+            <div className="bg-white rounded-xl border-2 border-primary p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Nieuwe hulpbron toevoegen</h2>
               <form onSubmit={handleHulpSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Naam *</label>
                   <input type="text" value={hulpNaam} onChange={(e) => setHulpNaam(e.target.value)}
                     placeholder="Naam van de organisatie"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none"
                     disabled={hulpSubmitting} />
                 </div>
 
@@ -531,7 +531,7 @@ export default function GemeenteHulpbronnen() {
                     <button type="button"
                       onClick={() => { setHulpDoelgroep("ZORGVRAGER"); setHulpCategorie("") }}
                       className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition border-2 ${
-                        hulpDoelgroep === "ZORGVRAGER" ? "border-emerald-500 bg-emerald-500 text-white" : "border-gray-200 text-gray-700 hover:border-emerald-300"
+                        hulpDoelgroep === "ZORGVRAGER" ? "border-primary bg-primary text-white" : "border-gray-200 text-gray-700 hover:border-primary/40"
                       }`}>
                       🤲 Zorgvrager
                     </button>
@@ -541,7 +541,7 @@ export default function GemeenteHulpbronnen() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Categorie</label>
                   <select value={hulpCategorie} onChange={(e) => setHulpCategorie(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none bg-white"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none bg-white"
                     disabled={hulpSubmitting}>
                     <option value="">-- Selecteer --</option>
                     {hulpFormCategorieOpties.map((c) => (
@@ -554,7 +554,7 @@ export default function GemeenteHulpbronnen() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Beschrijving</label>
                   <textarea value={hulpBeschrijving} onChange={(e) => setHulpBeschrijving(e.target.value)}
                     placeholder="Beschrijving van de hulpbron" rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-vertical"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-vertical"
                     disabled={hulpSubmitting} />
                 </div>
 
@@ -562,24 +562,24 @@ export default function GemeenteHulpbronnen() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Telefoon</label>
                     <input type="text" value={hulpTelefoon} onChange={(e) => setHulpTelefoon(e.target.value)}
-                      placeholder="Telefoonnummer" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none" disabled={hulpSubmitting} />
+                      placeholder="Telefoonnummer" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none" disabled={hulpSubmitting} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                     <input type="email" value={hulpEmail} onChange={(e) => setHulpEmail(e.target.value)}
-                      placeholder="email@voorbeeld.nl" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none" disabled={hulpSubmitting} />
+                      placeholder="email@voorbeeld.nl" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none" disabled={hulpSubmitting} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
                     <input type="url" value={hulpWebsite} onChange={(e) => setHulpWebsite(e.target.value)}
-                      placeholder="https://..." className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none" disabled={hulpSubmitting} />
+                      placeholder="https://..." className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none" disabled={hulpSubmitting} />
                   </div>
                 </div>
 
                 {hulpSubmitError && <div className="bg-red-50 border border-red-200 rounded-lg p-3"><p className="text-red-700 text-sm">{hulpSubmitError}</p></div>}
                 <div className="flex gap-2">
                   <button type="submit" disabled={hulpSubmitting}
-                    className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50">
+                    className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50">
                     {hulpSubmitting ? "Toevoegen..." : "Hulpbron toevoegen"}
                   </button>
                   <button type="button" onClick={() => setShowHulpForm(false)}
@@ -636,7 +636,7 @@ export default function GemeenteHulpbronnen() {
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-700">Mantelzorger</span>
                         )}
                         {item.doelgroep === "ZORGVRAGER" && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-700">Zorgvrager</span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-primary-light text-primary">Zorgvrager</span>
                         )}
                         {isLandelijk(item) && (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-700">Landelijk</span>
@@ -722,7 +722,7 @@ export default function GemeenteHulpbronnen() {
               <div className="flex items-center gap-2">
                 {!editMode && !isLandelijk(selectedHulpbron) && (
                   <button onClick={() => setEditMode(true)}
-                    className="text-sm text-emerald-600 hover:text-emerald-700 font-medium">
+                    className="text-sm text-primary hover:text-primary/80 font-medium">
                     Bewerken
                   </button>
                 )}
@@ -743,21 +743,21 @@ export default function GemeenteHulpbronnen() {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Naam</label>
                     <input type="text" value={editData.naam || ""}
                       onChange={(e) => setEditData({ ...editData, naam: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none" />
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Beschrijving</label>
                     <textarea value={editData.beschrijving || ""}
                       onChange={(e) => setEditData({ ...editData, beschrijving: e.target.value })}
                       rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-vertical" />
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-vertical" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Doelgroep</label>
                       <select value={editData.doelgroep || ""}
                         onChange={(e) => setEditData({ ...editData, doelgroep: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary outline-none">
                         <option value="">-- Geen --</option>
                         <option value="MANTELZORGER">Mantelzorger</option>
                         <option value="ZORGVRAGER">Zorgvrager</option>
@@ -767,7 +767,7 @@ export default function GemeenteHulpbronnen() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Categorie</label>
                       <select value={editData.onderdeelTest || ""}
                         onChange={(e) => setEditData({ ...editData, onderdeelTest: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary outline-none">
                         <option value="">-- Geen --</option>
                         {[...CATEGORIEEN_ZORGVRAGER, ...CATEGORIEEN_MANTELZORGER].map((c) => (
                           <option key={c.value} value={c.value}>{c.emoji} {c.label}</option>
@@ -780,39 +780,39 @@ export default function GemeenteHulpbronnen() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Telefoon</label>
                       <input type="text" value={editData.telefoon || ""}
                         onChange={(e) => setEditData({ ...editData, telefoon: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Bereikbaarheid</label>
                       <input type="text" value={editData.openingstijden || ""}
                         onChange={(e) => setEditData({ ...editData, openingstijden: e.target.value })}
                         placeholder="bijv. Ma-Vr 9:00-17:00"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                       <input type="email" value={editData.email || ""}
                         onChange={(e) => setEditData({ ...editData, email: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
                       <input type="url" value={editData.website || ""}
                         onChange={(e) => setEditData({ ...editData, website: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Kosten</label>
                       <input type="text" value={editData.kosten || ""}
                         onChange={(e) => setEditData({ ...editData, kosten: e.target.value })}
                         placeholder="bijv. Gratis, Eigen bijdrage"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none" />
                     </div>
                   </div>
                   {editError && <div className="bg-red-50 border border-red-200 rounded-lg p-3"><p className="text-red-700 text-sm">{editError}</p></div>}
                   <div className="flex gap-2 pt-2">
                     <button onClick={handleEditSubmit} disabled={editSubmitting}
-                      className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors">
+                      className="px-4 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors">
                       {editSubmitting ? "Opslaan..." : "Opslaan"}
                     </button>
                     <button onClick={() => setEditMode(false)}
@@ -829,7 +829,7 @@ export default function GemeenteHulpbronnen() {
                       <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">💜 Mantelzorger</span>
                     )}
                     {selectedHulpbron.doelgroep === "ZORGVRAGER" && (
-                      <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">🤲 Zorgvrager</span>
+                      <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-primary-light text-primary">🤲 Zorgvrager</span>
                     )}
                     {isLandelijk(selectedHulpbron) && (
                       <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Landelijk</span>
@@ -871,19 +871,19 @@ export default function GemeenteHulpbronnen() {
                     {selectedHulpbron.telefoon && (
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <span className="text-gray-400">Tel:</span>
-                        <a href={`tel:${selectedHulpbron.telefoon}`} className="text-emerald-600 hover:underline">{selectedHulpbron.telefoon}</a>
+                        <a href={`tel:${selectedHulpbron.telefoon}`} className="text-primary hover:underline">{selectedHulpbron.telefoon}</a>
                       </div>
                     )}
                     {selectedHulpbron.email && (
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <span className="text-gray-400">Email:</span>
-                        <a href={`mailto:${selectedHulpbron.email}`} className="text-emerald-600 hover:underline">{selectedHulpbron.email}</a>
+                        <a href={`mailto:${selectedHulpbron.email}`} className="text-primary hover:underline">{selectedHulpbron.email}</a>
                       </div>
                     )}
                     {selectedHulpbron.website && (
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <span className="text-gray-400">Website:</span>
-                        <a href={ensureAbsoluteUrl(selectedHulpbron.website)} target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline truncate">{selectedHulpbron.website.replace(/^https?:\/\//, "")}</a>
+                        <a href={ensureAbsoluteUrl(selectedHulpbron.website)} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">{selectedHulpbron.website.replace(/^https?:\/\//, "")}</a>
                       </div>
                     )}
                     {!selectedHulpbron.telefoon && !selectedHulpbron.email && !selectedHulpbron.website && (

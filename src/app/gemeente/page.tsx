@@ -126,8 +126,8 @@ export default function GemeenteDashboard() {
       label: "Mantelzorgers",
       value: data.totaalMantelzorgers,
       sub: `${data.nieuweDezeMaand} nieuwe deze maand`,
-      color: "bg-emerald-50 border-emerald-200",
-      iconColor: "text-emerald-600",
+      color: "bg-primary-light border-primary",
+      iconColor: "text-primary",
     },
     {
       label: "Gem. belastingscore",

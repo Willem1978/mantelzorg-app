@@ -138,10 +138,10 @@ export default function GemeenteAlarmen() {
           <p className="text-xs text-blue-600 mt-1">Alle alarmen</p>
         </div>
 
-        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5">
-          <p className="text-sm text-emerald-700">Laatste 30 dagen</p>
-          <p className="text-3xl font-bold text-emerald-800 mt-1">{data.recenteAlarmen}</p>
-          <p className="text-xs text-emerald-600 mt-1">Nieuwe alarmen</p>
+        <div className="bg-primary-light border border-primary rounded-xl p-5">
+          <p className="text-sm text-primary">Laatste 30 dagen</p>
+          <p className="text-3xl font-bold text-primary mt-1">{data.recenteAlarmen}</p>
+          <p className="text-xs text-primary/70 mt-1">Nieuwe alarmen</p>
         </div>
       </div>
 
@@ -162,7 +162,7 @@ export default function GemeenteAlarmen() {
                     </div>
                     <div className="w-full bg-gray-100 rounded-full h-2.5">
                       <div
-                        className="h-2.5 rounded-full bg-emerald-500"
+                        className="h-2.5 rounded-full bg-primary"
                         style={{ width: `${Math.max(pct, 2)}%` }}
                       />
                     </div>

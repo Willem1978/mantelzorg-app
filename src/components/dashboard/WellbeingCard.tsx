@@ -7,7 +7,7 @@ interface WellbeingScore {
   label: string
   value: number
   previousValue?: number
-  color: "teal" | "amber" | "red" | "green"
+  color: "primary" | "amber" | "red" | "green"
 }
 
 interface WellbeingCardProps {

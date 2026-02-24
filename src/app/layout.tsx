@@ -1,18 +1,24 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { Montserrat, Open_Sans } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import "./globals.css";
 
-// Geist als fallback font via next/font (wordt geladen op Vercel)
-// Atkinson Hyperlegible staat als eerste voorkeur in de CSS body font-family
-const geistSans = Geist({
-  variable: "--font-atkinson",
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
   subsets: ["latin"],
   display: "swap",
+  weight: ["600", "700"],
+});
+
+const openSans = Open_Sans({
+  variable: "--font-opensans",
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "MantelBuddy - Samen zorgen, samen sterk",
+  title: "MantelBuddy - Samen lokaal sterk",
   description: "MantelBuddy verbindt mantelzorgers met vrijwilligers uit de buurt",
   manifest: "/manifest.json",
   appleWebApp: {
@@ -23,7 +29,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#8B2B6B",
+  themeColor: "#2C7A7B",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -38,14 +44,9 @@ export default function RootLayout({
     <html lang="nl" suppressHydrationWarning>
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-        {/* Atkinson Hyperlegible font voor optimale leesbaarheid voor ouderen */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap"
-          rel="stylesheet"
-        />
       </head>
       <body
-        className={`${geistSans.variable} antialiased`}
+        className={`${montserrat.variable} ${openSans.variable} antialiased`}
         suppressHydrationWarning
       >
         <Providers>{children}</Providers>

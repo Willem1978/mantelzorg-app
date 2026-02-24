@@ -277,7 +277,7 @@ function GebruikersContent() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Gemeente *</label>
                   {nieuwFormulier.gemeenteNaam ? (
                     <div className="flex items-center gap-2">
-                      <span className="flex-1 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700 font-medium">
+                      <span className="flex-1 px-3 py-2 bg-primary-light border border-primary/20 rounded-lg text-sm text-primary font-medium">
                         {nieuwFormulier.gemeenteNaam}
                       </span>
                       <button

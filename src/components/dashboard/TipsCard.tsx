@@ -50,7 +50,7 @@ export function TipsCard({ tips, title = "Persoonlijke tips" }: TipsCardProps) {
         ))}
       </div>
 
-      <button className="w-full mt-4 py-3 text-teal-600 hover:text-teal-700 font-medium">
+      <button className="w-full mt-4 py-3 text-primary hover:text-primary/80 font-medium">
         Meer tips bekijken →
       </button>
     </div>

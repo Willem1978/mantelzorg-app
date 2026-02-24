@@ -44,7 +44,7 @@ export default function ForgotPasswordPage() {
   // Succes scherm - B1 taalgebruik
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-teal-50 to-green-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center px-4 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-primary-light to-green-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center px-4 py-8">
         <div className="bg-card rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xl max-w-md w-full text-center">
           <div className="w-14 h-14 sm:w-16 sm:h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
             <svg className="w-7 h-7 sm:w-8 sm:h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,7 +90,7 @@ export default function ForgotPasswordPage() {
 
   // Formulier - B1 taalgebruik
   return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-green-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-primary-light to-green-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center px-4 py-8">
       <div className="bg-card rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xl max-w-md w-full">
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 sm:gap-3 mb-6 sm:mb-8">

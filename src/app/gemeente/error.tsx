@@ -32,7 +32,7 @@ export default function GemeenteError({
           <div className="flex flex-col gap-3 mt-6">
             <button
               onClick={reset}
-              className="w-full py-3 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition-colors"
+              className="w-full py-3 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-colors"
             >
               Opnieuw proberen
             </button>

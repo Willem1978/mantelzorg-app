@@ -76,7 +76,7 @@ export default function GemeenteLayout({
         <div className="bg-white rounded-2xl shadow-lg p-8 text-center max-w-md">
           <h2 className="text-lg font-bold text-gray-900 mb-2">Geen toegang</h2>
           <p className="text-gray-500 text-sm mb-4">Je hebt geen toegang tot het gemeenteportaal.</p>
-          <a href="/gemeente/login" className="text-emerald-600 hover:underline text-sm font-medium">
+          <a href="/gemeente/login" className="text-primary hover:underline text-sm font-medium">
             Inloggen met een ander account
           </a>
         </div>
@@ -114,11 +114,11 @@ export default function GemeenteLayout({
               </svg>
             </button>
             <Link href="/gemeente" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">M</span>
               </div>
               <span className="font-semibold text-gray-900">MantelBuddy</span>
-              <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-medium">
+              <span className="text-xs bg-primary-light text-primary px-2 py-0.5 rounded-full font-medium">
                 {gemeenteNaam}
               </span>
             </Link>
@@ -171,7 +171,7 @@ export default function GemeenteLayout({
                     flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
                     transition-colors
                     ${isActive
-                      ? "bg-emerald-50 text-emerald-700"
+                      ? "bg-primary-light text-primary"
                       : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                     }
                   `}

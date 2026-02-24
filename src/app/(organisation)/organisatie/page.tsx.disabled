@@ -107,7 +107,7 @@ export default function OrganisationDashboardPage() {
               <div>
                 <p className="text-sm text-gray-500">{stat.label}</p>
                 <p className="text-3xl font-bold text-gray-900 mt-1">{stat.value}</p>
-                <p className="text-sm text-teal-600 mt-1">{stat.change}</p>
+                <p className="text-sm text-primary mt-1">{stat.change}</p>
               </div>
               <span className="text-2xl">{stat.icon}</span>
             </div>
@@ -164,7 +164,7 @@ export default function OrganisationDashboardPage() {
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-2">
                   <div
-                    className="bg-teal-500 h-2 rounded-full transition-all"
+                    className="bg-primary h-2 rounded-full transition-all"
                     style={{ width: `${need.percentage}%` }}
                   />
                 </div>

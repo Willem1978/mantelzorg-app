@@ -96,7 +96,7 @@ export function QuickCheckIn({ onSubmit }: QuickCheckInProps) {
             className={cn(
               "flex-1 flex flex-col items-center p-3 rounded-xl transition-all",
               "hover:scale-105 active:scale-95",
-              selectedFeeling === feeling.value ? "ring-2 ring-teal-500" : ""
+              selectedFeeling === feeling.value ? "ring-2 ring-primary" : ""
             )}
           >
             <div className={cn("w-12 h-12 rounded-full mb-2", feeling.color)}>

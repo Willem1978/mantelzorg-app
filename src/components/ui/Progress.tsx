@@ -5,7 +5,7 @@ interface ProgressProps {
   max?: number
   className?: string
   showLabel?: boolean
-  color?: "teal" | "amber" | "red" | "green"
+  color?: "primary" | "amber" | "red" | "green"
 }
 
 export function Progress({
@@ -13,12 +13,12 @@ export function Progress({
   max = 100,
   className,
   showLabel = false,
-  color = "teal",
+  color = "primary",
 }: ProgressProps) {
   const percentage = Math.min(Math.max((value / max) * 100, 0), 100)
 
   const colors = {
-    teal: "bg-teal-500",
+    primary: "bg-primary",
     amber: "bg-amber-500",
     red: "bg-red-500",
     green: "bg-green-500",
