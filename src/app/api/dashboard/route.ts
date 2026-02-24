@@ -25,10 +25,15 @@ interface HulpbronResult {
   beschrijving: string | null
   gemeente: string | null
   isLandelijk: boolean
+  dienst: string | null
+  openingstijden: string | null
+  soortHulp: string | null
+  kosten: string | null
+  bronLabel: string | null
 }
 
 interface AlgemeenHulpbron extends HulpbronResult {
-  soortHulp: string | null
+  // Overerft van HulpbronResult
 }
 
 interface LandelijkHulpbron {
@@ -37,6 +42,10 @@ interface LandelijkHulpbron {
   website: string | null
   beschrijving: string | null
   soortHulp: string | null
+  dienst: string | null
+  openingstijden: string | null
+  kosten: string | null
+  bronLabel: string | null
 }
 
 interface CategorieHulpbron extends HulpbronResult {
@@ -89,6 +98,10 @@ async function getHulpbronnenVoorTaken(
       website: true,
       beschrijving: true,
       soortHulp: true,
+      dienst: true,
+      openingstijden: true,
+      kosten: true,
+      bronLabel: true,
     },
   })
 
@@ -131,7 +144,7 @@ async function getHulpbronnenVoorTaken(
             AND: niveauFilter,
           },
           orderBy: { naam: 'asc' },
-          select: { naam: true, telefoon: true, website: true, beschrijving: true, gemeente: true, doelgroep: true, kosten: true },
+          select: { naam: true, telefoon: true, website: true, beschrijving: true, gemeente: true, doelgroep: true, kosten: true, dienst: true, openingstijden: true, soortHulp: true, bronLabel: true },
         }) : Promise.resolve([]),
         prisma.zorgorganisatie.findMany({
           where: {
@@ -141,7 +154,7 @@ async function getHulpbronnenVoorTaken(
             AND: niveauFilter,
           },
           orderBy: { naam: 'asc' },
-          select: { naam: true, telefoon: true, website: true, beschrijving: true, gemeente: true, doelgroep: true, kosten: true },
+          select: { naam: true, telefoon: true, website: true, beschrijving: true, gemeente: true, doelgroep: true, kosten: true, dienst: true, openingstijden: true, soortHulp: true, bronLabel: true },
         }),
       ])
       return { lokaleHulp, landelijkeHulp }
@@ -177,6 +190,9 @@ async function getHulpbronnenVoorTaken(
       gemeente: true,
       doelgroep: true,
       kosten: true,
+      dienst: true,
+      openingstijden: true,
+      bronLabel: true,
     },
   }) : []
 
@@ -204,6 +220,9 @@ async function getHulpbronnenVoorTaken(
       gemeente: true,
       doelgroep: true,
       kosten: true,
+      dienst: true,
+      openingstijden: true,
+      bronLabel: true,
     },
   })
 
@@ -264,6 +283,10 @@ async function getHulpbronnenVoorTaken(
                 gemeente: true,
                 doelgroep: true,
                 kosten: true,
+                dienst: true,
+                openingstijden: true,
+                soortHulp: true,
+                bronLabel: true,
               },
             })
           : Promise.resolve([]),
@@ -284,6 +307,10 @@ async function getHulpbronnenVoorTaken(
             gemeente: true,
             doelgroep: true,
             kosten: true,
+            dienst: true,
+            openingstijden: true,
+            soortHulp: true,
+            bronLabel: true,
           },
         }),
       ])

@@ -31,6 +31,9 @@ interface Hulpbron {
   isLandelijk?: boolean
   doelgroep?: string | null
   kosten?: string | null
+  dienst?: string | null
+  openingstijden?: string | null
+  bronLabel?: string | null
 }
 
 interface LandelijkeHulpbron {
@@ -39,6 +42,10 @@ interface LandelijkeHulpbron {
   website: string | null
   beschrijving: string | null
   soortHulp: string | null
+  dienst?: string | null
+  openingstijden?: string | null
+  kosten?: string | null
+  bronLabel?: string | null
 }
 
 interface LocatieInfo {
@@ -806,6 +813,10 @@ function HulpPageContent() {
               website: h.website,
               beschrijving: h.beschrijving,
               soortHulp: h.soortHulp || null,
+              dienst: h.dienst || null,
+              openingstijden: h.openingstijden || null,
+              kosten: h.kosten || null,
+              bronLabel: h.bronLabel || null,
             })), ...getLandelijkeHulpVoorCategorie(selectedCategorie)]
             // Dedup landelijke hulpbronnen op naam
             const seenNames = new Set<string>()
@@ -820,57 +831,53 @@ function HulpPageContent() {
             const heeftHulp = toonLokaal || toonLandelijk
 
             return (
-              <div className="space-y-4">
-                {/* Terug knop + categorie header */}
-                <button
-                  onClick={handleBackToCategories}
-                  className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 font-medium"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  Alle categorieën
-                </button>
-
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl">{catInfo?.icon || '💜'}</span>
-                  <div>
-                    <h2 className="font-bold text-lg text-foreground">{catInfo?.kort || selectedCategorie}</h2>
+              <div className="space-y-3">
+                {/* Compacte header: terug + categorie + filter op één niveau */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleBackToCategories}
+                    className="p-1.5 -ml-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors"
+                    aria-label="Terug naar categorieën"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <span className="text-xl">{catInfo?.icon || '💜'}</span>
+                  <div className="flex-1 min-w-0">
+                    <h2 className="font-bold text-foreground leading-tight">{catInfo?.kort || selectedCategorie}</h2>
                     {locatieMantelzorger && (
                       <p className="text-xs text-muted-foreground">📍 {locatieMantelzorger}</p>
                     )}
                   </div>
+                  {/* Compacte filter toggle */}
+                  {lokaleHulp.length > 0 && uniekeLandelijk.length > 0 && (
+                    <div className="flex gap-1 bg-muted p-0.5 rounded-lg flex-shrink-0">
+                      <button
+                        onClick={() => setBereikFilter('lokaal')}
+                        className={cn(
+                          "py-1 px-2 rounded-md text-xs font-medium transition-all",
+                          bereikFilter === 'lokaal'
+                            ? "bg-card text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        📍 Lokaal
+                      </button>
+                      <button
+                        onClick={() => setBereikFilter('alle')}
+                        className={cn(
+                          "py-1 px-2 rounded-md text-xs font-medium transition-all",
+                          bereikFilter === 'alle'
+                            ? "bg-card text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        🌍 Alles
+                      </button>
+                    </div>
+                  )}
                 </div>
-
-                {/* Filter toggle: Lokaal (standaard) / Alle hulp */}
-                {lokaleHulp.length > 0 && uniekeLandelijk.length > 0 && (
-                  <div className="flex gap-2 bg-muted p-1 rounded-lg">
-                    <button
-                      onClick={() => setBereikFilter('lokaal')}
-                      className={cn(
-                        "flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all",
-                        bereikFilter === 'lokaal'
-                          ? "bg-card text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      📍 In je buurt
-                      <span className="ml-1 text-xs opacity-70">({lokaleHulp.length})</span>
-                    </button>
-                    <button
-                      onClick={() => setBereikFilter('alle')}
-                      className={cn(
-                        "flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all",
-                        bereikFilter === 'alle'
-                          ? "bg-card text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      🌍 Alle hulp
-                      <span className="ml-1 text-xs opacity-70">({lokaleHulp.length + uniekeLandelijk.length})</span>
-                    </button>
-                  </div>
-                )}
 
                 {/* Resultaten */}
                 {!heeftHulp ? (
@@ -1032,23 +1039,22 @@ function HulpPageContent() {
             const heeftHulp = toonLokaal || toonLandelijk
 
             return (
-              <div className="space-y-4">
-                {/* Terug knop + categorie header */}
-                <button
-                  onClick={handleBackToCategories}
-                  className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 font-medium"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  Alle categorieën
-                </button>
-
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl">{catInfo?.icon || '💝'}</span>
-                  <div>
+              <div className="space-y-3">
+                {/* Compacte header: terug + categorie + status + filter op één niveau */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleBackToCategories}
+                    className="p-1.5 -ml-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors"
+                    aria-label="Terug naar categorieën"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <span className="text-xl">{catInfo?.icon || '💝'}</span>
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h2 className="font-bold text-lg text-foreground">{catInfo?.kort || selectedCategorie}</h2>
+                      <h2 className="font-bold text-foreground leading-tight">{catInfo?.kort || selectedCategorie}</h2>
                       {taakStatus && (
                         <span className={cn(
                           "text-xs font-semibold px-2 py-0.5 rounded-full",
@@ -1066,37 +1072,34 @@ function HulpPageContent() {
                       <p className="text-xs text-muted-foreground">📍 {locatieZorgvrager}</p>
                     )}
                   </div>
+                  {/* Compacte filter toggle */}
+                  {lokaleHulp.length > 0 && landelijkeHulp.length > 0 && (
+                    <div className="flex gap-1 bg-muted p-0.5 rounded-lg flex-shrink-0">
+                      <button
+                        onClick={() => setBereikFilter('lokaal')}
+                        className={cn(
+                          "py-1 px-2 rounded-md text-xs font-medium transition-all",
+                          bereikFilter === 'lokaal'
+                            ? "bg-card text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        📍 Lokaal
+                      </button>
+                      <button
+                        onClick={() => setBereikFilter('alle')}
+                        className={cn(
+                          "py-1 px-2 rounded-md text-xs font-medium transition-all",
+                          bereikFilter === 'alle'
+                            ? "bg-card text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        🌍 Alles
+                      </button>
+                    </div>
+                  )}
                 </div>
-
-                {/* Filter toggle: Lokaal (standaard) / Alle hulp */}
-                {lokaleHulp.length > 0 && landelijkeHulp.length > 0 && (
-                  <div className="flex gap-2 bg-muted p-1 rounded-lg">
-                    <button
-                      onClick={() => setBereikFilter('lokaal')}
-                      className={cn(
-                        "flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all",
-                        bereikFilter === 'lokaal'
-                          ? "bg-card text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      📍 In je buurt
-                      <span className="ml-1 text-xs opacity-70">({lokaleHulp.length})</span>
-                    </button>
-                    <button
-                      onClick={() => setBereikFilter('alle')}
-                      className={cn(
-                        "flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all",
-                        bereikFilter === 'alle'
-                          ? "bg-card text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      🌍 Alle hulp
-                      <span className="ml-1 text-xs opacity-70">({lokaleHulp.length + landelijkeHulp.length})</span>
-                    </button>
-                  </div>
-                )}
 
                 {/* Resultaten */}
                 {!heeftHulp ? (
@@ -1191,6 +1194,9 @@ function HulpbronCard({ hulp, favorieten, categorie }: {
   const isFavorited = !!(favorieten && favorieten[favKey])
   const favorietId = favorieten?.[favKey]
 
+  // Dienst als primaire naam, organisatie als secundair
+  const displayNaam = hulp.dienst || hulp.naam
+
   return (
     <>
       <div
@@ -1199,18 +1205,10 @@ function HulpbronCard({ hulp, favorieten, categorie }: {
       >
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <p className="font-medium text-sm">{hulp.naam}</p>
-              {hulp.isLandelijk ? (
-                <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2.5 py-0.5 rounded-full flex-shrink-0 font-medium">
-                  🌍 Landelijk
-                </span>
-              ) : hulp.gemeente && (
-                <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-2.5 py-0.5 rounded-full flex-shrink-0 font-medium">
-                  📍 {hulp.gemeente}
-                </span>
-              )}
-            </div>
+            <p className="font-semibold text-sm text-foreground">{displayNaam}</p>
+            {hulp.beschrijving && (
+              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{hulp.beschrijving}</p>
+            )}
           </div>
           <div onClick={(e) => e.stopPropagation()}>
             <FavorietButton
@@ -1227,15 +1225,21 @@ function HulpbronCard({ hulp, favorieten, categorie }: {
             />
           </div>
         </div>
-        {hulp.beschrijving && (
-          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{hulp.beschrijving}</p>
-        )}
-        <div className="flex items-center gap-3 mt-2">
-          {hulp.telefoon && (
-            <span className="text-xs text-primary flex items-center gap-1">📞</span>
+        <div className="flex items-center gap-2 mt-2 flex-wrap">
+          {/* Organisatie + gemeente */}
+          {hulp.isLandelijk ? (
+            <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full font-medium">
+              🌍 Landelijk
+            </span>
+          ) : hulp.gemeente && (
+            <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full font-medium">
+              📍 {hulp.dienst ? hulp.naam : hulp.gemeente}
+            </span>
           )}
-          {hulp.website && (
-            <span className="text-xs text-primary flex items-center gap-1">🌐</span>
+          {hulp.kosten && (
+            <span className="text-xs text-muted-foreground">
+              {hulp.kosten}
+            </span>
           )}
           <span className="text-xs text-primary font-medium ml-auto">Meer info →</span>
         </div>
@@ -1245,6 +1249,7 @@ function HulpbronCard({ hulp, favorieten, categorie }: {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         titel={hulp.naam}
+        dienst={hulp.dienst}
         beschrijving={hulp.beschrijving}
         gemeente={hulp.gemeente}
         soortHulp={hulp.soortHulp}
@@ -1252,6 +1257,8 @@ function HulpbronCard({ hulp, favorieten, categorie }: {
         website={hulp.website}
         doelgroep={hulp.doelgroep}
         kosten={hulp.kosten}
+        openingstijden={hulp.openingstijden}
+        bronLabel={hulp.bronLabel}
       />
     </>
   )
@@ -1269,46 +1276,47 @@ function LandelijkeHulpCard({ hulp, favorieten, categorie }: {
   const isFavorited = !!(favorieten && favorieten[favKey])
   const favorietId = favorieten?.[favKey]
 
+  const displayNaam = hulp.dienst || hulp.naam
+
   return (
     <>
       <div
-        className="flex items-center justify-between py-3 px-3 bg-card rounded-lg border border-border cursor-pointer hover:shadow-md transition-shadow"
+        className="ker-card py-3 cursor-pointer hover:shadow-md transition-shadow"
         onClick={() => setModalOpen(true)}
       >
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="font-medium text-sm">{hulp.naam}</p>
-            <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2.5 py-0.5 rounded-full flex-shrink-0 font-medium">
-              🌍 Landelijk
-            </span>
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm text-foreground">{displayNaam}</p>
+            {hulp.beschrijving && (
+              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{hulp.beschrijving}</p>
+            )}
           </div>
-          {hulp.beschrijving && (
-            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{hulp.beschrijving}</p>
-          )}
-          <div className="flex items-center gap-2 mt-1">
-            {hulp.telefoon && (
-              <span className="text-xs text-primary flex items-center gap-1">📞</span>
-            )}
-            {hulp.website && (
-              <span className="text-xs text-primary">🌐</span>
-            )}
-            <span className="text-xs text-primary font-medium ml-auto">Meer info →</span>
+          <div onClick={(e) => e.stopPropagation()}>
+            <FavorietButton
+              type="HULP"
+              itemId={itemId}
+              titel={hulp.naam}
+              beschrijving={hulp.beschrijving || undefined}
+              categorie={categorie || "Landelijk"}
+              url={hulp.website || undefined}
+              telefoon={hulp.telefoon || undefined}
+              icon="🌍"
+              initialFavorited={isFavorited}
+              initialFavorietId={favorietId}
+              size="sm"
+            />
           </div>
         </div>
-        <div onClick={(e) => e.stopPropagation()}>
-          <FavorietButton
-            type="HULP"
-            itemId={itemId}
-            titel={hulp.naam}
-            beschrijving={hulp.beschrijving || undefined}
-            categorie={categorie || "Landelijk"}
-            url={hulp.website || undefined}
-            telefoon={hulp.telefoon || undefined}
-            icon="🌍"
-            initialFavorited={isFavorited}
-            initialFavorietId={favorietId}
-            size="sm"
-          />
+        <div className="flex items-center gap-2 mt-2 flex-wrap">
+          <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full font-medium">
+            🌍 {hulp.dienst ? hulp.naam : 'Landelijk'}
+          </span>
+          {hulp.kosten && (
+            <span className="text-xs text-muted-foreground">
+              {hulp.kosten}
+            </span>
+          )}
+          <span className="text-xs text-primary font-medium ml-auto">Meer info →</span>
         </div>
       </div>
 
@@ -1316,10 +1324,14 @@ function LandelijkeHulpCard({ hulp, favorieten, categorie }: {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         titel={hulp.naam}
+        dienst={hulp.dienst}
         beschrijving={hulp.beschrijving}
         soortHulp={hulp.soortHulp}
         telefoon={hulp.telefoon}
         website={hulp.website}
+        kosten={hulp.kosten}
+        openingstijden={hulp.openingstijden}
+        bronLabel={hulp.bronLabel}
       />
     </>
   )
