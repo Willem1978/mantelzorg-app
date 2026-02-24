@@ -118,7 +118,7 @@ function HulpPageContent() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<TabType | null>(null)
   const [selectedCategorie, setSelectedCategorie] = useState<string | null>(null)
-  const [bereikFilter, setBereikFilter] = useState<'alle' | 'lokaal'>('alle')
+  const [bereikFilter, setBereikFilter] = useState<'alle' | 'lokaal'>('lokaal')
   const [showHulpvraagForm, setShowHulpvraagForm] = useState(false)
   const [showVragenTab, setShowVragenTab] = useState(false)
   const [initializedFromUrl, setInitializedFromUrl] = useState(false)
@@ -373,7 +373,7 @@ function HulpPageContent() {
       setSelectedCategorie(null)
     } else {
       setSelectedCategorie(categorie)
-      setBereikFilter('alle')
+      setBereikFilter('lokaal')
     }
   }
 
@@ -386,11 +386,11 @@ function HulpPageContent() {
     if (activeTab === tab) {
       setActiveTab(null)
       setSelectedCategorie(null)
-      setBereikFilter('alle')
+      setBereikFilter('lokaal')
     } else {
       setActiveTab(tab)
       setSelectedCategorie(null)
-      setBereikFilter('alle')
+      setBereikFilter('lokaal')
     }
   }
 
@@ -842,21 +842,9 @@ function HulpPageContent() {
                   </div>
                 </div>
 
-                {/* Filter toggle: Alle hulp / Alleen lokaal */}
+                {/* Filter toggle: Lokaal (standaard) / Alle hulp */}
                 {lokaleHulp.length > 0 && uniekeLandelijk.length > 0 && (
                   <div className="flex gap-2 bg-muted p-1 rounded-lg">
-                    <button
-                      onClick={() => setBereikFilter('alle')}
-                      className={cn(
-                        "flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all",
-                        bereikFilter === 'alle'
-                          ? "bg-card text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      🌍 Alle hulp
-                      <span className="ml-1 text-xs opacity-70">({lokaleHulp.length + uniekeLandelijk.length})</span>
-                    </button>
                     <button
                       onClick={() => setBereikFilter('lokaal')}
                       className={cn(
@@ -868,6 +856,18 @@ function HulpPageContent() {
                     >
                       📍 In je buurt
                       <span className="ml-1 text-xs opacity-70">({lokaleHulp.length})</span>
+                    </button>
+                    <button
+                      onClick={() => setBereikFilter('alle')}
+                      className={cn(
+                        "flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all",
+                        bereikFilter === 'alle'
+                          ? "bg-card text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      🌍 Alle hulp
+                      <span className="ml-1 text-xs opacity-70">({lokaleHulp.length + uniekeLandelijk.length})</span>
                     </button>
                   </div>
                 )}
@@ -1068,21 +1068,9 @@ function HulpPageContent() {
                   </div>
                 </div>
 
-                {/* Filter toggle: Alle hulp / Alleen lokaal */}
+                {/* Filter toggle: Lokaal (standaard) / Alle hulp */}
                 {lokaleHulp.length > 0 && landelijkeHulp.length > 0 && (
                   <div className="flex gap-2 bg-muted p-1 rounded-lg">
-                    <button
-                      onClick={() => setBereikFilter('alle')}
-                      className={cn(
-                        "flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all",
-                        bereikFilter === 'alle'
-                          ? "bg-card text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      🌍 Alle hulp
-                      <span className="ml-1 text-xs opacity-70">({lokaleHulp.length + landelijkeHulp.length})</span>
-                    </button>
                     <button
                       onClick={() => setBereikFilter('lokaal')}
                       className={cn(
@@ -1094,6 +1082,18 @@ function HulpPageContent() {
                     >
                       📍 In je buurt
                       <span className="ml-1 text-xs opacity-70">({lokaleHulp.length})</span>
+                    </button>
+                    <button
+                      onClick={() => setBereikFilter('alle')}
+                      className={cn(
+                        "flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all",
+                        bereikFilter === 'alle'
+                          ? "bg-card text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      🌍 Alle hulp
+                      <span className="ml-1 text-xs opacity-70">({lokaleHulp.length + landelijkeHulp.length})</span>
                     </button>
                   </div>
                 )}
