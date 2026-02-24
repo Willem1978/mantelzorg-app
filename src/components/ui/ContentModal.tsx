@@ -32,14 +32,11 @@ export function ContentModal({
   beschrijving,
   inhoud,
   bron,
-  bronLabel,
   url,
   telefoon,
   website,
   gemeente,
-  soortHulp,
   kosten,
-  doelgroep,
   dienst,
   openingstijden,
   organisatie,
@@ -137,11 +134,6 @@ export function ContentModal({
           {emoji && <span className="text-3xl flex-shrink-0 mt-0.5">{emoji}</span>}
           <div className="flex-1 min-w-0">
             <h2 className="font-bold text-lg text-foreground leading-tight">{weergaveTitel}</h2>
-            {soortHulp && (
-              <span className="inline-block text-xs px-2 py-0.5 rounded-full mt-1 bg-primary/10 text-primary">
-                {soortHulp}
-              </span>
-            )}
           </div>
           <button
             onClick={onClose}
@@ -156,7 +148,7 @@ export function ContentModal({
 
         {/* Scrollable content */}
         <div className="overflow-y-auto px-5 py-4 flex-1">
-          {/* Beschrijving (niet cursief) */}
+          {/* Beschrijving */}
           {beschrijving && (
             <p className="text-sm text-foreground leading-relaxed mb-4">
               {beschrijving}
@@ -170,57 +162,31 @@ export function ContentModal({
             </div>
           )}
 
-          {/* Praktische informatie */}
-          {(openingstijden || kosten) && (
-            <div className="space-y-3 mb-4">
-              {/* Bereikbaarheid */}
-              {openingstijden && (
-                <div className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                    Bereikbaarheid
-                  </p>
-                  <p className="text-sm text-foreground">{openingstijden}</p>
-                </div>
-              )}
-
-              {/* Kosten */}
-              {kosten && (
-                <div className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                    Kosten
-                  </p>
-                  <p className="text-sm text-foreground">{kosten}</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Organisatie & locatie onderaan */}
-          {(organisatieNaam || gemeente || bronLabel) && (
-            <div className="border-t border-border pt-3 mt-2 space-y-1.5">
-              {organisatieNaam && (
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-muted-foreground text-xs w-20 flex-shrink-0">Organisatie</span>
-                  <span className="text-foreground font-medium">{organisatieNaam}</span>
-                </div>
-              )}
+          {/* Details als één samenhangend blok */}
+          {(organisatieNaam || gemeente || kosten || openingstijden) && (
+            <div className="space-y-2 text-sm">
               {gemeente && (
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-muted-foreground text-xs w-20 flex-shrink-0">Locatie</span>
-                  <span className="text-foreground">📍 {gemeente}</span>
-                  {bronLabel && bronLabel !== "Landelijk" && (
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${bronLabelKleur(bronLabel)}`}>
-                      {bronLabel}
-                    </span>
-                  )}
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground w-24 flex-shrink-0">Locatie</span>
+                  <span className="text-foreground">{gemeente}</span>
                 </div>
               )}
-              {!gemeente && bronLabel && (
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-muted-foreground text-xs w-20 flex-shrink-0">Bereik</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${bronLabelKleur(bronLabel)}`}>
-                    {bronLabel}
-                  </span>
+              {organisatieNaam && (
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground w-24 flex-shrink-0">Organisatie</span>
+                  <span className="text-foreground">{organisatieNaam}</span>
+                </div>
+              )}
+              {kosten && (
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground w-24 flex-shrink-0">Kosten</span>
+                  <span className="text-foreground">{kosten}</span>
+                </div>
+              )}
+              {openingstijden && (
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground w-24 flex-shrink-0">Bereikbaar op</span>
+                  <span className="text-foreground">{openingstijden}</span>
                 </div>
               )}
             </div>
@@ -260,16 +226,4 @@ export function ContentModal({
       </div>
     </div>
   )
-}
-
-function bronLabelKleur(label: string | null): string {
-  if (!label) return "bg-muted text-muted-foreground"
-  switch (label) {
-    case "Landelijk": return "bg-primary/10 text-primary"
-    case "Gemeente": return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-    case "Gemeente (Wmo)": return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-    case "Zorgverzekeraar (Zvw)": return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-    case "Wlz": return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
-    default: return "bg-muted text-muted-foreground"
-  }
 }
