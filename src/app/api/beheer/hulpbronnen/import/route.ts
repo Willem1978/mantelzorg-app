@@ -17,6 +17,8 @@ const KOLOM_MAPPING: Record<string, string> = {
   'Soort organisatie': 'type',
   'Telefoonnummer': 'telefoon',
   'Telefonisch te bereiken op': 'openingstijden',
+  'Wanneer en/of Openingstijden': 'openingstijden',
+  'Openingstijden': 'openingstijden',
   'Website': 'website',
   'Kosten': 'kosten',
 }

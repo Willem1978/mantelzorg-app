@@ -168,7 +168,7 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { id, naam, beschrijving, doelgroep, onderdeelTest, soortHulp, telefoon, email, website, isActief } = body
+    const { id, naam, beschrijving, doelgroep, onderdeelTest, soortHulp, telefoon, email, website, openingstijden, kosten, isActief } = body
 
     if (!id) {
       return NextResponse.json({ error: "ID is verplicht" }, { status: 400 })
@@ -198,6 +198,8 @@ export async function PUT(request: NextRequest) {
         ...(telefoon !== undefined && { telefoon: telefoon?.trim() || null }),
         ...(email !== undefined && { email: email?.trim() || null }),
         ...(website !== undefined && { website: website?.trim() || null }),
+        ...(openingstijden !== undefined && { openingstijden: openingstijden?.trim() || null }),
+        ...(kosten !== undefined && { kosten: kosten?.trim() || null }),
         ...(isActief !== undefined && { isActief }),
       },
     })
