@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Button, Input } from "@/components/ui"
+import { Button, Input, LogoIcon } from "@/components/ui"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
@@ -94,10 +94,8 @@ export default function ForgotPasswordPage() {
       <div className="bg-card rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xl max-w-md w-full">
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 sm:gap-3 mb-6 sm:mb-8">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary rounded-xl flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-xl sm:text-2xl">M</span>
-          </div>
-          <span className="font-bold text-lg sm:text-xl text-foreground">MantelzorgApp</span>
+          <LogoIcon size={48} />
+          <span className="font-bold text-lg sm:text-xl text-foreground">MantelBuddy</span>
         </div>
 
         <h1 className="text-xl sm:text-2xl font-bold text-foreground text-center mb-2">

@@ -258,9 +258,9 @@ export function ContentModal({
           )}
 
           {/* Bron */}
-          {(bron || bronLabel) && (
+          {(organisatieNaam || bron) && (
             <p className="text-xs text-muted-foreground mt-3">
-              Bron: {bronLabel || bron}
+              Bron: {organisatieNaam || bron}
             </p>
           )}
         </div>
@@ -283,7 +283,7 @@ export function ContentModal({
                 rel="noopener noreferrer"
                 className={`ker-btn w-full flex items-center justify-center gap-2 ${telefoon ? "ker-btn-secondary" : "ker-btn-primary"}`}
               >
-                🌐 {bronLabel ? `Lees meer op ${bronLabel}` : bron ? `Lees meer op ${bron}` : "Bekijk website"}
+                🌐 {organisatieNaam ? `Lees meer bij ${organisatieNaam}` : "Bekijk website"}
               </a>
             )}
           </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
+import { LogoIcon } from "@/components/ui"
 
 const rolLabels: Record<string, string> = {
   COMMUNICATIE: "Communicatie",
@@ -127,9 +128,7 @@ export default function UitnodigingPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl p-8 max-w-md w-full shadow-sm border border-gray-200">
         <div className="text-center mb-6">
-          <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mx-auto mb-3">
-            <span className="text-white font-bold text-xl">M</span>
-          </div>
+          <div className="flex justify-center mb-3"><LogoIcon size={48} /></div>
           <h1 className="text-xl font-bold text-gray-900">Welkom bij MantelBuddy</h1>
           <p className="text-gray-500 text-sm mt-1">
             Je bent uitgenodigd als medewerker van gemeente <strong>{invite?.gemeenteNaam}</strong>
