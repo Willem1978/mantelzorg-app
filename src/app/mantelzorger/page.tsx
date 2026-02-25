@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { LogoIcon } from "@/components/ui"
 
 export default function MantelzorgerPage() {
   return (
@@ -7,9 +8,7 @@ export default function MantelzorgerPage() {
       <header className="px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center justify-center">
           <Link href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">M</span>
-            </div>
+            <LogoIcon size={40} />
             <span className="font-bold text-foreground text-xl">MantelBuddy</span>
           </Link>
         </div>

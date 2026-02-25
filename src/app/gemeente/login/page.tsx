@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { LogoIcon } from "@/components/ui"
 
 function GemeenteLoginForm() {
   const router = useRouter()
@@ -43,9 +44,7 @@ function GemeenteLoginForm() {
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-lg p-8">
           <div className="text-center mb-8">
-            <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center mx-auto mb-4">
-              <span className="text-white font-bold text-2xl">M</span>
-            </div>
+            <div className="flex justify-center mb-4"><LogoIcon size={56} /></div>
             <h1 className="text-2xl font-bold text-gray-900">Gemeenteportaal</h1>
             <p className="text-gray-500 mt-2">Inloggen voor gemeentemedewerkers</p>
           </div>

@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { LogoIcon } from "@/components/ui"
 
 function BeheerLoginContent() {
   const [email, setEmail] = useState("")
@@ -52,9 +53,7 @@ function BeheerLoginContent() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-white font-bold text-2xl">M</span>
-          </div>
+          <div className="flex justify-center mb-4"><LogoIcon size={64} /></div>
           <h1 className="text-2xl font-bold text-gray-900">Beheeromgeving</h1>
           <p className="text-gray-500 mt-1">Log in met je admin-account</p>
         </div>

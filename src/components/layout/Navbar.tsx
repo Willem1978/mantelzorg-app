@@ -8,6 +8,7 @@ import { NotificationBell } from "@/components/navigation/NotificationBell"
 import { ThemeToggle } from "@/components/navigation/ThemeToggle"
 import { FavorietenIcon } from "@/components/navigation/FavorietenIcon"
 import { useNieuwsBadge } from "@/hooks/useNieuwsBadge"
+import { LogoIcon } from "@/components/ui"
 
 interface NavbarProps {
   userRole?: "CAREGIVER" | "ORG_MEMBER" | "ORG_ADMIN" | "ADMIN"
@@ -64,9 +65,7 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
         <div className="flex justify-between h-14 sm:h-16">
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">M</span>
-              </div>
+              <LogoIcon size={32} />
               <span className="font-semibold text-foreground text-base sm:text-lg hidden sm:block">
                 MantelBuddy
               </span>

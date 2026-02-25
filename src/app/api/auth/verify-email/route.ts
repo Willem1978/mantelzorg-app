@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       data: {
         userId: user.id,
         type: "SYSTEM",
-        title: "Welkom bij MantelzorgApp!",
+        title: "Welkom bij MantelBuddy!",
         message: "Je e-mail is bevestigd. Start de intake om je persoonlijke dashboard te krijgen.",
         link: "/intake",
       }

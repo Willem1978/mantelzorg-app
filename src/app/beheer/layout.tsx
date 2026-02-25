@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import { useState } from "react"
+import { LogoIcon } from "@/components/ui"
 
 const menuItems = [
   { href: "/beheer", label: "Dashboard", icon: "📊" },
@@ -53,9 +54,7 @@ export default function BeheerLayout({
               </svg>
             </button>
             <Link href="/beheer" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">M</span>
-              </div>
+              <LogoIcon size={32} />
               <span className="font-semibold text-gray-900">MantelBuddy</span>
               <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">Beheer</span>
             </Link>

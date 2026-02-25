@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import { useEffect, useMemo, useState } from "react"
 import { AdminSpinner } from "@/components/admin"
+import { LogoIcon } from "@/components/ui"
 
 // Mapping van menu-items naar vereiste gemeente subrollen
 // Items zonder 'rollen' zijn altijd zichtbaar voor de hoofdadmin
@@ -114,9 +115,7 @@ export default function GemeenteLayout({
               </svg>
             </button>
             <Link href="/gemeente" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">M</span>
-              </div>
+              <LogoIcon size={32} />
               <span className="font-semibold text-gray-900">MantelBuddy</span>
               <span className="text-xs bg-primary-light text-primary px-2 py-0.5 rounded-full font-medium">
                 {gemeenteNaam}
