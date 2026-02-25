@@ -316,8 +316,11 @@ function ArtikelCard({ artikel, categorieTitel, isFavorited, favorietId }: {
             {artikel.beschrijving}
           </p>
           <div className="flex items-center gap-3 pl-7 flex-wrap">
+            {artikel.bron && (
+              <span className="text-xs text-muted-foreground">{artikel.bron}</span>
+            )}
             {artikel.inhoud && (
-              <span className="text-xs text-primary font-medium">Lees meer →</span>
+              <span className="text-xs text-primary font-medium ml-auto">Lees meer →</span>
             )}
           </div>
         </div>

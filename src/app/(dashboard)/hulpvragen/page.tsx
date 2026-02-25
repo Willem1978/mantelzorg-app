@@ -1211,6 +1211,8 @@ function HulpbronCard({ hulp, favorieten, categorie }: {
 
   // Dienst als primaire naam, organisatie als secundair
   const displayNaam = hulp.dienst || hulp.naam
+  // Organisatienaam tonen als de dienst de titel is
+  const organisatieNaam = hulp.dienst && hulp.naam !== hulp.dienst ? hulp.naam : null
 
   return (
     <>
@@ -1221,6 +1223,9 @@ function HulpbronCard({ hulp, favorieten, categorie }: {
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-sm text-foreground">{displayNaam}</p>
+            {organisatieNaam && (
+              <p className="text-xs text-muted-foreground mt-0.5">{organisatieNaam}</p>
+            )}
             {hulp.beschrijving && (
               <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{hulp.beschrijving}</p>
             )}
@@ -1278,6 +1283,7 @@ function LandelijkeHulpCard({ hulp, favorieten, categorie }: {
   const favorietId = favorieten?.[favKey]
 
   const displayNaam = hulp.dienst || hulp.naam
+  const organisatieNaam = hulp.dienst && hulp.naam !== hulp.dienst ? hulp.naam : null
 
   return (
     <>
@@ -1288,6 +1294,9 @@ function LandelijkeHulpCard({ hulp, favorieten, categorie }: {
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-sm text-foreground">{displayNaam}</p>
+            {organisatieNaam && (
+              <p className="text-xs text-muted-foreground mt-0.5">{organisatieNaam}</p>
+            )}
             {hulp.beschrijving && (
               <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{hulp.beschrijving}</p>
             )}
