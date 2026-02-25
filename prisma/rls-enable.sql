@@ -65,6 +65,21 @@ ALTER TABLE "BuddyTaak" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "BuddyTaakReactie" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "BuddyBeoordeling" ENABLE ROW LEVEL SECURITY;
 
+-- Uitnodigingen
+ALTER TABLE "InviteToken" ENABLE ROW LEVEL SECURITY;
+
+-- Artikelen & content management
+ALTER TABLE "Artikel" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "AuditLog" ENABLE ROW LEVEL SECURITY;
+
+-- Content beheer tabellen
+ALTER TABLE "BalanstestVraag" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Zorgtaak" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "TaakCategorieMapping" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ContentCategorie" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "FormulierOptie" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "AppContent" ENABLE ROW LEVEL SECURITY;
+
 -- ============================================
 -- 2. Policies: alleen service_role + postgres mogen alles
 -- ============================================
@@ -122,8 +137,23 @@ CREATE POLICY "postgres_full_access" ON "BuddyTaak" FOR ALL TO postgres USING (t
 CREATE POLICY "postgres_full_access" ON "BuddyTaakReactie" FOR ALL TO postgres USING (true) WITH CHECK (true);
 CREATE POLICY "postgres_full_access" ON "BuddyBeoordeling" FOR ALL TO postgres USING (true) WITH CHECK (true);
 
+-- Uitnodigingen
+CREATE POLICY "postgres_full_access" ON "InviteToken" FOR ALL TO postgres USING (true) WITH CHECK (true);
+
+-- Artikelen & content management
+CREATE POLICY "postgres_full_access" ON "Artikel" FOR ALL TO postgres USING (true) WITH CHECK (true);
+CREATE POLICY "postgres_full_access" ON "AuditLog" FOR ALL TO postgres USING (true) WITH CHECK (true);
+
+-- Content beheer tabellen
+CREATE POLICY "postgres_full_access" ON "BalanstestVraag" FOR ALL TO postgres USING (true) WITH CHECK (true);
+CREATE POLICY "postgres_full_access" ON "Zorgtaak" FOR ALL TO postgres USING (true) WITH CHECK (true);
+CREATE POLICY "postgres_full_access" ON "TaakCategorieMapping" FOR ALL TO postgres USING (true) WITH CHECK (true);
+CREATE POLICY "postgres_full_access" ON "ContentCategorie" FOR ALL TO postgres USING (true) WITH CHECK (true);
+CREATE POLICY "postgres_full_access" ON "FormulierOptie" FOR ALL TO postgres USING (true) WITH CHECK (true);
+CREATE POLICY "postgres_full_access" ON "AppContent" FOR ALL TO postgres USING (true) WITH CHECK (true);
+
 -- ============================================
--- Klaar! Alle 31 tabellen hebben nu RLS aan.
+-- Klaar! Alle 40 tabellen hebben nu RLS aan.
 -- De anon en authenticated rollen hebben GEEN toegang.
 -- Alleen postgres (Prisma) en service_role hebben volledige toegang.
 -- ============================================
