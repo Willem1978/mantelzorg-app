@@ -1251,11 +1251,6 @@ function HulpbronCard({ hulp, favorieten, categorie }: {
               📍 {hulp.gemeente}
             </span>
           )}
-          {hulp.kosten && (
-            <span className="text-xs text-muted-foreground">
-              {hulp.kosten}
-            </span>
-          )}
           <span className="text-xs text-primary font-medium ml-auto">{c.kaart.meerInfo}</span>
         </div>
       </div>
