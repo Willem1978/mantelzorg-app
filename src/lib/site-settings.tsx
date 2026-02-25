@@ -6,9 +6,38 @@ type SiteSettings = Record<string, string>
 
 const SiteSettingsContext = createContext<SiteSettings>({})
 
+// Mapping van SiteSettings sleutels naar CSS variabelen
+const CSS_VAR_MAP: Record<string, string> = {
+  "kleuren.primary": "--primary",
+  "kleuren.primaryLight": "--primary-light",
+  "kleuren.background": "--background",
+  "kleuren.scoreLaag": "--accent-green",
+  "kleuren.scoreGemiddeld": "--accent-amber",
+  "kleuren.scoreHoog": "--accent-red",
+}
+
+/**
+ * Injecteer kleuren uit SiteSettings als CSS custom properties op <html>.
+ * Zo werken alle Tailwind/KER classes automatisch met de admin-kleuren.
+ */
+function applyCssVariables(settings: SiteSettings) {
+  const root = document.documentElement
+  for (const [key, cssVar] of Object.entries(CSS_VAR_MAP)) {
+    const value = settings[key]
+    if (value) {
+      root.style.setProperty(cssVar, value)
+      // Ring kleur mee-updaten met primary
+      if (cssVar === "--primary") {
+        root.style.setProperty("--ring", value)
+      }
+    }
+  }
+}
+
 /**
  * Provider die site-instellingen laadt uit de database.
  * Wrap je app hiermee om overal toegang te hebben tot de instellingen.
+ * Past kleuren automatisch toe als CSS variabelen.
  */
 export function SiteSettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<SiteSettings>({})
@@ -16,7 +45,10 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     fetch("/api/site-settings")
       .then((res) => res.json())
-      .then((data) => setSettings(data))
+      .then((data) => {
+        setSettings(data)
+        applyCssVariables(data)
+      })
       .catch(() => {
         // Gebruik defaults als de API niet beschikbaar is
       })
