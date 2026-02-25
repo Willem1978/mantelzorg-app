@@ -185,16 +185,10 @@ export function ContentModal({
         </div>
 
         {/* Header */}
-        <div className="flex items-start gap-3 px-5 pt-3 pb-3 border-b border-border">
+        <div className="flex items-start gap-3 px-5 pt-3 pb-3">
           {emoji && <span className="text-3xl flex-shrink-0 mt-0.5" aria-hidden="true">{emoji}</span>}
           <div className="flex-1 min-w-0">
             <h2 id="content-modal-titel" className="font-bold text-lg text-foreground leading-tight">{weergaveTitel}</h2>
-            {/* Soort hulp als badge onder de titel */}
-            {soortHulp && (
-              <span className="inline-block mt-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                {soortHulp}
-              </span>
-            )}
           </div>
           <button
             onClick={onClose}
@@ -224,7 +218,7 @@ export function ContentModal({
           )}
 
           {/* Details als één samenhangend blok */}
-          {(organisatieNaam || gemeente || doelgroepLabel || kosten || openingstijden || soortHulp || telefoon) && (
+          {(organisatieNaam || gemeente || (telefoon && openingstijden)) && (
             <div className="space-y-2 text-sm">
               {gemeente && (
                 <div className="flex gap-2">
@@ -238,30 +232,13 @@ export function ContentModal({
                   <span className="text-foreground">{organisatieNaam}</span>
                 </div>
               )}
-              {doelgroepLabel && (
+              {telefoon && openingstijden && (
                 <div className="flex gap-2">
-                  <span className="text-muted-foreground w-28 flex-shrink-0">Voor wie</span>
-                  <span className="text-foreground">{doelgroepLabel}</span>
+                  <span className="text-muted-foreground w-28 flex-shrink-0">Bereikbaar</span>
+                  <span className="text-foreground">{openingstijden}</span>
                 </div>
               )}
-              {kosten && (
-                <div className="flex gap-2">
-                  <span className="text-muted-foreground w-28 flex-shrink-0">Kosten</span>
-                  <span className="text-foreground">{kosten}</span>
-                </div>
-              )}
-              <div className="flex gap-2">
-                <span className="text-muted-foreground w-28 flex-shrink-0">Bereikbaar</span>
-                <span className="text-foreground">{openingstijden || "Neem contact op voor bereikbaarheid"}</span>
-              </div>
             </div>
-          )}
-
-          {/* Bron */}
-          {(organisatieNaam || bron) && (
-            <p className="text-xs text-muted-foreground mt-3">
-              Bron: {organisatieNaam || bron}
-            </p>
           )}
         </div>
 
@@ -273,7 +250,8 @@ export function ContentModal({
                 href={`tel:${telefoon}`}
                 className="ker-btn ker-btn-primary w-full flex items-center justify-center gap-2"
               >
-                📞 Bellen: {telefoon}
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                Bel {telefoon}
               </a>
             )}
             {(url || website) && (
@@ -283,7 +261,8 @@ export function ContentModal({
                 rel="noopener noreferrer"
                 className={`ker-btn w-full flex items-center justify-center gap-2 ${telefoon ? "ker-btn-secondary" : "ker-btn-primary"}`}
               >
-                🌐 {organisatieNaam ? `Lees meer bij ${organisatieNaam}` : "Bekijk website"}
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                Naar website
               </a>
             )}
           </div>
