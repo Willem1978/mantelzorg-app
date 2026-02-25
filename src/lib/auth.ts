@@ -91,23 +91,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id as string
-        token.role = (user as any).role
-        token.caregiverId = (user as any).caregiverId
-        token.gemeenteNaam = (user as any).gemeenteNaam
-        token.gemeenteRollen = (user as any).gemeenteRollen || []
-        token.sessionVersion = (user as any).sessionVersion
+        token.id = user.id!
+        token.role = user.role
+        token.caregiverId = user.caregiverId
+        token.gemeenteNaam = user.gemeenteNaam
+        token.gemeenteRollen = user.gemeenteRollen || []
+        token.sessionVersion = user.sessionVersion
       }
       return token
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string
-        session.user.role = token.role as string
-        session.user.caregiverId = token.caregiverId as string | null
-        session.user.gemeenteNaam = token.gemeenteNaam as string | null
-        session.user.gemeenteRollen = (token.gemeenteRollen as string[]) || []
-        ;(session.user as any).sessionVersion = token.sessionVersion as number
+        session.user.id = token.id
+        session.user.role = token.role
+        session.user.caregiverId = token.caregiverId
+        session.user.gemeenteNaam = token.gemeenteNaam
+        session.user.gemeenteRollen = token.gemeenteRollen || []
+        session.user.sessionVersion = token.sessionVersion
       }
       return session
     },

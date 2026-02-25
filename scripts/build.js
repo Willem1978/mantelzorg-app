@@ -12,13 +12,18 @@ if (!process.env.DIRECT_URL && process.env.DATABASE_URL) {
 }
 
 // Generate Prisma client
-execSync('npx prisma generate', { stdio: 'inherit', env: process.env });
+try {
+  execSync('npx prisma generate', { stdio: 'inherit', env: process.env });
+} catch (e) {
+  console.error('Error: prisma generate failed. Cannot continue build.');
+  process.exit(1);
+}
 
 // Run db push to ensure database schema is up to date
 // This may fail if the direct database connection (port 5432) is unreachable from
 // the build environment (common with Supabase). Schema should be managed locally.
 try {
-  execSync('npx prisma db push --skip-generate --accept-data-loss', { stdio: 'inherit', env: process.env });
+  execSync('npx prisma db push --skip-generate', { stdio: 'inherit', env: process.env });
 } catch (e) {
   console.warn('Warning: prisma db push failed (direct DB connection may be unreachable from build server).');
   console.warn('Ensure schema is up to date by running "npx prisma db push" locally.');

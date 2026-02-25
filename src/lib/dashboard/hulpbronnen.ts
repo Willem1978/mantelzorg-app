@@ -55,8 +55,15 @@ export async function getHulpbronnenVoorTaken(
   zorgvragerGemeente: string | null,
   belastingNiveau: string | null
 ): Promise<HulpbronnenResultaat> {
+  // Filter hulpbronnen op basis van belastingniveau (groen/oranje/rood)
   const niveauFilter: Record<string, unknown>[] = []
-  void belastingNiveau
+  if (belastingNiveau === "LAAG") {
+    niveauFilter.push({ zichtbaarBijLaag: true })
+  } else if (belastingNiveau === "GEMIDDELD") {
+    niveauFilter.push({ zichtbaarBijGemiddeld: true })
+  } else if (belastingNiveau === "HOOG") {
+    niveauFilter.push({ zichtbaarBijHoog: true })
+  }
 
   // Landelijke hulplijnen
   const landelijk = await prisma.zorgorganisatie.findMany({
