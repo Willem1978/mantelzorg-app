@@ -37,6 +37,7 @@ export default function HuisstijlPage() {
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState<TabId>("branding")
   const [changes, setChanges] = useState<Record<string, string>>({})
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const { showSuccess, showError } = useToast()
 
   useEffect(() => {
@@ -45,13 +46,22 @@ export default function HuisstijlPage() {
 
   const loadSettings = async () => {
     setLoading(true)
+    setErrorMsg(null)
     try {
       const res = await fetch("/api/beheer/huisstijl")
       const data = await res.json()
+      if (!res.ok) {
+        const detail = data.detail ? `: ${data.detail}` : ""
+        setErrorMsg(`${data.error || "Fout bij laden"}${detail}`)
+        showError(data.error || "Instellingen konden niet worden geladen")
+        setSettings([])
+        return
+      }
       setSettings(data.settings || [])
       setChanges({})
     } catch (error) {
       console.error(error)
+      setErrorMsg("Kon geen verbinding maken met de server")
       showError("Instellingen konden niet worden geladen")
     } finally {
       setLoading(false)
@@ -191,9 +201,27 @@ export default function HuisstijlPage() {
           </div>
         ))}
 
-        {Object.keys(groups).length === 0 && (
+        {Object.keys(groups).length === 0 && !errorMsg && (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <p className="text-gray-400 text-lg">Geen instellingen in deze categorie</p>
+          </div>
+        )}
+
+        {errorMsg && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+            <div className="flex items-start gap-3">
+              <span className="text-red-500 text-xl flex-shrink-0">&#9888;</span>
+              <div>
+                <h3 className="text-red-800 font-semibold">Fout bij laden instellingen</h3>
+                <p className="text-red-600 text-sm mt-1">{errorMsg}</p>
+                <button
+                  onClick={loadSettings}
+                  className="mt-3 px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 transition-colors"
+                >
+                  Opnieuw proberen
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
