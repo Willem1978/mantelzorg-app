@@ -193,6 +193,7 @@ function HulpCard({ hulp, favorieten, categorie }: {
   const favorietId = favorieten?.[favKey]
 
   const displayNaam = hulp.dienst || hulp.naam
+  const organisatieNaam = hulp.dienst && hulp.naam !== hulp.dienst ? hulp.naam : null
 
   return (
     <>
@@ -202,6 +203,9 @@ function HulpCard({ hulp, favorieten, categorie }: {
       >
         <div className="flex-1 min-w-0">
           <p className="font-medium text-sm">{displayNaam}</p>
+          {organisatieNaam && (
+            <p className="text-xs text-muted-foreground mt-0.5">{organisatieNaam}</p>
+          )}
           {hulp.beschrijving && (
             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{hulp.beschrijving}</p>
           )}
