@@ -22,6 +22,11 @@ export async function GET() {
         website: true,
         beschrijving: true,
         soortHulp: true,
+        dienst: true,
+        openingstijden: true,
+        kosten: true,
+        bronLabel: true,
+        doelgroep: true,
       },
     })
 

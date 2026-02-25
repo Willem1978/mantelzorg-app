@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { FavorietButton } from "@/components/FavorietButton"
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs"
-import { ensureAbsoluteUrl } from "@/lib/utils"
+import { ContentModal } from "@/components/ui/ContentModal"
 
 interface LandelijkeHulpbron {
   naam: string
@@ -11,6 +11,11 @@ interface LandelijkeHulpbron {
   website: string | null
   beschrijving: string | null
   soortHulp: string | null
+  dienst: string | null
+  openingstijden: string | null
+  kosten: string | null
+  bronLabel: string | null
+  doelgroep: string | null
 }
 
 // Genereer stabiel itemId voor hulporganisaties
@@ -181,52 +186,65 @@ function HulpCard({ hulp, favorieten, categorie }: {
   favorieten: Record<string, string>
   categorie: string
 }) {
+  const [modalOpen, setModalOpen] = useState(false)
   const itemId = generateHulpItemId(hulp.naam)
   const favKey = `HULP:${itemId}`
   const isFavorited = !!(favorieten && favorieten[favKey])
   const favorietId = favorieten?.[favKey]
 
+  const displayNaam = hulp.dienst || hulp.naam
+
   return (
-    <div className="flex items-center justify-between py-3 px-3 bg-white dark:bg-card rounded-lg border border-border">
-      <div className="flex-1 min-w-0">
-        <p className="font-medium text-sm">{hulp.naam}</p>
-        {hulp.beschrijving && (
-          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{hulp.beschrijving}</p>
-        )}
-        <div className="flex gap-2 mt-1">
-          {hulp.telefoon && (
-            <a
-              href={`tel:${hulp.telefoon}`}
-              className="text-xs text-primary hover:underline font-medium flex items-center gap-1 whitespace-nowrap"
-            >
-              📞 {hulp.telefoon}
-            </a>
+    <>
+      <div
+        className="flex items-center justify-between py-3 px-3 bg-white dark:bg-card rounded-lg border border-border cursor-pointer hover:shadow-md transition-shadow"
+        onClick={() => setModalOpen(true)}
+      >
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-sm">{displayNaam}</p>
+          {hulp.beschrijving && (
+            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{hulp.beschrijving}</p>
           )}
-          {hulp.website && (
-            <a
-              href={ensureAbsoluteUrl(hulp.website)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary hover:text-primary/80"
-            >
-              🌐
-            </a>
-          )}
+          <div className="flex items-center gap-2 mt-1">
+            {hulp.telefoon && (
+              <span className="text-xs text-primary font-medium flex items-center gap-1 whitespace-nowrap">
+                📞 {hulp.telefoon}
+              </span>
+            )}
+            <span className="text-xs text-primary font-medium ml-auto">Meer info →</span>
+          </div>
+        </div>
+        <div onClick={(e) => e.stopPropagation()}>
+          <FavorietButton
+            type="HULP"
+            itemId={itemId}
+            titel={hulp.naam}
+            beschrijving={hulp.beschrijving || undefined}
+            categorie={categorie}
+            url={hulp.website || undefined}
+            telefoon={hulp.telefoon || undefined}
+            icon="🌍"
+            initialFavorited={isFavorited}
+            initialFavorietId={favorietId}
+            size="sm"
+          />
         </div>
       </div>
-      <FavorietButton
-        type="HULP"
-        itemId={itemId}
+
+      <ContentModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
         titel={hulp.naam}
-        beschrijving={hulp.beschrijving || undefined}
-        categorie={categorie}
-        url={hulp.website || undefined}
-        telefoon={hulp.telefoon || undefined}
-        icon="🌍"
-        initialFavorited={isFavorited}
-        initialFavorietId={favorietId}
-        size="sm"
+        dienst={hulp.dienst}
+        beschrijving={hulp.beschrijving}
+        soortHulp={hulp.soortHulp}
+        telefoon={hulp.telefoon}
+        website={hulp.website}
+        kosten={hulp.kosten}
+        openingstijden={hulp.openingstijden}
+        bronLabel={hulp.bronLabel}
+        doelgroep={hulp.doelgroep}
       />
-    </div>
+    </>
   )
 }

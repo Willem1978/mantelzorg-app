@@ -21,6 +21,9 @@ const KOLOM_MAPPING: Record<string, string> = {
   'Openingstijden': 'openingstijden',
   'Website': 'website',
   'Kosten': 'kosten',
+  'Telefonische bereikbaarheid': 'openingstijden',
+  'Bron': 'bronLabel',
+  'Bronlabel': 'bronLabel',
 }
 
 // Mapping van CSV-categorienamen naar gestandaardiseerde categorienamen
@@ -166,6 +169,7 @@ export async function POST(request: NextRequest) {
             openingstijden: row.openingstijden || null,
             kosten: row.kosten || null,
             gemeente,
+            bronLabel: row.bronLabel || (gemeente ? 'Gemeente' : 'Landelijk'),
             dekkingNiveau: gemeente ? 'GEMEENTE' : 'LANDELIJK',
             isActief: true,
             zichtbaarBijLaag: false,
