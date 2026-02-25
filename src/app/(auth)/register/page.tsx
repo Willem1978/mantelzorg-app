@@ -7,17 +7,9 @@ import Link from "next/link"
 import { AddressSearch, AddressInfo } from "@/components/ui/AddressSearch"
 import { GerAvatar } from "@/components/GerAvatar"
 import { useToast } from "@/components/ui/Toast"
+import { authContent } from "@/config/content"
 
-const RELATIE_OPTIES = [
-  "Partner",
-  "Ouder",
-  "Kind",
-  "Broer/zus",
-  "Schoonouder",
-  "Vriend(in)",
-  "Buurman/vrouw",
-  "Anders",
-]
+const c = authContent.register
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -63,22 +55,22 @@ export default function RegisterPage() {
     setError("")
 
     if (!formData.email) {
-      setError("Vul je e-mailadres in")
+      setError(c.errors.emailVerplicht)
       return
     }
 
     if (formData.password.length < 8) {
-      setError("Je wachtwoord moet minimaal 8 tekens zijn")
+      setError(c.errors.wachtwoordMin)
       return
     }
 
     if (formData.password !== formData.passwordConfirm) {
-      setError("De wachtwoorden zijn niet hetzelfde")
+      setError(c.errors.wachtwoordOngelijk)
       return
     }
 
     if (formData.phoneNumber && !validatePhoneNumber(formData.phoneNumber)) {
-      setError("Je telefoonnummer klopt niet. Gebruik het formaat: 06 12345678")
+      setError(c.errors.telefoonOngeldig)
       return
     }
 
@@ -90,12 +82,12 @@ export default function RegisterPage() {
     setError("")
 
     if (!formData.name.trim()) {
-      setError("Vul je naam in")
+      setError(c.errors.naamVerplicht)
       return
     }
 
     if (!formData.address) {
-      setError("Kies je adres")
+      setError(c.errors.adresVerplicht)
       return
     }
 
@@ -107,22 +99,22 @@ export default function RegisterPage() {
     setError("")
 
     if (!formData.careRecipientName.trim()) {
-      setError("Vul de naam van je naaste in")
+      setError(c.errors.naasteNaamVerplicht)
       return
     }
 
     if (!formData.careRecipientRelation) {
-      setError("Kies je relatie tot je naaste")
+      setError(c.errors.relatieVerplicht)
       return
     }
 
     if (!formData.careRecipientAddress) {
-      setError("Kies het adres van je naaste")
+      setError(c.errors.naasteAdresVerplicht)
       return
     }
 
     if (!formData.privacyConsent || !formData.dataProcessingConsent) {
-      setError("Je moet akkoord gaan met de voorwaarden")
+      setError(c.errors.voorwaardenVerplicht)
       return
     }
 
@@ -163,7 +155,7 @@ export default function RegisterPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || "Je account kon niet worden aangemaakt. Probeer het later opnieuw.")
+        throw new Error(data.error || c.errors.registratieFout)
       }
 
       // Automatisch inloggen na registratie
@@ -174,15 +166,15 @@ export default function RegisterPage() {
       })
 
       if (signInResult?.error) {
-        showSuccess("Account aangemaakt! Log nu in.")
+        showSuccess(c.success.accountAangemaakt)
         router.push("/login?registered=true")
         return
       }
 
-      showSuccess("Welkom! Je account is klaar.")
+      showSuccess(c.success.welkom)
       router.push("/dashboard")
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Er ging iets mis"
+      const errorMessage = err instanceof Error ? err.message : c.errors.generic
       setError(errorMessage)
       showError(errorMessage)
     } finally {
@@ -192,18 +184,18 @@ export default function RegisterPage() {
 
   const getStepTitle = () => {
     switch (step) {
-      case 1: return "Maak een account"
-      case 2: return "Over jou"
-      case 3: return "Over je naaste"
+      case 1: return c.steps.account.title
+      case 2: return c.steps.overJou.title
+      case 3: return c.steps.overNaaste.title
       default: return ""
     }
   }
 
   const getStepSubtitle = () => {
     switch (step) {
-      case 1: return "Vul je e-mail en wachtwoord in. Zo kun je later weer inloggen."
-      case 2: return "Vul je naam en adres in. Met je adres zoeken we hulp bij jou in de buurt."
-      case 3: return "Bijna klaar! Vul de gegevens van je naaste in."
+      case 1: return c.steps.account.subtitle
+      case 2: return c.steps.overJou.subtitle
+      case 3: return c.steps.overNaaste.subtitle
       default: return ""
     }
   }
@@ -229,7 +221,7 @@ export default function RegisterPage() {
           {/* Stappen indicator - nu in de linker kolom op desktop */}
           <div className="mt-4 lg:mt-8 flex justify-center lg:justify-center">
             <div className="ker-pill lg:text-base lg:px-6 lg:py-2">
-              stap <span className="font-bold mx-1">{step}</span> van 3
+              {c.progress(step)}
             </div>
           </div>
         </div>
@@ -251,7 +243,7 @@ export default function RegisterPage() {
               <form onSubmit={handleStep1Submit} className="space-y-4">
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-                    Je e-mailadres
+                    {c.form.emailLabel}
                   </label>
                   <input
                     id="email"
@@ -259,18 +251,18 @@ export default function RegisterPage() {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="ker-input"
-                    placeholder="naam@voorbeeld.nl"
+                    placeholder={c.form.emailPlaceholder}
                     required
                     autoComplete="email"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Hier sturen we belangrijke berichten naartoe
+                    {c.form.emailHelp}
                   </p>
                 </div>
 
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
-                    Kies een wachtwoord
+                    {c.form.passwordLabel}
                   </label>
                   <input
                     id="password"
@@ -278,18 +270,18 @@ export default function RegisterPage() {
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="ker-input"
-                    placeholder="Minimaal 8 tekens"
+                    placeholder={c.form.passwordMin}
                     required
                     autoComplete="new-password"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Kies iets dat je makkelijk onthoudt
+                    {c.form.passwordHelp}
                   </p>
                 </div>
 
                 <div>
                   <label htmlFor="passwordConfirm" className="block text-sm font-medium text-foreground mb-2">
-                    Typ je wachtwoord nog een keer
+                    {c.form.passwordConfirmLabel}
                   </label>
                   <input
                     id="passwordConfirm"
@@ -297,7 +289,7 @@ export default function RegisterPage() {
                     value={formData.passwordConfirm}
                     onChange={(e) => setFormData({ ...formData, passwordConfirm: e.target.value })}
                     className="ker-input"
-                    placeholder="Hetzelfde als hierboven"
+                    placeholder={c.form.passwordConfirmHelp}
                     required
                     autoComplete="new-password"
                   />
@@ -305,7 +297,7 @@ export default function RegisterPage() {
 
                 <div>
                   <label htmlFor="phoneNumber" className="block text-sm font-medium text-foreground mb-2">
-                    Je mobiele nummer <span className="text-muted-foreground font-normal">(niet verplicht)</span>
+                    {c.form.phoneLabel} <span className="text-muted-foreground font-normal">{c.form.phoneLabelOptional}</span>
                   </label>
                   <input
                     id="phoneNumber"
@@ -313,16 +305,16 @@ export default function RegisterPage() {
                     value={formData.phoneNumber}
                     onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                     className="ker-input"
-                    placeholder="06 12345678"
+                    placeholder={c.form.phonePlaceholder}
                     autoComplete="tel"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Dan kun je MantelBuddy ook via WhatsApp gebruiken
+                    {c.form.phoneHelp}
                   </p>
                 </div>
 
                 <button type="submit" className="ker-btn ker-btn-primary w-full">
-                  Ga verder
+                  {c.buttons.verder}
                 </button>
               </form>
             )}
@@ -332,7 +324,7 @@ export default function RegisterPage() {
               <form onSubmit={handleStep2Submit} className="space-y-4">
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
-                    Hoe mogen we je noemen?
+                    {c.form.nameLabel}
                   </label>
                   <input
                     id="name"
@@ -340,20 +332,20 @@ export default function RegisterPage() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="ker-input"
-                    placeholder="Je voornaam"
+                    placeholder={c.form.namePlaceholder}
                     required
                     autoComplete="given-name"
                   />
                 </div>
 
                 <AddressSearch
-                  label="Waar woon je?"
+                  label={c.form.addressLabel}
                   value={formData.address}
                   onChange={(address) => setFormData({ ...formData, address })}
-                  placeholder="Begin met typen, bijv. Kerkstraat of 1234AB"
+                  placeholder={c.form.addressPlaceholder}
                 />
                 <p className="text-xs text-muted-foreground -mt-2">
-                  Dit hebben we nodig om hulp bij jou in de buurt te vinden
+                  {c.form.addressHelp}
                 </p>
 
                 <div className="flex gap-3 pt-2">
@@ -362,10 +354,10 @@ export default function RegisterPage() {
                     onClick={() => setStep(1)}
                     className="ker-btn ker-btn-secondary flex-1"
                   >
-                    ← Terug
+                    {c.buttons.terug}
                   </button>
                   <button type="submit" className="ker-btn ker-btn-primary flex-1">
-                    Ga verder
+                    {c.buttons.verder}
                   </button>
                 </div>
               </form>
@@ -376,7 +368,7 @@ export default function RegisterPage() {
               <form onSubmit={handleStep3Submit} className="space-y-4">
                 <div>
                   <label htmlFor="careRecipientName" className="block text-sm font-medium text-foreground mb-2">
-                    Hoe heet degene voor wie je zorgt?
+                    {c.form.careNameLabel}
                   </label>
                   <input
                     id="careRecipientName"
@@ -384,18 +376,18 @@ export default function RegisterPage() {
                     value={formData.careRecipientName}
                     onChange={(e) => setFormData({ ...formData, careRecipientName: e.target.value })}
                     className="ker-input"
-                    placeholder="Voornaam"
+                    placeholder={c.form.careNamePlaceholder}
                     required
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    Wie is dat voor jou?
+                    {c.form.careRelationLabel}
                   </label>
-                  <p className="text-xs text-muted-foreground mb-3">Tik op wat van toepassing is</p>
+                  <p className="text-xs text-muted-foreground mb-3">{c.form.careRelationHelp}</p>
                   <div className="grid grid-cols-2 gap-2">
-                    {RELATIE_OPTIES.map((relatie) => (
+                    {c.relatieOpties.map((relatie) => (
                       <button
                         key={relatie}
                         type="button"
@@ -413,13 +405,13 @@ export default function RegisterPage() {
                 </div>
 
                 <AddressSearch
-                  label="Waar woont je naaste?"
+                  label={c.form.careAddressLabel}
                   value={formData.careRecipientAddress}
                   onChange={(address) => setFormData({ ...formData, careRecipientAddress: address })}
-                  placeholder="Begin met typen, bijv. Kerkstraat of 1234AB"
+                  placeholder={c.form.careAddressPlaceholder}
                 />
                 <p className="text-xs text-muted-foreground -mt-2">
-                  Zo vinden we hulp bij je naaste in de buurt
+                  {c.form.careAddressHelp}
                 </p>
 
                 {/* Privacy */}
@@ -432,11 +424,11 @@ export default function RegisterPage() {
                       className="mt-0.5 h-5 w-5 text-primary rounded border-border focus:ring-primary"
                     />
                     <span className="text-sm text-foreground">
-                      Ik ga akkoord met de{" "}
+                      {c.privacy.akkoordPrefix}{" "}
                       <Link href="/privacy" className="text-primary hover:underline">
-                        privacyregels
+                        {c.privacy.privacyregels}
                       </Link>{" "}
-                      <span className="text-muted-foreground">(we delen je gegevens nooit met anderen)</span>
+                      <span className="text-muted-foreground">{c.privacy.akkoordSuffix}</span>
                     </span>
                   </label>
 
@@ -448,7 +440,7 @@ export default function RegisterPage() {
                       className="mt-0.5 h-5 w-5 text-primary rounded border-border focus:ring-primary"
                     />
                     <span className="text-sm text-foreground">
-                      Jullie mogen mijn gegevens gebruiken om mij te helpen
+                      {c.privacy.gegevensGebruik}
                     </span>
                   </label>
                 </div>
@@ -459,7 +451,7 @@ export default function RegisterPage() {
                     onClick={() => setStep(2)}
                     className="ker-btn ker-btn-secondary flex-1"
                   >
-                    ← Terug
+                    {c.buttons.terug}
                   </button>
                   <button
                     type="submit"
@@ -469,10 +461,10 @@ export default function RegisterPage() {
                     {isLoading ? (
                       <span className="flex items-center justify-center gap-2">
                         <span className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                        Even geduld...
+                        {c.buttons.bezig}
                       </span>
                     ) : (
-                      "Klaar!"
+                      c.buttons.klaar
                     )}
                   </button>
                 </div>
@@ -481,9 +473,9 @@ export default function RegisterPage() {
 
             <div className="mt-6 pt-6 border-t border-border text-center">
               <p className="text-muted-foreground lg:text-base">
-                Heb je al een account?{" "}
+                {c.footer.heeftAccount}{" "}
                 <Link href="/login" className="text-primary font-medium hover:underline transition-colors">
-                  Log in
+                  {c.footer.login}
                 </Link>
               </p>
             </div>

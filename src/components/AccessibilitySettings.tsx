@@ -1,38 +1,34 @@
 "use client"
 
 import { useAccessibility } from "@/contexts/AccessibilityContext"
+import { common } from "@/config/content"
+
+const c = common.accessibility
 
 export function AccessibilitySettings() {
   const { highContrast, toggleHighContrast, largeText, toggleLargeText, reduceMotion, toggleReduceMotion } = useAccessibility()
 
+  const toggles = [
+    { isActive: largeText, onToggle: toggleLargeText },
+    { isActive: highContrast, onToggle: toggleHighContrast },
+    { isActive: reduceMotion, onToggle: toggleReduceMotion },
+  ]
+
   return (
     <div className="space-y-3">
-      <h3 className="font-bold text-lg text-foreground">Weergave-instellingen</h3>
-      <p className="text-muted-foreground mb-4">Pas de app aan zodat het prettig is om te gebruiken.</p>
+      <h3 className="font-bold text-lg text-foreground">{c.title}</h3>
+      <p className="text-muted-foreground mb-4">{c.subtitle}</p>
 
-      <ToggleOption
-        label="Grotere tekst"
-        beschrijving="Maakt alle tekst iets groter"
-        isActive={largeText}
-        onToggle={toggleLargeText}
-        emoji="🔤"
-      />
-
-      <ToggleOption
-        label="Hoog contrast"
-        beschrijving="Maakt tekst en randen scherper"
-        isActive={highContrast}
-        onToggle={toggleHighContrast}
-        emoji="🔲"
-      />
-
-      <ToggleOption
-        label="Minder beweging"
-        beschrijving="Schakelt animaties uit"
-        isActive={reduceMotion}
-        onToggle={toggleReduceMotion}
-        emoji="🎯"
-      />
+      {c.opties.map((optie, i) => (
+        <ToggleOption
+          key={i}
+          label={optie.label}
+          beschrijving={optie.beschrijving}
+          isActive={toggles[i].isActive}
+          onToggle={toggles[i].onToggle}
+          emoji={optie.emoji}
+        />
+      ))}
     </div>
   )
 }

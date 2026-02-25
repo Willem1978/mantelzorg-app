@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
 import { ResultSmiley } from "@/components/ui"
 import { PdfDownloadButton } from "@/components/PdfDownloadButton"
+import { rapportContent as c } from "@/config/content"
 
 // Mapping van taak naar categorie voor hulpvragen pagina
 const TAAK_NAAR_HULP_TAB: Record<string, { tab: 'voor-jou' | 'voor-naaste', categorie: string }> = {
@@ -118,18 +119,18 @@ export default function RapportPage() {
       })
       if (!response.ok) {
         if (response.status === 404) {
-          setError("Je hebt nog geen test gedaan.")
+          setError(c.fouten.geenTest)
         } else if (response.status === 401) {
-          setError("Log eerst in om je resultaten te bekijken.")
+          setError(c.fouten.nietIngelogd)
         } else {
-          setError("Er ging iets mis. Probeer het later opnieuw.")
+          setError(c.fouten.algemeenFout)
         }
         return
       }
       const data = await response.json()
       setResult(data)
     } catch {
-      setError("Er ging iets mis bij het laden. Probeer het later opnieuw.")
+      setError(c.fouten.laadFout)
     } finally {
       setLoading(false)
     }
@@ -140,7 +141,7 @@ export default function RapportPage() {
       <div className="ker-page-content flex items-center justify-center min-h-[50vh]">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Laden...</p>
+          <p className="text-muted-foreground">{c.laden}</p>
         </div>
       </div>
     )
@@ -152,7 +153,7 @@ export default function RapportPage() {
         <div className="flex items-start gap-4 mb-6">
           <GerAvatar size="md" />
           <div className="pt-1">
-            <h1 className="text-xl font-bold text-foreground">Geen resultaten</h1>
+            <h1 className="text-xl font-bold text-foreground">{c.fouten.geenResultaten}</h1>
             <p className="text-muted-foreground mt-1">{error}</p>
           </div>
         </div>
@@ -162,13 +163,13 @@ export default function RapportPage() {
             <span className="text-4xl">📋</span>
           </div>
           <p className="text-foreground mb-2">
-            Doe eerst de balanstest.
+            {c.geenTest.title}
           </p>
           <p className="text-sm text-muted-foreground mb-6">
-            Dan zie je hier je resultaten en tips die bij je passen.
+            {c.geenTest.subtitle}
           </p>
           <Link href="/belastbaarheidstest" className="ker-btn ker-btn-primary inline-block">
-            Start de Balanstest
+            {c.geenTest.button}
           </Link>
         </div>
       </div>
@@ -185,6 +186,9 @@ export default function RapportPage() {
   const zwareTaken = geselecteerdeTaken.filter((t) => isZwaar(t.moeilijkheid))
   const gemiddeldeTaken = geselecteerdeTaken.filter((t) => isGemiddeld(t.moeilijkheid))
   const takenMetAandacht = [...zwareTaken, ...gemiddeldeTaken]
+  const hoog = c.niveaus.HOOG
+  const gem = c.niveaus.GEMIDDELD
+  const laag = c.niveaus.LAAG
 
   return (
     <div className="ker-page-content">
@@ -193,10 +197,10 @@ export default function RapportPage() {
         <GerAvatar size="md" />
         <div className="pt-1">
           <h1 className="text-xl font-bold text-foreground">
-            Hoi {result.voornaam}
+            {c.header.greeting(result.voornaam)}
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Je resultaten van {new Date(result.completedAt).toLocaleDateString("nl-NL", { day: "numeric", month: "long" })}
+            {c.header.resultatenVan(new Date(result.completedAt).toLocaleDateString("nl-NL", { day: "numeric", month: "long" }))}
           </p>
         </div>
       </div>
@@ -213,10 +217,10 @@ export default function RapportPage() {
                 <ResultSmiley type="red" size="xl" />
               </div>
               <h2 className="text-xl font-bold text-[var(--accent-red)] mb-2">
-                Je bent overbelast
+                {hoog.title}
               </h2>
               <p className="text-foreground">
-                Dit is niet vol te houden. Je hebt nu hulp nodig.
+                {hoog.subtitle}
               </p>
             </div>
           </div>
@@ -225,7 +229,7 @@ export default function RapportPage() {
           <div className="ker-card mb-4 bg-white border-2 border-[var(--accent-red)]">
             <h3 className="font-bold text-[var(--accent-red)] mb-4 flex items-center gap-2">
               <span className="text-xl">🚨</span>
-              Dit moet je nu doen
+              {hoog.acties.title}
             </h3>
 
             <div className="space-y-3">
@@ -237,9 +241,9 @@ export default function RapportPage() {
                   <span className="text-white text-xl">🏥</span>
                 </div>
                 <div className="flex-1">
-                  <p className="font-bold text-foreground">Bel je huisarts</p>
+                  <p className="font-bold text-foreground">{hoog.acties.huisarts.title}</p>
                   <p className="text-sm text-muted-foreground">
-                    Maak een afspraak om je situatie te bespreken
+                    {hoog.acties.huisarts.beschrijving}
                   </p>
                 </div>
               </div>
@@ -256,10 +260,10 @@ export default function RapportPage() {
                 </div>
                 <div className="flex-1">
                   <p className="font-bold text-foreground">
-                    Mantelzorgondersteuner {result.gemeente || "gemeente"}
+                    {result.gemeente ? hoog.acties.gemeente.titleFn(result.gemeente) : hoog.acties.gemeente.titleFallback}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Gratis hulp vanuit je gemeente
+                    {hoog.acties.gemeente.beschrijving}
                   </p>
                 </div>
               </a>
@@ -273,9 +277,9 @@ export default function RapportPage() {
                   <span className="text-white text-xl">📞</span>
                 </div>
                 <div className="flex-1">
-                  <p className="font-bold text-foreground">Mantelzorglijn</p>
+                  <p className="font-bold text-foreground">{hoog.acties.mantelzorglijn.title}</p>
                   <p className="text-sm text-muted-foreground">
-                    030 - 205 90 59 (ma-vr, gratis)
+                    {hoog.acties.mantelzorglijn.beschrijving}
                   </p>
                 </div>
               </a>
@@ -286,10 +290,10 @@ export default function RapportPage() {
           {takenMetAandacht.length > 0 && (
             <div className="ker-card mb-4">
               <h3 className="font-bold text-foreground mb-3">
-                Deze taken moet je loslaten
+                {hoog.takenTitle}
               </h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Je besteedt {result.totaleZorguren} uur per week aan zorgtaken. Dat is te veel.
+                {hoog.takenSubtitleFn(result.totaleZorguren)}
               </p>
               <div className="space-y-2">
                 {takenMetAandacht.map((taak) => {
@@ -320,7 +324,7 @@ export default function RapportPage() {
                 })}
               </div>
               <p className="text-sm text-[var(--accent-red)] mt-4 font-medium">
-                Klik op een taak om hulpbronnen te bekijken
+                {hoog.takenHint}
               </p>
             </div>
           )}
@@ -338,10 +342,10 @@ export default function RapportPage() {
               <ResultSmiley type="amber" size="xl" />
             </div>
             <h2 className="text-xl font-bold text-[var(--accent-amber)] mb-2">
-              Je balans staat onder druk
+              {gem.title}
             </h2>
             <p className="text-foreground">
-              Zo doorgaan is niet houdbaar. Kijk welke taken je kunt overdragen.
+              {gem.subtitle}
             </p>
           </div>
 
@@ -349,8 +353,7 @@ export default function RapportPage() {
           {result.totaleZorguren > 20 && (
             <div className="ker-card mb-4 bg-[var(--accent-amber-bg)] border-l-4 border-[var(--accent-amber)]">
               <p className="text-foreground">
-                <strong>{result.totaleZorguren} uur per week</strong> is veel.
-                Probeer taken te delen met anderen.
+                <strong>{gem.zorgtijdFn(result.totaleZorguren)}</strong>{gem.zorgtijdSuffix}
               </p>
             </div>
           )}
@@ -359,7 +362,7 @@ export default function RapportPage() {
           {takenMetAandacht.length > 0 && (
             <div className="ker-card mb-4">
               <h3 className="font-bold text-foreground mb-3">
-                Hier kun je hulp bij krijgen
+                {gem.takenTitle}
               </h3>
               <div className="space-y-3">
                 {takenMetAandacht.map((taak) => {
@@ -391,14 +394,14 @@ export default function RapportPage() {
                 })}
               </div>
               <p className="text-sm text-primary mt-4 font-medium">
-                Klik op een taak om hulpbronnen te bekijken →
+                {gem.takenHint}
               </p>
             </div>
           )}
 
           {/* Hulp zoeken */}
           <div className="ker-card mb-4">
-            <h3 className="font-bold text-foreground mb-3">Vind hulp</h3>
+            <h3 className="font-bold text-foreground mb-3">{gem.vindHulp}</h3>
             <div className="space-y-2">
               <a
                 href={result.gemeente ? `https://www.google.com/search?q=mantelzorgondersteuning+${encodeURIComponent(result.gemeente)}` : "https://mantelzorg.nl/steunpunten"}
@@ -410,8 +413,8 @@ export default function RapportPage() {
                   <span className="text-primary-foreground">🤝</span>
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium text-foreground text-sm">Steunpunt Mantelzorg</p>
-                  <p className="text-xs text-muted-foreground">Gratis advies en ondersteuning</p>
+                  <p className="font-medium text-foreground text-sm">{gem.steunpunt.title}</p>
+                  <p className="text-xs text-muted-foreground">{gem.steunpunt.beschrijving}</p>
                 </div>
               </a>
 
@@ -426,8 +429,8 @@ export default function RapportPage() {
                     <span className="text-primary-foreground">🏛️</span>
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-foreground text-sm">WMO loket {result.gemeente}</p>
-                    <p className="text-xs text-muted-foreground">Vraag hulp aan bij de gemeente</p>
+                    <p className="font-medium text-foreground text-sm">{gem.wmoFn(result.gemeente)}</p>
+                    <p className="text-xs text-muted-foreground">{gem.wmoBeschrijving}</p>
                   </div>
                 </a>
               )}
@@ -447,10 +450,10 @@ export default function RapportPage() {
               <ResultSmiley type="green" size="xl" />
             </div>
             <h2 className="text-xl font-bold text-[var(--accent-green)] mb-2">
-              Goed bezig!
+              {laag.title}
             </h2>
             <p className="text-foreground">
-              Je hebt een goede balans. Blijf goed voor jezelf zorgen.
+              {laag.subtitle}
             </p>
           </div>
 
@@ -458,10 +461,10 @@ export default function RapportPage() {
           {zwareTaken.length > 0 && (
             <div className="ker-card mb-4 border-l-4 border-[var(--accent-amber)]">
               <h3 className="font-bold text-foreground mb-3">
-                Let op deze {zwareTaken.length === 1 ? "taak" : "taken"}
+                {laag.letOpTaakFn(zwareTaken.length)}
               </h3>
               <p className="text-sm text-muted-foreground mb-3">
-                Je ervaart {zwareTaken.length === 1 ? "deze taak" : "deze taken"} als zwaar. Hier kun je hulp bij krijgen:
+                {laag.letOpSubtitleFn(zwareTaken.length)}
               </p>
               <div className="space-y-3">
                 {zwareTaken.map((taak) => (
@@ -483,7 +486,7 @@ export default function RapportPage() {
           {geselecteerdeTaken.length > 0 && (
             <div className="ker-card mb-4">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-bold text-foreground">Jouw zorgtaken</h3>
+                <h3 className="font-bold text-foreground">{laag.zorgtaken}</h3>
                 <span className="text-sm text-muted-foreground">{result.totaleZorguren} uur/week</span>
               </div>
               <div className="space-y-2">
@@ -505,26 +508,16 @@ export default function RapportPage() {
 
           {/* Tips om balans te houden */}
           <div className="ker-card mb-4 bg-muted">
-            <h3 className="font-bold text-foreground mb-3">Houd je balans vast</h3>
+            <h3 className="font-bold text-foreground mb-3">{laag.balansTitle}</h3>
             <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <span className="text-xl">💚</span>
-                <p className="text-sm text-foreground">
-                  Plan elke dag iets leuks voor jezelf
-                </p>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="text-xl">🔄</span>
-                <p className="text-sm text-foreground">
-                  Doe deze test elke 3 maanden om je balans te checken
-                </p>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="text-xl">🤝</span>
-                <p className="text-sm text-foreground">
-                  Vraag hulp voordat je het nodig hebt
-                </p>
-              </div>
+              {laag.tips.map((tip, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <span className="text-xl">{tip.emoji}</span>
+                  <p className="text-sm text-foreground">
+                    {tip.tekst}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         </>
@@ -543,7 +536,7 @@ export default function RapportPage() {
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
         </svg>
-        Doe de test opnieuw
+        {c.opnieuw}
       </Link>
     </div>
   )
@@ -608,16 +601,5 @@ function getUrenGetal(uren: string): number | null {
 }
 
 function getHulpTip(taakId: string): string {
-  const tips: Record<string, string> = {
-    t1: "Thuiszorg kan helpen met wassen, aankleden en andere persoonlijke verzorging.",
-    t2: "Huishoudelijke hulp kun je aanvragen via de WMO van je gemeente.",
-    t3: "Een apotheek kan medicijnen in weekdozen klaarzetten. Thuiszorg kan toezien op inname.",
-    t4: "De gemeente kan aangepast vervoer regelen (Regiotaxi, WMO-vervoer).",
-    t5: "Vraag bij je gemeente naar vrijwillige hulp bij administratie en formulieren.",
-    t6: "Dagbesteding of vrijwilligers kunnen voor gezelschap zorgen.",
-    t7: "Vervangende mantelzorg of dagopvang kan toezicht overnemen zodat jij even rust hebt.",
-    t8: "Thuiszorg of wijkverpleging kan medische handelingen overnemen.",
-    t9: "Vrijwilligers of een klussenbus kunnen helpen met klussen in huis.",
-  }
-  return tips[taakId] || "Vraag bij je gemeente naar hulpmogelijkheden."
+  return c.hulpTips[taakId] || c.hulpTips.default
 }

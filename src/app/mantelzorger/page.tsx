@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { LogoIcon } from "@/components/ui"
+import { mantelzorgerContent as c } from "@/config/content"
 
 export default function MantelzorgerPage() {
   return (
@@ -21,15 +22,14 @@ export default function MantelzorgerPage() {
             <span className="text-4xl">🧡</span>
           </div>
           <h1 className="text-2xl font-bold text-foreground mb-3">
-            Welkom, mantelzorger
+            {c.title}
           </h1>
           <p className="text-muted-foreground">
-            Fijn dat je er bent. MantelBuddy helpt je met inzicht in je belasting,
-            lokale hulpbronnen en praktisch advies.
+            {c.subtitle}
           </p>
         </div>
 
-        {/* Twee keuzes */}
+        {/* Drie keuzes */}
         <div className="space-y-4">
           {/* Optie 1: Test doen (geen login nodig) */}
           <Link href="/belastbaarheidstest" className="block">
@@ -39,9 +39,9 @@ export default function MantelzorgerPage() {
                   <span className="text-2xl">📊</span>
                 </div>
                 <div className="flex-1">
-                  <h2 className="font-bold text-foreground">Doe de Balanstest</h2>
+                  <h2 className="font-bold text-foreground">{c.opties.balanstest.title}</h2>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Ontdek in 5 minuten hoe het met je gaat. Geen account nodig.
+                    {c.opties.balanstest.beschrijving}
                   </p>
                 </div>
                 <svg className="w-5 h-5 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -59,9 +59,9 @@ export default function MantelzorgerPage() {
                   <span className="text-2xl">👤</span>
                 </div>
                 <div className="flex-1">
-                  <h2 className="font-bold text-foreground">Ik heb al een account</h2>
+                  <h2 className="font-bold text-foreground">{c.opties.inloggen.title}</h2>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Log in om je dashboard, resultaten en hulpbronnen te zien.
+                    {c.opties.inloggen.beschrijving}
                   </p>
                 </div>
                 <svg className="w-5 h-5 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -79,9 +79,9 @@ export default function MantelzorgerPage() {
                   <span className="text-2xl">✨</span>
                 </div>
                 <div className="flex-1">
-                  <h2 className="font-bold text-foreground">Maak een account aan</h2>
+                  <h2 className="font-bold text-foreground">{c.opties.registreren.title}</h2>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Bewaar je resultaten, vind lokale hulp en krijg persoonlijk advies.
+                    {c.opties.registreren.beschrijving}
                   </p>
                 </div>
                 <svg className="w-5 h-5 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,12 +95,12 @@ export default function MantelzorgerPage() {
         {/* Hulplijn */}
         <div className="mt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            Direct met iemand praten?{" "}
+            {c.hulplijn.tekst}{" "}
             <a href="tel:0302059059" className="text-primary font-medium hover:underline">
-              Mantelzorglijn: 030 - 205 90 59
+              {c.hulplijn.label}
             </a>
             <br />
-            <span className="text-xs">(ma-vr, gratis)</span>
+            <span className="text-xs">{c.hulplijn.tijden}</span>
           </p>
         </div>
       </main>

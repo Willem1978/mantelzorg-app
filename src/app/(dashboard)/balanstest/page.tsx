@@ -6,6 +6,9 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
 import { PdfDownloadButton } from "@/components/PdfDownloadButton"
+import { balanstestContent } from "@/config/content"
+
+const c = balanstestContent
 
 interface TaakDetail {
   naam: string
@@ -101,11 +104,9 @@ export default function BalanstestOverzichtPage() {
       <div className="flex items-center gap-4 mb-6">
         <GerAvatar size="lg" />
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Balanstest</h1>
+          <h1 className="text-2xl font-bold text-foreground">{c.title}</h1>
           <p className="text-muted-foreground mt-1">
-            {hasTests
-              ? "Hier zie je je scores van elke keer dat je de test hebt gedaan."
-              : "Ontdek hoe het met je gaat en waar je hulp bij kunt krijgen."}
+            {hasTests ? c.subtitle : c.intro}
           </p>
         </div>
       </div>
@@ -115,13 +116,12 @@ export default function BalanstestOverzichtPage() {
         <div className="ker-card mb-6 bg-primary/5 border-2 border-primary">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <span className="text-2xl">📊</span>
+              <span className="text-2xl">{c.nieuweTest.emoji}</span>
             </div>
             <div className="flex-1">
-              <h2 className="font-bold text-foreground">Tijd voor een nieuwe balanstest</h2>
+              <h2 className="font-bold text-foreground">{c.nieuweTest.title}</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Je laatste test was {data.daysSinceLastTest} dagen geleden.
-                Het is goed om elke 3 maanden te checken hoe het gaat.
+                {c.nieuweTest.tekstFn(data.daysSinceLastTest!)}
               </p>
             </div>
           </div>
@@ -129,7 +129,7 @@ export default function BalanstestOverzichtPage() {
             href="/belastbaarheidstest"
             className="mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:opacity-90 transition-opacity"
           >
-            Doe de balanstest
+            {c.nieuweTest.button}
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
@@ -141,20 +141,20 @@ export default function BalanstestOverzichtPage() {
       {!hasTests && (
         <div className="ker-card text-center bg-primary/5">
           <div className="w-20 h-20 bg-primary/10 rounded-full mx-auto mb-4 flex items-center justify-center">
-            <span className="text-4xl">📊</span>
+            <span className="text-4xl">{c.geenTest.emoji}</span>
           </div>
-          <h2 className="font-bold text-xl text-foreground mb-2">Nog geen test gedaan</h2>
+          <h2 className="font-bold text-xl text-foreground mb-2">{c.geenTest.title}</h2>
           <p className="text-muted-foreground mb-2">
-            Doe de balanstest om te zien hoe het met je gaat.
+            {c.geenTest.beschrijving}
           </p>
           <p className="text-sm text-muted-foreground mb-6">
-            Het duurt maar 5 minuten en je krijgt direct tips.
+            {c.geenTest.subtekst}
           </p>
           <Link
             href="/belastbaarheidstest"
             className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:opacity-90 transition-opacity"
           >
-            Start de balanstest
+            {c.geenTest.button}
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
@@ -166,7 +166,7 @@ export default function BalanstestOverzichtPage() {
       {tests.length > 1 && (
         <section className="mb-6">
           <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-            <span className="text-2xl">📈</span> Je scores over tijd
+            <span className="text-2xl">{c.scores.emoji}</span> {c.scores.title}
           </h2>
           <div className="ker-card">
             <div className="flex items-end gap-3 h-48">
@@ -223,20 +223,20 @@ export default function BalanstestOverzichtPage() {
             {/* Legenda */}
             <div className="mt-4 pt-4 border-t border-border/50">
               <p className="text-xs text-muted-foreground text-center mb-3">
-                Hoe hoger de score, hoe zwaarder de zorg voor je is.
+                {c.scores.legendaTekst}
               </p>
               <div className="flex justify-center gap-4">
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-[var(--accent-green)]" />
-                  <span className="text-xs text-muted-foreground">Laag (0-6)</span>
+                  <span className="text-xs text-muted-foreground">{c.scores.laag}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-[var(--accent-amber)]" />
-                  <span className="text-xs text-muted-foreground">Gemiddeld (7-12)</span>
+                  <span className="text-xs text-muted-foreground">{c.scores.gemiddeld}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-[var(--accent-red)]" />
-                  <span className="text-xs text-muted-foreground">Hoog (13-24)</span>
+                  <span className="text-xs text-muted-foreground">{c.scores.hoog}</span>
                 </div>
               </div>
             </div>
@@ -284,7 +284,7 @@ export default function BalanstestOverzichtPage() {
         return (
           <section className="mb-6">
             <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-              <span className="text-2xl">⏱️</span> Je zorguren over tijd
+              <span className="text-2xl">{c.zorguren.emoji}</span> {c.zorguren.title}
             </h2>
             <div className="ker-card">
               <div className="flex items-end gap-3 h-52">
@@ -329,7 +329,7 @@ export default function BalanstestOverzichtPage() {
                                 >
                                   <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/groen:block z-20 pointer-events-none">
                                     <div className="bg-foreground text-background text-[10px] font-medium px-2 py-1 rounded shadow-lg whitespace-nowrap">
-                                      {test.urenGroen} uur niet zwaar
+                                      {c.zorguren.tooltipNietZwaarFn(test.urenGroen)}
                                     </div>
                                   </div>
                                 </div>
@@ -345,7 +345,7 @@ export default function BalanstestOverzichtPage() {
                                 >
                                   <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/oranje:block z-20 pointer-events-none">
                                     <div className="bg-foreground text-background text-[10px] font-medium px-2 py-1 rounded shadow-lg whitespace-nowrap">
-                                      {test.urenOranje} uur soms zwaar
+                                      {c.zorguren.tooltipSomsZwaarFn(test.urenOranje)}
                                     </div>
                                   </div>
                                 </div>
@@ -361,7 +361,7 @@ export default function BalanstestOverzichtPage() {
                                 >
                                   <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/rood:block z-20 pointer-events-none">
                                     <div className="bg-foreground text-background text-[10px] font-medium px-2 py-1 rounded shadow-lg whitespace-nowrap">
-                                      {test.urenRood} uur zwaar
+                                      {c.zorguren.tooltipZwaarFn(test.urenRood)}
                                     </div>
                                   </div>
                                 </div>
@@ -389,20 +389,20 @@ export default function BalanstestOverzichtPage() {
               {/* Legenda */}
               <div className="mt-4 pt-4 border-t border-border/50">
                 <p className="text-xs text-muted-foreground text-center mb-3">
-                  De kleuren laten zien hoe zwaar je elke taak vindt.
+                  {c.zorguren.legendaTekst}
                 </p>
                 <div className="flex justify-center gap-4">
                   <div className="flex items-center gap-1.5">
                     <div className="w-3 h-3 rounded-full bg-[var(--accent-green)]" />
-                    <span className="text-xs text-muted-foreground">Niet zwaar</span>
+                    <span className="text-xs text-muted-foreground">{c.zorguren.nietZwaar}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-3 h-3 rounded-full bg-[var(--accent-amber)]" />
-                    <span className="text-xs text-muted-foreground">Soms zwaar</span>
+                    <span className="text-xs text-muted-foreground">{c.zorguren.somsZwaar}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <div className="w-3 h-3 rounded-full bg-[var(--accent-red)]" />
-                    <span className="text-xs text-muted-foreground">Zwaar</span>
+                    <span className="text-xs text-muted-foreground">{c.zorguren.zwaar}</span>
                   </div>
                 </div>
               </div>
@@ -410,7 +410,7 @@ export default function BalanstestOverzichtPage() {
               {/* Detail lijst laatste test */}
               {laatsteTest && laatsteTest.taken.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-border/50">
-                  <p className="text-xs font-medium text-muted-foreground mb-2">Dit waren je taken:</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">{c.zorguren.takenTitel}</p>
                   <div className="space-y-1">
                     {laatsteTest.taken
                       .filter((t) => t.uren > 0)
@@ -432,7 +432,7 @@ export default function BalanstestOverzichtPage() {
                               />
                               <span className="text-foreground">{taak.naam}</span>
                             </div>
-                            <span className="text-muted-foreground">{taak.uren} uur</span>
+                            <span className="text-muted-foreground">{c.zorguren.uurFn(taak.uren)}</span>
                           </div>
                         )
                       })}
@@ -448,7 +448,7 @@ export default function BalanstestOverzichtPage() {
       {laatsteTest && (
         <section className="mb-6">
           <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-            <span className="text-2xl">🎯</span> Laatste score
+            <span className="text-2xl">{c.laatsteScore.emoji}</span> {c.laatsteScore.title}
           </h2>
           <div className="ker-card">
             <div className="flex items-center justify-between mb-4">
@@ -462,7 +462,7 @@ export default function BalanstestOverzichtPage() {
                   )}
                 >
                   {laatsteTest.score}
-                  <span className="text-lg font-normal text-muted-foreground">/24</span>
+                  <span className="text-lg font-normal text-muted-foreground">{c.laatsteScore.maxLabel}</span>
                 </span>
               </div>
               <span
@@ -473,9 +473,9 @@ export default function BalanstestOverzichtPage() {
                   laatsteTest.niveau === "HOOG" && "bg-[var(--accent-red-bg)] text-[var(--accent-red)]"
                 )}
               >
-                {laatsteTest.niveau === "LAAG" && "Lage belasting"}
-                {laatsteTest.niveau === "GEMIDDELD" && "Gemiddelde belasting"}
-                {laatsteTest.niveau === "HOOG" && "Hoge belasting"}
+                {laatsteTest.niveau === "LAAG" && c.laatsteScore.lageBelasting}
+                {laatsteTest.niveau === "GEMIDDELD" && c.laatsteScore.gemiddeldeBelasting}
+                {laatsteTest.niveau === "HOOG" && c.laatsteScore.hogeBelasting}
               </span>
             </div>
 
@@ -498,15 +498,15 @@ export default function BalanstestOverzichtPage() {
             </div>
 
             <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>{laatsteTest.aantalTaken} zorgtaken</span>
-              <span>{laatsteTest.totaleZorguren} uur/week</span>
+              <span>{c.laatsteScore.zorgtakenFn(laatsteTest.aantalTaken)}</span>
+              <span>{c.laatsteScore.uurPerWeekFn(laatsteTest.totaleZorguren)}</span>
             </div>
 
             <Link
               href="/rapport"
               className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-border/50 text-sm font-medium text-primary hover:underline"
             >
-              Bekijk je volledige resultaten
+              {c.laatsteScore.bekijkResultaten}
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
@@ -519,7 +519,7 @@ export default function BalanstestOverzichtPage() {
       {tests.length > 0 && (
         <section className="mb-6">
           <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-            <span className="text-2xl">📋</span> Alle rapporten
+            <span className="text-2xl">{c.rapporten.emoji}</span> {c.rapporten.title}
           </h2>
           <div className="space-y-3">
             {tests.map((test, i) => (
@@ -529,10 +529,10 @@ export default function BalanstestOverzichtPage() {
                   <div className="absolute inset-0 z-10 bg-card/95 backdrop-blur-sm rounded-2xl flex items-center justify-center p-4">
                     <div className="text-center">
                       <p className="font-medium text-foreground mb-3">
-                        Weet je het zeker?
+                        {c.verwijderDialog.title}
                       </p>
                       <p className="text-sm text-muted-foreground mb-4">
-                        Deze test wordt definitief verwijderd.
+                        {c.verwijderDialog.beschrijving}
                       </p>
                       <div className="flex gap-2 justify-center">
                         <button
@@ -540,7 +540,7 @@ export default function BalanstestOverzichtPage() {
                           onClick={() => setDeleteId(null)}
                           className="px-4 py-2.5 text-sm font-medium rounded-lg bg-muted text-foreground hover:bg-muted/80 transition-colors"
                         >
-                          Annuleren
+                          {c.verwijderDialog.annuleren}
                         </button>
                         <button
                           type="button"
@@ -548,7 +548,7 @@ export default function BalanstestOverzichtPage() {
                           disabled={deleting}
                           className="px-4 py-2.5 text-sm font-medium rounded-lg bg-[var(--accent-red)] text-white hover:opacity-90 transition-opacity disabled:opacity-50"
                         >
-                          {deleting ? "Bezig..." : "Verwijderen"}
+                          {deleting ? c.verwijderDialog.bezig : c.verwijderDialog.verwijderen}
                         </button>
                       </div>
                     </div>
@@ -578,13 +578,13 @@ export default function BalanstestOverzichtPage() {
                       </p>
                       {i === 0 && (
                         <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
-                          Laatste
+                          {c.rapporten.laatsteBadge}
                         </span>
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {test.aantalTaken} taken &middot; {test.totaleZorguren} uur/week
-                      {test.zwareTaken > 0 && ` · ${test.zwareTaken} zwaar`}
+                      {c.rapporten.takenSummaryFn(test.aantalTaken, test.totaleZorguren)}
+                      {test.zwareTaken > 0 && c.rapporten.zwaarSuffixFn(test.zwareTaken)}
                     </p>
                   </div>
                 </div>
@@ -598,14 +598,14 @@ export default function BalanstestOverzichtPage() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    Bekijk resultaat
+                    {c.rapporten.bekijkResultaat}
                   </Link>
                   <PdfDownloadButton testId={test.id} size="sm" variant="button" />
                   <button
                     type="button"
                     onClick={() => setDeleteId(test.id)}
                     className="flex items-center justify-center gap-2 py-2.5 px-4 text-sm font-medium rounded-lg bg-[var(--accent-red-bg)] text-[var(--accent-red)] hover:bg-[var(--accent-red)]/20 transition-colors"
-                    aria-label="Test verwijderen"
+                    aria-label={c.rapporten.testVerwijderenLabel}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -627,7 +627,7 @@ export default function BalanstestOverzichtPage() {
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          Doe de test opnieuw
+          {c.opnieuwButton}
         </Link>
       )}
     </div>

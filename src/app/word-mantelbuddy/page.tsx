@@ -5,21 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { searchGemeenten } from "@/lib/pdok"
 import { LogoIcon } from "@/components/ui"
-
-const hulpOpties = [
-  { id: "gesprek", label: "Gesprek / luisterend oor", icon: "☕", beschrijving: "Even bijpraten, koffiedrinken" },
-  { id: "boodschappen", label: "Boodschappen doen", icon: "🛒", beschrijving: "Supermarkt, apotheek" },
-  { id: "vervoer", label: "Vervoer", icon: "🚗", beschrijving: "Naar afspraken of uitjes" },
-  { id: "klusjes", label: "Klusjes in huis", icon: "🔧", beschrijving: "Kleine reparaties, tuin" },
-  { id: "oppas", label: "Oppas/gezelschap", icon: "🏠", beschrijving: "Bij de zorgvrager zijn" },
-  { id: "administratie", label: "Administratie", icon: "📋", beschrijving: "Papierwerk, formulieren" },
-]
-
-const beschikbaarheidOpties = [
-  { id: "eenmalig", label: "Eenmalige taken", beschrijving: "Af en toe een taak oppakken wanneer het jou uitkomt" },
-  { id: "vast", label: "Vast maatje worden", beschrijving: "Regelmatig taken voor de zorgvrager oppakken en uitvoeren" },
-  { id: "beide", label: "Beide", beschrijving: "Flexibel inzetbaar - zowel eenmalig als vast" },
-]
+import { volunteerContent as c } from "@/config/content"
 
 export default function WordMantelBuddyPage() {
   const router = useRouter()
@@ -110,7 +96,7 @@ export default function WordMantelBuddyPage() {
           </Link>
           {stap < 4 && (
             <div className="text-sm text-muted-foreground">
-              Stap {stap} van 3
+              {c.progress(stap)}
             </div>
           )}
         </div>
@@ -127,75 +113,75 @@ export default function WordMantelBuddyPage() {
                   <span className="text-4xl">🤝</span>
                 </div>
                 <h1 className="text-2xl font-bold text-foreground mb-2">
-                  Word MantelBuddy
+                  {c.stap1.title}
                 </h1>
                 <p className="text-muted-foreground">
-                  Help mantelzorgers in je buurt. Eenmalig of als vast maatje - je kiest hoe je wilt helpen!
+                  {c.stap1.subtitle}
                 </p>
               </div>
 
               <div className="ker-card">
-                <h2 className="font-bold text-foreground mb-4">Jouw gegevens</h2>
+                <h2 className="font-bold text-foreground mb-4">{c.stap1.gegevensTitle}</h2>
 
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-foreground mb-1">Voornaam *</label>
+                      <label className="block text-sm font-medium text-foreground mb-1">{c.stap1.labels.voornaam}</label>
                       <input
                         type="text"
                         value={formData.voornaam}
                         onChange={e => setFormData({...formData, voornaam: e.target.value})}
                         className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground"
-                        placeholder="Jan"
+                        placeholder={c.stap1.placeholders.voornaam}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-foreground mb-1">Achternaam *</label>
+                      <label className="block text-sm font-medium text-foreground mb-1">{c.stap1.labels.achternaam}</label>
                       <input
                         type="text"
                         value={formData.achternaam}
                         onChange={e => setFormData({...formData, achternaam: e.target.value})}
                         className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground"
-                        placeholder="Jansen"
+                        placeholder={c.stap1.placeholders.achternaam}
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">E-mailadres *</label>
+                    <label className="block text-sm font-medium text-foreground mb-1">{c.stap1.labels.email}</label>
                     <input
                       type="email"
                       value={formData.email}
                       onChange={e => setFormData({...formData, email: e.target.value})}
                       className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground"
-                      placeholder="jan@voorbeeld.nl"
+                      placeholder={c.stap1.placeholders.email}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">Telefoonnummer *</label>
+                    <label className="block text-sm font-medium text-foreground mb-1">{c.stap1.labels.telefoon}</label>
                     <input
                       type="tel"
                       value={formData.telefoon}
                       onChange={e => setFormData({...formData, telefoon: e.target.value})}
                       className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground"
-                      placeholder="06-12345678"
+                      placeholder={c.stap1.placeholders.telefoon}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">Postcode *</label>
+                    <label className="block text-sm font-medium text-foreground mb-1">{c.stap1.labels.postcode}</label>
                     <input
                       type="text"
                       value={formData.postcode}
                       onChange={e => setFormData({...formData, postcode: e.target.value})}
                       className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground"
-                      placeholder="1234 AB"
+                      placeholder={c.stap1.placeholders.postcode}
                     />
                   </div>
 
                   <div className="relative">
-                    <label className="block text-sm font-medium text-foreground mb-1">Gemeente *</label>
+                    <label className="block text-sm font-medium text-foreground mb-1">{c.stap1.labels.gemeente}</label>
                     {formData.gemeente ? (
                       <div className="px-4 py-3 bg-[var(--accent-green-bg)] rounded-xl flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -220,7 +206,7 @@ export default function WordMantelBuddyPage() {
                           onChange={e => handleGemeenteSearch(e.target.value)}
                           onFocus={() => gemeenteQuery.length >= 2 && setShowGemeenteResults(true)}
                           className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground"
-                          placeholder="Typ je gemeente (bijv. Nijmegen)"
+                          placeholder={c.stap1.placeholders.gemeente}
                           autoComplete="off"
                         />
                         {isSearchingGemeente && (
@@ -255,7 +241,7 @@ export default function WordMantelBuddyPage() {
                 className="ker-btn ker-btn-primary w-full disabled:opacity-50 flex items-center justify-center gap-2"
                 style={{ backgroundColor: "var(--accent-green)" }}
               >
-                Volgende
+                {c.stap1.volgende}
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
@@ -268,18 +254,18 @@ export default function WordMantelBuddyPage() {
             <div className="space-y-6">
               <div className="text-center mb-8">
                 <h1 className="text-2xl font-bold text-foreground mb-2">
-                  Wat wil je doen?
+                  {c.stap2.title}
                 </h1>
                 <p className="text-muted-foreground">
-                  Selecteer de manieren waarop je wilt helpen
+                  {c.stap2.subtitle}
                 </p>
               </div>
 
               <div className="ker-card">
-                <h2 className="font-bold text-foreground mb-4">Ik wil helpen met:</h2>
+                <h2 className="font-bold text-foreground mb-4">{c.stap2.hulpTitle}</h2>
 
                 <div className="grid grid-cols-2 gap-3">
-                  {hulpOpties.map(optie => (
+                  {c.hulpOpties.map(optie => (
                     <button
                       key={optie.id}
                       onClick={() => toggleHulpvorm(optie.id)}
@@ -298,10 +284,10 @@ export default function WordMantelBuddyPage() {
               </div>
 
               <div className="ker-card">
-                <h2 className="font-bold text-foreground mb-4">Beschikbaarheid</h2>
+                <h2 className="font-bold text-foreground mb-4">{c.stap2.beschikbaarheidTitle}</h2>
 
                 <div className="space-y-3">
-                  {beschikbaarheidOpties.map(optie => (
+                  {c.beschikbaarheidOpties.map(optie => (
                     <button
                       key={optie.id}
                       onClick={() => setFormData({...formData, beschikbaarheid: optie.id})}
@@ -323,7 +309,7 @@ export default function WordMantelBuddyPage() {
                   onClick={() => setStap(1)}
                   className="ker-btn ker-btn-secondary flex-1"
                 >
-                  Terug
+                  {c.stap2.terug}
                 </button>
                 <button
                   onClick={() => setStap(3)}
@@ -331,7 +317,7 @@ export default function WordMantelBuddyPage() {
                   className="ker-btn flex-1 disabled:opacity-50 flex items-center justify-center gap-2"
                   style={{ backgroundColor: "var(--accent-green)", color: "white" }}
                 >
-                  Volgende
+                  {c.stap2.volgende}
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
@@ -345,10 +331,10 @@ export default function WordMantelBuddyPage() {
             <div className="space-y-6">
               <div className="text-center mb-8">
                 <h1 className="text-2xl font-bold text-foreground mb-2">
-                  Vertel iets over jezelf
+                  {c.stap3.title}
                 </h1>
                 <p className="text-muted-foreground">
-                  Dit helpt bij het matchen met de juiste mantelzorger
+                  {c.stap3.subtitle}
                 </p>
               </div>
 
@@ -356,45 +342,39 @@ export default function WordMantelBuddyPage() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1">
-                      Waarom wil je MantelBuddy worden?
+                      {c.stap3.motivatieLabel}
                     </label>
                     <textarea
                       value={formData.motivatie}
                       onChange={e => setFormData({...formData, motivatie: e.target.value})}
                       className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground min-h-[100px]"
-                      placeholder="Vertel waarom je mantelzorgers wilt helpen..."
+                      placeholder={c.stap3.motivatiePlaceholder}
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-1">
-                      Heb je ervaring met mantelzorg of vrijwilligerswerk? (optioneel)
+                      {c.stap3.ervaringLabel}
                     </label>
                     <textarea
                       value={formData.ervaring}
                       onChange={e => setFormData({...formData, ervaring: e.target.value})}
                       className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground min-h-[80px]"
-                      placeholder="Bijv. zelf mantelzorger geweest, vrijwilligerswerk gedaan..."
+                      placeholder={c.stap3.ervaringPlaceholder}
                     />
                   </div>
                 </div>
               </div>
 
               <div className="ker-card bg-[var(--accent-green-bg)]">
-                <h3 className="font-bold text-foreground mb-2">Wat gebeurt er na aanmelding?</h3>
+                <h3 className="font-bold text-foreground mb-2">{c.stap3.naAanmelding.title}</h3>
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2">
-                    <span className="text-[var(--accent-green)]">✓</span>
-                    Je ontvangt een bevestigingsmail
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[var(--accent-green)]">✓</span>
-                    We nemen contact op voor een kennismakingsgesprek
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-[var(--accent-green)]">✓</span>
-                    Na goedkeuring word je gekoppeld aan mantelzorgers in je buurt
-                  </li>
+                  {c.stap3.naAanmelding.stappen.map((stap, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="text-[var(--accent-green)]">✓</span>
+                      {stap}
+                    </li>
+                  ))}
                 </ul>
               </div>
 
@@ -403,7 +383,7 @@ export default function WordMantelBuddyPage() {
                   onClick={() => setStap(2)}
                   className="ker-btn ker-btn-secondary flex-1"
                 >
-                  Terug
+                  {c.stap3.terug}
                 </button>
                 <button
                   onClick={handleSubmit}
@@ -411,7 +391,7 @@ export default function WordMantelBuddyPage() {
                   className="ker-btn flex-1 disabled:opacity-50 flex items-center justify-center gap-2"
                   style={{ backgroundColor: "var(--accent-green)", color: "white" }}
                 >
-                  {isSubmitting ? "Bezig..." : "Aanmelden"}
+                  {isSubmitting ? c.stap3.bezig : c.stap3.aanmelden}
                   {!isSubmitting && (
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -429,37 +409,26 @@ export default function WordMantelBuddyPage() {
                 <span className="text-5xl">🎉</span>
               </div>
               <h1 className="text-2xl font-bold text-foreground mb-4">
-                Bedankt voor je aanmelding!
+                {c.stap4.title}
               </h1>
               <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                We hebben je aanmelding ontvangen. Je ontvangt binnenkort een e-mail
-                met meer informatie over de volgende stappen.
+                {c.stap4.subtitle}
               </p>
 
               <div className="ker-card bg-[var(--accent-green-bg)] text-left max-w-md mx-auto mb-8">
-                <h3 className="font-bold text-foreground mb-3">Volgende stappen:</h3>
+                <h3 className="font-bold text-foreground mb-3">{c.stap4.volgendeStappen.title}</h3>
                 <ol className="space-y-2 text-sm">
-                  <li className="flex items-start gap-3">
-                    <span className="w-6 h-6 bg-[var(--accent-green)] text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
-                    <span className="text-foreground">Je ontvangt een bevestigingsmail</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-6 h-6 bg-[var(--accent-green)] text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">2</span>
-                    <span className="text-foreground">Kennismakingsgesprek (telefonisch of video)</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-6 h-6 bg-[var(--accent-green)] text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
-                    <span className="text-foreground">VOG-aanvraag en korte training</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="w-6 h-6 bg-[var(--accent-green)] text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">4</span>
-                    <span className="text-foreground">Start als MantelBuddy!</span>
-                  </li>
+                  {c.stap4.volgendeStappen.items.map((item, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <span className="w-6 h-6 bg-[var(--accent-green)] text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">{i + 1}</span>
+                      <span className="text-foreground">{item}</span>
+                    </li>
+                  ))}
                 </ol>
               </div>
 
               <Link href="/" className="ker-btn ker-btn-secondary">
-                Terug naar home
+                {c.stap4.terugNaarHome}
               </Link>
             </div>
           )}

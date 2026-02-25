@@ -10,6 +10,10 @@ export const dashboardContent = {
     loginButton: "Inloggen",
   },
 
+  // Begroeting header
+  greeting: (name: string) => `Hoi ${name}!`,
+  pageIntro: "Hier zie je hoe het met je gaat. Scrol naar beneden voor tips en hulp.",
+
   // Begroetingen op basis van tijdstip
   greetings: {
     morning: "Goedemorgen! Hoe voel je je vandaag?",
@@ -27,17 +31,25 @@ export const dashboardContent = {
     GEMIDDELD: {
       emoji: "🧡",
       kort: "Je doet heel veel",
-      uitleg: "Je hebt veel te doen. Het is goed om hulp te vragen. Kijk of iemand taken kan overnemen.",
+      uitleg: "Je hebt veel te doen. Het is goed om hulp te vragen. Denk aan familie, buren of hulp uit je gemeente. Kleine stappen helpen al veel.",
     },
     HOOG: {
       emoji: "❤️",
       kort: "Je doet te veel",
-      uitleg: "Je hebt te veel op je bordje. Ga hier niet alleen mee door. Vraag hulp aan je omgeving of een professional.",
+      uitleg: "Je hebt te veel op je bordje. Ga hier niet alleen mee door. Bel de Mantelzorglijn: 030 - 205 90 59 (gratis). Of neem contact op met je gemeente. Zij helpen je verder.",
     },
+  },
+
+  // Score weergave
+  score: {
+    maxScore: "/24",
+    bekijkResultaten: "Bekijk je volledige resultaten",
   },
 
   // Zorgtaken sectie
   zorgtaken: {
+    sectionTitle: "Je Zorgtaken",
+    sectionEmoji: "📋",
     title: "Jouw zorgtaken",
     subtitle: "Dit zijn je taken. Rode en oranje taken zijn zwaar. Druk op een taak om hulp te vinden.",
     niveaus: {
@@ -48,6 +60,7 @@ export const dashboardContent = {
     hulpbronCount: (count: number) => `${count} hulpbron${count !== 1 ? "nen" : ""} beschikbaar`,
     zoekHulp: "Zoek hulp",
     goedeTaken: "Taken die goed gaan",
+    urenPerWeek: (uren: number) => `(${uren}u/week)`,
   },
 
   // Tijdsnotatie
@@ -79,6 +92,7 @@ export const dashboardContent = {
 
   // Geen test gedaan
   geenTest: {
+    emoji: "📊",
     title: "Nog geen test gedaan",
     subtitle: "Ontdek hoe het met je gaat en waar je hulp bij kunt krijgen",
     button: "Start de balanstest",
@@ -93,4 +107,19 @@ export const dashboardContent = {
 
   // Laden
   laden: "Even laden...",
+
+  // Quick check-in component
+  checkIn: {
+    title: "Hoe voel je je nu?",
+    subtitle: "Een snelle check-in voor vandaag",
+    feelings: [
+      { value: "great", label: "Super" },
+      { value: "good", label: "Goed" },
+      { value: "okay", label: "Oké" },
+      { value: "tired", label: "Moe" },
+      { value: "struggling", label: "Zwaar" },
+    ],
+    bedankt: "Bedankt!",
+    opgeslagen: "Je gevoel is opgeslagen",
+  },
 } as const

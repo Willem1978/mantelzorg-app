@@ -34,6 +34,17 @@ export const common = {
     },
   },
 
+  // Toegankelijkheid / weergave-instellingen
+  accessibility: {
+    title: "Weergave-instellingen",
+    subtitle: "Pas de app aan zodat het prettig is om te gebruiken.",
+    opties: [
+      { label: "Grotere tekst", beschrijving: "Maakt alle tekst iets groter", emoji: "🔤" },
+      { label: "Hoog contrast", beschrijving: "Maakt tekst en randen scherper", emoji: "🔲" },
+      { label: "Minder beweging", beschrijving: "Schakelt animaties uit", emoji: "🎯" },
+    ],
+  },
+
   // Veelgestelde vragen
   faq: [
     {
