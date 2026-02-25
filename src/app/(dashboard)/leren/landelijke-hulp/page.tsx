@@ -193,7 +193,8 @@ function HulpCard({ hulp, favorieten, categorie }: {
   const favorietId = favorieten?.[favKey]
 
   const displayNaam = hulp.dienst || hulp.naam
-  const organisatieNaam = hulp.dienst && hulp.naam !== hulp.dienst ? hulp.naam : null
+  // Organisatienaam altijd tonen op de kaart
+  const organisatieNaam = hulp.naam
 
   return (
     <>
@@ -203,13 +204,11 @@ function HulpCard({ hulp, favorieten, categorie }: {
       >
         <div className="flex-1 min-w-0">
           <p className="font-medium text-sm">{displayNaam}</p>
-          {organisatieNaam && (
-            <p className="text-xs text-muted-foreground mt-0.5">{organisatieNaam}</p>
-          )}
           {hulp.beschrijving && (
             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{hulp.beschrijving}</p>
           )}
           <div className="flex items-center gap-2 mt-1">
+            <span className="text-xs text-muted-foreground">{organisatieNaam}</span>
             <span className="text-xs text-primary font-medium ml-auto">Meer info →</span>
           </div>
         </div>
