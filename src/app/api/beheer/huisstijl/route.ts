@@ -41,6 +41,48 @@ const DEFAULTS: Array<{
 ]
 
 /**
+ * Zorg dat de SiteSettings tabel bestaat (auto-bootstrap).
+ * Prisma kan de tabel niet aanmaken als de migratie niet is gedraaid,
+ * dus doen we het via raw SQL als het nodig is.
+ */
+async function ensureTableExists(): Promise<void> {
+  try {
+    // Snelle check: probeer een simpele query
+    await prisma.$queryRaw`SELECT 1 FROM "SiteSettings" LIMIT 1`
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error)
+    // Tabel bestaat niet → aanmaken
+    if (msg.includes("does not exist") || msg.includes("relation") || msg.includes("P2010") || msg.includes("P2021")) {
+      console.log("SiteSettings tabel bestaat niet, wordt nu aangemaakt...")
+      await prisma.$executeRaw`
+        CREATE TABLE IF NOT EXISTS "SiteSettings" (
+          "id" TEXT NOT NULL DEFAULT gen_random_uuid()::text,
+          "categorie" TEXT NOT NULL,
+          "sleutel" TEXT NOT NULL,
+          "waarde" TEXT NOT NULL,
+          "label" TEXT,
+          "type" TEXT NOT NULL DEFAULT 'text',
+          "groep" TEXT,
+          "volgorde" INTEGER NOT NULL DEFAULT 0,
+          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedBy" TEXT,
+          CONSTRAINT "SiteSettings_pkey" PRIMARY KEY ("id")
+        )
+      `
+      await prisma.$executeRaw`
+        CREATE UNIQUE INDEX IF NOT EXISTS "SiteSettings_sleutel_key" ON "SiteSettings"("sleutel")
+      `
+      await prisma.$executeRaw`
+        CREATE INDEX IF NOT EXISTS "SiteSettings_categorie_idx" ON "SiteSettings"("categorie")
+      `
+      console.log("SiteSettings tabel succesvol aangemaakt")
+    } else {
+      throw error
+    }
+  }
+}
+
+/**
  * GET: Haal alle site-instellingen op (met auto-seed van defaults)
  */
 export async function GET() {
@@ -50,6 +92,9 @@ export async function GET() {
   }
 
   try {
+    // Zorg dat de tabel bestaat
+    await ensureTableExists()
+
     // Zorg dat defaults bestaan
     const existing = await prisma.siteSettings.findMany()
     const existingKeys = new Set(existing.map((s) => s.sleutel))
@@ -67,7 +112,11 @@ export async function GET() {
     return NextResponse.json({ settings })
   } catch (error) {
     console.error("Huisstijl ophalen mislukt:", error)
-    return NextResponse.json({ error: "Huisstijl ophalen mislukt" }, { status: 500 })
+    const msg = error instanceof Error ? error.message : "Onbekende fout"
+    return NextResponse.json(
+      { error: "Huisstijl ophalen mislukt", detail: msg },
+      { status: 500 }
+    )
   }
 }
 
@@ -111,6 +160,10 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error("Huisstijl opslaan mislukt:", error)
-    return NextResponse.json({ error: "Huisstijl opslaan mislukt" }, { status: 500 })
+    const msg = error instanceof Error ? error.message : "Onbekende fout"
+    return NextResponse.json(
+      { error: "Huisstijl opslaan mislukt", detail: msg },
+      { status: 500 }
+    )
   }
 }
