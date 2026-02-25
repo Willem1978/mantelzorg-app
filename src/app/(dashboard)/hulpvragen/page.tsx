@@ -1241,19 +1241,9 @@ function HulpbronCard({ hulp, favorieten, categorie }: {
           </div>
         </div>
         <div className="flex items-center gap-2 mt-2 flex-wrap">
-          {/* Organisatie + gemeente */}
-          {hulp.isLandelijk ? (
-            <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full font-medium">
-              🌍 {c.kaart.landelijk}
-            </span>
-          ) : hulp.gemeente && (
+          {hulp.gemeente && (
             <span className="text-xs bg-primary-light dark:bg-primary/20 text-primary dark:text-primary/80 px-2 py-0.5 rounded-full font-medium">
-              📍 {hulp.dienst ? hulp.naam : hulp.gemeente}
-            </span>
-          )}
-          {hulp.kosten && (
-            <span className="text-xs text-muted-foreground">
-              {hulp.kosten}
+              📍 {hulp.gemeente}
             </span>
           )}
           <span className="text-xs text-primary font-medium ml-auto">{c.kaart.meerInfo}</span>
@@ -1267,13 +1257,9 @@ function HulpbronCard({ hulp, favorieten, categorie }: {
         dienst={hulp.dienst}
         beschrijving={hulp.beschrijving}
         gemeente={hulp.gemeente}
-        soortHulp={hulp.soortHulp}
         telefoon={hulp.telefoon}
         website={hulp.website}
-        doelgroep={hulp.doelgroep}
-        kosten={hulp.kosten}
         openingstijden={hulp.openingstijden}
-        bronLabel={hulp.bronLabel}
       />
     </>
   )
@@ -1323,14 +1309,6 @@ function LandelijkeHulpCard({ hulp, favorieten, categorie }: {
           </div>
         </div>
         <div className="flex items-center gap-2 mt-2 flex-wrap">
-          <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full font-medium">
-            🌍 {hulp.dienst ? hulp.naam : c.kaart.landelijk}
-          </span>
-          {hulp.kosten && (
-            <span className="text-xs text-muted-foreground">
-              {hulp.kosten}
-            </span>
-          )}
           <span className="text-xs text-primary font-medium ml-auto">{c.kaart.meerInfo}</span>
         </div>
       </div>
@@ -1341,12 +1319,9 @@ function LandelijkeHulpCard({ hulp, favorieten, categorie }: {
         titel={hulp.naam}
         dienst={hulp.dienst}
         beschrijving={hulp.beschrijving}
-        soortHulp={hulp.soortHulp}
         telefoon={hulp.telefoon}
         website={hulp.website}
-        kosten={hulp.kosten}
         openingstijden={hulp.openingstijden}
-        bronLabel={hulp.bronLabel}
       />
     </>
   )

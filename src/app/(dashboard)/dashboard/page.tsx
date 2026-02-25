@@ -5,7 +5,7 @@ import Image from "next/image"
 import { useSession } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { cn, ensureAbsoluteUrl } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
 import { PageIntro } from "@/components/ui/PageIntro"
 import { dashboardContent } from "@/config/content"
@@ -505,9 +505,7 @@ function DashboardContentView() {
                 {data.aanbevolenArtikelen.map((artikel) => (
                   <Link
                     key={artikel.id}
-                    href={artikel.url ? ensureAbsoluteUrl(artikel.url) : `/leren/${artikel.categorie}`}
-                    target={artikel.url ? "_blank" : undefined}
-                    rel={artikel.url ? "noopener noreferrer" : undefined}
+                    href={`/leren/${artikel.categorie}`}
                     className="block"
                   >
                     <div className="ker-card hover:border-primary/50 transition-all py-3">

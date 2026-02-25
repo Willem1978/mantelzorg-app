@@ -20,18 +20,6 @@ interface Artikel {
 }
 
 
-// Bronlabel kleuren
-function bronLabelKleur(label: string | null): string {
-  if (!label) return "bg-muted text-muted-foreground"
-  switch (label) {
-    case "Landelijk": return "bg-primary/10 text-primary"
-    case "Gemeente (Wmo)": return "bg-primary-light text-primary dark:bg-primary/20 dark:text-primary/80"
-    case "Zorgverzekeraar (Zvw)": return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-    case "Wlz": return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
-    default: return "bg-muted text-muted-foreground"
-  }
-}
-
 export default function CategoriePage() {
   const params = useParams()
   const categorie = params.categorie as string
@@ -328,11 +316,6 @@ function ArtikelCard({ artikel, categorieTitel, isFavorited, favorietId }: {
             {artikel.beschrijving}
           </p>
           <div className="flex items-center gap-3 pl-7 flex-wrap">
-            {artikel.bronLabel && (
-              <span className={`text-xs px-2 py-0.5 rounded-full ${bronLabelKleur(artikel.bronLabel)}`}>
-                {artikel.bronLabel}
-              </span>
-            )}
             {artikel.inhoud && (
               <span className="text-xs text-primary font-medium">Lees meer →</span>
             )}
@@ -347,9 +330,7 @@ function ArtikelCard({ artikel, categorieTitel, isFavorited, favorietId }: {
         emoji={artikel.emoji}
         beschrijving={artikel.beschrijving}
         inhoud={artikel.inhoud}
-        bron={artikel.bron}
-        bronLabel={artikel.bronLabel}
-        url={artikel.url}
+        website={artikel.url}
       />
     </>
   )

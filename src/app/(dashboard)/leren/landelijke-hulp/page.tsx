@@ -206,11 +206,6 @@ function HulpCard({ hulp, favorieten, categorie }: {
             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{hulp.beschrijving}</p>
           )}
           <div className="flex items-center gap-2 mt-1">
-            {hulp.telefoon && (
-              <span className="text-xs text-primary font-medium flex items-center gap-1 whitespace-nowrap">
-                📞 {hulp.telefoon}
-              </span>
-            )}
             <span className="text-xs text-primary font-medium ml-auto">Meer info →</span>
           </div>
         </div>
@@ -237,13 +232,9 @@ function HulpCard({ hulp, favorieten, categorie }: {
         titel={hulp.naam}
         dienst={hulp.dienst}
         beschrijving={hulp.beschrijving}
-        soortHulp={hulp.soortHulp}
         telefoon={hulp.telefoon}
         website={hulp.website}
-        kosten={hulp.kosten}
         openingstijden={hulp.openingstijden}
-        bronLabel={hulp.bronLabel}
-        doelgroep={hulp.doelgroep}
       />
     </>
   )

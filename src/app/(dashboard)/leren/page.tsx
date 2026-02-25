@@ -259,9 +259,6 @@ export default function LerenPage() {
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-0.5">
             <h2 className="font-bold text-lg">{c.gemeenteNieuws.title}</h2>
-            <span className="text-xs bg-primary-light dark:bg-primary/20 text-primary dark:text-primary/80 px-2.5 py-0.5 rounded-full font-medium">
-              {c.gemeenteNieuws.badgeEmoji} {c.gemeenteNieuws.badge}
-            </span>
           </div>
           <p className="text-sm text-muted-foreground">
             {gemeenteMantelzorger && gemeenteZorgvrager && gemeenteMantelzorger !== gemeenteZorgvrager
@@ -293,9 +290,6 @@ export default function LerenPage() {
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-0.5">
             <h2 className="font-bold text-lg">{c.landelijk.title}</h2>
-            <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2.5 py-0.5 rounded-full font-medium">
-              {c.landelijk.badgeEmoji} {c.landelijk.badge}
-            </span>
           </div>
           <p className="text-sm text-muted-foreground">
             {c.landelijk.beschrijving}
