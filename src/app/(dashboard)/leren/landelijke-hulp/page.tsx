@@ -238,6 +238,7 @@ function HulpCard({ hulp, favorieten, categorie }: {
         beschrijving={hulp.beschrijving}
         telefoon={hulp.telefoon}
         website={hulp.website}
+        kosten={hulp.kosten}
         openingstijden={hulp.openingstijden}
       />
     </>

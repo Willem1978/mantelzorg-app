@@ -1251,6 +1251,11 @@ function HulpbronCard({ hulp, favorieten, categorie }: {
               📍 {hulp.gemeente}
             </span>
           )}
+          {hulp.kosten && (
+            <span className="text-xs text-muted-foreground">
+              {hulp.kosten}
+            </span>
+          )}
           <span className="text-xs text-primary font-medium ml-auto">{c.kaart.meerInfo}</span>
         </div>
       </div>
@@ -1264,6 +1269,7 @@ function HulpbronCard({ hulp, favorieten, categorie }: {
         gemeente={hulp.gemeente}
         telefoon={hulp.telefoon}
         website={hulp.website}
+        kosten={hulp.kosten}
         openingstijden={hulp.openingstijden}
       />
     </>
@@ -1330,6 +1336,7 @@ function LandelijkeHulpCard({ hulp, favorieten, categorie }: {
         beschrijving={hulp.beschrijving}
         telefoon={hulp.telefoon}
         website={hulp.website}
+        kosten={hulp.kosten}
         openingstijden={hulp.openingstijden}
       />
     </>

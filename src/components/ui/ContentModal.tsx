@@ -218,7 +218,7 @@ export function ContentModal({
           )}
 
           {/* Details als één samenhangend blok */}
-          {(organisatieNaam || bron || gemeente || (telefoon && openingstijden)) && (
+          {(organisatieNaam || gemeente || kosten || (telefoon && openingstijden)) && (
             <div className="space-y-2 text-sm">
               {gemeente && (
                 <div className="flex gap-2">
@@ -232,10 +232,10 @@ export function ContentModal({
                   <span className="text-foreground">{organisatieNaam}</span>
                 </div>
               )}
-              {!organisatieNaam && bron && (
+              {kosten && (
                 <div className="flex gap-2">
-                  <span className="text-muted-foreground w-28 flex-shrink-0">Bron</span>
-                  <span className="text-foreground">{bron}</span>
+                  <span className="text-muted-foreground w-28 flex-shrink-0">Kosten</span>
+                  <span className="text-foreground">{kosten}</span>
                 </div>
               )}
               {telefoon && openingstijden && (
@@ -245,6 +245,13 @@ export function ContentModal({
                 </div>
               )}
             </div>
+          )}
+
+          {/* Bronverwijzing */}
+          {!organisatieNaam && bron && (
+            <p className="text-xs text-muted-foreground mt-3">
+              Bron: {bron}
+            </p>
           )}
         </div>
 
