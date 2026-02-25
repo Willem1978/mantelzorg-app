@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { AdminSpinner, AdminEmptyState } from "@/components/admin"
+import { FORMULIER_OPTIES_TABS } from "@/config/options"
 
 interface FormulierOptie {
   id: string
@@ -15,14 +16,7 @@ interface FormulierOptie {
   createdAt: string
 }
 
-const tabs = [
-  { label: "Relatie", value: "RELATIE" },
-  { label: "Uren/week", value: "UREN_PER_WEEK" },
-  { label: "Zorgduur", value: "ZORGDUUR" },
-  { label: "Uren balanstest", value: "UREN_BALANSTEST" },
-  { label: "Buddy hulpvorm", value: "BUDDY_HULPVORM" },
-  { label: "Check-in hulp", value: "CHECKIN_HULP" },
-]
+const tabs = FORMULIER_OPTIES_TABS
 
 const LEEG_FORMULIER = {
   groep: "RELATIE",

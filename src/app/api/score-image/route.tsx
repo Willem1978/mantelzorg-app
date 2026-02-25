@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { NextRequest } from 'next/server'
+import { getScoreColors } from '@/config/colors'
 
 export const runtime = 'edge'
 
@@ -10,21 +11,16 @@ export async function GET(request: NextRequest) {
   const name = searchParams.get('name') || ''
 
   // Bepaal kleuren op basis van niveau
-  let bgColor = '#22c55e' // groen
-  let textColor = '#166534'
-  let emoji = '💚'
-  let levelText = 'Laag'
+  const niveauColors = getScoreColors(level)
+  const bgColor = niveauColors.hex
+  const textColor = niveauColors.hex
+  const levelText = niveauColors.label
 
+  let emoji = '💚'
   if (level === 'GEMIDDELD') {
-    bgColor = '#f97316' // oranje
-    textColor = '#9a3412'
     emoji = '🧡'
-    levelText = 'Gemiddeld'
   } else if (level === 'HOOG') {
-    bgColor = '#ef4444' // rood
-    textColor = '#991b1b'
     emoji = '❤️'
-    levelText = 'Hoog'
   }
 
   // Bereken percentage voor de meter

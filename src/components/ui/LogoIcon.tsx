@@ -1,3 +1,5 @@
+import { branding } from "@/config/branding"
+
 interface LogoIconProps {
   size?: number
   className?: string
@@ -15,11 +17,11 @@ export function LogoIcon({ size = 32, className }: LogoIconProps) {
       fill="none"
     >
       {/* Left figure */}
-      <circle cx="16" cy="10" r="6" fill="#2C7A7B"/>
-      <path d="M16 16C9 22 5 33 24 46C17 37 12 27 16 16Z" fill="#2C7A7B"/>
+      <circle cx="16" cy="10" r="6" fill={branding.logoColors.left}/>
+      <path d="M16 16C9 22 5 33 24 46C17 37 12 27 16 16Z" fill={branding.logoColors.left}/>
       {/* Right figure */}
-      <circle cx="32" cy="10" r="6" fill="#319795"/>
-      <path d="M32 16C39 22 43 33 24 46C31 37 36 27 32 16Z" fill="#319795"/>
+      <circle cx="32" cy="10" r="6" fill={branding.logoColors.right}/>
+      <path d="M32 16C39 22 43 33 24 46C31 37 36 27 32 16Z" fill={branding.logoColors.right}/>
     </svg>
   )
 }

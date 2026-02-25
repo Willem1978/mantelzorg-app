@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { AdminSpinner, AdminEmptyState } from "@/components/admin"
 import { useToast } from "@/components/ui/Toast"
+import { ARTIKEL_CATEGORIEEN, ARTIKEL_TYPES, ARTIKEL_STATUSSEN, ARTIKEL_SUB_HOOFDSTUKKEN, BRON_LABELS } from "@/config/options"
 
 interface Artikel {
   id: string
@@ -27,69 +28,22 @@ interface Artikel {
 
 const categorieOpties = [
   { value: "", label: "Alle categorieen" },
-  { value: "praktische-tips", label: "Praktische tips" },
-  { value: "zelfzorg", label: "Zelfzorg" },
-  { value: "rechten", label: "Rechten" },
-  { value: "financieel", label: "Financieel" },
-  { value: "hulpmiddelen-producten", label: "Hulpmiddelen & producten" },
-  { value: "gemeentenieuws", label: "Gemeentenieuws" },
+  ...ARTIKEL_CATEGORIEEN,
 ]
 
-// Sub-hoofdstuk opties per categorie
-const subHoofdstukOpties: Record<string, { value: string; label: string }[]> = {
-  "praktische-tips": [
-    { value: "", label: "Geen sub-hoofdstuk" },
-    { value: "dagelijks-organiseren", label: "Dagelijks organiseren" },
-    { value: "samen-organiseren", label: "Samen organiseren met familie/netwerk" },
-    { value: "veiligheid-zware-taken", label: "Veiligheid bij zware taken" },
-  ],
-  "zelfzorg": [
-    { value: "", label: "Geen sub-hoofdstuk" },
-    { value: "overbelasting-herkennen", label: "Overbelasting herkennen" },
-    { value: "pauze-en-respijt", label: "Pauze en respijt organiseren" },
-    { value: "emotionele-steun", label: "Emotionele steun en praten" },
-  ],
-  "rechten": [
-    { value: "", label: "Geen sub-hoofdstuk" },
-    { value: "routekaart-wmo-zvw-wlz", label: "Routekaart Wmo/Zvw/Wlz" },
-    { value: "gemeente-wmo-aanvragen", label: "Gemeente (Wmo) aanvragen" },
-    { value: "clientondersteuning", label: "Gratis clientondersteuning" },
-  ],
-  "financieel": [
-    { value: "", label: "Geen sub-hoofdstuk" },
-    { value: "eigen-bijdrage-kosten", label: "Eigen bijdrage en kosten" },
-    { value: "mantelzorgwaardering", label: "Mantelzorgwaardering" },
-    { value: "pgb-aanvragen-beheer", label: "Pgb: aanvragen en beheer" },
-    { value: "vergoedingen-hulpmiddelen", label: "Vergoedingen hulpmiddelen" },
-  ],
-  "hulpmiddelen-producten": [
-    { value: "", label: "Geen sub-hoofdstuk" },
-    { value: "hulpmiddelen-overzicht", label: "Hulpmiddelen overzicht" },
-    { value: "vergoedingsroutes", label: "Vergoedingsroutes" },
-  ],
-}
+// Sub-hoofdstuk opties per categorie (uit centraal config)
+const subHoofdstukOpties = ARTIKEL_SUB_HOOFDSTUKKEN
 
-const bronLabelOpties = [
-  { value: "", label: "Geen bronlabel" },
-  { value: "Landelijk", label: "Landelijk" },
-  { value: "Gemeente (Wmo)", label: "Gemeente (Wmo)" },
-  { value: "Zorgverzekeraar (Zvw)", label: "Zorgverzekeraar (Zvw)" },
-  { value: "Wlz", label: "Wlz" },
-  { value: "Overig", label: "Overig" },
-]
+const bronLabelOpties = [...BRON_LABELS]
 
 const typeOpties = [
   { value: "", label: "Alle types" },
-  { value: "ARTIKEL", label: "Artikel" },
-  { value: "GEMEENTE_NIEUWS", label: "Gemeentenieuws" },
-  { value: "TIP", label: "Tip" },
+  ...ARTIKEL_TYPES,
 ]
 
 const statusOpties = [
   { value: "", label: "Alle statussen" },
-  { value: "CONCEPT", label: "Concept" },
-  { value: "GEPUBLICEERD", label: "Gepubliceerd" },
-  { value: "GEARCHIVEERD", label: "Gearchiveerd" },
+  ...ARTIKEL_STATUSSEN,
 ]
 
 const LEEG_FORMULIER = {

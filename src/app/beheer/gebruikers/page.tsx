@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
 import { AdminSpinner, AdminEmptyState } from "@/components/admin"
 import { useToast } from "@/components/ui/Toast"
+import { ROLLEN } from "@/config/options"
 
 interface Gebruiker {
   id: string
@@ -26,12 +27,7 @@ interface Gebruiker {
   } | null
 }
 
-const rolLabels: Record<string, string> = {
-  CAREGIVER: "Mantelzorger",
-  BUDDY: "MantelBuddy",
-  GEMEENTE_ADMIN: "Gemeente Admin",
-  ADMIN: "Beheerder",
-}
+const rolLabels: Record<string, string> = ROLLEN
 
 const niveauKleur: Record<string, string> = {
   LAAG: "bg-green-100 text-green-700",

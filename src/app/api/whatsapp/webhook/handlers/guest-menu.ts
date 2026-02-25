@@ -1,3 +1,4 @@
+import { branding } from '@/config/branding'
 import {
   startTestSession,
   getCurrentQuestion,
@@ -22,7 +23,7 @@ export function handleGuestMenu(phoneNumber: string, input: string): HandlerResu
 
   // 2. Account aanmaken
   if (command === '2' || command === 'account' || command === 'nieuw') {
-    const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
+    const baseUrl = branding.urls.production
     return {
       response: `✨ *Account aanmaken*
 
@@ -36,7 +37,7 @@ _Typ 0 voor menu_`,
 
   // 3. Inloggen
   if (command === '3' || command === 'inloggen' || command === 'login') {
-    const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
+    const baseUrl = branding.urls.production
     return {
       response: `🔑 *Inloggen*
 

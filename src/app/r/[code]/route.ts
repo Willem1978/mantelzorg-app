@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { branding } from '@/config/branding'
 
 // Korte redirect URLs voor WhatsApp
 // /r/reg -> /register-whatsapp
@@ -13,7 +14,7 @@ export async function GET(
   const { searchParams } = new URL(request.url)
   const phone = searchParams.get('p')
 
-  const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
+  const baseUrl = branding.urls.production
 
   // Bouw redirect URL met optionele phone parameter
   const phoneParam = phone ? `?phone=${encodeURIComponent(phone)}` : ''

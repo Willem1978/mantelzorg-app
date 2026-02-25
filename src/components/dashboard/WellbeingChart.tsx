@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
+import { wellbeingChartColors } from "@/config/colors"
 
 interface CheckIn {
   month: string
@@ -38,9 +39,9 @@ export function WellbeingChart({ className }: WellbeingChartProps) {
   }
 
   const metrics = [
-    { key: "overall", label: "Algemeen", color: "#0d9488" },
-    { key: "physical", label: "Fysiek", color: "#3b82f6" },
-    { key: "emotional", label: "Emotioneel", color: "#8b5cf6" },
+    { key: "overall", label: "Algemeen", color: wellbeingChartColors.algemeen },
+    { key: "physical", label: "Fysiek", color: wellbeingChartColors.fysiek },
+    { key: "emotional", label: "Emotioneel", color: wellbeingChartColors.emotioneel },
   ]
 
   const getDataForMetric = (metric: string) => {
@@ -179,7 +180,7 @@ export function WellbeingChart({ className }: WellbeingChartProps) {
           <div className="relative flex items-end justify-between gap-1 h-full pb-8" style={{ height: chartHeight }}>
             {data.map((value, index) => {
               const height = value !== null ? (value / maxValue) * 100 : 0
-              const activeColor = metrics.find(m => m.key === activeMetric)?.color || "#0d9488"
+              const activeColor = metrics.find(m => m.key === activeMetric)?.color || wellbeingChartColors.algemeen
 
               return (
                 <div

@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma'
+import { branding } from '@/config/branding'
 import {
   generateShortToken,
   getMagicLinkUrl,
@@ -30,7 +31,7 @@ export async function handleLoggedInUser(
 
   // Rapport bekijken
   if (command === 'rapport' || command === '📄 bekijk rapport') {
-    const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
+    const baseUrl = branding.urls.production
 
     const token = generateShortToken()
     await prisma.magicLinkToken.create({
@@ -105,7 +106,7 @@ export async function handleLoggedInUser(
       ? new Date(lastTest.completedAt).toLocaleDateString('nl-NL')
       : 'Onbekend'
 
-    const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
+    const baseUrl = branding.urls.production
     const dashboardUrl = `${baseUrl}/login`
 
     let response = `📊 *Jouw Balansscore*\n\n`

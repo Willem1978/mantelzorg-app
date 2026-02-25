@@ -12,6 +12,8 @@
  * Als SMTP niet geconfigureerd is, worden emails gelogd naar de console.
  */
 
+import { branding } from "@/config/branding"
+
 interface EmailOptions {
   to: string
   subject: string
@@ -19,8 +21,8 @@ interface EmailOptions {
   text?: string
 }
 
-const APP_NAME = "MantelBuddy"
-const BASE_URL = process.env.NEXTAUTH_URL || "http://localhost:3000"
+const APP_NAME = branding.appName
+const BASE_URL = branding.urls.production
 
 function isSmtpConfigured(): boolean {
   return !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD)

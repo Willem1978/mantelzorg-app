@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { AdminSpinner, AdminEmptyState } from "@/components/admin"
+import { BUDDY_STATUSSEN, HULPVORM_LABELS } from "@/config/options"
 
 interface Buddy {
   id: string
@@ -27,23 +28,9 @@ interface Buddy {
   createdAt: string
 }
 
-const statusStappen = [
-  { value: "AANGEMELD", label: "Aangemeld", kleur: "bg-blue-100 text-blue-700" },
-  { value: "IN_BEHANDELING", label: "In behandeling", kleur: "bg-amber-100 text-amber-700" },
-  { value: "VOG_AANGEVRAAGD", label: "VOG aangevraagd", kleur: "bg-purple-100 text-purple-700" },
-  { value: "GOEDGEKEURD", label: "Goedgekeurd", kleur: "bg-green-100 text-green-700" },
-  { value: "INACTIEF", label: "Inactief", kleur: "bg-gray-100 text-gray-700" },
-  { value: "AFGEWEZEN", label: "Afgewezen", kleur: "bg-red-100 text-red-700" },
-]
+const statusStappen = BUDDY_STATUSSEN
 
-const hulpvormLabels: Record<string, string> = {
-  gesprek: "Gesprek",
-  boodschappen: "Boodschappen",
-  vervoer: "Vervoer",
-  klusjes: "Klusjes",
-  oppas: "Oppas",
-  administratie: "Administratie",
-}
+const hulpvormLabels = HULPVORM_LABELS
 
 function MantelBuddiesContent() {
   const [buddies, setBuddies] = useState<Buddy[]>([])

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { BALANSTEST_VRAGEN, UREN_MAP, TAAK_NAAR_ONDERDEEL } from "@/config/options"
 
 export const dynamic = 'force-dynamic'
 
@@ -77,15 +78,7 @@ export async function POST(request: Request) {
             // Converteer uren string naar getal
             let urenPerWeek: number | null = null
             if (taak.uren) {
-              const urenMap: Record<string, number> = {
-                "0-2": 1,
-                "2-4": 3,
-                "4-8": 6,
-                "8-12": 10,
-                "12-24": 18,
-                "24+": 30,
-              }
-              urenPerWeek = urenMap[taak.uren] || null
+              urenPerWeek = UREN_MAP[taak.uren] || null
             }
 
             // Converteer belasting naar moeilijkheid enum
@@ -148,36 +141,14 @@ export async function POST(request: Request) {
 // Helper functies
 
 function getVraagConfig(vraagId: string) {
-  const vragen: Record<string, { vraag: string; weegfactor: number }> = {
-    q1: { vraag: "Slaap je minder goed door de zorg?", weegfactor: 1.5 },
-    q2: { vraag: "Heb je last van je lichaam door het zorgen?", weegfactor: 1.0 },
-    q3: { vraag: "Kost het zorgen veel tijd en energie?", weegfactor: 1.0 },
-    q4: { vraag: "Is de band met je naaste veranderd?", weegfactor: 1.5 },
-    q5: { vraag: "Maakt het gedrag van je naaste je verdrietig, bang of boos?", weegfactor: 1.5 },
-    q6: { vraag: "Heb je verdriet dat je naaste anders is dan vroeger?", weegfactor: 1.0 },
-    q7: { vraag: "Slokt de zorg al je energie op?", weegfactor: 1.5 },
-    q8: { vraag: "Pas je je dagelijks leven aan voor de zorg?", weegfactor: 1.0 },
-    q9: { vraag: "Pas je regelmatig je plannen aan om te helpen?", weegfactor: 1.0 },
-    q10: { vraag: "Kom je niet meer toe aan dingen die je leuk vindt?", weegfactor: 1.0 },
-    q11: { vraag: "Kost het zorgen net zoveel tijd als je werk?", weegfactor: 1.5 },
-    q12: { vraag: "Geeft de zorg je ook geldproblemen?", weegfactor: 1.0 },
-  }
-  return vragen[vraagId]
+  const vraag = BALANSTEST_VRAGEN.find((v) => v.id === vraagId)
+  return vraag ? { vraag: vraag.vraag, weegfactor: vraag.weegfactor } : undefined
 }
 
 function getTaakConfig(taakId: string) {
-  const taken: Record<string, { naam: string; categorie: string }> = {
-    t1: { naam: "Administratie en geldzaken", categorie: "mentaal" },
-    t2: { naam: "Plannen en organiseren", categorie: "mentaal" },
-    t3: { naam: "Boodschappen doen", categorie: "praktisch" },
-    t4: { naam: "Bezoek en uitjes", categorie: "sociaal" },
-    t5: { naam: "Vervoer naar afspraken", categorie: "praktisch" },
-    t6: { naam: "Wassen en aankleden", categorie: "fysiek" },
-    t7: { naam: "Eten maken", categorie: "praktisch" },
-    t8: { naam: "Huishouden", categorie: "praktisch" },
-    t9: { naam: "Klusjes in huis", categorie: "fysiek" },
-  }
-  return taken[taakId]
+  const onderdeel = TAAK_NAAR_ONDERDEEL[taakId]
+  if (!onderdeel) return undefined
+  return { naam: onderdeel, categorie: onderdeel }
 }
 
 function getAntwoordScore(antwoord: string): number {

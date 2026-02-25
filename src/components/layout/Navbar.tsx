@@ -9,6 +9,7 @@ import { ThemeToggle } from "@/components/navigation/ThemeToggle"
 import { FavorietenIcon } from "@/components/navigation/FavorietenIcon"
 import { useNieuwsBadge } from "@/hooks/useNieuwsBadge"
 import { LogoIcon } from "@/components/ui"
+import { branding } from "@/config/branding"
 
 interface NavbarProps {
   userRole?: "CAREGIVER" | "ORG_MEMBER" | "ORG_ADMIN" | "ADMIN"
@@ -67,7 +68,7 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
             <Link href="/" className="flex items-center space-x-2">
               <LogoIcon size={32} />
               <span className="font-semibold text-foreground text-base sm:text-lg hidden sm:block">
-                MantelBuddy
+                {branding.appName}
               </span>
             </Link>
 
