@@ -102,12 +102,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id
-        session.user.role = token.role
-        session.user.caregiverId = token.caregiverId
-        session.user.gemeenteNaam = token.gemeenteNaam
-        session.user.gemeenteRollen = token.gemeenteRollen || []
-        session.user.sessionVersion = token.sessionVersion
+        session.user.id = token.id as string
+        session.user.role = token.role as string
+        session.user.caregiverId = token.caregiverId as string | null
+        session.user.gemeenteNaam = token.gemeenteNaam as string | null
+        session.user.gemeenteRollen = (token.gemeenteRollen as string[]) || []
+        session.user.sessionVersion = token.sessionVersion as number
       }
       return session
     },

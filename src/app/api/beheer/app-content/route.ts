@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       orderBy: [{ type: "asc" }, { volgorde: "asc" }, { createdAt: "desc" }],
     })
 
-    return NextResponse.json({ content })
+    return NextResponse.json({ items: content })
   } catch (error) {
     console.error("AppContent ophalen mislukt:", error)
     return NextResponse.json({ error: "AppContent ophalen mislukt" }, { status: 500 })
