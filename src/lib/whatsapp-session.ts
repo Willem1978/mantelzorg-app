@@ -6,7 +6,7 @@
 // Re-export uit centraal config bestand
 export { HULP_VOOR_MANTELZORGER, HULP_BIJ_TAAK, HULP_CATEGORIEEN, ZORGTAKEN, UREN_OPTIES, MOEILIJKHEID_OPTIES, RELATIE_OPTIES, getScoreLevel } from "@/config/options"
 export { BALANSTEST_VRAGEN as BELASTBAARHEID_QUESTIONS } from "@/config/options"
-import { BALANSTEST_VRAGEN, ZORGTAKEN as _ZORGTAKEN } from "@/config/options"
+import { BALANSTEST_VRAGEN, ZORGTAKEN as _ZORGTAKEN, getScoreLevel } from "@/config/options"
 
 // ===========================================
 // TEST SESSIE - voor balanstest flow
