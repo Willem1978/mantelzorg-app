@@ -17,6 +17,7 @@ const menuItems = [
   { href: "/beheer/categorieen", label: "Categorieën", icon: "🗂️" },
   { href: "/beheer/formulier-opties", label: "Formulier opties", icon: "📝" },
   { href: "/beheer/app-content", label: "App content", icon: "📱" },
+  { href: "/beheer/huisstijl", label: "Huisstijl & Teksten", icon: "🎨" },
   { href: "/beheer/intake-vragen", label: "Intake vragen", icon: "📥" },
   { href: "/beheer/alarmen", label: "Alarmen", icon: "🔔" },
   { href: "/beheer/audit", label: "Audit Log", icon: "📋" },

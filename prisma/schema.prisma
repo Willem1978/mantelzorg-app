@@ -1037,3 +1037,22 @@ enum AppContentType {
   PAGINA_INTRO   // Pagina titels en beschrijvingen
   FEATURE_CARD   // Feature uitleg kaarten
 }
+
+// ============================================
+// SITE INSTELLINGEN (huisstijl, teksten, logo)
+// ============================================
+
+model SiteSettings {
+  id        String   @id @default(cuid())
+  categorie String   // "branding", "kleuren", "teksten"
+  sleutel   String   @unique // bijv. "branding.appName", "kleuren.primary", "teksten.profiel.header.subtitle"
+  waarde    String   @db.Text // De waarde (tekst, kleurcode, of base64 logo)
+  label     String?  // Leesbaar label voor admin UI
+  type      String   @default("text") // "text", "color", "image", "textarea"
+  groep     String?  // Groepering in admin UI
+  volgorde  Int      @default(0)
+  updatedAt DateTime @updatedAt
+  updatedBy String?  // User ID van de laatste wijziging
+
+  @@index([categorie])
+}
