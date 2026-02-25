@@ -1,6 +1,14 @@
-import { DefaultSession } from "next-auth"
+import { DefaultSession, DefaultUser } from "next-auth"
 
 declare module "next-auth" {
+  interface User extends DefaultUser {
+    role: string
+    caregiverId: string | null
+    gemeenteNaam: string | null
+    gemeenteRollen: string[]
+    sessionVersion: number
+  }
+
   interface Session {
     user: {
       id: string
@@ -8,6 +16,7 @@ declare module "next-auth" {
       caregiverId: string | null
       gemeenteNaam: string | null
       gemeenteRollen: string[]
+      sessionVersion: number
     } & DefaultSession["user"]
   }
 }
@@ -19,5 +28,6 @@ declare module "next-auth/jwt" {
     caregiverId: string | null
     gemeenteNaam: string | null
     gemeenteRollen: string[]
+    sessionVersion: number
   }
 }

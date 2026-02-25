@@ -25,7 +25,7 @@ export default auth((request) => {
 
   // Beheer login pagina: altijd toegankelijk (anders redirect loop)
   if (pathname === "/beheer/login") {
-    if (session && (session.user as any)?.role === "ADMIN") {
+    if (session && session.user?.role === "ADMIN") {
       return NextResponse.redirect(new URL("/beheer", request.url))
     }
     return NextResponse.next()
@@ -34,7 +34,7 @@ export default auth((request) => {
   // Gemeente login pagina: altijd toegankelijk
   if (pathname === "/gemeente/login") {
     if (session) {
-      const role = (session.user as any)?.role
+      const role = session.user?.role
       if (role === "GEMEENTE_ADMIN" || role === "ADMIN") {
         return NextResponse.redirect(new URL("/gemeente", request.url))
       }
@@ -49,7 +49,7 @@ export default auth((request) => {
       loginUrl.searchParams.set("callbackUrl", pathname)
       return NextResponse.redirect(loginUrl)
     }
-    const role = (session.user as any)?.role
+    const role = session.user?.role
     if (role !== "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", request.url))
     }
@@ -63,7 +63,7 @@ export default auth((request) => {
       loginUrl.searchParams.set("callbackUrl", pathname)
       return NextResponse.redirect(loginUrl)
     }
-    const role = (session.user as any)?.role
+    const role = session.user?.role
     if (role !== "GEMEENTE_ADMIN" && role !== "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", request.url))
     }

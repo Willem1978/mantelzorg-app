@@ -1,1131 +1,777 @@
-# Architectuur Verbetervoorstel - Mantelzorg App
+# Volledig Verbetervoorstel - MantelBuddy App
 
 > **Datum:** 25 februari 2026
-> **Scope:** Volledige codebase-analyse van de Next.js/Prisma/Supabase applicatie
-> **Doel:** Concrete, prioriteit-geordende verbetervoorstellen met codevoorbeelden
+> **Scope:** Architectuur, klantreis, content-beheer, beheeromgeving
+> **Doel:** Concrete verbetervoorstellen geordend op prioriteit, met codevoorbeelden
 
 ---
 
 ## Inhoudsopgave
 
-1. [Samenvatting](#1-samenvatting)
-2. [Kritiek - Input Validatie](#2-kritiek---input-validatie-ontbreekt-bij-45-routes)
-3. [Kritiek - Caching Strategie](#3-kritiek---geen-caching-strategie-9496-routes)
-4. [Kritiek - In-Memory WhatsApp Sessies](#4-kritiek---in-memory-whatsapp-sessies)
-5. [Kritiek - Test Coverage](#5-kritiek---zero-api-test-coverage)
-6. [Hoog - Service Layer Abstractie](#6-hoog---service-layer-abstractie-ontbreekt)
-7. [Hoog - Inconsistente Error Responses](#7-hoog---inconsistente-error-responses)
-8. [Hoog - Database Indexes](#8-hoog---ontbrekende-database-indexes)
-9. [Medium - Type Safety (as any)](#9-medium---type-safety-as-any-verwijderen)
-10. [Medium - N+1 Queries en Paginatie](#10-medium---n1-queries-en-ontbrekende-paginatie)
-11. [Medium - Build Script Risico's](#11-medium---build-script-risicos)
-12. [Laag - Ontbrekende Cascade Deletes](#12-laag---ontbrekende-cascade-deletes)
-13. [Implementatie Roadmap](#13-implementatie-roadmap)
+### DEEL A: KLANTREIS & CONTENT
+1. [Klantreis: Voor de Balanstest](#1-klantreis-voor-de-balanstest)
+2. [Klantreis: Na de Balanstest](#2-klantreis-na-de-balanstest)
+3. [Score-Gestuurde Hulpkoppeling per Gemeente](#3-score-gestuurde-hulpkoppeling-per-gemeente)
+4. [Alle Content uit de Code halen](#4-alle-content-uit-de-code-halen)
+5. [Beheeromgeving: Wat Werkt Niet / Ontbreekt](#5-beheeromgeving-wat-werkt-niet--ontbreekt)
+
+### DEEL B: TECHNISCHE ARCHITECTUUR
+6. [Input Validatie (45+ routes)](#6-input-validatie-ontbreekt-bij-45-routes)
+7. [Caching Strategie (94/96 routes)](#7-geen-caching-strategie-9496-routes)
+8. [In-Memory WhatsApp Sessies](#8-in-memory-whatsapp-sessies)
+9. [Test Coverage (0/96 routes)](#9-zero-api-test-coverage)
+10. [Service Layer Abstractie](#10-service-layer-abstractie-ontbreekt)
+11. [Inconsistente Error Responses](#11-inconsistente-error-responses)
+12. [Database Indexes](#12-ontbrekende-database-indexes)
+13. [Type Safety (as any)](#13-type-safety-as-any-verwijderen)
+14. [N+1 Queries en Paginatie](#14-n1-queries-en-ontbrekende-paginatie)
+15. [Build Script Risico's](#15-build-script-risicos)
+16. [Ontbrekende Cascade Deletes](#16-ontbrekende-cascade-deletes)
+
+### DEEL C: IMPLEMENTATIE ROADMAP
+17. [Gefaseerd Implementatieplan](#17-implementatie-roadmap)
 
 ---
 
-## 1. Samenvatting
-
-| # | Probleem | Ernst | Bestanden | Impact |
-|---|----------|-------|-----------|--------|
-| 2 | Geen input validatie bij 45+ routes | **Kritiek** | 45+ API routes | SQL injection, data corruptie |
-| 3 | Geen caching (94/96 routes force-dynamic) | **Kritiek** | 94 API routes | Performance, kosten |
-| 4 | In-memory WhatsApp sessies | **Kritiek** | `whatsapp-session.ts` | Data verlies bij restart |
-| 5 | Geen API tests | **Kritiek** | 96 API routes | Regressie risico |
-| 6 | Geen service layer | **Hoog** | 80+ API routes | Moeilijk testbaar, duplicatie |
-| 7 | Inconsistente error responses | **Hoog** | 20+ routes | Slechte DX, moeilijk debuggen |
-| 8 | Ontbrekende database indexes | **Hoog** | 3 Prisma models | Trage queries |
-| 9 | 26x `as any` type casts | **Medium** | 11 bestanden | Type safety verlies |
-| 10 | N+1 queries, ontbrekende paginatie | **Medium** | 10+ routes | Performance |
-| 11 | Gevaarlijk build script | **Medium** | `scripts/build.js` | Data verlies mogelijk |
-| 12 | Ontbrekende cascade deletes | **Laag** | BelastbaarheidTest | Orphaned records |
+# DEEL A: KLANTREIS & CONTENT
 
 ---
 
-## 2. Kritiek - Input Validatie ontbreekt bij 45+ routes
-
-### Probleem
-
-Slechts ~50 van de 96 API routes gebruiken Zod-validatie. De overige routes parsen direct `request.json()` en vertrouwen op handmatige controles of doen helemaal geen validatie. Dit opent de deur voor onverwachte data, type-fouten, en potentieel kwaadaardige input.
+## 1. Klantreis: Voor de Balanstest
 
 ### Huidige situatie
 
-**`src/lib/validations.ts`** bevat alleen:
-- `loginSchema` - auth
-- `registerSchema` - auth
-- `forgotPasswordSchema` - auth
-- `resetPasswordSchema` - auth
-- `artikelSchema` - beheer
-- `hulpbronSchema` - beheer
-- `checkInSchema` - check-in
+Een mantelzorger die de balanstest nog niet heeft gedaan ziet nu:
 
-**Ontbrekende schemas voor:**
-- Alle `gemeente/*` routes (demografie, trends, rapportages, hulpbronnen)
-- Alle `beheer/gebruikers/*` routes
-- `intake/route.ts` - handmatige validatie
-- `belastbaarheidstest/route.ts`
-- `balanstest/[id]/route.ts`
-- `check-in/route.ts` (deels)
-- Alle `seed/*` routes
-- WhatsApp webhook handlers
+**Op het dashboard** (`src/config/content/dashboard.ts:94-99`):
+```
+Emoji: 📊
+Titel: "Nog geen test gedaan"
+Subtitel: "Ontdek hoe het met je gaat en waar je hulp bij kunt krijgen"
+Knop: "Start de balanstest"
+```
 
-### Voorbeeld: Geen validatie in intake route
+**Op de balanstest-pagina** (`src/config/content/balanstest.ts:18-24`):
+```
+Emoji: 📊
+Titel: "Nog geen test gedaan"
+Beschrijving: "Doe de balanstest om te zien hoe het met je gaat."
+Subtekst: "Het duurt maar 5 minuten en je krijgt direct tips."
+Knop: "Start de balanstest"
+```
 
-**`src/app/api/intake/route.ts:29-36`** - Handmatige check zonder schema:
+### Wat er mist
+
+1. **Geen motivatie waarom de test belangrijk is** - De tekst zegt alleen "om te zien hoe het met je gaat" maar legt niet uit wat je ermee kunt
+2. **Geen directe koppeling naar lokale hulp** - De mantelzorger wordt niet laagdrempelig meegenomen in wat er in de gemeente beschikbaar is
+3. **Geen "zachte landing"** - Er is geen tussenweg voor mensen die de test niet willen maar wel hulp zoeken
+4. **Taal is niet overal B1** - Sommige teksten zijn te formeel of te vaag
+
+### Wat moet veranderen
+
+**A. Motivatie-blok op dashboard (voor test)**
+
+De mantelzorger die nog geen test heeft gedaan moet op het dashboard drie dingen zien:
+
+1. **Motivatie-card** met persoonlijke, B1-toon:
+   - "Hoe gaat het met jou? Veel mantelzorgers doen meer dan ze denken. Met de balanstest ontdek je in 5 minuten hoe het echt met je gaat. Je krijgt direct tips die bij jou passen."
+   - Knop: "Doe de balanstest"
+
+2. **Hulp-preview card** (NIEUW - ook zonder test):
+   - "Hulp bij jou in de buurt" met 2-3 voorbeelden van lokale hulp uit de gemeente
+   - Laagdrempelig: "Je hoeft niet eerst de test te doen om hulp te zoeken"
+   - Knop: "Bekijk alle hulp"
+
+3. **Social proof** (NIEUW):
+   - "X mantelzorgers in [gemeente] gebruiken MantelBuddy al"
+   - Of: "De meeste mantelzorgers ontdekken dat ze meer doen dan ze dachten"
+
+**B. Deze teksten moeten NIET in code staan**
+
+Al deze motivatieteksten moeten via de beheeromgeving aanpasbaar zijn, ook per gemeente. Zie punt 4.
+
+**C. Implementatie**
+
+Nieuwe content-velden nodig in de database (via SiteSettings of nieuw ContentBlock model):
+
+```
+content.dashboard.geenTest.motivatie      -> Motivatietekst (B1)
+content.dashboard.geenTest.hulpPreview    -> Intro voor hulp-preview
+content.dashboard.geenTest.socialProof    -> Social proof tekst
+```
+
+De hulp-preview haalt lokale hulpbronnen op via de bestaande `getHulpbronnenVoorTaken()` in `src/lib/dashboard/hulpbronnen.ts` maar dan ZONDER testresultaat - alleen op basis van gemeente.
+
+---
+
+## 2. Klantreis: Na de Balanstest
+
+### Huidige situatie
+
+Na de test ziet de mantelzorger een rapportpagina met:
+
+**Score-weergave:** Getal 0-24 met kleur (groen/oranje/rood)
+
+**Niveau-advies** (`src/config/content/rapport.ts:27-83`) - HARDCODED:
+
+| Niveau | Titel | Tekst |
+|--------|-------|-------|
+| LAAG (0-6, groen) | "Goed bezig!" | "Je hebt een goede balans. Blijf goed voor jezelf zorgen." |
+| GEMIDDELD (7-12, oranje) | "Je balans staat onder druk" | "Zo doorgaan is niet houdbaar. Kijk welke taken je kunt overdragen." |
+| HOOG (13+, rood) | "Je bent overbelast" | "Dit is niet vol te houden. Je hebt nu hulp nodig." |
+
+**Hulp-tips per taak** (`src/config/content/rapport.ts:88-99`) - HARDCODED:
 ```typescript
-// HUIDIG - onveilig
-const body: IntakeBody = await request.json()  // TypeScript type is geen runtime check!
-
-if (!body.answers || Object.keys(body.answers).length === 0) {
-  return NextResponse.json(
-    { error: "Geen antwoorden ontvangen" },
-    { status: 400 }
-  )
+hulpTips: {
+  t1: "Thuiszorg kan helpen met wassen, aankleden en andere persoonlijke verzorging.",
+  t2: "Huishoudelijke hulp kun je aanvragen via de WMO van je gemeente.",
+  t3: "Een apotheek kan medicijnen in weekdozen klaarzetten...",
+  t4: "De gemeente kan aangepast vervoer regelen...",
+  t5: "Vraag bij je gemeente naar vrijwillige hulp bij administratie...",
+  // etc. voor alle 10 taken
 }
 ```
+
+**Dynamisch advies** (`src/lib/dashboard/advies.ts:26-149`) - Teksten HARDCODED in code:
+```typescript
+if (input.belastingNiveau === "HOOG") {
+  adviezen.push({
+    titel: "Vraag hulp",
+    tekst: "Je hebt veel op je bordje. Je hoeft het niet alleen te doen...",
+  })
+}
+```
+
+### Wat er mist
+
+1. **Geen subscores** - De 12 vragen gaan over 3 gebieden (fysiek, gevoel, tijd) maar de subscores worden NIET apart getoond
+2. **Groen-advies is te simpel** - "Goed bezig!" zonder concrete volgende stappen
+3. **Rood-advies is te generiek** - Dezelfde tekst voor iedereen, zonder gemeente-specifieke hulp
+4. **Geen verschil per gemeente** - De beheerder kan niet per gemeente instellen welke hulp bij welk niveau hoort
+5. **Tips per taak zijn hardcoded** - Kunnen niet via beheer aangepast worden
+6. **Geen aandachtgebieden** - De 3 dimensies (fysiek, gevoel, tijd) worden niet benadrukt
+
+### Wat moet veranderen
+
+**A. Subscores toevoegen (fysiek, gevoel, tijd)**
+
+De 12 vragen mappen naar 3 gebieden:
+
+| Gebied | Vragen | Max score |
+|--------|--------|-----------|
+| **Fysiek** (Lichamelijk) | q1 slaap (1.5x), q2 lichaam (1.0x), q3 tijd+energie (1.0x) | 7 |
+| **Gevoel** (Emotioneel) | q4 band (1.5x), q5 gedrag (1.5x), q6 verdriet (1.0x), q7 energie (1.5x) | 11 |
+| **Tijd** (Praktisch) | q8 dagelijks (1.0x), q9 plannen (1.0x), q10 leuke dingen (1.0x), q11 werk (1.5x), q12 geld (1.0x) | 11 |
+
+Implementatie vereist:
+
+1. Mapping toevoegen in config/database:
+```typescript
+export const SCORE_GEBIEDEN = {
+  FYSIEK: { label: "Lichamelijk", emoji: "💪", vraagIds: ["q1", "q2", "q3"] },
+  GEVOEL: { label: "Gevoel", emoji: "💛", vraagIds: ["q4", "q5", "q6", "q7"] },
+  TIJD:   { label: "Tijd & energie", emoji: "⏰", vraagIds: ["q8", "q9", "q10", "q11", "q12"] },
+}
+```
+
+2. Subscore-opslag in database (BelastbaarheidTest model uitbreiden):
+```prisma
+model BelastbaarheidTest {
+  // bestaande velden...
+  scoreFysiek    Float?    // Subscore fysiek
+  scoreGevoel    Float?    // Subscore gevoel
+  scoreTijd      Float?    // Subscore tijd
+}
+```
+
+3. Visuele weergave: drie balkjes op rapport-pagina, elk groen/oranje/rood
+
+**B. Verschil in advies per totaalscore**
+
+**Bij groen (totaal):**
+- "Je hebt een goede balans. Dat is fijn! Let wel op deze punten:"
+- Per subscore die oranje/rood is: specifiek aandachtgebied benoemen
+- Concrete stappen: "Plan elke week iets leuks", "Doe de test over 3 maanden opnieuw"
+- Hulp bij jou in de buurt (preventief, laagdrempelig)
+
+**Bij oranje (totaal):**
+- "Je doet heel veel. Dat is zwaar. Er is hulp voor je."
+- Per subscore die rood is: urgente aandachtgebieden benoemen
+- Concrete stappen: "Bespreek dit met je huisarts", "Zoek hulp bij deze taken"
+- Hulpbronnen gekoppeld aan dit niveau (uit database, per gemeente)
+
+**Bij rood (totaal):**
+- "Je hebt nu hulp nodig. Je doet te veel alleen."
+- Directe acties: bel huisarts, bel mantelzorglijn, vraag WMO-hulp
+- Gemeente-specifieke hulp prominent tonen
+- Alarm naar beheerder (al geimplementeerd)
+
+**C. Alle teksten via beheer instelbaar**
+
+Per niveau en per subscore-combinatie moet een beheerder:
+1. De titel en tekst kunnen aanpassen (B1 taalgebruik)
+2. Specifieke hulpbronnen kunnen koppelen
+3. Dit per gemeente kunnen doen
+
+---
+
+## 3. Score-Gestuurde Hulpkoppeling per Gemeente
+
+### Huidige situatie
+
+De database heeft al velden voor score-gebaseerde zichtbaarheid op het Zorgorganisatie model:
+```
+zichtbaarBijLaag: boolean       // Toon bij groen
+zichtbaarBijGemiddeld: boolean  // Toon bij oranje
+zichtbaarBijHoog: boolean       // Toon bij rood
+```
+
+**MAAR: de hulpbronnen-logica gebruikt dit NIET!**
+
+In `src/lib/dashboard/hulpbronnen.ts:58-59`:
+```typescript
+const niveauFilter: Record<string, unknown>[] = []
+void belastingNiveau  // <-- BELASTINGNIVEAU WORDT GENEGEERD!
+```
+
+De `belastingNiveau` parameter wordt ontvangen maar nooit gebruikt in de queries. Alle hulpbronnen worden altijd getoond, ongeacht score.
+
+### Wat er mist
+
+1. **niveauFilter is leeg** - De zichtbaarheidsvelden worden nooit gecontroleerd
+2. **Beheer-interface onvolledig** - Niet duidelijk of de checkboxes in het hulpbron-formulier prominent genoeg zijn
+3. **Geen gemeente-specifiek advies** - Een beheerder kan niet instellen: "Bij rood in gemeente X, toon deze 3 hulpbronnen bovenaan"
+4. **Geen prioritering** - Alle hulpbronnen zijn gelijkwaardig, er is geen "eerste actie" vs "overige opties"
+
+### Wat moet veranderen
+
+**A. Fix de niveauFilter in hulpbronnen.ts**
+
+```typescript
+// src/lib/dashboard/hulpbronnen.ts - FIX
+const niveauFilter: Record<string, unknown>[] = []
+if (belastingNiveau === "LAAG") {
+  niveauFilter.push({ zichtbaarBijLaag: true })
+} else if (belastingNiveau === "GEMIDDELD") {
+  niveauFilter.push({ zichtbaarBijGemiddeld: true })
+} else if (belastingNiveau === "HOOG") {
+  niveauFilter.push({ zichtbaarBijHoog: true })
+}
+```
+
+**B. Uitbreiding Zorgorganisatie model voor prioriteit**
+
+```prisma
+model Zorgorganisatie {
+  // bestaande velden...
+  prioriteitBijLaag       Int     @default(0)  // Hogere waarde = prominenter
+  prioriteitBijGemiddeld  Int     @default(0)
+  prioriteitBijHoog       Int     @default(0)
+  actieTekstLaag          String? // "Goed om te weten"
+  actieTekstGemiddeld     String? // "Dit kan je helpen"
+  actieTekstHoog          String? // "Bel vandaag nog"
+}
+```
+
+**C. Beheeromgeving aanpassen**
+
+In hulpbronnen-edit pagina toevoegen:
+
+| Veld | Type | Beschrijving |
+|------|------|--------------|
+| Zichtbaar bij groen | Checkbox | Toon bij lage belasting |
+| Zichtbaar bij oranje | Checkbox | Toon bij gemiddelde belasting |
+| Zichtbaar bij rood | Checkbox | Toon bij hoge belasting |
+| Prioriteit per niveau | Nummer (0-10) | Volgorde per belastingniveau |
+| Actietekst per niveau | Tekstveld | B1-tekst: "Bel vandaag nog" |
+
+**D. Gemeente-admin kan dit zelf instellen**
+
+In het gemeente-portal (`/gemeente/hulpbronnen/`) moet een gemeente-admin:
+1. Per hulpbron in hun gemeente de score-zichtbaarheid instellen
+2. Per hulpbron een actietekst schrijven per niveau
+3. Een "top 3 bij rood" lijst kunnen samenstellen
+4. Een "preventie-tips bij groen" lijst kunnen beheren
+
+---
+
+## 4. Alle Content uit de Code halen
+
+### Probleem
+
+Er zit een grote hoeveelheid hardcoded Nederlandse tekst in de codebase die via de beheeromgeving aanpasbaar zou moeten zijn.
+
+### Inventaris: Alle content in code
+
+#### 4.1 Balanstest vragen en opties
+
+**Bestand:** `src/config/options.ts:120-162`
+
+| Content | Regels | Items |
+|---------|--------|-------|
+| 12 balanstestvragen + weegfactoren | 120-133 | BALANSTEST_VRAGEN |
+| 10 zorgtaken + beschrijvingen | 19-30 | ZORGTAKEN |
+| 6 uren-opties | 155-162 | UREN_OPTIES |
+| 3 moeilijkheids-opties | 139-143 | MOEILIJKHEID_OPTIES |
+| Score drempels (0-6, 7-12, 13+) | 212-216 | getScoreLevel() |
+
+**Status:** Er bestaat al een beheer-interface voor balanstestvragen (`/beheer/balanstest-vragen`) en zorgtaken (`/beheer/zorgtaken`). MAAR de frontend leest nog steeds uit `src/config/options.ts` in plaats van de database.
+
+**Fix:** De belastbaarheidstest-pagina moet vragen ophalen via API in plaats van import uit config.
+
+#### 4.2 Rapport teksten per niveau
+
+**Bestand:** `src/config/content/rapport.ts:27-99`
+
+Alle niveau-titels, subtitels, actie-beschrijvingen en tips staan hardcoded. Voorbeeld:
+```typescript
+HOOG: {
+  title: "Je bent overbelast",
+  subtitle: "Dit is niet vol te houden. Je hebt nu hulp nodig.",
+  acties: {
+    huisarts: { title: "Bel je huisarts", beschrijving: "Maak een afspraak..." },
+    gemeente: { titleFn: (g) => `Mantelzorgondersteuner ${g}` },
+    mantelzorglijn: { title: "Mantelzorglijn", beschrijving: "030 - 205 90 59" },
+  },
+}
+```
+
+**Fix:** Nieuw database-model of uitbreiding SiteSettings met categorie "rapport".
+
+#### 4.3 Hulp-tips per taak
+
+**Bestand:** `src/config/content/rapport.ts:88-99`
+
+9 hardcoded tips als `t1` t/m `t9` plus `default`. Voorbeeld:
+```typescript
+t1: "Thuiszorg kan helpen met wassen, aankleden en andere persoonlijke verzorging.",
+t2: "Huishoudelijke hulp kun je aanvragen via de WMO van je gemeente.",
+```
+
+**Fix:** Koppel deze tips aan het Zorgtaak model in de database, beheerbaar via `/beheer/zorgtaken`.
+
+#### 4.4 Dashboard teksten
+
+**Bestand:** `src/config/content/dashboard.ts` (125 regels)
+
+- Begroetingen per tijdstip ("Goedemorgen!", "Goedemiddag!", "Goedenavond!")
+- Score-berichten per niveau (kort + uitleg, 3 varianten)
+- Check-in labels ("Super", "Goed", "Oke", "Moe", "Zwaar")
+- WhatsApp-teksten
+- Sectie-titels en intro's
+
+**Status:** Deels overlap met SiteSettings (teksten.dashboard.greeting bestaat al). De rest staat in code.
+
+#### 4.5 Advies-logica met hardcoded teksten
+
+**Bestand:** `src/lib/dashboard/advies.ts` (149 regels)
+
+Alle 10+ advies-templates zitten in de code:
+```typescript
+titel: "Vraag hulp",
+tekst: "Je hebt veel op je bordje. Je hoeft het niet alleen te doen. Bel de Mantelzorglijn..."
+
+titel: "Neem pauze",
+tekst: "Respijtzorg kan je even ontlasten..."
+
+titel: "Houd je balans in de gaten",
+tekst: "Je doet al veel. Probeer elke week iets voor jezelf..."
+```
+
+**Fix:** Advies-templates naar database, beheerbaar per niveau en per gemeente.
+
+#### 4.6 Overige content-bestanden (10 bestanden)
+
+| Bestand | Regels | Inhoud |
+|---------|--------|--------|
+| `src/config/content/landing.ts` | ~100 | Landingspagina hero, features, CTA's |
+| `src/config/content/mantelzorger.ts` | ~80 | Informatie-pagina mantelzorgers |
+| `src/config/content/volunteer.ts` | ~60 | Vrijwilligers aanmeld-pagina |
+| `src/config/content/agenda.ts` | ~40 | Agenda labels en beschrijvingen |
+| `src/config/content/auth.ts` | ~50 | Login/register/vergeten teksten |
+| `src/config/content/common.ts` | ~30 | Gedeelde UI-teksten |
+| `src/config/content/favorieten.ts` | ~20 | Favorieten-pagina teksten |
+| `src/config/content/hulpvragen.ts` | ~40 | Hulpvragen-pagina teksten |
+| `src/config/content/leren.ts` | ~30 | Leren-pagina teksten |
+| `src/config/content/profiel.ts` | ~40 | Profiel-pagina teksten |
 
 ### Voorgestelde oplossing
 
-#### Stap 1: Voeg ontbrekende Zod schemas toe aan `src/lib/validations.ts`
+**Uitbreiden van bestaand SiteSettings model** (aanbevolen):
 
-```typescript
-// --- Intake schema ---
-export const intakeSchema = z.object({
-  answers: z.record(z.string(), z.string()).refine(
-    (val) => Object.keys(val).length > 0,
-    "Minimaal 1 antwoord is verplicht"
-  ),
-})
+Het model ondersteunt al categorieen, key-value paren, types, groepering en audit trail.
 
-// --- Belastbaarheidstest schema ---
-export const belastbaarheidTestSchema = z.object({
-  voornaam: z.string().min(1, "Voornaam is verplicht"),
-  email: z.string().email("Vul een geldig e-mailadres in"),
-  postcode: z.string().regex(/^\d{4}\s?[A-Za-z]{2}$/, "Ongeldige postcode").optional(),
-  huisnummer: z.string().optional(),
-  antwoorden: z.record(z.string(), z.string()),
-  taakSelecties: z.array(z.object({
-    taakId: z.string(),
-    taakNaam: z.string(),
-    urenPerWeek: z.number().int().min(0).optional(),
-    moeilijkheid: z.enum(["MAKKELIJK", "GEMIDDELD", "MOEILIJK", "ZEER_MOEILIJK"]).optional(),
-  })).optional(),
-})
-
-// --- Gemeente filter schema (herbruikbaar) ---
-export const gemeenteFilterSchema = z.object({
-  periode: z.enum(["week", "maand", "kwartaal", "jaar", "alles"]).default("alles"),
-  page: z.coerce.number().int().min(1).default(1),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-})
-
-// --- Beheer gebruiker update schema ---
-export const gebruikerUpdateSchema = z.object({
-  name: z.string().min(1).optional(),
-  email: z.string().email().optional(),
-  role: z.enum(["CAREGIVER", "BUDDY", "ORG_MEMBER", "ORG_ADMIN", "GEMEENTE_ADMIN", "ADMIN"]).optional(),
-  isActive: z.boolean().optional(),
-  adminNotities: z.string().optional(),
-})
-```
-
-#### Stap 2: Gebruik `validateBody()` helper in alle routes
-
-```typescript
-// NIEUW - veilig
-import { intakeSchema, validateBody } from "@/lib/validations"
-
-export async function POST(request: NextRequest) {
-  const body = await request.json()
-  const validation = validateBody(body, intakeSchema)
-  if (!validation.success) {
-    return NextResponse.json({ error: validation.error }, { status: 400 })
-  }
-  const { answers } = validation.data
-  // ... rest van de logica
+Toevoegen:
+```prisma
+model SiteSettings {
+  // bestaande velden...
+  gemeente    String?   // NIEUW: null = globaal, "Zutphen" = gemeente-specifiek
 }
 ```
 
-### Betrokken bestanden (top prioriteit)
+Nieuwe categorieen:
+```
+categorie: "rapport"    -> rapport.niveaus.HOOG.title, rapport.niveaus.HOOG.subtitle, etc.
+categorie: "advies"     -> advies.hoog.hulp.titel, advies.hoog.hulp.tekst, etc.
+categorie: "dashboard"  -> dashboard.greeting.morning, dashboard.geenTest.motivatie, etc.
+categorie: "balanstest" -> balanstest.intro, balanstest.geenTest.titel, etc.
+```
+
+Content-ophaal logica:
+```typescript
+// src/lib/content.ts
+export async function getContent(pagina: string, gemeente?: string | null) {
+  const globaal = await prisma.siteSettings.findMany({
+    where: { categorie: pagina, gemeente: null }
+  })
+  const gemeenteContent = gemeente
+    ? await prisma.siteSettings.findMany({ where: { categorie: pagina, gemeente } })
+    : []
+
+  const result: Record<string, string> = {}
+  globaal.forEach(s => { result[s.sleutel] = s.waarde })
+  gemeenteContent.forEach(s => { result[s.sleutel] = s.waarde }) // Override
+  return result
+}
+```
+
+---
+
+## 5. Beheeromgeving: Wat Werkt Niet / Ontbreekt
+
+### 5.1 Kleuren instellen werkt niet volledig
+
+**Status:** De beheer-interface bestaat (`/beheer/huisstijl` tab Kleuren) met velden:
+```
+kleuren.scoreLaag      -> #2E7D32 (groen)
+kleuren.scoreGemiddeld -> #C86800 (oranje)
+kleuren.scoreHoog      -> #B71C1C (rood)
+kleuren.primary        -> #2C7A7B
+```
+
+**Probleem:** Kleuren worden opgeslagen in database maar NIET dynamisch toegepast in de frontend. Componenten gebruiken hardcoded Tailwind klassen (`text-green-600`, `bg-amber-500`, `text-red-600`).
+
+**Fix nodig:**
+1. CSS custom properties genereren uit database-kleuren
+2. Componenten omschrijven naar custom properties
+3. Of: `useSiteSettings()` hook die kleuren als CSS variables inject
+
+### 5.2 Score-hulp koppeling werkt niet
+
+**Status:** Zorgorganisatie model heeft `zichtbaarBijLaag/Gemiddeld/Hoog` velden.
+
+**Probleem:** De query in `hulpbronnen.ts` negeert het belastingniveau volledig (zie punt 3).
+
+**Fix:** niveauFilter activeren + beheer-UI verbeteren.
+
+### 5.3 Rapport-content niet via beheer aanpasbaar
+
+**Status:** Geen beheer-interface voor rapport-teksten. Alles in `src/config/content/rapport.ts`.
+
+**Fix:** Nieuwe sectie in beheeromgeving of uitbreiding huisstijl met tabblad "Rapport teksten".
+
+### 5.4 Advies-templates niet via beheer aanpasbaar
+
+**Status:** Alle teksten in `src/lib/dashboard/advies.ts`.
+
+**Fix:** Advies-templates beheerbaar maken. Een beheerder moet kunnen:
+- Per belastingniveau 2-3 adviezen instellen
+- Per advies: titel, tekst, emoji, link, prioriteit
+- Per gemeente andere adviezen instellen
+
+### 5.5 Balanstestvragen: Beheer bestaat maar wordt niet gebruikt
+
+**Status:** Beheer-interface op `/beheer/balanstest-vragen` bestaat, maar de frontend leest uit `src/config/options.ts`.
+
+**Fix:** Belastbaarheidstest-pagina moet vragen uit database halen via API call.
+
+### 5.6 Gemeente-admin mist content-beheer voor niveaus
+
+**Status:** Gemeente-admins kunnen hulpbronnen en nieuws beheren, maar NIET:
+- Advies-teksten per niveau aanpassen voor hun gemeente
+- Rapport-teksten per niveau aanpassen
+- "Top 3 hulp bij rood" instellen
+- Preventie-tips bij groen instellen
+
+**Fix:** Uitbreiding gemeente-portal met "Advies & Content" tabblad.
+
+---
+
+# DEEL B: TECHNISCHE ARCHITECTUUR
+
+---
+
+## 6. Input Validatie ontbreekt bij 45+ routes
+
+### Probleem
+
+Van de 96 API routes gebruiken er ~50 Zod-validatie. De overige parsen direct `request.json()` zonder schema.
+
+### Huidige schemas in `src/lib/validations.ts`
+
+Alleen: loginSchema, registerSchema, forgotPasswordSchema, resetPasswordSchema, artikelSchema, hulpbronSchema, checkInSchema.
+
+### Routes zonder validatie (top prioriteit)
 
 | Route | Reden |
 |-------|-------|
-| `src/app/api/intake/route.ts` | Gebruikersinvoer, geen schema |
-| `src/app/api/belastbaarheidstest/route.ts` | Grote form, geen schema |
-| `src/app/api/balanstest/[id]/route.ts` | Gebruikersinvoer |
-| `src/app/api/check-in/route.ts` | Gebruikersinvoer |
-| `src/app/api/beheer/gebruikers/[id]/route.ts` | Admin operaties |
-| `src/app/api/beheer/hulpbronnen/route.ts` | CRUD operaties |
-| `src/app/api/gemeente/*/route.ts` (alle) | Filterparameters |
+| `api/intake/route.ts` | Handmatige check, geen schema |
+| `api/belastbaarheidstest/route.ts` | Grote form, 12 vragen + taken |
+| `api/balanstest/[id]/route.ts` | Gebruikersinvoer |
+| `api/beheer/gebruikers/[id]/route.ts` | Admin operaties |
+| `api/gemeente/*/route.ts` (alle) | Filterparameters |
+
+### Voorbeeld: intake route
+
+`src/app/api/intake/route.ts:29-36`:
+```typescript
+const body: IntakeBody = await request.json()  // TypeScript type = geen runtime check!
+if (!body.answers || Object.keys(body.answers).length === 0) {
+  return NextResponse.json({ error: "Geen antwoorden ontvangen" }, { status: 400 })
+}
+```
+
+### Fix
+
+Schemas toevoegen aan `src/lib/validations.ts` en overal de bestaande `validateBody()` helper gebruiken.
 
 ---
 
-## 3. Kritiek - Geen caching strategie (94/96 routes)
+## 7. Geen Caching Strategie (94/96 routes)
 
 ### Probleem
 
-94 van de 96 API routes gebruiken `export const dynamic = 'force-dynamic'`, wat **alle** Next.js caching volledig uitschakelt. Alleen `site-settings` en `auth/[...nextauth]` hebben cache headers. Dit betekent dat elke request een verse database-query triggert, ook voor data die zelden verandert.
+94 van 96 routes hebben `export const dynamic = 'force-dynamic'`, wat alle caching uitschakelt. Elke pageview = verse database-query.
 
-### Impact
+### Voorgestelde strategie
 
-- Onnodig hoge database-belasting (elke pageview = verse query)
-- Langzamere response times
-- Hogere Supabase-kosten bij schalen
-- Slechte gebruikerservaring door trage laadtijden
+| Type | Voorbeeld | Cache |
+|------|-----------|-------|
+| Statische content | artikelen, hulpbronnen | `s-maxage=3600, stale-while-revalidate=86400` |
+| Per-gebruiker data | dashboard, profiel | `private, s-maxage=60, stale-while-revalidate=300` |
+| Gemeente statistieken | demografie, trends | `private, s-maxage=300, stale-while-revalidate=3600` |
+| Mutaties & auth | POST/PUT/DELETE, auth | `force-dynamic` (houd huidig) |
 
-### Huidige situatie
-
-```typescript
-// Staat bovenaan in 94 van 96 routes:
-export const dynamic = 'force-dynamic'
-```
-
-### Voorgestelde oplossing per route-categorie
-
-#### Categorie A: Statisch/Zelden verandert - Cache agressief
-
-Routes waarvan de data zelden wijzigt:
-
-```typescript
-// src/app/api/site-settings/route.ts - GOED (al gecached)
-// Toepassen op vergelijkbare routes:
-
-// src/app/api/content/* routes (artikelen, categorieën)
-export const revalidate = 3600 // 1 uur cache, revalidate on demand
-
-export async function GET() {
-  const data = await prisma.artikel.findMany({ where: { isActief: true } })
-  return NextResponse.json(data, {
-    headers: {
-      'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
-    },
-  })
-}
-```
-
-**Routes voor categorie A:**
-- `src/app/api/content/*` - Content categorieën, zorgtaken, formulier opties
-- `src/app/api/artikelen/*` - Gepubliceerde artikelen
-- `src/app/api/hulpbronnen/zoeken/*` - Zorgorganisaties (veranderen zelden)
-
-#### Categorie B: Per-gebruiker data - Korte cache met revalidatie
-
-```typescript
-// src/app/api/dashboard/route.ts
-// Verwijder: export const dynamic = 'force-dynamic'
-
-export async function GET() {
-  const session = await auth()
-  // ... fetch data
-  return NextResponse.json(data, {
-    headers: {
-      'Cache-Control': 'private, s-maxage=60, stale-while-revalidate=300',
-    },
-  })
-}
-```
-
-**Routes voor categorie B:**
-- `src/app/api/dashboard/route.ts`
-- `src/app/api/profiel/route.ts`
-- `src/app/api/notificaties/route.ts`
-
-#### Categorie C: Gemeente statistieken - Medium cache
-
-```typescript
-// src/app/api/gemeente/demografie/route.ts
-// Statistieken veranderen pas als er nieuwe tests zijn
-
-export async function GET() {
-  // ... fetch data
-  return NextResponse.json(data, {
-    headers: {
-      'Cache-Control': 'private, s-maxage=300, stale-while-revalidate=3600',
-    },
-  })
-}
-```
-
-**Routes voor categorie C:**
-- `src/app/api/gemeente/demografie/route.ts`
-- `src/app/api/gemeente/trends/route.ts`
-- `src/app/api/gemeente/rapportages/route.ts`
-
-#### Categorie D: Moet altijd vers zijn - Houd force-dynamic
-
-```typescript
-// Deze routes moeten altijd vers zijn:
-export const dynamic = 'force-dynamic'
-```
-
-**Routes voor categorie D:**
-- `src/app/api/auth/*` - Authenticatie
-- `src/app/api/whatsapp/*` - Webhook handlers
-- `src/app/api/beheer/*/route.ts` - Admin mutaties (POST/PUT/DELETE)
-
-#### Optioneel: On-demand revalidatie bij mutaties
-
-```typescript
-// In een POST/PUT/DELETE handler die data wijzigt:
-import { revalidatePath } from 'next/cache'
-
-export async function POST(request: NextRequest) {
-  // ... create/update data
-  revalidatePath('/api/artikelen')  // Invalideer de GET cache
-  return NextResponse.json({ success: true })
-}
-```
+Gebruik `revalidatePath()` bij mutaties om caches te invalideren.
 
 ---
 
-## 4. Kritiek - In-Memory WhatsApp Sessies
+## 8. In-Memory WhatsApp Sessies
 
 ### Probleem
 
-**`src/lib/whatsapp-session.ts:112-115`** slaat alle WhatsApp-sessies op in JavaScript `Map` objecten:
-
+`src/lib/whatsapp-session.ts:112-115` slaat sessies op in JavaScript Map objecten:
 ```typescript
 const sessions = new Map<string, TestSession>()
 const onboardingSessions = new Map<string, OnboardingSession>()
 const hulpSessions = new Map<string, HulpSession>()
 ```
 
-Dit is problematisch omdat:
-1. **Sessies verdwijnen** bij elke server restart/deploy
-2. **Geen support** voor meerdere server instances (Vercel serverless functions)
-3. **Geen expiratie** - sessies groeien oneindig (memory leak)
-4. **Geen beveiliging** - geen session validation of cleanup
+Sessies verdwijnen bij deploy/restart. Werkt niet met Vercel serverless. Geen expiratie (memory leak).
 
-### Impact
+### Fix
 
-- Gebruikers verliezen WhatsApp-flows halverwege bij deploys
-- In serverless (Vercel) werkt het per definitie niet betrouwbaar (elke invocation kan een nieuwe instance zijn)
-- Potentieel memory leak op lange termijn
-
-### Voorgestelde oplossing: Database-backed sessies
-
-#### Stap 1: Voeg een WhatsAppSession model toe aan Prisma schema
-
-```prisma
-model WhatsAppSession {
-  id          String   @id @default(cuid())
-  phoneNumber String
-  type        WhatsAppSessionType
-  data        Json     // Sessie state (answers, step, etc.)
-  expiresAt   DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@unique([phoneNumber, type])
-  @@index([expiresAt])  // Voor cleanup queries
-}
-
-enum WhatsAppSessionType {
-  TEST
-  ONBOARDING
-  HULP
-}
-```
-
-#### Stap 2: Refactor session functies
-
-```typescript
-// src/lib/whatsapp-session.ts - NIEUW
-
-import { prisma } from "@/lib/prisma"
-
-const SESSION_TTL_MS = 30 * 60 * 1000 // 30 minuten
-
-export async function getTestSession(phoneNumber: string): Promise<TestSession | null> {
-  const session = await prisma.whatsAppSession.findUnique({
-    where: { phoneNumber_type: { phoneNumber, type: "TEST" } },
-  })
-  if (!session || session.expiresAt < new Date()) {
-    if (session) {
-      await prisma.whatsAppSession.delete({ where: { id: session.id } })
-    }
-    return null
-  }
-  return session.data as TestSession
-}
-
-export async function startTestSession(phoneNumber: string, userId: string): Promise<void> {
-  const data: TestSession = {
-    userId,
-    currentStep: 'intro',
-    currentQuestion: 0,
-    answers: {},
-    selectedTasks: [],
-    currentTaskIndex: 0,
-    taskDetails: {},
-    startedAt: new Date(),
-  }
-  await prisma.whatsAppSession.upsert({
-    where: { phoneNumber_type: { phoneNumber, type: "TEST" } },
-    create: {
-      phoneNumber,
-      type: "TEST",
-      data: data as any,
-      expiresAt: new Date(Date.now() + SESSION_TTL_MS),
-    },
-    update: {
-      data: data as any,
-      expiresAt: new Date(Date.now() + SESSION_TTL_MS),
-    },
-  })
-}
-
-export async function updateTestSession(
-  phoneNumber: string,
-  updates: Partial<TestSession>
-): Promise<void> {
-  const current = await getTestSession(phoneNumber)
-  if (!current) return
-  await prisma.whatsAppSession.update({
-    where: { phoneNumber_type: { phoneNumber, type: "TEST" } },
-    data: {
-      data: { ...current, ...updates } as any,
-      expiresAt: new Date(Date.now() + SESSION_TTL_MS), // Verleng TTL
-    },
-  })
-}
-```
-
-#### Stap 3: Periodieke cleanup (optioneel)
-
-```typescript
-// src/app/api/cron/cleanup-sessions/route.ts
-export async function GET() {
-  const deleted = await prisma.whatsAppSession.deleteMany({
-    where: { expiresAt: { lt: new Date() } },
-  })
-  return NextResponse.json({ deleted: deleted.count })
-}
-```
+Nieuw Prisma model WhatsAppSession met JSON data-veld, TTL van 30 minuten, en periodieke cleanup.
 
 ---
 
-## 5. Kritiek - Zero API Test Coverage
+## 9. Zero API Test Coverage
 
 ### Probleem
 
-Er zijn slechts 3 testbestanden, allen voor lib utilities:
-- `src/lib/__tests__/validations.test.ts` (138 regels)
-- `src/lib/__tests__/rate-limit.test.ts` (~30 regels)
-- `src/lib/__tests__/advies.test.ts`
+Slechts 3 testbestanden (validations, rate-limit, advies). Geen van de 96 API routes is getest.
 
-**Geen enkele API route is getest.** Met 96 routes is dit een groot regressierisico.
+### Fix
 
-### Voorgestelde oplossing: Gefaseerde testopzet
-
-#### Stap 1: Test-infrastructure (eenmalig)
-
-Maak een test helper voor API routes:
-
-```typescript
-// src/lib/__tests__/helpers/api-test-utils.ts
-import { prisma } from "@/lib/prisma"
-
-// Mock de auth() functie
-export function mockAuth(user: { id: string; role: string; [key: string]: any } | null) {
-  jest.mock("@/lib/auth", () => ({
-    auth: jest.fn().mockResolvedValue(
-      user ? { user } : null
-    ),
-  }))
-}
-
-// Maak een NextRequest mock
-export function createMockRequest(
-  method: string,
-  body?: any,
-  searchParams?: Record<string, string>
-): Request {
-  const url = new URL("http://localhost:3000/api/test")
-  if (searchParams) {
-    Object.entries(searchParams).forEach(([k, v]) => url.searchParams.set(k, v))
-  }
-  return new Request(url, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: body ? JSON.stringify(body) : undefined,
-  })
-}
-
-// Database cleanup helper
-export async function cleanupTestData() {
-  // Verwijder testdata in de juiste volgorde (foreign keys)
-  await prisma.intakeResponse.deleteMany({})
-  await prisma.belastbaarheidAntwoord.deleteMany({})
-  await prisma.belastbaarheidTest.deleteMany({})
-  await prisma.caregiver.deleteMany({})
-  await prisma.user.deleteMany({})
-}
-```
-
-#### Stap 2: Prioriteer tests voor kritieke routes
-
-Begin met de routes die het meest impact hebben:
-
-```typescript
-// src/app/api/intake/__tests__/route.test.ts
-import { describe, it, expect, beforeEach, afterEach } from "vitest"
-import { POST, GET } from "../route"
-import { createMockRequest, mockAuth, cleanupTestData } from "@/lib/__tests__/helpers/api-test-utils"
-
-describe("POST /api/intake", () => {
-  beforeEach(() => cleanupTestData())
-  afterEach(() => cleanupTestData())
-
-  it("retourneert 401 zonder sessie", async () => {
-    mockAuth(null)
-    const req = createMockRequest("POST", { answers: { q1: "ja" } })
-    const res = await POST(req as any)
-    expect(res.status).toBe(401)
-  })
-
-  it("retourneert 400 bij lege answers", async () => {
-    mockAuth({ id: "user1", role: "CAREGIVER" })
-    const req = createMockRequest("POST", { answers: {} })
-    const res = await POST(req as any)
-    expect(res.status).toBe(400)
-  })
-
-  it("slaat intake op en markeert als completed", async () => {
-    // ... setup testdata, run POST, verify database state
-  })
-})
-```
-
-#### Stap 3: Test Coverage targets
-
-| Fase | Routes | Deadline suggestie |
-|------|--------|--------------------|
-| **Fase 1** | Auth routes (login, register, reset) | Week 1 |
-| **Fase 2** | Intake, belastbaarheidstest, check-in | Week 2 |
-| **Fase 3** | Dashboard, profiel | Week 3 |
-| **Fase 4** | Beheer CRUD routes | Week 4 |
-| **Fase 5** | Gemeente statistiek routes | Week 5 |
-| **Fase 6** | WhatsApp webhook handlers | Week 6 |
+1. Test helpers aanmaken met mock-auth en request builders
+2. Gefaseerd testen: auth -> intake/test -> dashboard -> beheer -> gemeente -> whatsapp
 
 ---
 
-## 6. Hoog - Service Layer Abstractie ontbreekt
+## 10. Service Layer Abstractie ontbreekt
 
 ### Probleem
 
-80+ van de 96 API routes roepen Prisma direct aan. Er is geen service-laag tussen de route handler en de database. Dit betekent:
-- **Duplicatie**: Dezelfde query-logica herhaalt zich in meerdere routes
-- **Moeilijk testbaar**: Routes zijn direct gekoppeld aan de database
-- **Geen hergebruik**: Business logica zit vast in HTTP handlers
+80+ routes roepen Prisma direct aan. Geen service-laag = moeilijk testbaar, duplicatie, business-logica in HTTP handlers.
 
-### Huidige (slechte) situatie
+### Fix
 
-Er bestaat al een kleine service-laag in `src/lib/dashboard/`:
-- `hulpbronnen.ts` (190 regels)
-- `artikelen.ts` (50 regels)
-- `advies.ts` (149 regels)
-- `mijlpalen.ts` (82 regels)
-
-Maar deze patronen worden niet breder toegepast.
-
-### Voorgestelde oplossing: Service modules per domein
-
-#### Stap 1: Maak service modules aan
-
+Service modules per domein:
 ```
 src/lib/services/
-  caregiver.service.ts     - Caregiver CRUD + profiel logica
-  intake.service.ts        - Intake opslag en ophalen
-  belastbaarheid.service.ts - Test logica, score berekening
-  gemeente.service.ts      - Gemeente statistieken
-  beheer.service.ts        - Admin operaties
-  notificatie.service.ts   - Notificatie CRUD
+  caregiver.service.ts
+  intake.service.ts
+  belastbaarheid.service.ts
+  gemeente.service.ts
+  beheer.service.ts
+  notificatie.service.ts
 ```
 
-#### Stap 2: Voorbeeld service implementatie
-
-```typescript
-// src/lib/services/intake.service.ts
-import { prisma } from "@/lib/prisma"
-
-const SCORE_MAP: Record<string, number> = {
-  helemaal_mee_eens: 4,
-  mee_eens: 3,
-  niet_mee_eens: 2,
-  helemaal_niet_mee_eens: 1,
-}
-
-export async function saveIntakeResponses(
-  userId: string,
-  answers: Record<string, string>
-) {
-  const caregiver = await prisma.caregiver.findUnique({
-    where: { userId },
-  })
-  if (!caregiver) {
-    throw new Error("CAREGIVER_NOT_FOUND")
-  }
-
-  const intakeResponses = Object.entries(answers).map(
-    ([questionId, value]) => ({
-      questionId,
-      value,
-      score: SCORE_MAP[value] ?? null,
-    })
-  )
-
-  await prisma.$transaction(async (tx) => {
-    await tx.intakeResponse.deleteMany({ where: { caregiverId: caregiver.id } })
-    for (const response of intakeResponses) {
-      // ... question lookup + create logic (verplaatst uit route)
-      await tx.intakeResponse.create({
-        data: {
-          caregiverId: caregiver.id,
-          questionId: response.questionId,
-          value: response.value,
-          score: response.score,
-        },
-      })
-    }
-    await tx.caregiver.update({
-      where: { id: caregiver.id },
-      data: { intakeCompleted: true, onboardedAt: new Date() },
-    })
-  })
-}
-
-export async function getIntakeResponses(userId: string) {
-  const caregiver = await prisma.caregiver.findUnique({
-    where: { userId },
-    include: {
-      intakeResponses: {
-        include: { question: { include: { category: true } } },
-      },
-    },
-  })
-  if (!caregiver) throw new Error("CAREGIVER_NOT_FOUND")
-  // ... groupering logica
-  return { intakeCompleted: caregiver.intakeCompleted, categories: /* ... */ }
-}
-```
-
-#### Stap 3: Slanke route handler
-
-```typescript
-// src/app/api/intake/route.ts - NA REFACTOR
-import { NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
-import { intakeSchema, validateBody } from "@/lib/validations"
-import { saveIntakeResponses, getIntakeResponses } from "@/lib/services/intake.service"
-
-export async function POST(request: NextRequest) {
-  try {
-    const session = await auth()
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 })
-    }
-
-    const body = await request.json()
-    const validation = validateBody(body, intakeSchema)
-    if (!validation.success) {
-      return NextResponse.json({ error: validation.error }, { status: 400 })
-    }
-
-    await saveIntakeResponses(session.user.id, validation.data.answers)
-    return NextResponse.json({ success: true, message: "Intake opgeslagen" })
-  } catch (error: any) {
-    if (error.message === "CAREGIVER_NOT_FOUND") {
-      return NextResponse.json({ error: "Geen profiel gevonden" }, { status: 404 })
-    }
-    console.error("Intake save error:", error)
-    return NextResponse.json({ error: "Interne fout" }, { status: 500 })
-  }
-}
-```
+Route handlers worden dan: auth check -> validatie -> service call -> response.
 
 ---
 
-## 7. Hoog - Inconsistente Error Responses
+## 11. Inconsistente Error Responses
 
 ### Probleem
 
-Er zijn minstens 4 verschillende error-response formats in gebruik:
+4 verschillende error formats: `{ error }`, `{ message }`, `{ bericht }`, `{ error: error.message }` (lekt internals).
 
-| Pattern | Voorbeeld | Voorkomt in |
-|---------|-----------|-------------|
-| `{ error: "..." }` | `{ error: "Niet gevonden" }` | 80+ routes |
-| `{ message: "..." }` | `{ message: "Fout opgetreden" }` | 5-10 routes |
-| `{ bericht: "..." }` | gemeente routes met k-anonimiteit | 3+ routes |
-| `{ error: variabele }` | `{ error: error.message }` | 5+ routes (lekt interne details) |
+### Fix
 
-### Voorgestelde oplossing: Gestandaardiseerde error response helper
-
-#### Stap 1: Maak een error response utility
-
+Centrale helper `src/lib/api-response.ts`:
 ```typescript
-// src/lib/api-response.ts
-import { NextResponse } from "next/server"
-
-interface ApiError {
-  error: string
-  code?: string
-  details?: Record<string, string>
-}
-
-export function apiError(
-  message: string,
-  status: number,
-  code?: string
-): NextResponse<ApiError> {
-  return NextResponse.json(
-    { error: message, ...(code && { code }) },
-    { status }
-  )
-}
-
-// Veelgebruikte errors als shortcuts
 export const ApiErrors = {
-  unauthorized: () => apiError("Niet ingelogd", 401, "UNAUTHORIZED"),
-  forbidden: () => apiError("Geen toegang", 403, "FORBIDDEN"),
-  notFound: (entity = "Resource") => apiError(`${entity} niet gevonden`, 404, "NOT_FOUND"),
-  badRequest: (message: string) => apiError(message, 400, "BAD_REQUEST"),
-  internal: (logError?: unknown) => {
-    if (logError) console.error("Internal error:", logError)
-    return apiError("Er ging iets mis", 500, "INTERNAL_ERROR")
-  },
-} as const
-
-// Success response helper
-export function apiSuccess<T>(data: T, status = 200): NextResponse {
-  return NextResponse.json(data, { status })
+  unauthorized: () => apiError("Niet ingelogd", 401),
+  forbidden: () => apiError("Geen toegang", 403),
+  notFound: (entity) => apiError(`${entity} niet gevonden`, 404),
+  badRequest: (msg) => apiError(msg, 400),
+  internal: (logErr?) => { console.error(logErr); return apiError("Er ging iets mis", 500) },
 }
-```
-
-#### Stap 2: Migreer routes stapsgewijs
-
-```typescript
-// VOOR:
-return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 })
-
-// NA:
-import { ApiErrors } from "@/lib/api-response"
-return ApiErrors.unauthorized()
-```
-
-```typescript
-// VOOR (lekt interne error details):
-const msg = error instanceof Error ? error.message : String(error)
-return NextResponse.json({ error: msg })
-
-// NA:
-return ApiErrors.internal(error)
 ```
 
 ---
 
-## 8. Hoog - Ontbrekende Database Indexes
+## 12. Ontbrekende Database Indexes
 
 ### Probleem
 
-Meerdere kolommen die frequent gefilterd of gesorteerd worden, missen database-indexes. Dit leidt tot full table scans.
+Kolommen die frequent gefilterd worden missen indexes, wat leidt tot full table scans.
 
-### Ontbrekende indexes geidentificeerd
+### Ontbrekende indexes
 
-#### 8.1 BelastbaarheidTest model (`prisma/schema.prisma:330-354`)
-
-**Huidige indexes:** alleen `@@index([caregiverId])`
-
-**Ontbrekend:**
 ```prisma
 model BelastbaarheidTest {
-  // ... bestaande velden
-
-  @@index([caregiverId])
-  @@index([gemeente])                    // TOEVOEGEN: filtered in gemeente/demografie, gemeente/trends
-  @@index([isCompleted, gemeente])       // TOEVOEGEN: samengestelde index voor gemeente queries
-  @@index([completedAt])                 // TOEVOEGEN: gesorteerd in trends/rapportages
+  @@index([gemeente])
+  @@index([isCompleted, gemeente])
+  @@index([completedAt])
 }
-```
 
-**Query die profiteert** (`src/app/api/gemeente/demografie/route.ts:11-21`):
-```typescript
-const tests = await prisma.belastbaarheidTest.findMany({
-  where: {
-    isCompleted: true,
-    gemeente: { equals: gemeenteNaam, mode: "insensitive" },  // FULL TABLE SCAN zonder index
-  },
-})
-```
-
-#### 8.2 Caregiver model (`prisma/schema.prisma:93-131`)
-
-**Huidige indexes:** geen expliciete (alleen `@unique` op userId)
-
-**Ontbrekend:**
-```prisma
 model Caregiver {
-  // ... bestaande velden
-
-  @@index([municipality])  // TOEVOEGEN: filtered in gemeente/demografie
+  @@index([municipality])
 }
-```
-
-**Query die profiteert** (`src/app/api/gemeente/demografie/route.ts:71-81`):
-```typescript
-const caregivers = await prisma.caregiver.findMany({
-  where: {
-    municipality: { equals: gemeenteNaam, mode: "insensitive" },  // FULL TABLE SCAN
-  },
-})
-```
-
-#### 8.3 MonthlyCheckIn model (`prisma/schema.prisma:168-186`)
-
-**Ontbrekend:**
-```prisma
-model MonthlyCheckIn {
-  // ... bestaande velden
-
-  @@index([caregiverId, month])  // Bestaat al als @@unique, maar overweeg extra index op completedAt
-}
-```
-
-### Implementatie
-
-Voeg de indexes toe aan `prisma/schema.prisma` en run:
-```bash
-npx prisma db push
-```
-
-> **Let op:** Dit is een non-destructieve operatie. Indexes toevoegen verwijdert geen data.
-
----
-
-## 9. Medium - Type Safety (as any) verwijderen
-
-### Probleem
-
-Er zijn 26 `as any` casts verspreid over 11 bestanden. De meest impactvolle zijn in:
-
-1. **`src/middleware.ts`** - 4x `(session.user as any)?.role`
-2. **`src/lib/auth.ts`** - 6x in JWT/session callbacks
-3. **`src/app/gemeente/layout.tsx`** - 4x in layout component
-
-### Voorgestelde oplossing: Extend NextAuth types
-
-#### Stap 1: Maak of update type declarations
-
-```typescript
-// src/types/next-auth.d.ts
-import { DefaultSession, DefaultUser } from "next-auth"
-import { JWT } from "next-auth/jwt"
-
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string
-      role: string
-      caregiverId: string | null
-      gemeenteNaam: string | null
-      gemeenteRollen: string[]
-      sessionVersion: number
-    } & DefaultSession["user"]
-  }
-
-  interface User extends DefaultUser {
-    role: string
-    caregiverId: string | null
-    gemeenteNaam: string | null
-    gemeenteRollen: string[]
-    sessionVersion: number
-  }
-}
-
-declare module "next-auth/jwt" {
-  interface JWT {
-    id: string
-    role: string
-    caregiverId: string | null
-    gemeenteNaam: string | null
-    gemeenteRollen: string[]
-    sessionVersion: number
-  }
-}
-```
-
-#### Stap 2: Verwijder casts in auth.ts
-
-```typescript
-// src/lib/auth.ts - NA REFACTOR
-callbacks: {
-  async jwt({ token, user }) {
-    if (user) {
-      token.id = user.id!
-      token.role = user.role          // Geen cast meer nodig
-      token.caregiverId = user.caregiverId
-      token.gemeenteNaam = user.gemeenteNaam
-      token.gemeenteRollen = user.gemeenteRollen
-      token.sessionVersion = user.sessionVersion
-    }
-    return token
-  },
-  async session({ session, token }) {
-    if (session.user) {
-      session.user.id = token.id
-      session.user.role = token.role   // Geen cast meer nodig
-      session.user.caregiverId = token.caregiverId
-      session.user.gemeenteNaam = token.gemeenteNaam
-      session.user.gemeenteRollen = token.gemeenteRollen
-      session.user.sessionVersion = token.sessionVersion
-    }
-    return session
-  },
-},
-```
-
-#### Stap 3: Verwijder casts in middleware.ts
-
-```typescript
-// src/middleware.ts - NA REFACTOR
-// VOOR:
-const role = (session.user as any)?.role
-
-// NA:
-const role = session.user?.role  // TypeScript kent nu het type
 ```
 
 ---
 
-## 10. Medium - N+1 Queries en ontbrekende paginatie
+## 13. Type Safety (as any) verwijderen
 
 ### Probleem
 
-#### 10.1 Diepe nested includes (N+1 risico)
+26x `as any` in 11 bestanden. Meest impactvol: `src/middleware.ts` (4x), `src/lib/auth.ts` (6x).
 
-**`src/app/api/beheer/gebruikers/[id]/route.ts`** heeft een query met 4 niveaus diep nesting:
+### Fix
 
-```typescript
-const gebruiker = await prisma.user.findUnique({
-  where: { id },
-  include: {
-    caregiver: {
-      include: {
-        belastbaarheidTests: { /* level 3 */ },
-        monthlyCheckIns: { /* level 3 */ },
-        helpRequests: { /* level 3 */ },
-        buddyMatches: {
-          include: {
-            buddy: { select: { /* level 4 */ } }
-          }
-        }
-      }
-    },
-    mantelBuddy: {
-      include: {
-        matches: {
-          include: {
-            caregiver: {
-              select: {
-                user: { select: { /* level 5! */ } }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-})
-```
-
-#### 10.2 Ontbrekende paginatie
-
-**`src/app/api/gemeente/demografie/route.ts:71-81`** haalt ALLE mantelzorgers op zonder limiet:
-
-```typescript
-const caregivers = await prisma.caregiver.findMany({
-  where: { municipality: { equals: gemeenteNaam, mode: "insensitive" } },
-  select: { dateOfBirth: true, careRecipient: true, neighborhood: true, careSince: true },
-  // GEEN: take, skip
-})
-```
-
-### Voorgestelde oplossing
-
-#### 10.1 Splitsen van diepe queries
-
-```typescript
-// In plaats van 1 mega-query, splits in 2-3 gerichte queries:
-const gebruiker = await prisma.user.findUnique({
-  where: { id },
-  include: { caregiver: true, mantelBuddy: true },
-})
-
-// Alleen als caregiver bestaat:
-const recenteTests = gebruiker?.caregiver
-  ? await prisma.belastbaarheidTest.findMany({
-      where: { caregiverId: gebruiker.caregiver.id, isCompleted: true },
-      orderBy: { completedAt: "desc" },
-      take: 10,
-      select: { id: true, totaleBelastingScore: true, completedAt: true },
-    })
-  : []
-```
-
-#### 10.2 Cursor-based paginatie voor grote datasets
-
-Voor de gemeente demografie route is aggregatie op database-niveau beter dan alles ophalen:
-
-```typescript
-// Gebruik Prisma groupBy of raw queries voor statistieken:
-const leeftijdStats = await prisma.$queryRaw`
-  SELECT
-    CASE
-      WHEN EXTRACT(YEAR FROM AGE(NOW(), "dateOfBirth")) BETWEEN 18 AND 30 THEN '18-30'
-      WHEN EXTRACT(YEAR FROM AGE(NOW(), "dateOfBirth")) BETWEEN 31 AND 45 THEN '31-45'
-      -- etc.
-    END as leeftijdgroep,
-    COUNT(*) as aantal
-  FROM "Caregiver"
-  WHERE LOWER(municipality) = LOWER(${gemeenteNaam})
-  GROUP BY leeftijdgroep
-`
-```
+Extend NextAuth types in `src/types/next-auth.d.ts` zodat `session.user.role`, `session.user.caregiverId` etc. getypt zijn zonder cast.
 
 ---
 
-## 11. Medium - Build Script Risico's
+## 14. N+1 Queries en ontbrekende paginatie
 
 ### Probleem
 
-**`scripts/build.js:21`** gebruikt `--accept-data-loss`:
+- `src/app/api/beheer/gebruikers/[id]/route.ts`: query met 5 niveaus diep include-nesting
+- `src/app/api/gemeente/demografie/route.ts:71-81`: haalt ALLE mantelzorgers op zonder limiet
 
+### Fix
+
+1. Splits diepe queries in 2-3 gerichte queries
+2. Database-aggregatie voor statistieken i.p.v. alles ophalen en in JS tellen
+3. Paginatie toevoegen aan alle list-endpoints
+
+---
+
+## 15. Build Script Risico's
+
+### Probleem
+
+`scripts/build.js:21` gebruikt `--accept-data-loss`:
 ```javascript
-execSync('npx prisma db push --skip-generate --accept-data-loss', {
-  stdio: 'inherit', env: process.env
-});
+execSync('npx prisma db push --skip-generate --accept-data-loss', { ... })
 ```
 
-Dit kan kolommen of tabellen verwijderen als het schema gewijzigd is.
+Kan kolommen/tabellen verwijderen bij schema-wijzigingen. Geen error handling voor prisma generate.
 
-### Verdere problemen
+### Fix
 
-1. **Geen error handling** voor `prisma generate` (regel 15) - als dit faalt, bouwt Next.js met een verouderde client
-2. **Hardcoded Supabase poort-mapping** (regel 6-11) - breekt bij andere database setups
-
-### Voorgestelde oplossing
-
-```javascript
-// scripts/build.js - VERBETERD
-const { execSync } = require('child_process');
-
-// DIRECT_URL afleiden als niet gezet
-if (!process.env.DIRECT_URL && process.env.DATABASE_URL) {
-  process.env.DIRECT_URL = process.env.DATABASE_URL
-    .replace(':6543/', ':5432/')
-    .replace('&pgbouncer=true', '')
-    .replace('?pgbouncer=true&', '?')
-    .replace('?pgbouncer=true', '');
-  console.log('DIRECT_URL automatically set from DATABASE_URL');
-}
-
-// Stap 1: Genereer Prisma client (MOET slagen)
-try {
-  execSync('npx prisma generate', { stdio: 'inherit', env: process.env });
-} catch (e) {
-  console.error('FATAL: Prisma client generation failed. Build aborted.');
-  process.exit(1);  // Stop de build
-}
-
-// Stap 2: Schema sync (ZONDER --accept-data-loss)
-try {
-  execSync('npx prisma db push --skip-generate', {
-    stdio: 'inherit', env: process.env
-  });
-} catch (e) {
-  console.warn('Warning: prisma db push failed. Schema should be managed locally.');
-  // Niet fataal - schema kan lokaal beheerd worden
-}
-
-// Stap 3: Build Next.js
-execSync('npx next build', { stdio: 'inherit', env: process.env });
-```
+1. Verwijder `--accept-data-loss`
+2. Laat build falen als `prisma generate` faalt
+3. Maak poort-mapping configureerbaar
 
 ---
 
-## 12. Laag - Ontbrekende Cascade Deletes
+## 16. Ontbrekende Cascade Deletes
 
 ### Probleem
 
-**BelastbaarheidTest** (`prisma/schema.prisma:350`) mist `onDelete` behavior:
+BelastbaarheidTest mist `onDelete` behavior. Bij verwijderen van caregiver blijven testrecords als orphans achter.
+
+### Fix
 
 ```prisma
-caregiver Caregiver? @relation(fields: [caregiverId], references: [id])
-// Zou moeten zijn:
-caregiver Caregiver? @relation(fields: [caregiverId], references: [id], onDelete: SetNull)
+caregiver Caregiver? @relation(..., onDelete: SetNull)
 ```
 
-Omdat `caregiverId` nullable is (`String?`), is `SetNull` de juiste keuze hier - als een caregiver verwijderd wordt, blijven de testresultaten bewaard voor statistieken maar verliezen ze de koppeling.
-
-### Voorgestelde fix
-
-```prisma
-model BelastbaarheidTest {
-  // ...
-  caregiver Caregiver? @relation(fields: [caregiverId], references: [id], onDelete: SetNull)
-  // ...
-}
-```
-
-Vergelijkbaar voor **BuddyBeoordeling** (`prisma/schema.prisma:670`):
-```prisma
-// HUIDIG:
-caregiver Caregiver? @relation(fields: [caregiverId], references: [id])
-
-// VERBETERD:
-caregiver Caregiver? @relation(fields: [caregiverId], references: [id], onDelete: SetNull)
-```
+SetNull is juist (caregiverId is nullable) - testresultaten blijven bewaard voor statistieken.
 
 ---
 
-## 13. Implementatie Roadmap
+# DEEL C: IMPLEMENTATIE ROADMAP
+
+---
+
+## 17. Implementatie Roadmap
 
 ### Fase 1: Quick Wins (Week 1-2)
 
-| Taak | Impact | Effort |
-|------|--------|--------|
-| Database indexes toevoegen | Hoog | Laag |
-| NextAuth types uitbreiden (as any weg) | Medium | Laag |
-| `api-response.ts` helper aanmaken | Medium | Laag |
-| Build script fixen (geen --accept-data-loss) | Medium | Laag |
-| Cascade deletes toevoegen | Laag | Laag |
+| Taak | Impact | Effort | Punt |
+|------|--------|--------|------|
+| Database indexes toevoegen | Hoog | Laag | 12 |
+| niveauFilter fix in hulpbronnen.ts | Hoog | Laag | 3 |
+| NextAuth types (as any weg) | Medium | Laag | 13 |
+| api-response.ts helper | Medium | Laag | 11 |
+| Build script fixen | Medium | Laag | 15 |
+| Cascade deletes | Laag | Laag | 16 |
 
-### Fase 2: Validatie & Errors (Week 3-4)
+### Fase 2: Content uit Code (Week 3-5)
 
-| Taak | Impact | Effort |
-|------|--------|--------|
-| Ontbrekende Zod schemas schrijven | Hoog | Medium |
-| Validatie toepassen in alle routes | Hoog | Medium |
-| Error responses standaardiseren | Medium | Medium |
+| Taak | Impact | Effort | Punt |
+|------|--------|--------|------|
+| SiteSettings uitbreiden met gemeente-veld | Hoog | Medium | 4 |
+| Rapport-teksten naar database migreren | Hoog | Medium | 4.2 |
+| Advies-templates naar database | Hoog | Medium | 4.5 |
+| Hulp-tips per taak naar database | Medium | Laag | 4.3 |
+| Frontend vragen uit database laden | Hoog | Medium | 5.5 |
+| Kleuren dynamisch toepassen | Medium | Medium | 5.1 |
 
-### Fase 3: Architectuur (Week 5-8)
+### Fase 3: Klantreis Verbetering (Week 6-8)
 
-| Taak | Impact | Effort |
-|------|--------|--------|
-| Service layer modules aanmaken | Hoog | Hoog |
-| Routes refactoren naar services | Hoog | Hoog |
-| Caching strategie implementeren | Hoog | Medium |
-| WhatsApp sessies naar database | Hoog | Medium |
+| Taak | Impact | Effort | Punt |
+|------|--------|--------|------|
+| Subscores (fysiek/gevoel/tijd) toevoegen | Hoog | Medium | 2 |
+| Motivatie-blok dashboard (voor test) | Hoog | Medium | 1 |
+| Hulp-preview zonder test | Hoog | Medium | 1 |
+| Score-gestuurde hulpkoppeling activeren | Hoog | Medium | 3 |
+| Gemeente-admin content-beheer | Hoog | Hoog | 5.6 |
+| Per-niveau advies via beheer | Hoog | Medium | 5.4 |
 
-### Fase 4: Kwaliteitsborging (Week 9-12)
+### Fase 4: Validatie & API Kwaliteit (Week 9-10)
 
-| Taak | Impact | Effort |
-|------|--------|--------|
-| Test helpers en fixtures opzetten | Hoog | Medium |
-| Tests voor kritieke API routes | Hoog | Hoog |
-| N+1 query optimalisaties | Medium | Medium |
-| Paginatie toevoegen waar nodig | Medium | Laag |
+| Taak | Impact | Effort | Punt |
+|------|--------|--------|------|
+| Ontbrekende Zod schemas | Hoog | Medium | 6 |
+| Error responses standaardiseren | Medium | Medium | 11 |
+| Caching strategie | Hoog | Medium | 7 |
+
+### Fase 5: Architectuur & Stabiliteit (Week 11-14)
+
+| Taak | Impact | Effort | Punt |
+|------|--------|--------|------|
+| Service layer modules | Hoog | Hoog | 10 |
+| WhatsApp sessies naar database | Hoog | Medium | 8 |
+| API tests schrijven | Hoog | Hoog | 9 |
+| N+1 query optimalisaties | Medium | Medium | 14 |
 
 ---
 
-> **Opmerking:** Dit document is gegenereerd op basis van een volledige codebase-analyse van 96 API routes, het Prisma schema (1059 regels), middleware, service bestanden, en de build-configuratie. Alle bestandspaden en regelnummers zijn geverifieerd tegen de huidige codebase.
+> Dit document is gebaseerd op analyse van: 96 API routes, Prisma schema (1059 regels), 15 content-bestanden, 19 beheer-pagina's, middleware, service-bestanden, en build-configuratie.

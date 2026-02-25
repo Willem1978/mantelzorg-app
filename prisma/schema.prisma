@@ -128,6 +128,8 @@ model Caregiver {
   gegevenBeoordelingen      BuddyBeoordeling[]
   // Favorieten
   favorieten                Favoriet[]
+
+  @@index([municipality])
 }
 
 model IntakeCategory {
@@ -347,10 +349,13 @@ model BelastbaarheidTest {
   alarmLogs            AlarmLog[]
   antwoorden           BelastbaarheidAntwoord[]
   rapporten            BelastbaarheidRapport[]
-  caregiver            Caregiver?               @relation(fields: [caregiverId], references: [id])
+  caregiver            Caregiver?               @relation(fields: [caregiverId], references: [id], onDelete: SetNull)
   taakSelecties        ZorgtaakSelectie[]
 
   @@index([caregiverId])
+  @@index([gemeente])
+  @@index([isCompleted, gemeente])
+  @@index([completedAt])
 }
 
 model BelastbaarheidAntwoord {
