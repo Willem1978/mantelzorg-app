@@ -1,23 +1,18 @@
 -- ============================================
--- MantelBuddy: Row Level Security (RLS) inschakelen
+-- MantelZorg App: VOLLEDIGE RLS Fix
 -- ============================================
 --
--- VEROUDERD: Gebruik prisma/rls-complete-fix.sql in plaats hiervan.
--- Dat script is idempotent en veilig om meerdere keren uit te voeren.
+-- Lost 67 "Policy Exists RLS Disabled" fouten op.
+-- Dit script:
+--   1. Schakelt RLS in op ALLE 40 tabellen
+--   2. Verwijdert en maakt policies opnieuw aan (idempotent)
+--   3. Veilig om meerdere keren uit te voeren
 --
--- Dit originele script kan NIET opnieuw worden uitgevoerd (CREATE POLICY
--- faalt als policy al bestaat). Gebruik rls-complete-fix.sql.
--- ============================================
---
--- De app benadert de database ALLEEN via Prisma (server-side),
--- niet via de Supabase client SDK. Daarom blokkeren we alle
--- directe Supabase API-toegang (anon/authenticated rollen).
---
--- Uitvoeren: Supabase Dashboard → SQL Editor → plak rls-complete-fix.sql
+-- Uitvoeren: Supabase Dashboard → SQL Editor → plak dit script → Run
 -- ============================================
 
 -- ============================================
--- 1. RLS inschakelen op alle tabellen
+-- STAP 1: RLS inschakelen op ALLE tabellen
 -- ============================================
 
 -- Auth-gerelateerde tabellen
@@ -27,6 +22,7 @@ ALTER TABLE IF EXISTS "Session" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS "VerificationToken" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS "MagicLinkToken" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS "PasswordResetToken" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "InviteToken" ENABLE ROW LEVEL SECURITY;
 
 -- Mantelzorger profiel & intake
 ALTER TABLE IF EXISTS "Caregiver" ENABLE ROW LEVEL SECURITY;
@@ -59,6 +55,10 @@ ALTER TABLE IF EXISTS "Zorgorganisatie" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS "BelastbaarheidRapport" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS "AlarmLog" ENABLE ROW LEVEL SECURITY;
 
+-- Artikelen & content management
+ALTER TABLE IF EXISTS "Artikel" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "AuditLog" ENABLE ROW LEVEL SECURITY;
+
 -- Favorieten
 ALTER TABLE IF EXISTS "Favoriet" ENABLE ROW LEVEL SECURITY;
 
@@ -69,13 +69,6 @@ ALTER TABLE IF EXISTS "BuddyTaak" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS "BuddyTaakReactie" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS "BuddyBeoordeling" ENABLE ROW LEVEL SECURITY;
 
--- Uitnodigingen
-ALTER TABLE IF EXISTS "InviteToken" ENABLE ROW LEVEL SECURITY;
-
--- Artikelen & content management
-ALTER TABLE IF EXISTS "Artikel" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS "AuditLog" ENABLE ROW LEVEL SECURITY;
-
 -- Content beheer tabellen
 ALTER TABLE IF EXISTS "BalanstestVraag" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS "Zorgtaak" ENABLE ROW LEVEL SECURITY;
@@ -84,12 +77,14 @@ ALTER TABLE IF EXISTS "ContentCategorie" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS "FormulierOptie" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS "AppContent" ENABLE ROW LEVEL SECURITY;
 
+-- Prisma migrations tabel
+ALTER TABLE IF EXISTS "_prisma_migrations" ENABLE ROW LEVEL SECURITY;
+
 -- ============================================
--- 2. Policies: alleen service_role + postgres mogen alles
+-- STAP 2: Policies opnieuw aanmaken (idempotent)
 -- ============================================
--- Prisma gebruikt de postgres-rol via de directe connection string.
--- De service_role bypast RLS automatisch in Supabase.
--- We maken een policy per tabel voor de postgres-rol.
+-- Drop + Create per tabel zodat het altijd werkt,
+-- ongeacht of de policy al bestond.
 -- ============================================
 
 DO $$
@@ -109,28 +104,50 @@ DECLARE
     'Favoriet',
     'MantelBuddy', 'BuddyMatch', 'BuddyTaak', 'BuddyTaakReactie', 'BuddyBeoordeling',
     'BalanstestVraag', 'Zorgtaak', 'TaakCategorieMapping',
-    'ContentCategorie', 'FormulierOptie', 'AppContent'
+    'ContentCategorie', 'FormulierOptie', 'AppContent',
+    '_prisma_migrations'
   ];
 BEGIN
   FOR tbl IN SELECT unnest(all_tables)
   LOOP
+    -- Check of de tabel bestaat
     IF EXISTS (
       SELECT 1 FROM information_schema.tables
       WHERE table_schema = 'public' AND table_name = tbl
     ) THEN
+      -- Verwijder bestaande policy
       EXECUTE format('DROP POLICY IF EXISTS "postgres_full_access" ON %I', tbl);
+      -- Maak nieuwe policy
       EXECUTE format(
         'CREATE POLICY "postgres_full_access" ON %I FOR ALL TO postgres USING (true) WITH CHECK (true)',
         tbl
       );
-      RAISE NOTICE 'RLS + policy OK voor tabel: %', tbl;
+      RAISE NOTICE '✓ RLS + policy OK voor tabel: %', tbl;
+    ELSE
+      RAISE NOTICE '⚠ Tabel % bestaat niet (overgeslagen)', tbl;
     END IF;
   END LOOP;
 END
 $$;
 
 -- ============================================
--- Klaar! Alle 40 tabellen hebben nu RLS aan.
--- De anon en authenticated rollen hebben GEEN toegang.
--- Alleen postgres (Prisma) en service_role hebben volledige toegang.
+-- STAP 3: Verificatie - toon RLS status
+-- ============================================
+
+SELECT
+  schemaname,
+  tablename,
+  rowsecurity
+FROM pg_tables
+WHERE schemaname = 'public'
+ORDER BY tablename;
+
+-- ============================================
+-- Klaar! Alle tabellen hebben nu:
+--   ✓ RLS ingeschakeld
+--   ✓ postgres_full_access policy
+--
+-- Alleen postgres (Prisma) en service_role
+-- hebben volledige toegang.
+-- anon en authenticated rollen zijn GEBLOKKEERD.
 -- ============================================
