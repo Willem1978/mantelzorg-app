@@ -333,6 +333,7 @@ function ArtikelCard({ artikel, categorieTitel, isFavorited, favorietId }: {
         emoji={artikel.emoji}
         beschrijving={artikel.beschrijving}
         inhoud={artikel.inhoud}
+        bron={artikel.bron}
         website={artikel.url}
       />
     </>
