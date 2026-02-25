@@ -7,6 +7,7 @@ import {
   normalizePostcode,
   RELATIE_OPTIES,
 } from '@/lib/whatsapp-session'
+import { branding } from '@/config/branding'
 import type { HandlerResult } from './types'
 import { ONBOARDING_CHOICE_BUTTONS } from './types'
 import { savePendingTestResults } from './belastbaarheidstest'
@@ -33,7 +34,7 @@ export async function handleOnboardingSession(
     const num = parseInt(command)
 
     if (num === 1 || commandLower === 'inloggen') {
-      const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
+      const baseUrl = branding.urls.production
       clearOnboardingSession(phoneNumber)
       return {
         response: `🔑 *Inloggen*
@@ -47,7 +48,7 @@ _Typ 0 voor menu_`,
     }
 
     if (num === 2 || commandLower === 'registreren') {
-      const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
+      const baseUrl = branding.urls.production
       clearOnboardingSession(phoneNumber)
       return {
         response: `✨ *Account aanmaken*

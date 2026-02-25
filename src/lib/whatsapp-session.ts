@@ -3,6 +3,11 @@
  * Houdt de staat bij van belastbaarheidstest flows en onboarding
  */
 
+// Re-export uit centraal config bestand
+export { HULP_VOOR_MANTELZORGER, HULP_BIJ_TAAK, HULP_CATEGORIEEN, ZORGTAKEN, UREN_OPTIES, MOEILIJKHEID_OPTIES, RELATIE_OPTIES, getScoreLevel } from "@/config/options"
+export { BALANSTEST_VRAGEN as BELASTBAARHEID_QUESTIONS } from "@/config/options"
+import { BALANSTEST_VRAGEN, ZORGTAKEN as _ZORGTAKEN } from "@/config/options"
+
 // ===========================================
 // TEST SESSIE - voor balanstest flow
 // ===========================================
@@ -103,33 +108,6 @@ interface HulpSession {
   startedAt: Date
 }
 
-// Hulp voor mantelzorger zelf - filter op "Onderdeel mantelzorgtest" = "Mantelzorgondersteuning"
-// Dan subcategoriseren op "Soort hulp"
-export const HULP_VOOR_MANTELZORGER = [
-  { id: 'informatie', naam: 'Informatie en advies', emoji: 'ℹ️', dbValue: 'Informatie en advies' },
-  { id: 'educatie', naam: 'Educatie & cursussen', emoji: '📚', dbValue: 'Educatie' },
-  { id: 'emotioneel', naam: 'Emotionele steun', emoji: '💚', dbValue: 'Emotionele steun' },
-  { id: 'begeleiding', naam: 'Persoonlijke begeleiding', emoji: '🤝', dbValue: 'Persoonlijke begeleiding' },
-  { id: 'praktisch', naam: 'Praktische hulp', emoji: '🔧', dbValue: 'Praktische hulp' },
-  { id: 'respijt', naam: 'Vervangende zorg (respijt)', emoji: '🛏️', dbValue: 'Vervangende mantelzorg' },
-]
-
-// Hulp bij taken - filter op "Onderdeel mantelzorgtest" (alles behalve Mantelzorgondersteuning)
-export const HULP_BIJ_TAAK = [
-  { id: 'administratie', naam: 'Administratie & aanvragen', emoji: '📋', dbValue: 'Administratie en aanvragen' },
-  { id: 'maaltijden', naam: 'Maaltijden', emoji: '🍽️', dbValue: 'Bereiden en/of nuttigen van maaltijden' },
-  { id: 'boodschappen', naam: 'Boodschappen', emoji: '🛒', dbValue: 'Boodschappen' },
-  { id: 'huishouden', naam: 'Huishoudelijke taken', emoji: '🏠', dbValue: 'Huishoudelijke taken' },
-  { id: 'klusjes', naam: 'Klusjes in/om huis', emoji: '🔨', dbValue: 'Klusjes in en om het huis' },
-  { id: 'verzorging', naam: 'Persoonlijke verzorging', emoji: '🛁', dbValue: 'Persoonlijke verzorging' },
-  { id: 'sociaal', naam: 'Sociaal & activiteiten', emoji: '👥', dbValue: 'Sociaal contact en activiteiten' },
-  { id: 'vervoer', naam: 'Vervoer', emoji: '🚗', dbValue: 'Vervoer' },
-  { id: 'plannen', naam: 'Plannen & organiseren', emoji: '📅', dbValue: 'Plannen en organiseren' },
-  { id: 'huisdieren', naam: 'Huisdieren', emoji: '🐕', dbValue: 'Huisdieren' },
-]
-
-// Legacy voor backwards compatibility
-export const HULP_CATEGORIEEN = HULP_BIJ_TAAK
 
 // In-memory store (in productie zou je Redis of database gebruiken)
 const sessions = new Map<string, TestSession>()
@@ -140,63 +118,12 @@ const hulpSessions = new Map<string, HulpSession>()
 // CONSTANTEN
 // ===========================================
 
-// Zorgtaken die mantelzorgers kunnen uitvoeren - uit Excel "Onderdeel mantelzorgtest"
-export const ZORGTAKEN = [
-  { id: 't1', naam: 'Persoonlijke verzorging', beschrijving: 'Wassen, aankleden, naar toilet', dbValue: 'Persoonlijke verzorging' },
-  { id: 't2', naam: 'Huishoudelijke taken', beschrijving: 'Schoonmaken, opruimen', dbValue: 'Huishoudelijke taken' },
-  { id: 't3', naam: 'Maaltijden', beschrijving: 'Koken, eten bereiden', dbValue: 'Bereiden en/of nuttigen van maaltijden' },
-  { id: 't4', naam: 'Boodschappen', beschrijving: 'Boodschappen doen', dbValue: 'Boodschappen' },
-  { id: 't5', naam: 'Administratie', beschrijving: 'Post, rekeningen, formulieren', dbValue: 'Administratie en aanvragen' },
-  { id: 't6', naam: 'Vervoer', beschrijving: 'Brengen, halen, begeleiden', dbValue: 'Vervoer' },
-  { id: 't7', naam: 'Sociaal contact', beschrijving: 'Gezelschap, uitjes, activiteiten', dbValue: 'Sociaal contact en activiteiten' },
-  { id: 't8', naam: 'Klusjes', beschrijving: 'Klusjes in en om het huis', dbValue: 'Klusjes in en om het huis' },
-  { id: 't9', naam: 'Plannen & organiseren', beschrijving: 'Afspraken, planning', dbValue: 'Plannen en organiseren' },
-  { id: 't10', naam: 'Huisdieren', beschrijving: 'Verzorging huisdieren', dbValue: 'Huisdieren' },
-]
 
-// Uren opties per week - zoals in screenshot
-export const UREN_OPTIES = [
-  { id: 'u1', label: 'Tot 2 uur per week', waarde: 1 },
-  { id: 'u2', label: '2 tot 4 uur per week', waarde: 3 },
-  { id: 'u3', label: '4 tot 8 uur per week', waarde: 6 },
-  { id: 'u4', label: '8 tot 12 uur per week', waarde: 10 },
-  { id: 'u5', label: '12 tot 24 uur per week', waarde: 18 },
-  { id: 'u6', label: 'Meer dan 24 uur per week', waarde: 30 },
-]
 
-// Moeilijkheid opties - NEE/SOMS/JA zoals in screenshot
-export const MOEILIJKHEID_OPTIES = [
-  { id: 'm1', label: 'Nee', emoji: '🟢', waarde: 'NEE' },
-  { id: 'm2', label: 'Soms', emoji: '🟡', waarde: 'SOMS' },
-  { id: 'm3', label: 'Ja', emoji: '🔴', waarde: 'JA' },
-]
 
-export const RELATIE_OPTIES = [
-  'Partner',
-  'Ouder',
-  'Schoonouder',
-  'Kind',
-  'Broer/zus',
-  'Vriend(in)',
-  'Buur',
-  'Anders',
-]
 
-// 12 vragen, max score = 24 (12 × 2 punten per "ja")
-export const BELASTBAARHEID_QUESTIONS = [
-  { id: 'q1', vraag: 'Slaap je minder goed door de zorg?' },
-  { id: 'q2', vraag: 'Heb je last van je lichaam door het zorgen?' },
-  { id: 'q3', vraag: 'Kost het zorgen veel tijd en energie?' },
-  { id: 'q4', vraag: 'Is de band met je naaste veranderd?' },
-  { id: 'q5', vraag: 'Maakt het gedrag van je naaste je verdrietig, bang of boos?' },
-  { id: 'q6', vraag: 'Heb je verdriet dat je naaste anders is dan vroeger?' },
-  { id: 'q7', vraag: 'Slokt de zorg al je energie op?' },
-  { id: 'q8', vraag: 'Pas je je dagelijks leven aan voor de zorg?' },
-  { id: 'q9', vraag: 'Pas je regelmatig je plannen aan om te helpen?' },
-  { id: 'q10', vraag: 'Kom je niet meer toe aan dingen die je leuk vindt?' },
-  { id: 'q11', vraag: 'Kost het zorgen net zoveel tijd als je werk?' },
-  { id: 'q12', vraag: 'Geeft de zorg je ook geldproblemen?' },
-]
+// Lokale alias voor intern gebruik (BALANSTEST_VRAGEN uit config bevat ook weegfactor)
+const BELASTBAARHEID_QUESTIONS = BALANSTEST_VRAGEN
 
 // ===========================================
 // TEST SESSIE FUNCTIES
@@ -264,12 +191,6 @@ export function calculateScore(answers: Record<string, string>): number {
   })
 
   return totalScore // Max = 12 vragen × 2 = 24
-}
-
-export function getScoreLevel(score: number): string {
-  if (score < 7) return 'LAAG'
-  if (score <= 12) return 'GEMIDDELD'
-  return 'HOOG'
 }
 
 export function clearTestSession(userId: string): void {
@@ -350,10 +271,10 @@ export function setTaskDifficulty(userId: string, difficulty: string): TestSessi
   return session
 }
 
-export function getCurrentTask(session: TestSession): (typeof ZORGTAKEN)[0] | null {
+export function getCurrentTask(session: TestSession): (typeof _ZORGTAKEN)[0] | null {
   if (session.currentTaskIndex >= session.selectedTasks.length) return null
   const taskId = session.selectedTasks[session.currentTaskIndex]
-  return ZORGTAKEN.find((t) => t.id === taskId) || null
+  return _ZORGTAKEN.find((t) => t.id === taskId) || null
 }
 
 export function getCurrentQuestion(session: TestSession): (typeof BELASTBAARHEID_QUESTIONS)[0] | null {

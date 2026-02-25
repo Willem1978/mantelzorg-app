@@ -1,25 +1,7 @@
 import jsPDF from "jspdf"
 import autoTable, { type CellHookData } from "jspdf-autotable"
-
-// ==========================================
-// KLEUREN
-// ==========================================
-const C = {
-  primary:    [101, 52, 178] as const,  // #6534B2 warm paars
-  primaryBg:  [243, 237, 252] as const, // licht paars
-  groen:      [16, 137, 87]  as const,  // #108957
-  groenBg:    [232, 248, 240] as const,
-  oranje:     [194, 120, 3]  as const,  // #C27803
-  oranjeBg:   [255, 247, 230] as const,
-  rood:       [190, 30, 45]  as const,  // #BE1E2D
-  roodBg:     [254, 237, 239] as const,
-  donker:     [38, 38, 38]   as const,  // #262626
-  tekst:      [64, 64, 64]   as const,  // #404040
-  grijs:      [128, 128, 128] as const,
-  lichtgrijs: [245, 245, 245] as const,
-  wit:        [255, 255, 255] as const,
-  rand:       [220, 220, 220] as const,
-}
+import { pdfColors } from "@/config/colors"
+import { branding } from "@/config/branding"
 
 // ==========================================
 // INTERFACES
@@ -80,15 +62,15 @@ export interface PdfRapportData {
 // HELPERS
 // ==========================================
 function niveauKleur(n: string) {
-  if (n === "HOOG") return C.rood
-  if (n === "GEMIDDELD") return C.oranje
-  return C.groen
+  if (n === "HOOG") return pdfColors.rood
+  if (n === "GEMIDDELD") return pdfColors.oranje
+  return pdfColors.groen
 }
 
 function niveauBg(n: string) {
-  if (n === "HOOG") return C.roodBg
-  if (n === "GEMIDDELD") return C.oranjeBg
-  return C.groenBg
+  if (n === "HOOG") return pdfColors.roodBg
+  if (n === "GEMIDDELD") return pdfColors.oranjeBg
+  return pdfColors.groenBg
 }
 
 function niveauLabel(n: string) {
@@ -113,9 +95,9 @@ function zwaarteTekst(m: string | null) {
 
 function zwaarteKleur(m: string | null) {
   const t = zwaarteTekst(m)
-  if (t === "Zwaar") return C.rood
-  if (t === "Matig" || t === "Gemiddeld") return C.oranje
-  return C.groen
+  if (t === "Zwaar") return pdfColors.rood
+  if (t === "Matig" || t === "Gemiddeld") return pdfColors.oranje
+  return pdfColors.groen
 }
 
 function antwoordLabel(a: string) {
@@ -149,7 +131,7 @@ function pageBreak(doc: jsPDF, y: number, needed: number): number {
 }
 
 function drawLine(doc: jsPDF, y: number) {
-  doc.setDrawColor(C.rand[0], C.rand[1], C.rand[2])
+  doc.setDrawColor(pdfColors.rand[0], pdfColors.rand[1], pdfColors.rand[2])
   doc.setLineWidth(0.3)
   doc.line(20, y, 190, y)
 }
@@ -158,20 +140,20 @@ function sectionTitle(doc: jsPDF, y: number, icon: string, title: string): numbe
   y = pageBreak(doc, y, 20)
   doc.setFont("helvetica", "bold")
   doc.setFontSize(13)
-  doc.setTextColor(C.primary[0], C.primary[1], C.primary[2])
+  doc.setTextColor(pdfColors.primary[0], pdfColors.primary[1], pdfColors.primary[2])
   doc.text(`${icon}  ${title}`, 20, y)
   y += 3
   drawLine(doc, y)
   return y + 7
 }
 
-function bullet(doc: jsPDF, y: number, text: string, kleur: readonly [number, number, number] = C.primary): number {
+function bullet(doc: jsPDF, y: number, text: string, kleur: readonly [number, number, number] = pdfColors.primary): number {
   y = pageBreak(doc, y, 7)
   doc.setFillColor(kleur[0], kleur[1], kleur[2])
   doc.circle(23, y - 1, 1.5, "F")
   doc.setFont("helvetica", "normal")
   doc.setFontSize(9)
-  doc.setTextColor(C.tekst[0], C.tekst[1], C.tekst[2])
+  doc.setTextColor(pdfColors.tekst[0], pdfColors.tekst[1], pdfColors.tekst[2])
   const lines = doc.splitTextToSize(text, 160)
   doc.text(lines, 28, y)
   return y + lines.length * 4.5 + 2
@@ -195,7 +177,7 @@ function infoCard(doc: jsPDF, y: number, bgKleur: readonly [number, number, numb
   // Tekst
   doc.setFont("helvetica", "normal")
   doc.setFontSize(9)
-  doc.setTextColor(C.tekst[0], C.tekst[1], C.tekst[2])
+  doc.setTextColor(pdfColors.tekst[0], pdfColors.tekst[1], pdfColors.tekst[2])
   doc.text(lines, 30, y + 16)
   return y + cardHeight + 6
 }
@@ -203,19 +185,19 @@ function infoCard(doc: jsPDF, y: number, bgKleur: readonly [number, number, numb
 function orgCard(doc: jsPDF, y: number, org: Hulpbron): number {
   y = pageBreak(doc, y, 14)
   // Achtergrond
-  doc.setFillColor(C.lichtgrijs[0], C.lichtgrijs[1], C.lichtgrijs[2])
+  doc.setFillColor(pdfColors.lichtgrijs[0], pdfColors.lichtgrijs[1], pdfColors.lichtgrijs[2])
   doc.roundedRect(24, y, 166, 11, 2, 2, "F")
   // Naam
   doc.setFont("helvetica", "bold")
   doc.setFontSize(8)
-  doc.setTextColor(C.donker[0], C.donker[1], C.donker[2])
+  doc.setTextColor(pdfColors.donker[0], pdfColors.donker[1], pdfColors.donker[2])
   doc.text(org.naam, 28, y + 5)
   // Contact
   const contact = [org.telefoon, org.website].filter(Boolean).join("  |  ")
   if (contact) {
     doc.setFont("helvetica", "normal")
     doc.setFontSize(7)
-    doc.setTextColor(C.grijs[0], C.grijs[1], C.grijs[2])
+    doc.setTextColor(pdfColors.grijs[0], pdfColors.grijs[1], pdfColors.grijs[2])
     doc.text(contact, 28, y + 9.5)
   }
   return y + 13
@@ -237,14 +219,14 @@ export function generatePdfRapport(data: PdfRapportData): void {
   // PAGINA 1: HEADER
   // ==========================================
   // Paarse header balk
-  doc.setFillColor(C.primary[0], C.primary[1], C.primary[2])
+  doc.setFillColor(pdfColors.primary[0], pdfColors.primary[1], pdfColors.primary[2])
   doc.rect(0, 0, 210, 42, "F")
 
   // App naam
   doc.setFont("helvetica", "bold")
   doc.setFontSize(20)
   doc.setTextColor(255, 255, 255)
-  doc.text("MantelBuddy", 20, 16)
+  doc.text(branding.appName, 20, 16)
 
   // Subtitel
   doc.setFont("helvetica", "normal")
@@ -279,7 +261,7 @@ export function generatePdfRapport(data: PdfRapportData): void {
   // Score max
   doc.setFont("helvetica", "normal")
   doc.setFontSize(12)
-  doc.setTextColor(C.grijs[0], C.grijs[1], C.grijs[2])
+  doc.setTextColor(pdfColors.grijs[0], pdfColors.grijs[1], pdfColors.grijs[2])
   doc.text("/24", 38 + doc.getTextWidth(`${test.totaleBelastingScore}`) * 2.6, y + 18)
 
   // Niveau label
@@ -291,14 +273,14 @@ export function generatePdfRapport(data: PdfRapportData): void {
   // Zorguren
   doc.setFont("helvetica", "normal")
   doc.setFontSize(9)
-  doc.setTextColor(C.tekst[0], C.tekst[1], C.tekst[2])
+  doc.setTextColor(pdfColors.tekst[0], pdfColors.tekst[1], pdfColors.tekst[2])
   doc.text(`${test.totaleZorguren} uur zorg per week`, 80, y + 22)
 
   // Thermometer balk
   const balkX = 80
   const balkW = 100
   const balkY = y + 27
-  doc.setFillColor(C.rand[0], C.rand[1], C.rand[2])
+  doc.setFillColor(pdfColors.rand[0], pdfColors.rand[1], pdfColors.rand[2])
   doc.roundedRect(balkX, balkY, balkW, 5, 2.5, 2.5, "F")
   const scoreW = Math.max((test.totaleBelastingScore / 24) * balkW, 5)
   doc.setFillColor(kleur[0], kleur[1], kleur[2])
@@ -306,11 +288,11 @@ export function generatePdfRapport(data: PdfRapportData): void {
 
   // Zone labels onder balk
   doc.setFontSize(6)
-  doc.setTextColor(C.groen[0], C.groen[1], C.groen[2])
+  doc.setTextColor(pdfColors.groen[0], pdfColors.groen[1], pdfColors.groen[2])
   doc.text("Laag", balkX, balkY + 8)
-  doc.setTextColor(C.oranje[0], C.oranje[1], C.oranje[2])
+  doc.setTextColor(pdfColors.oranje[0], pdfColors.oranje[1], pdfColors.oranje[2])
   doc.text("Gemiddeld", balkX + balkW / 2 - 5, balkY + 8)
-  doc.setTextColor(C.rood[0], C.rood[1], C.rood[2])
+  doc.setTextColor(pdfColors.rood[0], pdfColors.rood[1], pdfColors.rood[2])
   doc.text("Hoog", balkX + balkW - 8, balkY + 8)
 
   y += 48
@@ -327,7 +309,7 @@ export function generatePdfRapport(data: PdfRapportData): void {
         EMOTIONELE_NOOD: "De zorg slokt al je energie op en kost evenveel tijd als een baan.",
         SOCIAAL_ISOLEMENT: "Je mist activiteiten die je leuk vindt en ervaart verdriet.",
       }
-      y = infoCard(doc, y, C.roodBg, C.rood, "Let op", tekst[alarm.type] || alarm.beschrijving)
+      y = infoCard(doc, y, pdfColors.roodBg, pdfColors.rood, "Let op", tekst[alarm.type] || alarm.beschrijving)
     }
   }
 
@@ -337,7 +319,7 @@ export function generatePdfRapport(data: PdfRapportData): void {
   y = sectionTitle(doc, y, ">>", "Advies voor jou als mantelzorger")
 
   if (test.belastingNiveau === "HOOG") {
-    y = infoCard(doc, y, C.roodBg, C.rood,
+    y = infoCard(doc, y, pdfColors.roodBg, pdfColors.rood,
       "Je bent overbelast",
       "Het is belangrijk dat je snel hulp zoekt. Je doet te veel en dat is niet vol te houden. Neem vandaag nog stappen."
     )
@@ -347,10 +329,10 @@ export function generatePdfRapport(data: PdfRapportData): void {
       "Vraag vervangende mantelzorg aan zodat jij even rust kunt nemen",
       "Praat erover met iemand die je vertrouwt",
     ]
-    for (const a of acties) { y = bullet(doc, y, a, C.rood) }
+    for (const a of acties) { y = bullet(doc, y, a, pdfColors.rood) }
 
   } else if (test.belastingNiveau === "GEMIDDELD") {
-    y = infoCard(doc, y, C.oranjeBg, C.oranje,
+    y = infoCard(doc, y, pdfColors.oranjeBg, pdfColors.oranje,
       "Je balans staat onder druk",
       "Met de juiste hulp kun je het beter volhouden. Zoek hulp bij de taken die het zwaarst zijn."
     )
@@ -360,10 +342,10 @@ export function generatePdfRapport(data: PdfRapportData): void {
       "Praat met je huisarts als je merkt dat het te veel wordt",
       "Bekijk welke hulp er in je gemeente beschikbaar is",
     ]
-    for (const a of acties) { y = bullet(doc, y, a, C.oranje) }
+    for (const a of acties) { y = bullet(doc, y, a, pdfColors.oranje) }
 
   } else {
-    y = infoCard(doc, y, C.groenBg, C.groen,
+    y = infoCard(doc, y, pdfColors.groenBg, pdfColors.groen,
       "Goed bezig!",
       "Je hebt een goede balans. Blijf goed voor jezelf zorgen."
     )
@@ -372,7 +354,7 @@ export function generatePdfRapport(data: PdfRapportData): void {
       "Doe deze test regelmatig om je balans te checken",
       "Vraag hulp voordat je het echt nodig hebt",
     ]
-    for (const t of tips) { y = bullet(doc, y, t, C.groen) }
+    for (const t of tips) { y = bullet(doc, y, t, pdfColors.groen) }
   }
 
   // Hulpbronnen voor mantelzorger
@@ -381,7 +363,7 @@ export function generatePdfRapport(data: PdfRapportData): void {
     y = pageBreak(doc, y, 16)
     doc.setFont("helvetica", "bold")
     doc.setFontSize(10)
-    doc.setTextColor(C.primary[0], C.primary[1], C.primary[2])
+    doc.setTextColor(pdfColors.primary[0], pdfColors.primary[1], pdfColors.primary[2])
     doc.text(
       hulpbronnen.mantelzorgerGemeente
         ? `Hulp voor jou in ${hulpbronnen.mantelzorgerGemeente}`
@@ -415,7 +397,7 @@ export function generatePdfRapport(data: PdfRapportData): void {
       // Taak naam + zwaarte badge
       doc.setFont("helvetica", "bold")
       doc.setFontSize(10)
-      doc.setTextColor(C.donker[0], C.donker[1], C.donker[2])
+      doc.setTextColor(pdfColors.donker[0], pdfColors.donker[1], pdfColors.donker[2])
       doc.text(taak.taakNaam, 24, y)
 
       // Badge
@@ -432,7 +414,7 @@ export function generatePdfRapport(data: PdfRapportData): void {
       // Hulptip
       doc.setFont("helvetica", "italic")
       doc.setFontSize(8)
-      doc.setTextColor(C.tekst[0], C.tekst[1], C.tekst[2])
+      doc.setTextColor(pdfColors.tekst[0], pdfColors.tekst[1], pdfColors.tekst[2])
       const tip = hulpTip(taak.taakId)
       const tipLines = doc.splitTextToSize(tip, 155)
       doc.text(tipLines, 24, y)
@@ -466,12 +448,12 @@ export function generatePdfRapport(data: PdfRapportData): void {
       styles: {
         fontSize: 8,
         cellPadding: { top: 3, bottom: 3, left: 4, right: 4 },
-        textColor: [C.tekst[0], C.tekst[1], C.tekst[2]],
-        lineColor: [C.rand[0], C.rand[1], C.rand[2]],
+        textColor: [pdfColors.tekst[0], pdfColors.tekst[1], pdfColors.tekst[2]],
+        lineColor: [pdfColors.rand[0], pdfColors.rand[1], pdfColors.rand[2]],
         lineWidth: 0.3,
       },
       headStyles: {
-        fillColor: [C.primary[0], C.primary[1], C.primary[2]],
+        fillColor: [pdfColors.primary[0], pdfColors.primary[1], pdfColors.primary[2]],
         textColor: [255, 255, 255],
         fontStyle: "bold",
         fontSize: 8,
@@ -482,14 +464,14 @@ export function generatePdfRapport(data: PdfRapportData): void {
         2: { cellWidth: 40, halign: "center", fontStyle: "bold" },
       },
       alternateRowStyles: {
-        fillColor: [C.lichtgrijs[0], C.lichtgrijs[1], C.lichtgrijs[2]],
+        fillColor: [pdfColors.lichtgrijs[0], pdfColors.lichtgrijs[1], pdfColors.lichtgrijs[2]],
       },
       didParseCell: (data: CellHookData) => {
         if (data.section === "body" && data.column.index === 2) {
           const val = data.cell.raw as string
-          if (val === "Zwaar") data.cell.styles.textColor = [C.rood[0], C.rood[1], C.rood[2]]
-          else if (val === "Matig" || val === "Gemiddeld") data.cell.styles.textColor = [C.oranje[0], C.oranje[1], C.oranje[2]]
-          else data.cell.styles.textColor = [C.groen[0], C.groen[1], C.groen[2]]
+          if (val === "Zwaar") data.cell.styles.textColor = [pdfColors.rood[0], pdfColors.rood[1], pdfColors.rood[2]]
+          else if (val === "Matig" || val === "Gemiddeld") data.cell.styles.textColor = [pdfColors.oranje[0], pdfColors.oranje[1], pdfColors.oranje[2]]
+          else data.cell.styles.textColor = [pdfColors.groen[0], pdfColors.groen[1], pdfColors.groen[2]]
         }
       },
       margin: { left: 20, right: 20 },
@@ -516,12 +498,12 @@ export function generatePdfRapport(data: PdfRapportData): void {
     styles: {
       fontSize: 8,
       cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 },
-      textColor: [C.tekst[0], C.tekst[1], C.tekst[2]],
-      lineColor: [C.rand[0], C.rand[1], C.rand[2]],
+      textColor: [pdfColors.tekst[0], pdfColors.tekst[1], pdfColors.tekst[2]],
+      lineColor: [pdfColors.rand[0], pdfColors.rand[1], pdfColors.rand[2]],
       lineWidth: 0.3,
     },
     headStyles: {
-      fillColor: [C.primary[0], C.primary[1], C.primary[2]],
+      fillColor: [pdfColors.primary[0], pdfColors.primary[1], pdfColors.primary[2]],
       textColor: [255, 255, 255],
       fontStyle: "bold",
       fontSize: 8,
@@ -532,14 +514,14 @@ export function generatePdfRapport(data: PdfRapportData): void {
       2: { cellWidth: 25, halign: "center", fontStyle: "bold" },
     },
     alternateRowStyles: {
-      fillColor: [C.lichtgrijs[0], C.lichtgrijs[1], C.lichtgrijs[2]],
+      fillColor: [pdfColors.lichtgrijs[0], pdfColors.lichtgrijs[1], pdfColors.lichtgrijs[2]],
     },
     didParseCell: (data: CellHookData) => {
       if (data.section === "body" && data.column.index === 2) {
         const val = data.cell.raw as string
-        if (val === "Ja") data.cell.styles.textColor = [C.rood[0], C.rood[1], C.rood[2]]
-        else if (val === "Soms") data.cell.styles.textColor = [C.oranje[0], C.oranje[1], C.oranje[2]]
-        else data.cell.styles.textColor = [C.groen[0], C.groen[1], C.groen[2]]
+        if (val === "Ja") data.cell.styles.textColor = [pdfColors.rood[0], pdfColors.rood[1], pdfColors.rood[2]]
+        else if (val === "Soms") data.cell.styles.textColor = [pdfColors.oranje[0], pdfColors.oranje[1], pdfColors.oranje[2]]
+        else data.cell.styles.textColor = [pdfColors.groen[0], pdfColors.groen[1], pdfColors.groen[2]]
       }
     },
     margin: { left: 20, right: 20 },
@@ -561,14 +543,14 @@ export function generatePdfRapport(data: PdfRapportData): void {
 
   for (const c of contacten) {
     y = pageBreak(doc, y, 12)
-    doc.setFillColor(C.primaryBg[0], C.primaryBg[1], C.primaryBg[2])
+    doc.setFillColor(pdfColors.primaryBg[0], pdfColors.primaryBg[1], pdfColors.primaryBg[2])
     doc.roundedRect(20, y, 170, 10, 2, 2, "F")
     doc.setFont("helvetica", "bold")
     doc.setFontSize(9)
-    doc.setTextColor(C.primary[0], C.primary[1], C.primary[2])
+    doc.setTextColor(pdfColors.primary[0], pdfColors.primary[1], pdfColors.primary[2])
     doc.text(c.naam, 26, y + 6.5)
     doc.setFont("helvetica", "normal")
-    doc.setTextColor(C.tekst[0], C.tekst[1], C.tekst[2])
+    doc.setTextColor(pdfColors.tekst[0], pdfColors.tekst[1], pdfColors.tekst[2])
     doc.text(c.info, 85, y + 6.5)
     y += 13
   }
@@ -580,18 +562,18 @@ export function generatePdfRapport(data: PdfRapportData): void {
   for (let p = 1; p <= pages; p++) {
     doc.setPage(p)
     // Dunne lijn
-    doc.setDrawColor(C.rand[0], C.rand[1], C.rand[2])
+    doc.setDrawColor(pdfColors.rand[0], pdfColors.rand[1], pdfColors.rand[2])
     doc.setLineWidth(0.3)
     doc.line(20, 286, 190, 286)
     // Tekst
     doc.setFont("helvetica", "normal")
     doc.setFontSize(7)
-    doc.setTextColor(C.grijs[0], C.grijs[1], C.grijs[2])
-    doc.text("MantelBuddy  |  Persoonlijk Adviesrapport", 20, 291)
+    doc.setTextColor(pdfColors.grijs[0], pdfColors.grijs[1], pdfColors.grijs[2])
+    doc.text(`${branding.appName}  |  Persoonlijk Adviesrapport`, 20, 291)
     doc.text(`${datum}  |  Pagina ${p}/${pages}`, 190, 291, { align: "right" })
   }
 
   // Download
-  const bestand = `MantelBuddy-Rapport-${test.voornaam}-${new Date(test.completedAt).toISOString().slice(0, 10)}.pdf`
+  const bestand = `${branding.appName}-Rapport-${test.voornaam}-${new Date(test.completedAt).toISOString().slice(0, 10)}.pdf`
   doc.save(bestand)
 }

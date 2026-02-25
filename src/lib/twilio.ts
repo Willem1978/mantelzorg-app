@@ -2,7 +2,9 @@ import twilio from 'twilio'
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID
 const authToken = process.env.TWILIO_AUTH_TOKEN
-const whatsappFrom = process.env.TWILIO_WHATSAPP_FROM || 'whatsapp:+14155238886'
+import { branding } from '@/config/branding'
+
+const whatsappFrom = process.env.TWILIO_WHATSAPP_FROM || `whatsapp:${branding.contact.whatsappNumber}`
 const messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID
 
 if (!accountSid || !authToken) {
@@ -376,7 +378,7 @@ export async function sendWhatsAppMessageWithImage({
  * Genereer URL voor score infographic
  */
 export function getScoreImageUrl(score: number, level: string, name?: string): string {
-  const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
+  const baseUrl = branding.urls.production
   const params = new URLSearchParams({
     score: score.toString(),
     level,
@@ -391,7 +393,7 @@ export function getScoreImageUrl(score: number, level: string, name?: string): s
  * Gebruikt korte /m/ route voor betere leesbaarheid in WhatsApp
  */
 export function getMagicLinkUrl(token: string): string {
-  const baseUrl = process.env.NEXTAUTH_URL || 'https://mantelzorg-app.vercel.app'
+  const baseUrl = branding.urls.production
   return `${baseUrl}/m/${token}`
 }
 

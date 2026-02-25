@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Montserrat, Open_Sans } from "next/font/google";
 import { Providers } from "@/components/Providers";
+import { branding, pageTitle } from "@/config/branding";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -18,18 +19,18 @@ const openSans = Open_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "MantelBuddy - Samen lokaal sterk",
-  description: "MantelBuddy verbindt mantelzorgers met vrijwilligers uit de buurt",
+  title: pageTitle(),
+  description: branding.description,
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "MantelBuddy",
+    title: branding.appName,
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#2C7A7B",
+  themeColor: branding.themeColor,
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,

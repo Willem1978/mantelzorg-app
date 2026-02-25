@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { Button, Card, CardContent } from "@/components/ui"
 import { cn } from "@/lib/utils"
+import { eventTypeColors } from "@/config/colors"
 
 interface CalendarEvent {
   id: string
@@ -18,12 +19,12 @@ interface CalendarEvent {
 
 // B1 taalgebruik - korte, simpele woorden
 const eventTypes = [
-  { value: "CARE_TASK", label: "Zorg", icon: "🏥", color: "#ef4444", hint: "Voor de zorg" },
-  { value: "APPOINTMENT", label: "Afspraak", icon: "📅", color: "#3b82f6", hint: "Arts of andere afspraak" },
-  { value: "SELF_CARE", label: "Voor mij", icon: "🧘", color: "#10b981", hint: "Tijd voor jezelf" },
-  { value: "SOCIAL", label: "Samen", icon: "👥", color: "#8b5cf6", hint: "Met vrienden of familie" },
-  { value: "WORK", label: "Werk", icon: "💼", color: "#f59e0b", hint: "Werk of studie" },
-  { value: "OTHER", label: "Anders", icon: "📝", color: "#6b7280", hint: "Iets anders" },
+  { value: "CARE_TASK", label: "Zorg", icon: "🏥", color: eventTypeColors.CARE_TASK, hint: "Voor de zorg" },
+  { value: "APPOINTMENT", label: "Afspraak", icon: "📅", color: eventTypeColors.APPOINTMENT, hint: "Arts of andere afspraak" },
+  { value: "SELF_CARE", label: "Voor mij", icon: "🧘", color: eventTypeColors.SELF_CARE, hint: "Tijd voor jezelf" },
+  { value: "SOCIAL", label: "Samen", icon: "👥", color: eventTypeColors.SOCIAL, hint: "Met vrienden of familie" },
+  { value: "WORK", label: "Werk", icon: "💼", color: eventTypeColors.WORK, hint: "Werk of studie" },
+  { value: "OTHER", label: "Anders", icon: "📝", color: eventTypeColors.OTHER, hint: "Iets anders" },
 ]
 
 const reminderOptions = [

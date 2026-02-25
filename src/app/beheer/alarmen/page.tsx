@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { AdminSpinner, AdminEmptyState } from "@/components/admin"
+import { ALARM_TYPES } from "@/config/options"
+import { urgentieColors, urgentieLabels } from "@/config/colors"
 
 interface Alarm {
   id: string
@@ -25,27 +27,12 @@ interface Alarm {
   }
 }
 
-const alarmTypeLabels: Record<string, string> = {
-  HOGE_BELASTING: "Hoge belasting",
-  KRITIEKE_COMBINATIE: "Kritieke combinatie",
-  VEEL_ZORGUREN: "Veel zorguren",
-  EMOTIONELE_NOOD: "Emotionele nood",
-  SOCIAAL_ISOLEMENT: "Sociaal isolement",
-  FYSIEKE_KLACHTEN: "Fysieke klachten",
-}
+const alarmTypeLabels = ALARM_TYPES
 
-const urgentieKleur: Record<string, string> = {
-  LOW: "bg-gray-100 text-gray-700 border-gray-200",
-  MEDIUM: "bg-amber-50 text-amber-700 border-amber-200",
-  HIGH: "bg-orange-50 text-orange-700 border-orange-200",
-  CRITICAL: "bg-red-50 text-red-700 border-red-200",
-}
-
-const urgentieLabel: Record<string, string> = {
-  LOW: "Laag",
-  MEDIUM: "Midden",
-  HIGH: "Hoog",
-  CRITICAL: "Kritiek",
+function getUrgentieKleur(urgentie: string): string {
+  const colors = urgentieColors[urgentie as keyof typeof urgentieColors]
+  if (!colors) return ""
+  return `${colors.bg} ${colors.text} ${colors.border}`
 }
 
 export default function AlarmenPage() {
@@ -161,7 +148,7 @@ export default function AlarmenPage() {
           {alarmen.map((alarm) => (
             <div
               key={alarm.id}
-              className={`rounded-xl border p-4 ${urgentieKleur[alarm.urgentie]} ${alarm.isAfgehandeld ? "opacity-60" : ""}`}
+              className={`rounded-xl border p-4 ${getUrgentieKleur(alarm.urgentie)} ${alarm.isAfgehandeld ? "opacity-60" : ""}`}
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
@@ -170,7 +157,7 @@ export default function AlarmenPage() {
                       {alarmTypeLabels[alarm.type] || alarm.type}
                     </span>
                     <span className="text-xs px-2 py-0.5 rounded-full bg-white/50 font-medium">
-                      {urgentieLabel[alarm.urgentie]}
+                      {urgentieLabels[alarm.urgentie]}
                     </span>
                     {alarm.isAfgehandeld && (
                       <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">

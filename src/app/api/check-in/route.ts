@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { ANTWOORD_SCORES, CHECKIN_FREQUENTIES } from "@/config/options"
 
 export const dynamic = 'force-dynamic'
 
@@ -41,12 +42,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Calculate scores from answers
-    const scoreMap: Record<string, number> = {
-      "ja": 1,
-      "soms": 2,
-      "nee": 3,
-    }
+    // Calculate scores from answers (using central config)
+    const scoreMap = ANTWOORD_SCORES
 
     // Calculate overall feeling and stress level
     let overallFeeling = 0
@@ -170,17 +167,11 @@ export async function GET(request: NextRequest) {
       select: { belastingNiveau: true },
     })
 
-    // Aanbevolen frequentie op basis van belastingniveau
-    // LAAG: maandelijks, GEMIDDELD: 2x per maand, HOOG: wekelijks
-    let aanbevolenFrequentie = "maandelijks"
-    let frequentieDagen = 30
-    if (latestTest?.belastingNiveau === "GEMIDDELD") {
-      aanbevolenFrequentie = "2x per maand"
-      frequentieDagen = 14
-    } else if (latestTest?.belastingNiveau === "HOOG") {
-      aanbevolenFrequentie = "wekelijks"
-      frequentieDagen = 7
-    }
+    // Aanbevolen frequentie op basis van belastingniveau (uit centraal config)
+    const niveau = (latestTest?.belastingNiveau || "LAAG") as keyof typeof CHECKIN_FREQUENTIES
+    const frequentieConfig = CHECKIN_FREQUENTIES[niveau] || CHECKIN_FREQUENTIES.LAAG
+    const aanbevolenFrequentie = frequentieConfig.label
+    const frequentieDagen = frequentieConfig.dagen
 
     // Check of check-in nodig is op basis van slimme frequentie
     const lastCheckIn = caregiver.monthlyCheckIns[0] || null

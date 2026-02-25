@@ -1,6 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import { emoticonColors } from "@/config/colors"
 
 interface SmileyButtonProps {
   value: "nee" | "soms" | "ja"
@@ -15,14 +16,7 @@ interface SmileyButtonProps {
 const SmileySvg = ({ type, colored }: { type: "nee" | "soms" | "ja"; colored: boolean }) => {
   const size = 48
 
-  // Kleuren
-  const colors = {
-    nee: { bg: "#7CB342", face: "#558B2F" },    // Groen
-    soms: { bg: "#FFD54F", face: "#F9A825" },   // Geel
-    ja: { bg: "#EF5350", face: "#C62828" },     // Rood
-  }
-
-  const color = colors[type]
+  const color = emoticonColors[type]
   const bgColor = colored ? color.bg : "#E0E0E0"
   const faceColor = colored ? color.face : "#9E9E9E"
 

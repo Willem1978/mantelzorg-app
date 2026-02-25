@@ -4,19 +4,15 @@
  */
 
 import { prisma } from "@/lib/prisma"
+import { ZORGTAKEN, TAAK_NAAM_VARIANTEN } from "@/config/options"
 
-// Mapping van taak IDs naar alle mogelijke onderdeelTest waarden
-const TAAK_NAAR_ONDERDEEL_VARIANTEN: Record<string, string[]> = {
-  t1: ["Administratie", "Administratie en aanvragen"],
-  t2: ["Plannen", "Plannen en organiseren"],
-  t3: ["Boodschappen"],
-  t4: ["Sociaal & activiteiten", "Sociaal contact en activiteiten"],
-  t5: ["Vervoer"],
-  t6: ["Verzorging", "Persoonlijke verzorging"],
-  t7: ["Maaltijden", "Bereiden en/of nuttigen van maaltijden"],
-  t8: ["Huishouden", "Huishoudelijke taken"],
-  t9: ["Klusjes", "Klusjes in en om het huis"],
-}
+// Mapping van taak IDs naar alle mogelijke onderdeelTest waarden (dbValue + varianten)
+const TAAK_NAAR_ONDERDEEL_VARIANTEN: Record<string, string[]> = Object.fromEntries(
+  ZORGTAKEN.map((t) => {
+    const varianten = TAAK_NAAM_VARIANTEN[t.dbValue] || []
+    return [t.id, [t.dbValue, ...varianten]]
+  })
+)
 
 export interface HulpbronResult {
   naam: string

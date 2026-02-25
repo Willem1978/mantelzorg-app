@@ -1,21 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { TAAK_NAAR_ONDERDEEL } from "@/config/options"
 
 export const dynamic = 'force-dynamic'
-
-// Mapping van taak IDs naar onderdeel-categorieën in database
-const TAAK_NAAR_ONDERDEEL: Record<string, string> = {
-  t1: 'Persoonlijke verzorging',
-  t2: 'Huishoudelijke taken',
-  t3: 'Persoonlijke verzorging',
-  t4: 'Vervoer',
-  t5: 'Administratie en aanvragen',
-  t6: 'Sociaal contact en activiteiten',
-  t7: 'Persoonlijke verzorging',
-  t8: 'Persoonlijke verzorging',
-  t9: 'Klusjes in en om het huis',
-}
 
 // GET - Haal specifieke test op met hulpbronnen voor PDF rapport
 export async function GET(
