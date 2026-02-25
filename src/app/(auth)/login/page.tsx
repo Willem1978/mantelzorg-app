@@ -6,6 +6,9 @@ import { signIn } from "next-auth/react"
 import Link from "next/link"
 import { GerAvatar } from "@/components/GerAvatar"
 import { useToast } from "@/components/ui/Toast"
+import { authContent } from "@/config/content"
+
+const c = authContent.login
 
 function LoginForm() {
   const router = useRouter()
@@ -37,14 +40,14 @@ function LoginForm() {
       })
 
       if (result?.error) {
-        throw new Error("Ongeldige inloggegevens")
+        throw new Error(c.error.invalidCredentials)
       }
 
       // Redirect naar callbackUrl of dashboard
-      showSuccess("Je bent ingelogd!")
+      showSuccess(c.success)
       router.push(callbackUrl)
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Er ging iets mis"
+      const errorMessage = err instanceof Error ? err.message : c.error.generic
       setError(errorMessage)
       showError(errorMessage)
     } finally {
@@ -61,9 +64,9 @@ function LoginForm() {
           <div className="flex items-start gap-4 lg:flex-col lg:items-center lg:gap-6">
             <GerAvatar size="lg" className="lg:w-32 lg:h-32" />
             <div className="pt-2 lg:pt-0">
-              <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Welkom terug!</h1>
+              <h1 className="text-2xl lg:text-3xl font-bold text-foreground">{c.title}</h1>
               <p className="text-muted-foreground mt-1 lg:mt-3 lg:text-lg">
-                Vul je gegevens in om in te loggen. Na het inloggen ga je naar je dashboard.
+                {c.subtitle}
               </p>
             </div>
           </div>
@@ -77,29 +80,29 @@ function LoginForm() {
             <div className="ker-card lg:shadow-lg">
             {sessionInvalidated && (
               <div className="bg-amber-50 border-2 border-amber-300 text-amber-800 px-4 py-3 rounded-xl mb-6 text-sm">
-                <p className="font-medium">Je bent uitgelogd</p>
-                <p className="text-amber-700">Je bent op een ander apparaat ingelogd. Log opnieuw in om door te gaan.</p>
+                <p className="font-medium">{c.sessionInvalidated.title}</p>
+                <p className="text-amber-700">{c.sessionInvalidated.tekst}</p>
               </div>
             )}
 
             {fromTest && (
               <div className="bg-primary/10 border-2 border-primary/30 text-foreground px-4 py-3 rounded-xl mb-6 text-sm">
-                <p className="font-medium">Je hebt de test afgerond!</p>
-                <p className="text-muted-foreground">Log in om je resultaten op te slaan.</p>
+                <p className="font-medium">{c.fromTest.title}</p>
+                <p className="text-muted-foreground">{c.fromTest.tekst}</p>
               </div>
             )}
 
             {error && (
               <div className="bg-[#FFEBEE] border-2 border-[#F44336] text-[#C62828] px-4 py-3 rounded-xl mb-6 text-sm">
-                <p className="font-medium">Dat lukte niet</p>
-                <p>Je e-mail of wachtwoord is niet goed. Kijk het na en probeer opnieuw.</p>
+                <p className="font-medium">{c.error.title}</p>
+                <p>{c.error.tekst}</p>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-                  Je e-mailadres
+                  {c.form.emailLabel}
                 </label>
                 <input
                   id="email"
@@ -107,18 +110,18 @@ function LoginForm() {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="ker-input"
-                  placeholder="naam@voorbeeld.nl"
+                  placeholder={c.form.emailPlaceholder}
                   required
                   autoComplete="email"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Het adres waarmee je bent aangemeld
+                  {c.form.emailHelp}
                 </p>
               </div>
 
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
-                  Je wachtwoord
+                  {c.form.passwordLabel}
                 </label>
                 <input
                   id="password"
@@ -126,7 +129,7 @@ function LoginForm() {
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   className="ker-input"
-                  placeholder="••••••••"
+                  placeholder={c.form.passwordPlaceholder}
                   required
                   autoComplete="current-password"
                 />
@@ -134,7 +137,7 @@ function LoginForm() {
 
               <div className="text-right">
                 <Link href="/wachtwoord-vergeten" className="text-sm text-primary hover:underline">
-                  Wachtwoord vergeten?
+                  {c.form.forgotPassword}
                 </Link>
               </div>
 
@@ -146,23 +149,23 @@ function LoginForm() {
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
                     <span className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                    Inloggen...
+                    {c.form.submitting}
                   </span>
                 ) : (
-                  "Inloggen"
+                  c.form.submitButton
                 )}
               </button>
             </form>
 
             <div className="mt-6 pt-6 border-t border-border">
               <p className="text-center text-muted-foreground mb-4">
-                Nog geen account? Maak er gratis een aan.
+                {c.footer.noAccount}
               </p>
               <Link
                 href="/register"
                 className="ker-btn ker-btn-secondary w-full flex items-center justify-center gap-2"
               >
-                Account aanmaken
+                {c.footer.createAccount}
               </Link>
             </div>
             </div>
@@ -171,11 +174,11 @@ function LoginForm() {
           {/* Terug links */}
           <div className="mt-4 flex justify-center gap-4 text-sm lg:text-base">
             <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">
-              ← Terug naar home
+              {c.footer.backToHome}
             </Link>
             <span className="text-muted-foreground">|</span>
             <Link href="/belastbaarheidstest" className="text-muted-foreground hover:text-foreground transition-colors">
-              Doe eerst de Balanstest
+              {c.footer.doTestFirst}
             </Link>
           </div>
         </main>

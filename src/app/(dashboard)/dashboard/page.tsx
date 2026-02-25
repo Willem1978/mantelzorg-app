@@ -8,6 +8,9 @@ import Link from "next/link"
 import { cn, ensureAbsoluteUrl } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
 import { PageIntro } from "@/components/ui/PageIntro"
+import { dashboardContent } from "@/config/content"
+
+const c = dashboardContent
 
 interface Hulpbron {
   naam: string
@@ -151,12 +154,12 @@ export default function DashboardPage() {
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     }>
-      <DashboardContent />
+      <DashboardContentView />
     </Suspense>
   )
 }
 
-function DashboardContent() {
+function DashboardContentView() {
   const { data: session, status } = useSession()
   const searchParams = useSearchParams()
   const [data, setData] = useState<DashboardData | null>(null)
@@ -221,13 +224,13 @@ function DashboardContent() {
           <div className="flex justify-center mb-4">
             <GerAvatar size="lg" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">Welkom bij MantelBuddy!</h1>
-          <p className="text-muted-foreground mb-6">Log in om je dashboard te zien. Hier vind je je resultaten, tips en hulp bij jou in de buurt.</p>
+          <h1 className="text-2xl font-bold text-foreground mb-2">{c.loggedOut.title}</h1>
+          <p className="text-muted-foreground mb-6">{c.loggedOut.subtitle}</p>
           <Link
             href="/api/auth/signin"
             className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:opacity-90 transition-opacity"
           >
-            Inloggen
+            {c.loggedOut.loginButton}
           </Link>
         </div>
       </div>
@@ -256,7 +259,7 @@ function DashboardContent() {
         <GerAvatar size="lg" />
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            Hoi {userName}!
+            {c.greeting(userName)}
           </h1>
           <p className="text-muted-foreground mt-1">
             {getGreeting()}
@@ -265,7 +268,7 @@ function DashboardContent() {
       </div>
 
       {/* C2.1: Warme welkomsttekst */}
-      <PageIntro tekst="Hier zie je hoe het met je gaat. Scrol naar beneden voor tips en hulp." />
+      <PageIntro tekst={c.pageIntro} />
 
           {/* SECTIE 1: Jouw Balans */}
           {data?.test?.hasTest ? (
@@ -276,18 +279,14 @@ function DashboardContent() {
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="font-bold text-lg text-foreground">
-                  {data.test.niveau === "LAAG" && "Je houdt het goed vol 💚"}
-                  {data.test.niveau === "GEMIDDELD" && "Je doet heel veel 🧡"}
-                  {data.test.niveau === "HOOG" && "Je doet te veel ❤️"}
+                  {data.test.niveau && `${c.scoreMessages[data.test.niveau].kort} ${c.scoreMessages[data.test.niveau].emoji}`}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  {data.test.daysSinceTest === 0 ? "Vandaag" : `${data.test.daysSinceTest}d geleden`}
+                  {data.test.daysSinceTest === 0 ? c.tijd.vandaag : c.tijd.dagenGeleden(data.test.daysSinceTest || 0)}
                 </p>
               </div>
               <p className="text-sm text-muted-foreground">
-                {data.test.niveau === "LAAG" && "Je balans is goed. Zorg ook goed voor jezelf. Neem af en toe rust. Zo hou je het vol."}
-                {data.test.niveau === "GEMIDDELD" && "Je hebt veel te doen. Het is goed om hulp te vragen. Denk aan familie, buren of hulp uit je gemeente. Kleine stappen helpen al veel."}
-                {data.test.niveau === "HOOG" && "Je hebt te veel op je bordje. Ga hier niet alleen mee door. Bel de Mantelzorglijn: 030 - 205 90 59 (gratis). Of neem contact op met je gemeente. Zij helpen je verder."}
+                {data.test.niveau && c.scoreMessages[data.test.niveau].uitleg}
               </p>
             </div>
 
@@ -303,7 +302,7 @@ function DashboardContent() {
                   )}
                 >
                   {data.test.score}
-                  <span className="text-lg font-normal text-muted-foreground">/24</span>
+                  <span className="text-lg font-normal text-muted-foreground">{c.score.maxScore}</span>
                 </span>
               </div>
 
@@ -329,19 +328,19 @@ function DashboardContent() {
             {/* Jouw taken — kleurblokken */}
             {(data.test.zorgtaken?.length || 0) > 0 && (
               <div className="mt-5 pt-4 border-t border-border/50">
-                <p className="text-sm font-semibold text-foreground mb-3">Jouw zorgtaken</p>
+                <p className="text-sm font-semibold text-foreground mb-3">{c.zorgtaken.title}</p>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="rounded-xl bg-[var(--accent-green-bg)] p-3 text-center">
                     <p className="text-2xl font-bold text-[var(--accent-green)]">{lichtTaken.length}</p>
-                    <p className="text-sm text-[var(--accent-green)] font-medium">Gaan goed</p>
+                    <p className="text-sm text-[var(--accent-green)] font-medium">{c.zorgtaken.niveaus.licht}</p>
                   </div>
                   <div className="rounded-xl bg-[var(--accent-amber-bg)] p-3 text-center">
                     <p className="text-2xl font-bold text-[var(--accent-amber)]">{matigTaken.length}</p>
-                    <p className="text-sm text-[var(--accent-amber)] font-medium">Matig</p>
+                    <p className="text-sm text-[var(--accent-amber)] font-medium">{c.zorgtaken.niveaus.matig}</p>
                   </div>
                   <div className="rounded-xl bg-[var(--accent-red-bg)] p-3 text-center">
                     <p className="text-2xl font-bold text-[var(--accent-red)]">{zwareTaken.length}</p>
-                    <p className="text-sm text-[var(--accent-red)] font-medium">Zwaar</p>
+                    <p className="text-sm text-[var(--accent-red)] font-medium">{c.zorgtaken.niveaus.zwaar}</p>
                   </div>
                 </div>
               </div>
@@ -352,7 +351,7 @@ function DashboardContent() {
               href="/rapport"
               className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-border/50 text-sm font-medium text-primary hover:underline"
             >
-              Bekijk je volledige resultaten
+              {c.score.bekijkResultaten}
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
@@ -365,14 +364,14 @@ function DashboardContent() {
           <div className="ker-card">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                <span className="text-3xl">📊</span>
+                <span className="text-3xl">{c.geenTest.emoji}</span>
               </div>
               <div className="flex-1">
                 <h2 className="font-bold text-xl text-foreground">
-                  Nog geen test gedaan
+                  {c.geenTest.title}
                 </h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Ontdek hoe het met je gaat en waar je hulp bij kunt krijgen
+                  {c.geenTest.subtitle}
                 </p>
               </div>
             </div>
@@ -380,7 +379,7 @@ function DashboardContent() {
               href="/belastbaarheidstest"
               className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:opacity-90 transition-opacity"
             >
-              Start de balanstest
+              {c.geenTest.button}
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
@@ -395,10 +394,10 @@ function DashboardContent() {
             <section className="mb-8">
             <div className="mb-4">
               <h2 className="text-lg font-bold text-foreground flex items-center gap-2 mb-2">
-                <span className="text-2xl">📋</span> Je Zorgtaken
+                <span className="text-2xl">{c.zorgtaken.sectionEmoji}</span> {c.zorgtaken.sectionTitle}
               </h2>
               <p className="text-sm text-muted-foreground">
-                Dit zijn je taken. Rode en oranje taken zijn zwaar. Druk op een taak om hulp te vinden.
+                {c.zorgtaken.subtitle}
               </p>
             </div>
 
@@ -419,15 +418,15 @@ function DashboardContent() {
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold">{taak.naam}</span>
-                        {taak.uren && <span className="text-sm text-muted-foreground">({taak.uren}u/week)</span>}
+                        {taak.uren && <span className="text-sm text-muted-foreground">{c.zorgtaken.urenPerWeek(taak.uren)}</span>}
                       </div>
                       <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-red)]/15 text-[var(--accent-red)]">
-                        Zwaar
+                        {c.zorgtaken.niveaus.zwaar}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-primary">
                       <span>🤝</span>
-                      <span>{aantalHulp > 0 ? `${aantalHulp} hulpbron${aantalHulp > 1 ? 'nen' : ''} beschikbaar` : 'Zoek hulp'}</span>
+                      <span>{aantalHulp > 0 ? c.zorgtaken.hulpbronCount(aantalHulp) : c.zorgtaken.zoekHulp}</span>
                       <span>→</span>
                     </div>
                   </div>
@@ -451,15 +450,15 @@ function DashboardContent() {
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold">{taak.naam}</span>
-                        {taak.uren && <span className="text-sm text-muted-foreground">({taak.uren}u/week)</span>}
+                        {taak.uren && <span className="text-sm text-muted-foreground">{c.zorgtaken.urenPerWeek(taak.uren)}</span>}
                       </div>
                       <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-amber)]/15 text-[var(--accent-amber)]">
-                        Matig
+                        {c.zorgtaken.niveaus.matig}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-primary">
                       <span>🤝</span>
-                      <span>{aantalHulp > 0 ? `${aantalHulp} hulpbron${aantalHulp > 1 ? 'nen' : ''} beschikbaar` : 'Zoek hulp'}</span>
+                      <span>{aantalHulp > 0 ? c.zorgtaken.hulpbronCount(aantalHulp) : c.zorgtaken.zoekHulp}</span>
                       <span>→</span>
                     </div>
                   </div>
@@ -471,7 +470,7 @@ function DashboardContent() {
             {lichtTaken.length > 0 && (
               <div className="ker-card bg-[var(--accent-green-bg)] border-[3px] border-[var(--accent-green)]">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="font-medium text-foreground">Taken die goed gaan</span>
+                  <span className="font-medium text-foreground">{c.zorgtaken.goedeTaken}</span>
                   <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-green)]/15 text-[var(--accent-green)]">
                     {lichtTaken.length}
                   </span>
@@ -495,13 +494,11 @@ function DashboardContent() {
             <section className="mb-8">
               <div className="mb-4">
                 <h2 className="text-lg font-bold text-foreground flex items-center gap-2 mb-2">
-                  <span className="text-2xl">💡</span> Aanbevolen voor jou
+                  <span className="text-2xl">{c.artikelen.emoji}</span> {c.artikelen.title}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  {data.test?.niveau === "LAAG" && "Tips om het goed te blijven doen."}
-                  {data.test?.niveau === "GEMIDDELD" && "Artikelen die je nu kunnen helpen."}
-                  {data.test?.niveau === "HOOG" && "Belangrijke informatie voor jou."}
-                  {!data.test?.niveau && "Artikelen die voor jou interessant kunnen zijn."}
+                  {data.test?.niveau && c.artikelen.perNiveau[data.test.niveau]}
+                  {!data.test?.niveau && c.artikelen.default}
                 </p>
               </div>
               <div className="space-y-2">
@@ -534,7 +531,7 @@ function DashboardContent() {
                 href="/leren"
                 className="flex items-center justify-center gap-1 mt-3 text-sm font-medium text-primary hover:underline"
               >
-                Bekijk meer informatie
+                {c.artikelen.meerBekijken}
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
@@ -551,10 +548,10 @@ function DashboardContent() {
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                   </svg>
                 </div>
-                <h2 className="font-bold text-base text-foreground">Gebruik MantelBuddy ook via WhatsApp</h2>
+                <h2 className="font-bold text-base text-foreground">{c.whatsapp.title}</h2>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
-                Scan de QR code met je telefoon. Of druk op de knop hieronder.
+                {c.whatsapp.subtitle}
               </p>
 
               {/* QR Code */}
@@ -562,7 +559,7 @@ function DashboardContent() {
                 <div className="bg-white p-3 rounded-xl shadow-sm">
                   <Image
                     src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://wa.me/14155238886?text=Hoi"
-                    alt="Scan QR code om WhatsApp te starten"
+                    alt={c.whatsapp.qrAlt}
                     width={120}
                     height={120}
                     className="rounded-lg"
@@ -581,7 +578,7 @@ function DashboardContent() {
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
                 </svg>
-                Open WhatsApp
+                {c.whatsapp.openButton}
               </a>
             </div>
           </section>
@@ -591,7 +588,7 @@ function DashboardContent() {
 
 function getGreeting(): string {
   const hour = new Date().getHours()
-  if (hour < 12) return "Goedemorgen! Hoe voel je je vandaag?"
-  if (hour < 18) return "Goedemiddag! Hoe gaat het met je?"
-  return "Goedenavond! Hoe was je dag?"
+  if (hour < 12) return c.greetings.morning
+  if (hour < 18) return c.greetings.afternoon
+  return c.greetings.evening
 }

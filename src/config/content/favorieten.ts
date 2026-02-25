@@ -5,11 +5,16 @@
 export const favorietenContent = {
   title: "Mijn favorieten",
   emoji: "❤️",
-  subtitle: "Alles wat je hebt bewaard op een plek.",
+  subtitle: "Alles wat je hebt bewaard op één plek.",
 
   leeg: {
+    emoji: "💜",
     title: "Je hebt nog geen favorieten",
-    subtitle: "Op de Hulp en Informatie pagina kun je op het hartje tikken. Dan verschijnen ze hier.",
+    beschrijvingPrefix: "Op de ",
+    hulpLabel: "Hulp",
+    beschrijvingMidden: " en ",
+    informatieLabel: "Informatie",
+    beschrijvingSuffix: " pagina kun je op het hartje tikken. Dan verschijnen ze hier.",
     naarHulp: "Naar Hulp",
     naarInformatie: "Naar Informatie",
   },
@@ -17,12 +22,14 @@ export const favorietenContent = {
   kiesCategorieHint: "Kies een categorie om je bewaarde items te bekijken.",
 
   tabs: {
-    voorJou: "Voor jou",
-    voorNaaste: "Voor naaste",
-    informatie: "Informatie",
+    voorJou: { label: "Voor jou", emoji: "💜" },
+    voorNaaste: { label: "Voor naaste", emoji: "💝" },
+    informatie: { label: "Informatie", emoji: "📚" },
   },
 
-  afgerondHint: "Klaar met een item? Tik op Afgerond om af te vinken.",
+  afgerondHint: "Klaar met een item? Tik op ",
+  afgerondHintLabel: "Afgerond",
+  afgerondHintSuffix: " om af te vinken.",
 
   status: {
     afgerond: "Afgerond",
@@ -30,4 +37,6 @@ export const favorietenContent = {
   },
 
   verwijderen: "Verwijderen",
+  website: "Website",
+  overig: "Overig",
 } as const

@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react"
 import { cn, ensureAbsoluteUrl } from "@/lib/utils"
 import Link from "next/link"
+import { favorietenContent } from "@/config/content"
+
+const c = favorietenContent
 
 interface Favoriet {
   id: string
@@ -142,7 +145,7 @@ export default function FavorietenPage() {
     })
 
     return gesorteerd.reduce<Record<string, Favoriet[]>>((acc, fav) => {
-      const cat = fav.categorie || "Overig"
+      const cat = fav.categorie || c.overig
       if (!acc[cat]) acc[cat] = []
       acc[cat].push(fav)
       return acc
@@ -157,28 +160,27 @@ export default function FavorietenPage() {
       {/* Header - compact */}
       <div className="mb-4">
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          <span className="text-3xl">❤️</span> Mijn favorieten
+          <span className="text-3xl">{c.emoji}</span> {c.title}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Alles wat je hebt bewaard op één plek.
+          {c.subtitle}
         </p>
       </div>
 
       {/* Lege staat */}
       {geenFavorieten && (
         <div className="text-center py-12">
-          <div className="text-6xl mb-4">💜</div>
-          <h2 className="text-lg font-semibold text-foreground mb-2">Je hebt nog geen favorieten</h2>
+          <div className="text-6xl mb-4">{c.leeg.emoji}</div>
+          <h2 className="text-lg font-semibold text-foreground mb-2">{c.leeg.title}</h2>
           <p className="text-sm text-muted-foreground max-w-xs mx-auto mb-6">
-            Op de <span className="font-medium">Hulp</span> en <span className="font-medium">Informatie</span> pagina
-            kun je op het hartje tikken. Dan verschijnen ze hier.
+            {c.leeg.beschrijvingPrefix}<span className="font-medium">{c.leeg.hulpLabel}</span>{c.leeg.beschrijvingMidden}<span className="font-medium">{c.leeg.informatieLabel}</span>{c.leeg.beschrijvingSuffix}
           </p>
           <div className="flex flex-col gap-3 max-w-xs mx-auto">
             <Link href="/hulpvragen" className="ker-btn ker-btn-primary text-center">
-              Naar Hulp
+              {c.leeg.naarHulp}
             </Link>
             <Link href="/leren" className="ker-btn ker-btn-secondary text-center">
-              Naar Informatie
+              {c.leeg.naarInformatie}
             </Link>
           </div>
         </div>
@@ -190,15 +192,15 @@ export default function FavorietenPage() {
           {/* Uitleg tekst */}
           <div className="bg-primary/5 rounded-xl p-3 mb-4">
             <p className="text-sm text-foreground">
-              Kies een categorie om je bewaarde items te bekijken.
+              {c.kiesCategorieHint}
             </p>
           </div>
 
           {/* 3 gelijke tabs */}
           <div className="grid grid-cols-3 gap-2 mb-6">
             <TabButton
-              label="Voor jou"
-              emoji="💜"
+              label={c.tabs.voorJou.label}
+              emoji={c.tabs.voorJou.emoji}
               count={voorJou.length}
               countAfgerond={countAfgerond(voorJou)}
               isActive={activeTab === "voor-jou"}
@@ -206,8 +208,8 @@ export default function FavorietenPage() {
               disabled={voorJou.length === 0}
             />
             <TabButton
-              label="Voor naaste"
-              emoji="💝"
+              label={c.tabs.voorNaaste.label}
+              emoji={c.tabs.voorNaaste.emoji}
               count={voorNaaste.length}
               countAfgerond={countAfgerond(voorNaaste)}
               isActive={activeTab === "voor-naaste"}
@@ -215,8 +217,8 @@ export default function FavorietenPage() {
               disabled={voorNaaste.length === 0}
             />
             <TabButton
-              label="Informatie"
-              emoji="📚"
+              label={c.tabs.informatie.label}
+              emoji={c.tabs.informatie.emoji}
               count={informatie.length}
               countAfgerond={countAfgerond(informatie)}
               isActive={activeTab === "informatie"}
@@ -232,7 +234,7 @@ export default function FavorietenPage() {
               {getActiveItems().length > 0 && (
                 <div className="bg-primary/5 rounded-xl p-3 mb-2">
                   <p className="text-sm text-foreground">
-                    Klaar met een item? Tik op <span className="font-medium text-[var(--accent-green)]">Afgerond</span> om af te vinken.
+                    {c.afgerondHint}<span className="font-medium text-[var(--accent-green)]">{c.afgerondHintLabel}</span>{c.afgerondHintSuffix}
                   </p>
                 </div>
               )}
@@ -394,7 +396,7 @@ function FavorietCard({
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
-                Website
+                {c.website}
               </a>
             )}
           </div>
@@ -413,14 +415,14 @@ function FavorietCard({
               <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
               </svg>
-              Afgerond
+              {c.status.afgerond}
             </button>
           ) : (
             <button
               onClick={() => onToggleVoltooid(fav.id, fav.isVoltooid)}
               className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border border-border text-muted-foreground font-medium text-sm hover:bg-muted transition-colors min-h-[44px]"
             >
-              Niet afgerond
+              {c.status.nietAfgerond}
             </button>
           )}
           <button
@@ -430,7 +432,7 @@ function FavorietCard({
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
-            Verwijderen
+            {c.verwijderen}
           </button>
         </div>
       </div>

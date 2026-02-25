@@ -4,6 +4,9 @@ import Link from "next/link"
 import { useState, useEffect, useRef, useCallback } from "react"
 import { FavorietButton } from "@/components/FavorietButton"
 import { PageIntro } from "@/components/ui/PageIntro"
+import { lerenContent } from "@/config/content"
+
+const c = lerenContent
 
 interface GemeenteNieuwsItem {
   id: string
@@ -64,20 +67,20 @@ export default function LerenPage() {
     const loadCategories = async () => {
       try {
         const res = await fetch("/api/content/categorieen?type=LEREN")
-        if (!res.ok) throw new Error("Fout bij laden van categorieën")
+        if (!res.ok) throw new Error(c.foutLadenCategorieen)
 
         const data = await res.json()
-        const mapped: LerenCategorie[] = (data.categorieen || []).map((c: { slug: string; naam: string; beschrijving: string; emoji: string }) => ({
-          id: c.slug,
-          title: c.naam,
-          description: c.beschrijving,
-          emoji: c.emoji,
-          href: `/leren/${c.slug}`,
+        const mapped: LerenCategorie[] = (data.categorieen || []).map((cat: { slug: string; naam: string; beschrijving: string; emoji: string }) => ({
+          id: cat.slug,
+          title: cat.naam,
+          description: cat.beschrijving,
+          emoji: cat.emoji,
+          href: `/leren/${cat.slug}`,
         }))
         setCategories(mapped)
       } catch (error) {
         console.error("Error loading categories:", error)
-        setContentError("Er ging iets mis bij het laden van categorieën.")
+        setContentError(c.foutLadenCategorieenBeschrijving)
       } finally {
         setContentLoading(false)
       }
@@ -100,7 +103,7 @@ export default function LerenPage() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              items: categories.map(c => ({ type: "INFORMATIE", itemId: c.id })),
+              items: categories.map(cat => ({ type: "INFORMATIE", itemId: cat.id })),
             }),
           }).catch(() => null),
           // Lichtgewicht gemeente endpoint (ipv zwaar /api/dashboard)
@@ -213,7 +216,7 @@ export default function LerenPage() {
       <div className="ker-page-content flex items-center justify-center min-h-[50vh]">
         <div className="text-center">
           <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Laden...</p>
+          <p className="text-muted-foreground">{c.laden}</p>
         </div>
       </div>
     )
@@ -223,13 +226,13 @@ export default function LerenPage() {
     return (
       <div className="ker-page-content flex items-center justify-center min-h-[50vh]">
         <div className="text-center max-w-md mx-auto px-4">
-          <p className="text-foreground font-medium mb-2">Er ging iets mis</p>
+          <p className="text-foreground font-medium mb-2">{c.fout}</p>
           <p className="text-muted-foreground text-sm mb-4">{contentError}</p>
           <button
             onClick={() => window.location.reload()}
             className="ker-btn ker-btn-primary"
           >
-            Opnieuw proberen
+            {c.opnieuw}
           </button>
         </div>
       </div>
@@ -240,32 +243,32 @@ export default function LerenPage() {
     <div className="ker-page-content pb-24">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
-        <span className="text-3xl">📚</span>
-        <h1 className="text-2xl font-bold">Informatie, tips & hulpmiddelen</h1>
+        <span className="text-3xl">{c.emoji}</span>
+        <h1 className="text-2xl font-bold">{c.title}</h1>
       </div>
 
       {/* C2.1: Introductietekst */}
-      <PageIntro tekst="Hier vind je artikelen en tips die passen bij jouw situatie. Tik op een onderwerp om meer te lezen. Bewaar iets met het hartje." />
+      <PageIntro tekst={c.subtitle} />
 
       {/* Gemeente Nieuws - bovenaan als er nieuws is */}
       <Link
         href="/leren/gemeente-nieuws"
         className="ker-card hover:shadow-md transition-shadow flex items-center gap-4 p-4 mb-4 relative"
       >
-        <span className="text-3xl">🏘️</span>
+        <span className="text-3xl">{c.gemeenteNieuws.emoji}</span>
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-0.5">
-            <h2 className="font-bold text-lg">Nieuws van de gemeente</h2>
+            <h2 className="font-bold text-lg">{c.gemeenteNieuws.title}</h2>
             <span className="text-xs bg-primary-light dark:bg-primary/20 text-primary dark:text-primary/80 px-2.5 py-0.5 rounded-full font-medium">
-              📍 Lokaal
+              {c.gemeenteNieuws.badgeEmoji} {c.gemeenteNieuws.badge}
             </span>
           </div>
           <p className="text-sm text-muted-foreground">
             {gemeenteMantelzorger && gemeenteZorgvrager && gemeenteMantelzorger !== gemeenteZorgvrager
-              ? `Updates uit ${gemeenteMantelzorger} en ${gemeenteZorgvrager}`
+              ? c.gemeenteNieuws.subtitleTwoFn(gemeenteMantelzorger, gemeenteZorgvrager)
               : gemeenteMantelzorger
-                ? `Updates uit ${gemeenteMantelzorger}`
-                : "Nieuws over mantelzorg in jouw gemeente"
+                ? c.gemeenteNieuws.subtitleFn(gemeenteMantelzorger)
+                : c.gemeenteNieuws.beschrijving
             }
           </p>
         </div>
@@ -286,16 +289,16 @@ export default function LerenPage() {
         href="/leren/landelijke-hulp"
         className="ker-card hover:shadow-md transition-shadow flex items-center gap-4 p-4 mb-6 relative"
       >
-        <span className="text-3xl">🌍</span>
+        <span className="text-3xl">{c.landelijk.emoji}</span>
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-0.5">
-            <h2 className="font-bold text-lg">Landelijke hulplijnen</h2>
+            <h2 className="font-bold text-lg">{c.landelijk.title}</h2>
             <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2.5 py-0.5 rounded-full font-medium">
-              🌍 Landelijk
+              {c.landelijk.badgeEmoji} {c.landelijk.badge}
             </span>
           </div>
           <p className="text-sm text-muted-foreground">
-            Hier vind je hulplijnen en informatie voor heel Nederland
+            {c.landelijk.beschrijving}
           </p>
         </div>
         {/* Pijl rechts */}
@@ -332,7 +335,7 @@ export default function LerenPage() {
                 <h2 className="font-bold text-lg">{category.title}</h2>
                 <p className="text-sm text-muted-foreground">{category.description}</p>
                 {aantalArtikelen > 0 && (
-                  <p className="text-sm text-primary mt-1">{aantalArtikelen} artikelen</p>
+                  <p className="text-sm text-primary mt-1">{c.artikelenCountFn(aantalArtikelen)}</p>
                 )}
               </Link>
             </div>

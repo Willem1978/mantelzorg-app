@@ -4,6 +4,9 @@ import { useState, useEffect, useCallback } from "react"
 import { Button, Card, CardContent } from "@/components/ui"
 import { cn } from "@/lib/utils"
 import { eventTypeColors } from "@/config/colors"
+import { agendaContent } from "@/config/content"
+
+const c = agendaContent
 
 interface CalendarEvent {
   id: string
@@ -19,20 +22,20 @@ interface CalendarEvent {
 
 // B1 taalgebruik - korte, simpele woorden
 const eventTypes = [
-  { value: "CARE_TASK", label: "Zorg", icon: "🏥", color: eventTypeColors.CARE_TASK, hint: "Voor de zorg" },
-  { value: "APPOINTMENT", label: "Afspraak", icon: "📅", color: eventTypeColors.APPOINTMENT, hint: "Arts of andere afspraak" },
-  { value: "SELF_CARE", label: "Voor mij", icon: "🧘", color: eventTypeColors.SELF_CARE, hint: "Tijd voor jezelf" },
-  { value: "SOCIAL", label: "Samen", icon: "👥", color: eventTypeColors.SOCIAL, hint: "Met vrienden of familie" },
-  { value: "WORK", label: "Werk", icon: "💼", color: eventTypeColors.WORK, hint: "Werk of studie" },
-  { value: "OTHER", label: "Anders", icon: "📝", color: eventTypeColors.OTHER, hint: "Iets anders" },
+  { value: "CARE_TASK", label: c.eventTypes.CARE_TASK.label, icon: c.eventTypes.CARE_TASK.icon, color: eventTypeColors.CARE_TASK, hint: c.eventTypes.CARE_TASK.hint },
+  { value: "APPOINTMENT", label: c.eventTypes.APPOINTMENT.label, icon: c.eventTypes.APPOINTMENT.icon, color: eventTypeColors.APPOINTMENT, hint: c.eventTypes.APPOINTMENT.hint },
+  { value: "SELF_CARE", label: c.eventTypes.SELF_CARE.label, icon: c.eventTypes.SELF_CARE.icon, color: eventTypeColors.SELF_CARE, hint: c.eventTypes.SELF_CARE.hint },
+  { value: "SOCIAL", label: c.eventTypes.SOCIAL.label, icon: c.eventTypes.SOCIAL.icon, color: eventTypeColors.SOCIAL, hint: c.eventTypes.SOCIAL.hint },
+  { value: "WORK", label: c.eventTypes.WORK.label, icon: c.eventTypes.WORK.icon, color: eventTypeColors.WORK, hint: c.eventTypes.WORK.hint },
+  { value: "OTHER", label: c.eventTypes.OTHER.label, icon: c.eventTypes.OTHER.icon, color: eventTypeColors.OTHER, hint: c.eventTypes.OTHER.hint },
 ]
 
 const reminderOptions = [
-  { value: 0, label: "Geen" },
-  { value: 15, label: "15 min van tevoren" },
-  { value: 30, label: "30 min van tevoren" },
-  { value: 60, label: "1 uur van tevoren" },
-  { value: 1440, label: "1 dag van tevoren" },
+  { value: 0, label: c.reminderOptions.none },
+  { value: 15, label: c.reminderOptions.min15 },
+  { value: 30, label: c.reminderOptions.min30 },
+  { value: 60, label: c.reminderOptions.hour1 },
+  { value: 1440, label: c.reminderOptions.day1 },
 ]
 
 export default function AgendaPage() {
@@ -167,9 +170,9 @@ export default function AgendaPage() {
       {/* Header - B1 taalgebruik */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Mijn Agenda</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">{c.title}</h1>
           <p className="text-muted-foreground text-sm sm:text-base mt-1">
-            Hier zie je wat je moet doen.
+            {c.subtitle}
           </p>
         </div>
         <Button
@@ -183,7 +186,7 @@ export default function AgendaPage() {
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
-          Iets toevoegen
+          {c.addButton}
         </Button>
       </div>
 
@@ -226,7 +229,7 @@ export default function AgendaPage() {
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* Header met sluiten knop */}
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-lg text-foreground">Nieuw in agenda</h3>
+                  <h3 className="font-bold text-lg text-foreground">{c.form.title}</h3>
                   <button
                     type="button"
                     onClick={() => { resetForm(); setShowForm(false) }}
@@ -241,7 +244,7 @@ export default function AgendaPage() {
                 {/* Stap 1: Waar gaat het over */}
                 <div>
                   <label className="block text-base font-medium text-foreground mb-3">
-                    1. Waar gaat het over?
+                    {c.form.stap1}
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {eventTypes.map((type) => (
@@ -267,13 +270,13 @@ export default function AgendaPage() {
                 {/* Stap 2: Wat */}
                 <div>
                   <label className="block text-base font-medium text-foreground mb-2">
-                    2. Wat moet je doen?
+                    {c.form.stap2}
                   </label>
                   <input
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Bijvoorbeeld: Naar de dokter"
+                    placeholder={c.form.stap2Placeholder}
                     className="w-full px-4 py-3 rounded-xl border border-input bg-background text-foreground text-base focus:outline-none focus:ring-2 focus:ring-ring"
                     required
                   />
@@ -282,7 +285,7 @@ export default function AgendaPage() {
                 {/* Stap 3: Wanneer */}
                 <div>
                   <label className="block text-base font-medium text-foreground mb-2">
-                    3. Wanneer?
+                    {c.form.stap3}
                   </label>
 
                   {/* Hele dag toggle - eerst tonen */}
@@ -293,12 +296,12 @@ export default function AgendaPage() {
                       onChange={(e) => setIsAllDay(e.target.checked)}
                       className="w-5 h-5 rounded border-input text-primary focus:ring-ring"
                     />
-                    <span className="text-foreground">De hele dag</span>
+                    <span className="text-foreground">{c.form.heleDag}</span>
                   </label>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-sm text-muted-foreground mb-1">Datum</label>
+                      <label className="block text-sm text-muted-foreground mb-1">{c.form.datum}</label>
                       <input
                         type="date"
                         value={startDate}
@@ -309,7 +312,7 @@ export default function AgendaPage() {
                     </div>
                     {!isAllDay && (
                       <div>
-                        <label className="block text-sm text-muted-foreground mb-1">Van - tot</label>
+                        <label className="block text-sm text-muted-foreground mb-1">{c.form.vanTot}</label>
                         <div className="flex gap-2 items-center">
                           <input
                             type="time"
@@ -333,32 +336,32 @@ export default function AgendaPage() {
 
                 {/* Stap 4: Extra (optioneel) */}
                 <div className="space-y-3">
-                  <p className="text-base font-medium text-foreground">4. Extra (niet verplicht)</p>
+                  <p className="text-base font-medium text-foreground">{c.form.stap4}</p>
 
                   <div>
-                    <label className="block text-sm text-muted-foreground mb-1">Waar?</label>
+                    <label className="block text-sm text-muted-foreground mb-1">{c.form.locatie}</label>
                     <input
                       type="text"
                       value={location}
                       onChange={(e) => setLocation(e.target.value)}
-                      placeholder="Bijvoorbeeld: Bij de huisarts"
+                      placeholder={c.form.locatiePlaceholder}
                       className="w-full px-4 py-3 rounded-xl border border-input bg-background text-foreground text-base focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm text-muted-foreground mb-1">Notitie</label>
+                    <label className="block text-sm text-muted-foreground mb-1">{c.form.notitie}</label>
                     <textarea
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Wat moet je niet vergeten?"
+                      placeholder={c.form.notitiePlaceholder}
                       rows={2}
                       className="w-full px-4 py-3 rounded-xl border border-input bg-background text-foreground text-base focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm text-muted-foreground mb-1">Herinnering</label>
+                    <label className="block text-sm text-muted-foreground mb-1">{c.form.herinnering}</label>
                     <select
                       value={reminder}
                       onChange={(e) => setReminder(Number(e.target.value))}
@@ -382,7 +385,7 @@ export default function AgendaPage() {
                     className="flex-1"
                     size="lg"
                   >
-                    Stop
+                    {c.form.stopButton}
                   </Button>
                   <Button
                     type="submit"
@@ -391,7 +394,7 @@ export default function AgendaPage() {
                     className="flex-1"
                     size="lg"
                   >
-                    Opslaan
+                    {c.form.opslaanButton}
                   </Button>
                 </div>
               </form>
@@ -403,17 +406,17 @@ export default function AgendaPage() {
       {/* Lijst met items - B1 taalgebruik */}
       {isLoading ? (
         <div className="text-center py-12 text-muted-foreground">
-          Even laden...
+          {c.laden}
         </div>
       ) : events.length === 0 ? (
         <Card>
           <CardContent className="py-10 sm:py-12 text-center px-4">
             <span className="text-5xl sm:text-6xl mb-4 block">📅</span>
             <h3 className="text-lg font-semibold text-foreground mb-2">
-              Je agenda is leeg
+              {c.leeg.title}
             </h3>
             <p className="text-muted-foreground mb-6 text-sm sm:text-base">
-              Voeg toe wat je moet doen.
+              {c.leeg.subtitle}
             </p>
             <Button
               size="lg"
@@ -422,7 +425,7 @@ export default function AgendaPage() {
                 setShowForm(true)
               }}
             >
-              Iets toevoegen
+              {c.addButton}
             </Button>
           </CardContent>
         </Card>
@@ -453,7 +456,7 @@ export default function AgendaPage() {
                               </h4>
                               <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                                 {event.isAllDay ? (
-                                  <span>Hele dag</span>
+                                  <span>{c.heleDag}</span>
                                 ) : (
                                   <span>
                                     {formatTime(event.startTime)}

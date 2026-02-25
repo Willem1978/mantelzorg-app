@@ -2,18 +2,28 @@
 
 import { useState } from "react"
 import { cn } from "@/lib/utils"
+import { dashboardContent } from "@/config/content"
+
+const c = dashboardContent.checkIn
 
 interface QuickCheckInProps {
   onSubmit?: (feeling: string) => void
 }
 
-const feelings = [
-  { value: "great", label: "Super", emoji: "happy", color: "bg-green-400 hover:bg-green-500" },
-  { value: "good", label: "Goed", emoji: "happy", color: "bg-green-300 hover:bg-green-400" },
-  { value: "okay", label: "Oké", emoji: "neutral", color: "bg-yellow-400 hover:bg-yellow-500" },
-  { value: "tired", label: "Moe", emoji: "neutral", color: "bg-yellow-300 hover:bg-yellow-400" },
-  { value: "struggling", label: "Zwaar", emoji: "sad", color: "bg-red-400 hover:bg-red-500" },
+const emojiTypes = ["happy", "happy", "neutral", "neutral", "sad"] as const
+const colorClasses = [
+  "bg-green-400 hover:bg-green-500",
+  "bg-green-300 hover:bg-green-400",
+  "bg-yellow-400 hover:bg-yellow-500",
+  "bg-yellow-300 hover:bg-yellow-400",
+  "bg-red-400 hover:bg-red-500",
 ]
+
+const feelings = c.feelings.map((f, i) => ({
+  ...f,
+  emoji: emojiTypes[i],
+  color: colorClasses[i],
+}))
 
 const EmoticonHappy = () => (
   <svg viewBox="0 0 100 100" className="w-full h-full">
@@ -76,8 +86,8 @@ export function QuickCheckIn({ onSubmit }: QuickCheckInProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <p className="font-medium text-gray-900">Bedankt!</p>
-          <p className="text-sm text-gray-500 mt-1">Je gevoel is opgeslagen</p>
+          <p className="font-medium text-gray-900">{c.bedankt}</p>
+          <p className="text-sm text-gray-500 mt-1">{c.opgeslagen}</p>
         </div>
       </div>
     )
@@ -85,8 +95,8 @@ export function QuickCheckIn({ onSubmit }: QuickCheckInProps) {
 
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-      <h2 className="text-lg font-semibold text-gray-900 mb-2">Hoe voel je je nu?</h2>
-      <p className="text-sm text-gray-500 mb-4">Een snelle check-in voor vandaag</p>
+      <h2 className="text-lg font-semibold text-gray-900 mb-2">{c.title}</h2>
+      <p className="text-sm text-gray-500 mb-4">{c.subtitle}</p>
 
       <div className="flex justify-between gap-2">
         {feelings.map((feeling) => (

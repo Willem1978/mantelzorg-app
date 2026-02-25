@@ -6,6 +6,9 @@ import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { FavorietButton } from "@/components/FavorietButton"
 import { ContentModal } from "@/components/ui/ContentModal"
+import { hulpvragenContent } from "@/config/content"
+
+const c = hulpvragenContent
 
 // Genereer stabiel itemId voor hulporganisaties
 function slugify(text: string): string {
@@ -168,7 +171,7 @@ function HulpPageContent() {
         ])
 
         if (!zorgvragerRes.ok || !mantelzorgerRes.ok || !hulpvraagRes.ok || !mappingsRes.ok) {
-          throw new Error("Fout bij laden van content")
+          throw new Error(c.errors.contentLaden)
         }
 
         const zorgvragerData = await zorgvragerRes.json()
@@ -219,7 +222,7 @@ function HulpPageContent() {
         setTaakNaarCategorie(mappedTaakCategorie)
       } catch (error) {
         console.error("Error loading content:", error)
-        setContentError("Er ging iets mis bij het laden van categorieën.")
+        setContentError(c.errors.categorieFout)
       } finally {
         setContentLoading(false)
       }
@@ -413,13 +416,13 @@ function HulpPageContent() {
     return (
       <div className="ker-page-content flex items-center justify-center min-h-[50vh]">
         <div className="text-center max-w-md mx-auto px-4">
-          <p className="text-foreground font-medium mb-2">Er ging iets mis bij het laden</p>
-          <p className="text-muted-foreground text-sm mb-4">Probeer het opnieuw. Werkt het nog steeds niet? Neem dan contact met ons op.</p>
+          <p className="text-foreground font-medium mb-2">{c.errors.ladenTitle}</p>
+          <p className="text-muted-foreground text-sm mb-4">{c.errors.ladenSubtitle}</p>
           <button
             onClick={() => window.location.reload()}
             className="ker-btn ker-btn-primary"
           >
-            Opnieuw proberen
+            {c.errors.opnieuwProberen}
           </button>
         </div>
       </div>
@@ -513,14 +516,13 @@ function HulpPageContent() {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Terug
+            {c.terug}
           </button>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <span className="text-3xl">📝</span> Mijn vragen
+            <span className="text-3xl">📝</span> {c.mijnVragen.title}
           </h1>
           <p className="text-muted-foreground mt-2">
-            Hier zie je de vragen die je hebt gesteld. Wij zoeken hulp voor je en
-            laten je weten als er een antwoord is.
+            {c.mijnVragen.beschrijving}
           </p>
         </div>
 
@@ -531,22 +533,22 @@ function HulpPageContent() {
               onClick={() => setShowHulpvraagForm(true)}
               className="w-full py-4 border-2 border-dashed border-primary/30 rounded-xl text-primary font-medium hover:border-primary hover:bg-primary/5 transition-all"
             >
-              + Nieuwe vraag stellen
+              {c.mijnVragen.nieuweVraag}
             </button>
           )}
 
           {/* Hulpvraag formulier */}
           {showHulpvraagForm && (
             <div className="ker-card">
-              <h3 className="font-semibold text-foreground mb-2">Nieuwe hulpvraag</h3>
+              <h3 className="font-semibold text-foreground mb-2">{c.nieuweHulpvraag.title}</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Vertel ons waar je hulp bij nodig hebt. Wij zoeken dan iemand die je kan helpen.
+                {c.nieuweHulpvraag.beschrijving}
               </p>
               <form onSubmit={handleSubmitHulpvraag} className="space-y-4">
                 {/* Categorie */}
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    Waar gaat het over?
+                    {c.nieuweHulpvraag.onderwerp}
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     {hulpvraagCategories.map((cat) => (
@@ -571,13 +573,13 @@ function HulpPageContent() {
                 {/* Titel */}
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    Korte vraag
+                    {c.nieuweHulpvraag.korteVraag}
                   </label>
                   <input
                     type="text"
                     value={formTitle}
                     onChange={(e) => setFormTitle(e.target.value)}
-                    placeholder="Bijv: Ik zoek hulp bij boodschappen"
+                    placeholder={c.nieuweHulpvraag.korteVraagPlaceholder}
                     className="ker-input"
                     required
                   />
@@ -586,12 +588,12 @@ function HulpPageContent() {
                 {/* Beschrijving */}
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    Meer uitleg
+                    {c.nieuweHulpvraag.meerUitleg}
                   </label>
                   <textarea
                     value={formDescription}
                     onChange={(e) => setFormDescription(e.target.value)}
-                    placeholder="Vertel meer over wat je nodig hebt..."
+                    placeholder={c.nieuweHulpvraag.meerUitlegPlaceholder}
                     rows={3}
                     className="ker-input"
                     required
@@ -605,14 +607,14 @@ function HulpPageContent() {
                     onClick={() => setShowHulpvraagForm(false)}
                     className="ker-btn ker-btn-secondary flex-1"
                   >
-                    Annuleren
+                    {c.nieuweHulpvraag.annuleren}
                   </button>
                   <button
                     type="submit"
                     disabled={!formCategory || !formTitle || !formDescription || isSubmitting}
                     className="ker-btn ker-btn-primary flex-1"
                   >
-                    {isSubmitting ? 'Versturen...' : 'Verstuur'}
+                    {isSubmitting ? c.nieuweHulpvraag.bezig : c.nieuweHulpvraag.verstuur}
                   </button>
                 </div>
               </form>
@@ -623,7 +625,7 @@ function HulpPageContent() {
           {helpRequests.length === 0 && !showHulpvraagForm ? (
             <div className="text-center py-12">
               <span className="text-5xl">📝</span>
-              <p className="text-muted-foreground mt-4">Nog geen vragen gesteld</p>
+              <p className="text-muted-foreground mt-4">{c.geenVragen}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -642,9 +644,9 @@ function HulpPageContent() {
                             request.status === 'OPEN' && "bg-yellow-100 text-yellow-700",
                             request.status === 'RESOLVED' && "bg-gray-100 text-gray-600"
                           )}>
-                            {request.status === 'RESPONDED' && 'Antwoord'}
-                            {request.status === 'OPEN' && 'Nieuw'}
-                            {request.status === 'RESOLVED' && 'Afgerond'}
+                            {request.status === 'RESPONDED' && c.status.antwoord}
+                            {request.status === 'OPEN' && c.status.nieuw}
+                            {request.status === 'RESOLVED' && c.status.afgerond}
                           </span>
                         </div>
                         <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
@@ -652,7 +654,7 @@ function HulpPageContent() {
                         </p>
                         {request.response && (
                           <div className="mt-3 p-3 bg-green-50 rounded-lg">
-                            <p className="text-xs font-medium text-green-700 mb-1">Antwoord:</p>
+                            <p className="text-xs font-medium text-green-700 mb-1">{c.status.antwoordLabel}</p>
                             <p className="text-sm text-green-800">{request.response}</p>
                           </div>
                         )}
@@ -673,13 +675,13 @@ function HulpPageContent() {
       {/* Header - compact */}
       <div className="mb-4">
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          <span className="text-3xl">💜</span> Hulp vinden en regelen
+          <span className="text-3xl">{c.tabs.voorJou.emoji}</span> {c.title}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Kies hieronder voor wie je hulp zoekt. Tik op het <span className="text-primary font-semibold">hartje</span> om iets te bewaren.
+          {c.subtitlePrefix}<span className="text-primary font-semibold">{c.subtitleHartje}</span>{c.subtitleSuffix}
           {hulpData?.testNiveau && (
             <span>
-              {' '}De hulp is afgestemd op jouw situatie ({hulpData.testNiveau === "LAAG" ? "lage" : hulpData.testNiveau === "GEMIDDELD" ? "gemiddelde" : "hoge"} belasting).
+              {' '}{c.belastingInfo(c.belastingNiveaus[hulpData.testNiveau] || hulpData.testNiveau)}
             </span>
           )}
         </p>
@@ -707,8 +709,8 @@ function HulpPageContent() {
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
               )}
             >
-              <span className="text-lg block mb-1">💜</span>
-              Voor jou
+              <span className="text-lg block mb-1">{c.tabs.voorJou.emoji}</span>
+              {c.tabs.voorJou.label}
               {aantalVoorJou > 0 && (
                 <span className={cn(
                   "absolute -top-1 -right-1 w-5 h-5 text-xs font-bold rounded-full flex items-center justify-center",
@@ -729,8 +731,8 @@ function HulpPageContent() {
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
               )}
             >
-              <span className="text-lg block mb-1">💝</span>
-              Voor naaste
+              <span className="text-lg block mb-1">{c.tabs.voorNaaste.emoji}</span>
+              {c.tabs.voorNaaste.label}
               {aantalZwareTaken > 0 && (
                 <span className={cn(
                   "absolute -top-1 -right-1 w-5 h-5 text-xs font-bold rounded-full flex items-center justify-center",
@@ -756,8 +758,7 @@ function HulpPageContent() {
             <>
               <div className="bg-primary/10 rounded-xl p-4 mb-2">
                 <p className="text-sm text-foreground">
-                  <span className="font-medium">💜 Hulp voor jou als mantelzorger.</span> Mantelzorgen is zwaar werk.
-                  Ook je hebt soms hulp nodig. Hier vind je organisaties die je kunnen helpen.
+                  <span className="font-medium">{c.tabs.voorJou.introTitle}</span> {c.tabs.voorJou.beschrijving}
                 </p>
               </div>
               {locatieMantelzorger ? (
@@ -766,7 +767,7 @@ function HulpPageContent() {
                 </p>
               ) : (
                 <Link href="/profiel" className="text-sm text-primary hover:underline flex items-center gap-1">
-                  📍 Vul je woonplaats in voor lokale hulp →
+                  📍 {c.locatie.vulWoonplaatsIn}
                 </Link>
               )}
 
@@ -786,7 +787,7 @@ function HulpPageContent() {
                       <p className="font-bold text-sm">{cat.kort}</p>
                       {aantalHulp > 0 && (
                         <p className="text-xs mt-0.5 text-primary">
-                          {aantalHulp} hulpbron{aantalHulp > 1 ? 'nen' : ''}
+                          {c.hulpbronnenCount(aantalHulp)}
                         </p>
                       )}
                     </button>
@@ -832,14 +833,14 @@ function HulpPageContent() {
                     onClick={handleBackToCategories}
                     className="text-primary hover:underline font-medium"
                   >
-                    Hulp
+                    {c.breadcrumb.hulp}
                   </button>
                   <span className="text-muted-foreground">&rsaquo;</span>
                   <button
                     onClick={handleBackToCategories}
                     className="text-primary hover:underline font-medium"
                   >
-                    Voor jou
+                    {c.tabs.voorJou.label}
                   </button>
                   <span className="text-muted-foreground">&rsaquo;</span>
                   <span className="text-muted-foreground">{catInfo?.kort || selectedCategorie}</span>
@@ -862,7 +863,7 @@ function HulpPageContent() {
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
-                    Lokaal
+                    {c.filters.lokaal}
                     <span className={cn(
                       "w-5 h-5 rounded-full text-xs flex items-center justify-center",
                       bereikFilter === 'lokaal'
@@ -881,7 +882,7 @@ function HulpPageContent() {
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
-                    Alles
+                    {c.filters.alles}
                     <span className={cn(
                       "w-5 h-5 rounded-full text-xs flex items-center justify-center",
                       bereikFilter === 'alle'
@@ -897,11 +898,11 @@ function HulpPageContent() {
                 {!heeftHulp ? (
                   <div className="text-center py-8 ker-card">
                     <span className="text-3xl block mb-2">🔍</span>
-                    <p className="text-foreground font-medium">Geen hulpbronnen gevonden</p>
+                    <p className="text-foreground font-medium">{c.leeg.title}</p>
                     <p className="text-sm text-muted-foreground mt-1">
                       {locatieMantelzorger
-                        ? `Er zijn nog geen hulpbronnen voor deze categorie bij ${locatieMantelzorger}.`
-                        : "Vul je woonplaats in bij je profiel zodat we lokale hulp kunnen tonen."}
+                        ? c.leeg.metLocatie(locatieMantelzorger)
+                        : c.leeg.zonderLocatieMantelzorger}
                     </p>
                   </div>
                 ) : (
@@ -910,7 +911,7 @@ function HulpPageContent() {
                     {toonLokaal && (
                       <div className="space-y-2">
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                          In je buurt
+                          {c.filters.inJeBuurt}
                           {locatieMantelzorger && (
                             <span> 📍 {locatieMantelzorger}</span>
                           )}
@@ -925,7 +926,7 @@ function HulpPageContent() {
                     {toonLandelijk && (
                       <div className="space-y-2">
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                          Landelijk beschikbaar
+                          {c.filters.landelijkBeschikbaar}
                         </p>
                         {uniekeLandelijk.map((hulp, i) => (
                           <LandelijkeHulpCard key={`landelijk-${i}`} hulp={hulp} favorieten={favorieten} categorie={selectedCategorie || undefined} />
@@ -948,10 +949,9 @@ function HulpPageContent() {
             <>
               <div className="bg-[var(--accent-amber-bg)] rounded-xl p-4 mb-2">
                 <p className="text-sm text-foreground">
-                  <span className="font-medium">💝 Hulp voor je naaste.</span> Hier vind je hulp voor de taken
-                  die je voor je naaste doet.
+                  <span className="font-medium">{c.tabs.voorNaaste.introTitle}</span> {c.tabs.voorNaaste.beschrijving}
                   {hulpData?.zwareTaken && hulpData.zwareTaken.length > 0
-                    ? " De kleuren laten zien hoe zwaar een taak voor jou is."
+                    ? c.tabs.voorNaaste.zwareTakenHint
                     : ""}
                 </p>
               </div>
@@ -962,8 +962,8 @@ function HulpPageContent() {
                 >
                   <span className="text-2xl">📊</span>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground">Doe de balanstest</p>
-                    <p className="text-xs text-muted-foreground">Dan kleuren we de tegels op basis van wat je zwaar vindt.</p>
+                    <p className="text-sm font-medium text-foreground">{c.balanstest.doe}</p>
+                    <p className="text-xs text-muted-foreground">{c.balanstest.uitleg}</p>
                   </div>
                   <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -976,7 +976,7 @@ function HulpPageContent() {
                 </p>
               ) : (
                 <Link href="/profiel" className="text-sm text-primary hover:underline flex items-center gap-1">
-                  📍 Vul de woonplaats van je naaste in voor lokale hulp →
+                  📍 {c.locatie.vulNaasteWoonplaatsIn}
                 </Link>
               )}
 
@@ -1014,9 +1014,7 @@ function HulpPageContent() {
                                   taakStatus === 'gemiddeld' && "bg-[var(--accent-amber)]/15 text-[var(--accent-amber)]",
                                   taakStatus === 'licht' && "bg-[var(--accent-green)]/15 text-[var(--accent-green)]",
                                 )}>
-                                  {taakStatus === 'zwaar' && 'Zwaar'}
-                                  {taakStatus === 'gemiddeld' && 'Matig'}
-                                  {taakStatus === 'licht' && 'Goed'}
+                                  {c.taakStatus[taakStatus]}
                                 </span>
                               </div>
                             )}
@@ -1024,7 +1022,7 @@ function HulpPageContent() {
                             <p className="font-bold text-sm">{cat.kort}</p>
                             {aantalHulp > 0 && (
                               <p className="text-xs mt-0.5 text-primary">
-                                {aantalHulp} hulpbron{aantalHulp > 1 ? 'nen' : ''}
+                                {c.hulpbronnenCount(aantalHulp)}
                               </p>
                             )}
                           </button>
@@ -1057,14 +1055,14 @@ function HulpPageContent() {
                     onClick={handleBackToCategories}
                     className="text-primary hover:underline font-medium"
                   >
-                    Hulp
+                    {c.breadcrumb.hulp}
                   </button>
                   <span className="text-muted-foreground">&rsaquo;</span>
                   <button
                     onClick={handleBackToCategories}
                     className="text-primary hover:underline font-medium"
                   >
-                    Voor naaste
+                    {c.tabs.voorNaaste.label}
                   </button>
                   <span className="text-muted-foreground">&rsaquo;</span>
                   <span className="text-muted-foreground">{catInfo?.kort || selectedCategorie}</span>
@@ -1081,9 +1079,7 @@ function HulpPageContent() {
                       taakStatus === 'gemiddeld' && "bg-[var(--accent-amber)]/15 text-[var(--accent-amber)]",
                       taakStatus === 'licht' && "bg-[var(--accent-green)]/15 text-[var(--accent-green)]",
                     )}>
-                      {taakStatus === 'zwaar' && 'Zwaar'}
-                      {taakStatus === 'gemiddeld' && 'Matig'}
-                      {taakStatus === 'licht' && 'Goed'}
+                      {c.taakStatus[taakStatus]}
                     </span>
                   )}
                 </div>
@@ -1099,7 +1095,7 @@ function HulpPageContent() {
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
-                    Lokaal
+                    {c.filters.lokaal}
                     <span className={cn(
                       "w-5 h-5 rounded-full text-xs flex items-center justify-center",
                       bereikFilter === 'lokaal'
@@ -1118,7 +1114,7 @@ function HulpPageContent() {
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
-                    Alles
+                    {c.filters.alles}
                     <span className={cn(
                       "w-5 h-5 rounded-full text-xs flex items-center justify-center",
                       bereikFilter === 'alle'
@@ -1134,11 +1130,11 @@ function HulpPageContent() {
                 {!heeftHulp ? (
                   <div className="text-center py-8 ker-card">
                     <span className="text-3xl block mb-2">🔍</span>
-                    <p className="text-foreground font-medium">Geen hulpbronnen gevonden</p>
+                    <p className="text-foreground font-medium">{c.leeg.title}</p>
                     <p className="text-sm text-muted-foreground mt-1">
                       {locatieZorgvrager
-                        ? `Er zijn nog geen hulpbronnen voor deze categorie bij ${locatieZorgvrager}.`
-                        : "Vul de woonplaats van je naaste in bij je profiel zodat we lokale hulp kunnen tonen."}
+                        ? c.leeg.metLocatie(locatieZorgvrager)
+                        : c.leeg.zonderLocatieNaaste}
                     </p>
                   </div>
                 ) : (
@@ -1148,7 +1144,7 @@ function HulpPageContent() {
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                            In de buurt van je naaste
+                            {c.filters.inBuurtNaaste}
                             {locatieZorgvrager && (
                               <span> 📍 {locatieZorgvrager}</span>
                             )}
@@ -1164,7 +1160,7 @@ function HulpPageContent() {
                     {toonLandelijk && (
                       <div className="space-y-2">
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                          Landelijk beschikbaar
+                          {c.filters.landelijkBeschikbaar}
                         </p>
                         {landelijkeHulp.map((hulp, i) => (
                           <HulpbronCard key={`landelijk-${i}`} hulp={hulp} favorieten={favorieten} categorie={selectedCategorie || undefined} />
@@ -1188,8 +1184,8 @@ function HulpPageContent() {
           <div className="flex items-center gap-3">
             <span className="text-2xl">🤝</span>
             <div className="flex-1 text-left">
-              <h3 className="font-semibold text-foreground text-sm">Hulp van een vrijwilliger?</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">Een MantelBuddy helpt met kleine taken bij jou in de buurt</p>
+              <h3 className="font-semibold text-foreground text-sm">{c.buddy.title}</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">{c.buddy.beschrijving}</p>
             </div>
             <svg className="w-4 h-4 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -1248,7 +1244,7 @@ function HulpbronCard({ hulp, favorieten, categorie }: {
           {/* Organisatie + gemeente */}
           {hulp.isLandelijk ? (
             <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full font-medium">
-              🌍 Landelijk
+              🌍 {c.kaart.landelijk}
             </span>
           ) : hulp.gemeente && (
             <span className="text-xs bg-primary-light dark:bg-primary/20 text-primary dark:text-primary/80 px-2 py-0.5 rounded-full font-medium">
@@ -1260,7 +1256,7 @@ function HulpbronCard({ hulp, favorieten, categorie }: {
               {hulp.kosten}
             </span>
           )}
-          <span className="text-xs text-primary font-medium ml-auto">Meer info →</span>
+          <span className="text-xs text-primary font-medium ml-auto">{c.kaart.meerInfo}</span>
         </div>
       </div>
 
@@ -1316,7 +1312,7 @@ function LandelijkeHulpCard({ hulp, favorieten, categorie }: {
               itemId={itemId}
               titel={hulp.naam}
               beschrijving={hulp.beschrijving || undefined}
-              categorie={categorie || "Landelijk"}
+              categorie={categorie || c.kaart.landelijk}
               url={hulp.website || undefined}
               telefoon={hulp.telefoon || undefined}
               icon="🌍"
@@ -1328,14 +1324,14 @@ function LandelijkeHulpCard({ hulp, favorieten, categorie }: {
         </div>
         <div className="flex items-center gap-2 mt-2 flex-wrap">
           <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full font-medium">
-            🌍 {hulp.dienst ? hulp.naam : 'Landelijk'}
+            🌍 {hulp.dienst ? hulp.naam : c.kaart.landelijk}
           </span>
           {hulp.kosten && (
             <span className="text-xs text-muted-foreground">
               {hulp.kosten}
             </span>
           )}
-          <span className="text-xs text-primary font-medium ml-auto">Meer info →</span>
+          <span className="text-xs text-primary font-medium ml-auto">{c.kaart.meerInfo}</span>
         </div>
       </div>
 
