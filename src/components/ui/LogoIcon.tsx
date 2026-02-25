@@ -1,11 +1,62 @@
+"use client"
+
 import { branding } from "@/config/branding"
+import { useEffect, useState } from "react"
 
 interface LogoIconProps {
   size?: number
   className?: string
 }
 
+// Module-level cache: slechts 1 fetch voor alle LogoIcon instanties
+let cachedLogo: string | null | undefined = undefined
+let fetchPromise: Promise<string | null> | null = null
+
+function fetchCustomLogo(): Promise<string | null> {
+  if (!fetchPromise) {
+    fetchPromise = fetch("/api/site-settings")
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((data: Record<string, string>) => {
+        const logo = data["branding.logo"] || null
+        cachedLogo = logo
+        return logo
+      })
+      .catch(() => {
+        cachedLogo = null
+        return null
+      })
+  }
+  return fetchPromise
+}
+
 export function LogoIcon({ size = 32, className }: LogoIconProps) {
+  const [customLogo, setCustomLogo] = useState<string | null>(
+    cachedLogo !== undefined ? cachedLogo : null
+  )
+
+  useEffect(() => {
+    if (cachedLogo !== undefined) {
+      setCustomLogo(cachedLogo)
+      return
+    }
+    fetchCustomLogo().then(setCustomLogo)
+  }, [])
+
+  // Custom logo geupload via beheer → toon als <img>
+  if (customLogo) {
+    return (
+      <img
+        src={customLogo}
+        alt={branding.appName}
+        width={size}
+        height={size}
+        className={className}
+        style={{ objectFit: "contain" }}
+      />
+    )
+  }
+
+  // Fallback: standaard SVG logo
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
