@@ -1012,6 +1012,7 @@ enum OptieGroep {
   ZORGDUUR               // <1 jaar, 1-3 jaar, etc.
   UREN_BALANSTEST        // Uren opties voor balanstest (0-2, 2-4, etc.)
   BUDDY_HULPVORM         // gesprek, boodschappen, vervoer, etc.
+  BUDDY_BESCHIKBAARHEID  // eenmalig, vast, beide
   CHECKIN_HULP           // Hulp opties bij check-in vraag
 }
 

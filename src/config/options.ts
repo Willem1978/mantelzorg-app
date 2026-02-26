@@ -327,6 +327,7 @@ export const FORMULIER_OPTIES_TABS = [
   { label: "Zorgduur", value: "ZORGDUUR" },
   { label: "Uren balanstest", value: "UREN_BALANSTEST" },
   { label: "Buddy hulpvorm", value: "BUDDY_HULPVORM" },
+  { label: "Buddy beschikbaarheid", value: "BUDDY_BESCHIKBAARHEID" },
   { label: "Check-in hulp", value: "CHECKIN_HULP" },
 ] as const
 

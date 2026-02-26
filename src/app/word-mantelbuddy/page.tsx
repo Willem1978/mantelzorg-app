@@ -1,11 +1,18 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { searchGemeenten } from "@/lib/pdok"
 import { LogoIcon } from "@/components/ui"
 import { volunteerContent as c } from "@/config/content"
+
+interface OptieItem {
+  id: string
+  label: string
+  icon?: string
+  beschrijving?: string
+}
 
 export default function WordMantelBuddyPage() {
   const router = useRouter()
@@ -27,6 +34,29 @@ export default function WordMantelBuddyPage() {
   const [gemeenteResults, setGemeenteResults] = useState<string[]>([])
   const [showGemeenteResults, setShowGemeenteResults] = useState(false)
   const [isSearchingGemeente, setIsSearchingGemeente] = useState(false)
+  const [hulpOpties, setHulpOpties] = useState<OptieItem[]>([])
+  const [beschikbaarheidOpties, setBeschikbaarheidOpties] = useState<OptieItem[]>([])
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/content/formulier-opties?groep=BUDDY_HULPVORM").then(r => r.json()),
+      fetch("/api/content/formulier-opties?groep=BUDDY_BESCHIKBAARHEID").then(r => r.json()),
+    ]).then(([hulpRes, beschikRes]) => {
+      if (hulpRes.opties?.length) {
+        setHulpOpties(hulpRes.opties.map((o: any) => ({ id: o.waarde, label: o.label, icon: o.emoji, beschrijving: o.beschrijving })))
+      } else {
+        setHulpOpties(c.hulpOpties.map(o => ({ ...o })))
+      }
+      if (beschikRes.opties?.length) {
+        setBeschikbaarheidOpties(beschikRes.opties.map((o: any) => ({ id: o.waarde, label: o.label, beschrijving: o.beschrijving })))
+      } else {
+        setBeschikbaarheidOpties(c.beschikbaarheidOpties.map(o => ({ ...o })))
+      }
+    }).catch(() => {
+      setHulpOpties(c.hulpOpties.map(o => ({ ...o })))
+      setBeschikbaarheidOpties(c.beschikbaarheidOpties.map(o => ({ ...o })))
+    })
+  }, [])
 
   const handleGemeenteSearch = async (query: string) => {
     setGemeenteQuery(query)
@@ -265,7 +295,7 @@ export default function WordMantelBuddyPage() {
                 <h2 className="font-bold text-foreground mb-4">{c.stap2.hulpTitle}</h2>
 
                 <div className="grid grid-cols-2 gap-3">
-                  {c.hulpOpties.map(optie => (
+                  {hulpOpties.map(optie => (
                     <button
                       key={optie.id}
                       onClick={() => toggleHulpvorm(optie.id)}
@@ -287,7 +317,7 @@ export default function WordMantelBuddyPage() {
                 <h2 className="font-bold text-foreground mb-4">{c.stap2.beschikbaarheidTitle}</h2>
 
                 <div className="space-y-3">
-                  {c.beschikbaarheidOpties.map(optie => (
+                  {beschikbaarheidOpties.map(optie => (
                     <button
                       key={optie.id}
                       onClick={() => setFormData({...formData, beschikbaarheid: optie.id})}
