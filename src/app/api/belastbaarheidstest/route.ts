@@ -5,6 +5,32 @@ import { BALANSTEST_VRAGEN, UREN_MAP, TAAK_NAAR_ONDERDEEL } from "@/config/optio
 
 export const dynamic = 'force-dynamic'
 
+/**
+ * Laad vragen en zorgtaken uit de database.
+ * Fallback naar config als de database leeg is.
+ */
+async function loadVragenEnTaken() {
+  // Laad balanstestvragen uit database
+  const dbVragen = await prisma.balanstestVraag.findMany({
+    where: { type: "BALANSTEST", isActief: true },
+    select: { vraagId: true, vraagTekst: true, gewicht: true },
+  })
+  const vragenMap = new Map(
+    dbVragen.map((v) => [v.vraagId, { vraag: v.vraagTekst, weegfactor: v.gewicht }])
+  )
+
+  // Laad zorgtaken uit database
+  const dbZorgtaken = await prisma.zorgtaak.findMany({
+    where: { isActief: true },
+    select: { taakId: true, naam: true, categorie: true },
+  })
+  const takenMap = new Map(
+    dbZorgtaken.map((t) => [t.taakId, { naam: t.naam, categorie: t.categorie || t.naam }])
+  )
+
+  return { vragenMap, takenMap }
+}
+
 export async function POST(request: Request) {
   try {
     const data = await request.json()
@@ -18,6 +44,9 @@ export async function POST(request: Request) {
       niveau,
       totaleUren,
     } = data
+
+    // Laad vragen en taken uit database (met config fallback)
+    const { vragenMap, takenMap } = await loadVragenEnTaken()
 
     // Bepaal belasting niveau voor database
     let belastingNiveau: "LAAG" | "GEMIDDELD" | "HOOG" = "LAAG"
@@ -51,16 +80,19 @@ export async function POST(request: Request) {
         // Antwoorden opslaan
         antwoorden: {
           create: Object.entries(antwoorden).map(([vraagId, antwoord]) => {
-            // Vind de vraag configuratie
-            const vraagConfig = getVraagConfig(vraagId)
+            // Probeer eerst database, dan config
+            const dbVraag = vragenMap.get(vraagId)
+            const configVraag = BALANSTEST_VRAGEN.find((v) => v.id === vraagId)
+            const vraagTekst = dbVraag?.vraag || configVraag?.vraag || vraagId
+            const gewicht = dbVraag?.weegfactor || configVraag?.weegfactor || 1.0
             const antwoordScore = getAntwoordScore(antwoord as string)
 
             return {
               vraagId,
-              vraagTekst: vraagConfig?.vraag || vraagId,
+              vraagTekst,
               antwoord: antwoord as string,
               score: antwoordScore,
-              gewicht: vraagConfig?.weegfactor || 1.0,
+              gewicht,
             }
           }),
         },
@@ -71,9 +103,13 @@ export async function POST(request: Request) {
             const taak = taakData as {
               isGeselecteerd: boolean
               uren: string
-              belasting: string  // Frontend gebruikt 'belasting' als veldnaam
+              belasting: string
             }
-            const taakConfig = getTaakConfig(taakId)
+
+            // Probeer eerst database, dan config
+            const dbTaak = takenMap.get(taakId)
+            const configOnderdeel = TAAK_NAAR_ONDERDEEL[taakId]
+            const taakNaam = dbTaak?.naam || configOnderdeel || taakId
 
             // Converteer uren string naar getal
             let urenPerWeek: number | null = null
@@ -89,7 +125,7 @@ export async function POST(request: Request) {
 
             return {
               taakId,
-              taakNaam: taakConfig?.naam || taakId,
+              taakNaam,
               isGeselecteerd: taak.isGeselecteerd,
               urenPerWeek,
               moeilijkheid,
@@ -139,17 +175,6 @@ export async function POST(request: Request) {
 }
 
 // Helper functies
-
-function getVraagConfig(vraagId: string) {
-  const vraag = BALANSTEST_VRAGEN.find((v) => v.id === vraagId)
-  return vraag ? { vraag: vraag.vraag, weegfactor: vraag.weegfactor } : undefined
-}
-
-function getTaakConfig(taakId: string) {
-  const onderdeel = TAAK_NAAR_ONDERDEEL[taakId]
-  if (!onderdeel) return undefined
-  return { naam: onderdeel, categorie: onderdeel }
-}
 
 function getAntwoordScore(antwoord: string): number {
   if (antwoord === "ja") return 2
