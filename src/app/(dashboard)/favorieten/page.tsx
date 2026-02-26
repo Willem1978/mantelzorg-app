@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { cn, ensureAbsoluteUrl } from "@/lib/utils"
 import Link from "next/link"
 import { favorietenContent } from "@/config/content"
+import { ContentModal } from "@/components/ui/ContentModal"
 
 const c = favorietenContent
 
@@ -327,6 +328,7 @@ function TabButton({
 }
 
 // Favoriet kaart — gestyled als hulpkaart (zelfde stijl als hulpvragen pagina)
+// INFORMATIE-favorieten openen een modal met het volledige artikel
 function FavorietCard({
   fav,
   onVerwijder,
@@ -337,87 +339,161 @@ function FavorietCard({
   onToggleVoltooid: (id: string, huidigeStatus: boolean) => void
 }) {
   const isVoltooid = fav.isVoltooid
+  const isInformatie = fav.type === "INFORMATIE"
+  const [modalOpen, setModalOpen] = useState(false)
+  const [artikelData, setArtikelData] = useState<{
+    inhoud: string | null
+    bron: string | null
+    emoji: string | null
+  } | null>(null)
+  const [artikelLoading, setArtikelLoading] = useState(false)
+
+  const handleCardClick = async () => {
+    if (!isInformatie) return
+
+    setModalOpen(true)
+
+    // Haal artikel op als dat nog niet is gedaan
+    if (!artikelData && !artikelLoading) {
+      setArtikelLoading(true)
+      try {
+        const res = await fetch(`/api/artikelen/${fav.itemId}`)
+        if (res.ok) {
+          const data = await res.json()
+          setArtikelData({
+            inhoud: data.artikel.inhoud,
+            bron: data.artikel.bron,
+            emoji: data.artikel.emoji,
+          })
+        }
+      } catch (error) {
+        console.error("Fout bij laden artikel:", error)
+      } finally {
+        setArtikelLoading(false)
+      }
+    }
+  }
 
   return (
-    <div className={cn(
-      "ker-card py-3 transition-shadow hover:shadow-md",
-      isVoltooid && "opacity-60"
-    )}>
-      {/* Titel + beschrijving */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <p className={cn(
-            "font-semibold text-sm text-foreground",
-            isVoltooid && "line-through text-muted-foreground"
-          )}>
-            {fav.titel}
-            {isVoltooid && <span className="ml-1.5 no-underline">✅</span>}
-          </p>
-          {fav.beschrijving && (
-            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{fav.beschrijving}</p>
-          )}
-        </div>
-        {/* Verwijderknop */}
-        <button
-          onClick={() => onVerwijder(fav.id)}
-          className="flex-shrink-0 p-1.5 rounded-full text-muted-foreground hover:text-[var(--accent-red)] hover:bg-[var(--accent-red-bg)] transition-colors"
-          aria-label={c.verwijderen}
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Telefoon en website chips */}
-      {(fav.telefoon || fav.url) && (
-        <div className="flex flex-wrap gap-2 mt-2">
-          {fav.telefoon && (
-            <a
-              href={`tel:${fav.telefoon}`}
-              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full bg-primary/8 text-primary text-xs font-medium hover:bg-primary/15 transition-colors"
-            >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-              </svg>
-              {fav.telefoon}
-            </a>
-          )}
-          {fav.url && (
-            <a
-              href={ensureAbsoluteUrl(fav.url)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full bg-primary/8 text-primary text-xs font-medium hover:bg-primary/15 transition-colors"
-            >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-              {c.website}
-            </a>
-          )}
-        </div>
-      )}
-
-      {/* Categorie chip + afgerond knop */}
-      <div className="flex items-center gap-2 mt-2 flex-wrap">
-        {fav.categorie && (
-          <span className="text-xs bg-primary-light dark:bg-primary/20 text-primary dark:text-primary/80 px-2 py-0.5 rounded-full font-medium">
-            {fav.categorie}
-          </span>
+    <>
+      <div
+        className={cn(
+          "ker-card py-3 transition-shadow hover:shadow-md",
+          isVoltooid && "opacity-60",
+          isInformatie && "cursor-pointer"
         )}
-        <button
-          onClick={() => onToggleVoltooid(fav.id, fav.isVoltooid)}
-          className={cn(
-            "ml-auto text-xs font-medium px-2.5 py-1 rounded-full transition-colors",
-            isVoltooid
-              ? "bg-muted text-muted-foreground hover:bg-muted/80"
-              : "bg-[var(--accent-green)]/15 text-[var(--accent-green)] hover:bg-[var(--accent-green)]/25"
+        onClick={isInformatie ? handleCardClick : undefined}
+      >
+        {/* Titel + beschrijving */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              {isInformatie && (fav.icon || artikelData?.emoji) && (
+                <span className="text-lg flex-shrink-0">{fav.icon || artikelData?.emoji}</span>
+              )}
+              <p className={cn(
+                "font-semibold text-sm text-foreground",
+                isVoltooid && "line-through text-muted-foreground"
+              )}>
+                {fav.titel}
+                {isVoltooid && <span className="ml-1.5 no-underline">✅</span>}
+              </p>
+            </div>
+            {fav.beschrijving && (
+              <p className={cn(
+                "text-xs text-muted-foreground mt-0.5 line-clamp-2",
+                isInformatie && (fav.icon || artikelData?.emoji) && "pl-7"
+              )}>{fav.beschrijving}</p>
+            )}
+          </div>
+          {/* Verwijderknop */}
+          <button
+            onClick={(e) => { e.stopPropagation(); onVerwijder(fav.id) }}
+            className="flex-shrink-0 p-1.5 rounded-full text-muted-foreground hover:text-[var(--accent-red)] hover:bg-[var(--accent-red-bg)] transition-colors"
+            aria-label={c.verwijderen}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Telefoon en website chips — alleen voor HULP items */}
+        {!isInformatie && (fav.telefoon || fav.url) && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {fav.telefoon && (
+              <a
+                href={`tel:${fav.telefoon}`}
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full bg-primary/8 text-primary text-xs font-medium hover:bg-primary/15 transition-colors"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+                {fav.telefoon}
+              </a>
+            )}
+            {fav.url && (
+              <a
+                href={ensureAbsoluteUrl(fav.url)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full bg-primary/8 text-primary text-xs font-medium hover:bg-primary/15 transition-colors"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                {c.website}
+              </a>
+            )}
+          </div>
+        )}
+
+        {/* Lees meer hint voor informatie-artikelen */}
+        {isInformatie && (
+          <div className={cn(
+            "flex items-center gap-3 mt-2",
+            (fav.icon || artikelData?.emoji) && "pl-7"
+          )}>
+            <span className="text-xs text-primary font-medium ml-auto">Lees meer →</span>
+          </div>
+        )}
+
+        {/* Categorie chip + afgerond knop */}
+        <div className="flex items-center gap-2 mt-2 flex-wrap">
+          {fav.categorie && (
+            <span className="text-xs bg-primary-light dark:bg-primary/20 text-primary dark:text-primary/80 px-2 py-0.5 rounded-full font-medium">
+              {fav.categorie}
+            </span>
           )}
-        >
-          {isVoltooid ? c.status.nietAfgerond : c.status.afgerond}
-        </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggleVoltooid(fav.id, fav.isVoltooid) }}
+            className={cn(
+              "ml-auto text-xs font-medium px-2.5 py-1 rounded-full transition-colors",
+              isVoltooid
+                ? "bg-muted text-muted-foreground hover:bg-muted/80"
+                : "bg-[var(--accent-green)]/15 text-[var(--accent-green)] hover:bg-[var(--accent-green)]/25"
+            )}
+          >
+            {isVoltooid ? c.status.nietAfgerond : c.status.afgerond}
+          </button>
+        </div>
       </div>
-    </div>
+
+      {/* ContentModal voor informatie-artikelen */}
+      {isInformatie && (
+        <ContentModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          titel={fav.titel}
+          emoji={fav.icon || artikelData?.emoji}
+          beschrijving={fav.beschrijving}
+          inhoud={artikelLoading ? "Laden..." : artikelData?.inhoud}
+          bron={artikelData?.bron}
+          website={fav.url}
+        />
+      )}
+    </>
   )
 }
