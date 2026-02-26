@@ -62,6 +62,14 @@ export function SiteSettingsProvider({ children }: { children: ReactNode }) {
 }
 
 /**
+ * Hook om alle site-instellingen op te halen als key-value map.
+ * Gebruik dit voor componenten die meerdere instellingen nodig hebben.
+ */
+export function useSiteSettings(): SiteSettings {
+  return useContext(SiteSettingsContext)
+}
+
+/**
  * Hook om een site-instelling op te halen met fallback naar default.
  *
  * @example

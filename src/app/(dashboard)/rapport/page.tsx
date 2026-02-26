@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
 import { ResultSmiley } from "@/components/ui"
 import { PdfDownloadButton } from "@/components/PdfDownloadButton"
-import { rapportContent as c } from "@/config/content"
+import { useRapportContent } from "@/hooks/useRapportContent"
 
 // Mapping van taak naar categorie voor hulpvragen pagina
 const TAAK_NAAR_HULP_TAB: Record<string, { tab: 'voor-jou' | 'voor-naaste', categorie: string }> = {
@@ -51,6 +51,8 @@ interface TestResult {
 }
 
 export default function RapportPage() {
+  const c = useRapportContent()
+  const getHulpTip = (taakId: string) => c.hulpTips[taakId] || c.hulpTips.default
   const { data: session, status } = useSession()
   const [result, setResult] = useState<TestResult | null>(null)
   const [loading, setLoading] = useState(true)
@@ -600,6 +602,4 @@ function getUrenGetal(uren: string): number | null {
   return map[uren] || null
 }
 
-function getHulpTip(taakId: string): string {
-  return c.hulpTips[taakId] || c.hulpTips.default
-}
+// getHulpTip is verplaatst naar inline in de component (gebruikt useRapportContent hook)

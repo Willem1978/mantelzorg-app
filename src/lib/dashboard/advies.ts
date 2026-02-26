@@ -1,6 +1,9 @@
 /**
  * Dynamisch hulpadvies op basis van balanstest score en zorgtaken.
  * Genereert persoonlijke, B1-niveau adviezen.
+ *
+ * Alle teksten zijn overschrijfbaar via SiteSettings (categorie "advies").
+ * SiteSettings keys: advies.<id>.titel, advies.<id>.tekst, advies.<id>.linkTekst
  */
 
 export interface Advies {
@@ -23,50 +26,68 @@ interface AdviesInput {
   hasCheckIn: boolean
 }
 
-export function genereerAdvies(input: AdviesInput): Advies[] {
+/** Optionele overrides uit SiteSettings (key = advies.<id>.<veld>) */
+type AdviesOverrides = Record<string, string>
+
+/**
+ * Helper om een advies-tekst op te halen met SiteSettings override.
+ */
+function adviesTekst(
+  overrides: AdviesOverrides,
+  id: string,
+  veld: "titel" | "tekst" | "linkTekst",
+  fallback: string
+): string {
+  return overrides[`${id}.${veld}`] || fallback
+}
+
+export function genereerAdvies(input: AdviesInput, overrides: AdviesOverrides = {}): Advies[] {
   const adviezen: Advies[] = []
+  const o = (id: string, veld: "titel" | "tekst" | "linkTekst", fallback: string) =>
+    adviesTekst(overrides, id, veld, fallback)
 
   // Advies op basis van belastingniveau
   if (input.belastingNiveau === "HOOG") {
     adviezen.push({
       id: "hoog-hulp",
-      titel: "Vraag hulp",
-      tekst: "Je hebt veel op je bordje. Je hoeft het niet alleen te doen. Bel de Mantelzorglijn (030 - 205 90 59) of vraag hulp bij je gemeente.",
+      titel: o("hoog-hulp", "titel", "Vraag hulp"),
+      tekst: o("hoog-hulp", "tekst", "Je hebt veel op je bordje. Je hoeft het niet alleen te doen. Bel de Mantelzorglijn (030 - 205 90 59) of vraag hulp bij je gemeente."),
       emoji: "🆘",
       prioriteit: "hoog",
       link: "tel:0302059059",
-      linkTekst: "Bel de Mantelzorglijn",
+      linkTekst: o("hoog-hulp", "linkTekst", "Bel de Mantelzorglijn"),
     })
 
     adviezen.push({
       id: "hoog-respijt",
-      titel: "Neem pauze",
-      tekst: "Respijtzorg kan je even ontlasten. Een dagopvang of tijdelijke vervanging geeft je rust. Vraag ernaar bij je gemeente.",
+      titel: o("hoog-respijt", "titel", "Neem pauze"),
+      tekst: o("hoog-respijt", "tekst", "Respijtzorg kan je even ontlasten. Een dagopvang of tijdelijke vervanging geeft je rust. Vraag ernaar bij je gemeente."),
       emoji: "🛏️",
       prioriteit: "hoog",
       link: "/hulpvragen?tab=voor-mij",
-      linkTekst: "Zoek respijtzorg",
+      linkTekst: o("hoog-respijt", "linkTekst", "Zoek respijtzorg"),
     })
   }
 
   if (input.belastingNiveau === "GEMIDDELD") {
     adviezen.push({
       id: "gemiddeld-balans",
-      titel: "Houd je balans in de gaten",
-      tekst: "Je doet al veel. Probeer elke week iets voor jezelf te doen. Een wandeling, een kopje koffie met een vriend, of gewoon even rust.",
+      titel: o("gemiddeld-balans", "titel", "Houd je balans in de gaten"),
+      tekst: o("gemiddeld-balans", "tekst", "Je doet al veel. Probeer elke week iets voor jezelf te doen. Een wandeling, een kopje koffie met een vriend, of gewoon even rust."),
       emoji: "⚖️",
       prioriteit: "gemiddeld",
     })
 
     if (input.zwareTaken.length > 0) {
+      const takenTekst = input.zwareTaken.slice(0, 2).join(" en ")
       adviezen.push({
         id: "gemiddeld-taken",
-        titel: "Verdeel zware taken",
-        tekst: `Je vindt ${input.zwareTaken.slice(0, 2).join(" en ")} zwaar. Kun je iemand vragen om te helpen? Familie, buren of vrijwilligers kunnen bijspringen.`,
+        titel: o("gemiddeld-taken", "titel", "Verdeel zware taken"),
+        tekst: o("gemiddeld-taken", "tekst", `Je vindt ${takenTekst} zwaar. Kun je iemand vragen om te helpen? Familie, buren of vrijwilligers kunnen bijspringen.`),
         emoji: "🤝",
         prioriteit: "gemiddeld",
         link: "/hulpvragen?tab=voor-naaste",
-        linkTekst: "Zoek hulp bij taken",
+        linkTekst: o("gemiddeld-taken", "linkTekst", "Zoek hulp bij taken"),
       })
     }
   }
@@ -74,8 +95,8 @@ export function genereerAdvies(input: AdviesInput): Advies[] {
   if (input.belastingNiveau === "LAAG") {
     adviezen.push({
       id: "laag-goed",
-      titel: "Goed bezig!",
-      tekst: "Je balans is goed. Blijf goed voor jezelf zorgen. Houd bij hoe het gaat met de maandelijkse check-in.",
+      titel: o("laag-goed", "titel", "Goed bezig!"),
+      tekst: o("laag-goed", "tekst", "Je balans is goed. Blijf goed voor jezelf zorgen. Houd bij hoe het gaat met de maandelijkse check-in."),
       emoji: "💚",
       prioriteit: "laag",
     })
@@ -85,20 +106,20 @@ export function genereerAdvies(input: AdviesInput): Advies[] {
   if (input.trend === "worse") {
     adviezen.push({
       id: "trend-slechter",
-      titel: "Je score is gestegen",
-      tekst: "Je belasting is hoger dan vorige keer. Neem dit serieus. Kijk of je ergens hulp bij kunt krijgen.",
+      titel: o("trend-slechter", "titel", "Je score is gestegen"),
+      tekst: o("trend-slechter", "tekst", "Je belasting is hoger dan vorige keer. Neem dit serieus. Kijk of je ergens hulp bij kunt krijgen."),
       emoji: "📈",
       prioriteit: "hoog",
       link: "/hulpvragen",
-      linkTekst: "Zoek hulp",
+      linkTekst: o("trend-slechter", "linkTekst", "Zoek hulp"),
     })
   }
 
   if (input.trend === "improved") {
     adviezen.push({
       id: "trend-beter",
-      titel: "Het gaat de goede kant op",
-      tekst: "Je score is verbeterd. Wat je doet werkt. Ga zo door!",
+      titel: o("trend-beter", "titel", "Het gaat de goede kant op"),
+      tekst: o("trend-beter", "tekst", "Je score is verbeterd. Wat je doet werkt. Ga zo door!"),
       emoji: "📉",
       prioriteit: "laag",
     })
@@ -108,8 +129,8 @@ export function genereerAdvies(input: AdviesInput): Advies[] {
   if (input.wellbeingTrend === "down") {
     adviezen.push({
       id: "wellbeing-daling",
-      titel: "Je voelt je minder goed",
-      tekst: "Je check-ins laten zien dat het minder gaat. Praat erover met iemand die je vertrouwt. Of bel de Mantelzorglijn.",
+      titel: o("wellbeing-daling", "titel", "Je voelt je minder goed"),
+      tekst: o("wellbeing-daling", "tekst", "Je check-ins laten zien dat het minder gaat. Praat erover met iemand die je vertrouwt. Of bel de Mantelzorglijn."),
       emoji: "💬",
       prioriteit: "gemiddeld",
     })
@@ -119,12 +140,12 @@ export function genereerAdvies(input: AdviesInput): Advies[] {
   if (input.daysSinceTest && input.daysSinceTest > 90) {
     adviezen.push({
       id: "test-verouderd",
-      titel: "Doe een nieuwe balanstest",
-      tekst: "Je laatste test is meer dan 3 maanden geleden. Doe een nieuwe test om te kijken hoe het nu met je gaat.",
+      titel: o("test-verouderd", "titel", "Doe een nieuwe balanstest"),
+      tekst: o("test-verouderd", "tekst", "Je laatste test is meer dan 3 maanden geleden. Doe een nieuwe test om te kijken hoe het nu met je gaat."),
       emoji: "📊",
       prioriteit: "gemiddeld",
       link: "/belastbaarheidstest",
-      linkTekst: "Start de balanstest",
+      linkTekst: o("test-verouderd", "linkTekst", "Start de balanstest"),
     })
   }
 
@@ -132,12 +153,12 @@ export function genereerAdvies(input: AdviesInput): Advies[] {
   if (!input.hasCheckIn) {
     adviezen.push({
       id: "checkin-reminder",
-      titel: "Doe een check-in",
-      tekst: "Hoe gaat het deze week? Een korte check-in helpt je om bij te houden hoe het gaat.",
+      titel: o("checkin-reminder", "titel", "Doe een check-in"),
+      tekst: o("checkin-reminder", "tekst", "Hoe gaat het deze week? Een korte check-in helpt je om bij te houden hoe het gaat."),
       emoji: "✅",
       prioriteit: "laag",
       link: "/check-in",
-      linkTekst: "Doe de check-in",
+      linkTekst: o("checkin-reminder", "linkTekst", "Doe de check-in"),
     })
   }
 
