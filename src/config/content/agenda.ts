@@ -27,10 +27,17 @@ export const agendaContent = {
     day1: "1 dag van tevoren",
   },
 
+  // Zorgtaak sub-selectie
+  zorgtaakSelectie: {
+    label: "Welke zorgtaak?",
+    hint: "Kies de taak die je gaat doen.",
+  },
+
   // Nieuw item formulier
   form: {
     title: "Nieuw in agenda",
     stap1: "1. Waar gaat het over?",
+    stap1b: "1b. Welke zorgtaak?",
     stap2: "2. Wat moet je doen?",
     stap2Placeholder: "Bijvoorbeeld: Naar de dokter",
     stap3: "3. Wanneer?",

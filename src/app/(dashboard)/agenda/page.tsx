@@ -5,6 +5,7 @@ import { Button, Card, CardContent } from "@/components/ui"
 import { cn } from "@/lib/utils"
 import { eventTypeColors } from "@/config/colors"
 import { agendaContent } from "@/config/content"
+import { ZORGTAKEN } from "@/config/options"
 
 const c = agendaContent
 
@@ -48,6 +49,7 @@ export default function AgendaPage() {
   const [description, setDescription] = useState("")
   const [location, setLocation] = useState("")
   const [eventType, setEventType] = useState("OTHER")
+  const [zorgtaakId, setZorgtaakId] = useState<string | null>(null)
   const [startDate, setStartDate] = useState("")
   const [startTime, setStartTime] = useState("")
   const [endTime, setEndTime] = useState("")
@@ -124,6 +126,7 @@ export default function AgendaPage() {
     setDescription("")
     setLocation("")
     setEventType("OTHER")
+    setZorgtaakId(null)
     setStartDate("")
     setStartTime("")
     setEndTime("")
@@ -131,8 +134,16 @@ export default function AgendaPage() {
     setReminder(0)
   }
 
-  const getEventTypeInfo = (type: string) => {
-    return eventTypes.find(t => t.value === type) || eventTypes[5]
+  const getEventTypeInfo = (type: string, eventTitle?: string) => {
+    const baseType = eventTypes.find(t => t.value === type) || eventTypes[5]
+    // Als het een CARE_TASK is, kijk of de titel een zorgtaak-emoji bevat
+    if (type === "CARE_TASK" && eventTitle) {
+      const matchedTask = ZORGTAKEN.find(t => t.emoji && eventTitle.startsWith(t.emoji))
+      if (matchedTask) {
+        return { ...baseType, icon: matchedTask.emoji }
+      }
+    }
+    return baseType
   }
 
   const formatTime = (dateString: string) => {
@@ -251,7 +262,10 @@ export default function AgendaPage() {
                       <button
                         key={type.value}
                         type="button"
-                        onClick={() => setEventType(type.value)}
+                        onClick={() => {
+                          setEventType(type.value)
+                          if (type.value !== "CARE_TASK") setZorgtaakId(null)
+                        }}
                         className={cn(
                           "p-3 sm:p-4 rounded-xl border-2 transition-all text-center",
                           eventType === type.value
@@ -266,6 +280,49 @@ export default function AgendaPage() {
                     ))}
                   </div>
                 </div>
+
+                {/* Stap 1b: Welke zorgtaak (alleen bij CARE_TASK) */}
+                {eventType === "CARE_TASK" && (
+                  <div>
+                    <label className="block text-base font-medium text-foreground mb-2">
+                      {c.form.stap1b}
+                    </label>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      {c.zorgtaakSelectie.hint}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {ZORGTAKEN.map((taak) => (
+                        <button
+                          key={taak.id}
+                          type="button"
+                          onClick={() => {
+                            setZorgtaakId(taak.id)
+                            // Pre-fill title als die nog leeg is
+                            if (!title) {
+                              setTitle(`${taak.emoji} ${taak.naam}`)
+                            }
+                          }}
+                          className={cn(
+                            "flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-left",
+                            zorgtaakId === taak.id
+                              ? "border-primary bg-primary/10"
+                              : "border-border hover:border-primary/50"
+                          )}
+                        >
+                          <span className="text-xl flex-shrink-0">{taak.emoji}</span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-foreground leading-tight truncate">
+                              {taak.naam}
+                            </p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {taak.beschrijving}
+                            </p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Stap 2: Wat */}
                 <div>
@@ -440,7 +497,7 @@ export default function AgendaPage() {
                 </h3>
                 <div className="space-y-2">
                   {dayEvents.map((event) => {
-                    const typeInfo = getEventTypeInfo(event.eventType)
+                    const typeInfo = getEventTypeInfo(event.eventType, event.title)
                     return (
                       <Card key={event.id} className="overflow-hidden">
                         <div
