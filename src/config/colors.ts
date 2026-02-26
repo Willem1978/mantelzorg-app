@@ -60,14 +60,9 @@ export const emoticonColors = {
   ja: { bg: "#EF5350", face: "#C62828", label: "Niet goed" },
 } as const
 
-// Agenda event type kleuren
+// Agenda event kleur
 export const eventTypeColors = {
   CARE_TASK: "#ef4444",
-  APPOINTMENT: "#3b82f6",
-  SELF_CARE: "#10b981",
-  SOCIAL: "#8b5cf6",
-  WORK: "#f59e0b",
-  OTHER: "#6b7280",
 } as const
 
 // Urgentie kleuren (voor alarmen)

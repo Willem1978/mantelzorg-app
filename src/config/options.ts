@@ -342,19 +342,6 @@ export const CHECKIN_FREQUENTIES: Record<BelastingNiveau, { label: string; dagen
 }
 
 // ============================================
-// AGENDA EVENT TYPES
-// ============================================
-
-export const AGENDA_EVENT_TYPES = [
-  { id: "CARE_TASK", label: "Zorg", description: "Voor de zorg", emoji: "🏥" },
-  { id: "APPOINTMENT", label: "Afspraak", description: "Arts of andere afspraak", emoji: "📅" },
-  { id: "SELF_CARE", label: "Voor mij", description: "Tijd voor jezelf", emoji: "🧘" },
-  { id: "SOCIAL", label: "Samen", description: "Met vrienden of familie", emoji: "👫" },
-  { id: "WORK", label: "Werk", description: "Werk of studie", emoji: "💼" },
-  { id: "OTHER", label: "Anders", description: "Iets anders", emoji: "📝" },
-] as const
-
-// ============================================
 // HERINNERING OPTIES
 // ============================================
 
