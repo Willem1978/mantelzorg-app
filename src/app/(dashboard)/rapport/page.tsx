@@ -8,6 +8,7 @@ import { GerAvatar } from "@/components/GerAvatar"
 import { ResultSmiley } from "@/components/ui"
 import { PdfDownloadButton } from "@/components/PdfDownloadButton"
 import { useRapportContent } from "@/hooks/useRapportContent"
+import { berekenDeelgebieden, type DeelgebiedScore } from "@/lib/dashboard/deelgebieden"
 
 // Mapping van taak naar categorie voor hulpvragen pagina
 const TAAK_NAAR_HULP_TAB: Record<string, { tab: 'voor-jou' | 'voor-naaste', categorie: string }> = {
@@ -188,6 +189,16 @@ export default function RapportPage() {
   const zwareTaken = geselecteerdeTaken.filter((t) => isZwaar(t.moeilijkheid))
   const gemiddeldeTaken = geselecteerdeTaken.filter((t) => isGemiddeld(t.moeilijkheid))
   const takenMetAandacht = [...zwareTaken, ...gemiddeldeTaken]
+
+  // Deelgebied-scores berekenen
+  const deelgebieden = berekenDeelgebieden(
+    result.antwoorden.map((a) => ({
+      vraagId: a.vraagId,
+      score: a.score,
+      gewicht: 1, // gewicht wordt intern bepaald door deelgebieden.ts
+    }))
+  )
+
   const hoog = c.niveaus.HOOG
   const gem = c.niveaus.GEMIDDELD
   const laag = c.niveaus.LAAG
@@ -523,6 +534,47 @@ export default function RapportPage() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Deelgebied-scores */}
+      {deelgebieden.length > 0 && (
+        <div className="ker-card mb-4">
+          <h3 className="font-bold text-foreground mb-4">Scores per gebied</h3>
+          <div className="space-y-4">
+            {deelgebieden.map((dg) => (
+              <div key={dg.naam}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">{dg.emoji}</span>
+                    <span className="text-sm font-semibold text-foreground">{dg.naam}</span>
+                  </div>
+                  <span
+                    className={cn(
+                      "text-xs font-semibold px-2 py-0.5 rounded-full",
+                      dg.niveau === "LAAG" && "bg-[var(--accent-green-bg)] text-[var(--accent-green)]",
+                      dg.niveau === "GEMIDDELD" && "bg-[var(--accent-amber-bg)] text-[var(--accent-amber)]",
+                      dg.niveau === "HOOG" && "bg-[var(--accent-red-bg)] text-[var(--accent-red)]"
+                    )}
+                  >
+                    {dg.percentage}%
+                  </span>
+                </div>
+                <div className="h-2.5 bg-muted rounded-full overflow-hidden mb-2">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all duration-500",
+                      dg.niveau === "LAAG" && "bg-[var(--accent-green)]",
+                      dg.niveau === "GEMIDDELD" && "bg-[var(--accent-amber)]",
+                      dg.niveau === "HOOG" && "bg-[var(--accent-red)]"
+                    )}
+                    style={{ width: `${dg.percentage}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">{dg.tip}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* PDF download */}

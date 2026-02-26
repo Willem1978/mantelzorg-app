@@ -91,6 +91,24 @@ interface DashboardData {
     completed: number
     upcoming: { id: string; title: string; dueDate: string | null }[]
   }
+  deelgebieden?: {
+    naam: string
+    emoji: string
+    score: number
+    maxScore: number
+    percentage: number
+    niveau: "LAAG" | "GEMIDDELD" | "HOOG"
+    tip: string
+  }[]
+  adviezen?: {
+    id: string
+    titel: string
+    tekst: string
+    emoji: string
+    prioriteit: "hoog" | "gemiddeld" | "laag"
+    link?: string
+    linkTekst?: string
+  }[]
   aanbevolenArtikelen?: {
     id: string
     titel: string
@@ -325,6 +343,50 @@ function DashboardContentView() {
               </div>
             </div>
 
+            {/* Deelgebied-scores — Energie, Gevoel, Tijd */}
+            {data.deelgebieden && data.deelgebieden.length > 0 && (
+              <div className="mt-5 pt-4 border-t border-border/50">
+                <p className="text-sm font-semibold text-foreground mb-3">Jouw scores per gebied</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {data.deelgebieden.map((dg) => (
+                    <div
+                      key={dg.naam}
+                      className={cn(
+                        "rounded-xl p-3 text-center",
+                        dg.niveau === "LAAG" && "bg-[var(--accent-green-bg)]",
+                        dg.niveau === "GEMIDDELD" && "bg-[var(--accent-amber-bg)]",
+                        dg.niveau === "HOOG" && "bg-[var(--accent-red-bg)]"
+                      )}
+                    >
+                      <p className="text-lg mb-0.5">{dg.emoji}</p>
+                      <p
+                        className={cn(
+                          "text-xs font-semibold",
+                          dg.niveau === "LAAG" && "text-[var(--accent-green)]",
+                          dg.niveau === "GEMIDDELD" && "text-[var(--accent-amber)]",
+                          dg.niveau === "HOOG" && "text-[var(--accent-red)]"
+                        )}
+                      >
+                        {dg.naam}
+                      </p>
+                      <div className="mt-1.5 h-1.5 bg-white/50 dark:bg-white/10 rounded-full overflow-hidden">
+                        <div
+                          className={cn(
+                            "h-full rounded-full",
+                            dg.niveau === "LAAG" && "bg-[var(--accent-green)]",
+                            dg.niveau === "GEMIDDELD" && "bg-[var(--accent-amber)]",
+                            dg.niveau === "HOOG" && "bg-[var(--accent-red)]"
+                          )}
+                          style={{ width: `${dg.percentage}%` }}
+                        />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-1">{dg.percentage}%</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Jouw taken — kleurblokken */}
             {(data.test.zorgtaken?.length || 0) > 0 && (
               <div className="mt-5 pt-4 border-t border-border/50">
@@ -388,6 +450,92 @@ function DashboardContentView() {
         </section>
       )}
 
+
+          {/* SECTIE 2: Advies — Jouw volgende stap */}
+          {data?.adviezen && data.adviezen.length > 0 && (
+            <section className="mb-8">
+              <div className="mb-4">
+                <h2 className="text-lg font-bold text-foreground flex items-center gap-2 mb-2">
+                  <span className="text-2xl">💡</span> Advies voor jou
+                </h2>
+              </div>
+              <div className="space-y-3">
+                {data.adviezen.slice(0, 3).map((advies) => (
+                  <div
+                    key={advies.id}
+                    className={cn(
+                      "ker-card border-l-4",
+                      advies.prioriteit === "hoog" && "border-l-[var(--accent-red)] bg-[var(--accent-red-bg)]",
+                      advies.prioriteit === "gemiddeld" && "border-l-[var(--accent-amber)] bg-[var(--accent-amber-bg)]",
+                      advies.prioriteit === "laag" && "border-l-[var(--accent-green)] bg-[var(--accent-green-bg)]"
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl flex-shrink-0">{advies.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm">{advies.titel}</h3>
+                        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{advies.tekst}</p>
+                        {advies.link && (
+                          <Link
+                            href={advies.link}
+                            className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-primary hover:underline"
+                          >
+                            {advies.linkTekst || "Meer info"}
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* SECTIE 2: Adviezen — Jouw volgende stap */}
+          {data?.adviezen && data.adviezen.length > 0 && (
+            <section className="mb-8">
+              <div className="mb-4">
+                <h2 className="text-lg font-bold text-foreground flex items-center gap-2 mb-2">
+                  <span className="text-2xl">🎯</span> Jouw volgende stap
+                </h2>
+              </div>
+              <div className="space-y-3">
+                {data.adviezen.slice(0, 3).map((advies) => (
+                  <div
+                    key={advies.id}
+                    className={cn(
+                      "ker-card border-l-4",
+                      advies.prioriteit === "hoog" && "border-l-[var(--accent-red)] bg-[var(--accent-red-bg)]",
+                      advies.prioriteit === "gemiddeld" && "border-l-[var(--accent-amber)] bg-[var(--accent-amber-bg)]",
+                      advies.prioriteit === "laag" && "border-l-[var(--accent-green)] bg-[var(--accent-green-bg)]"
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl flex-shrink-0">{advies.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm text-foreground">{advies.titel}</h3>
+                        <p className="text-sm text-muted-foreground mt-1">{advies.tekst}</p>
+                        {advies.link && advies.linkTekst && (
+                          <Link
+                            href={advies.link}
+                            className="inline-flex items-center gap-1 mt-2 text-sm font-medium text-primary hover:underline"
+                          >
+                            {advies.linkTekst}
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
               {/* SECTIE 3: Je Zorgtaken met Hulp */}
           {data?.test?.zorgtaken && data.test.zorgtaken.length > 0 && (
