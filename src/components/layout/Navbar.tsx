@@ -42,13 +42,12 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
   }, [])
 
   // B1 taalgebruik - simpele menu woorden
-  // Volgorde: Home, Hulp, Hoe gaat het?
-  // NOTE: Agenda is tijdelijk verborgen maar code blijft behouden voor later
   const caregiverLinks: { href: string; label: string; hasBadge: boolean; nieuwsBadge?: boolean }[] = [
     { href: "/dashboard", label: "Home", hasBadge: false },
-    { href: "/leren", label: "Informatie", hasBadge: false, nieuwsBadge: true },
     { href: "/hulpvragen", label: "Hulp", hasBadge: true },
-    // { href: "/agenda", label: "Agenda", hasBadge: false }, // Tijdelijk verborgen
+    { href: "/marktplaats", label: "Marktplaats", hasBadge: false },
+    { href: "/agenda", label: "Agenda", hasBadge: false },
+    { href: "/check-in", label: "Check-in", hasBadge: false },
     { href: "/balanstest", label: "Balanstest", hasBadge: false },
   ]
 
