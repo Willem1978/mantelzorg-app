@@ -6,25 +6,60 @@ import { useSession, signOut } from "next-auth/react"
 import { useState } from "react"
 import { LogoIcon } from "@/components/ui"
 
-const menuItems = [
-  { href: "/beheer", label: "Dashboard", icon: "📊" },
-  { href: "/beheer/gebruikers", label: "Gebruikers", icon: "👥" },
-  { href: "/beheer/artikelen", label: "Artikelen & Tips", icon: "📝" },
-  { href: "/beheer/hulpbronnen", label: "Hulpbronnen", icon: "🏥" },
-  { href: "/beheer/mantelbuddies", label: "MantelBuddies", icon: "🤝" },
-  { href: "/beheer/balanstest-vragen", label: "Balanstest & Check-in", icon: "❓" },
-  { href: "/beheer/zorgtaken", label: "Zorgtaken", icon: "📋" },
-  { href: "/beheer/categorieen", label: "Categorieën", icon: "🗂️" },
-  { href: "/beheer/formulier-opties", label: "Formulier opties", icon: "📝" },
-  { href: "/beheer/app-content", label: "App content", icon: "📱" },
-  { href: "/beheer/gemeenten", label: "Gemeenten", icon: "🏛️" },
-  { href: "/beheer/huisstijl", label: "Huisstijl & Teksten", icon: "🎨" },
-  { href: "/beheer/intake-vragen", label: "Intake vragen", icon: "📥" },
-  { href: "/beheer/alarmen", label: "Alarmen", icon: "🔔" },
-  { href: "/beheer/audit", label: "Audit Log", icon: "📋" },
-  { href: "/beheer/data-update", label: "Data bijwerken", icon: "🔄" },
-  { href: "/beheer/instellingen", label: "Instellingen", icon: "⚙️" },
+// Gegroepeerd menu — logische indeling voor beheerders
+const menuGroepen: { label: string; items: { href: string; label: string; icon: string }[] }[] = [
+  {
+    label: "",
+    items: [
+      { href: "/beheer", label: "Dashboard", icon: "📊" },
+    ],
+  },
+  {
+    label: "Gebruikers & Hulp",
+    items: [
+      { href: "/beheer/gebruikers", label: "Gebruikers", icon: "👥" },
+      { href: "/beheer/mantelbuddies", label: "MantelBuddies", icon: "🤝" },
+      { href: "/beheer/alarmen", label: "Alarmen", icon: "🔔" },
+    ],
+  },
+  {
+    label: "Content",
+    items: [
+      { href: "/beheer/artikelen", label: "Artikelen & Tips", icon: "📝" },
+      { href: "/beheer/hulpbronnen", label: "Hulpbronnen", icon: "🏥" },
+      { href: "/beheer/app-content", label: "App content", icon: "📱" },
+    ],
+  },
+  {
+    label: "Test & Vragen",
+    items: [
+      { href: "/beheer/balanstest-vragen", label: "Balanstest & Check-in", icon: "❓" },
+      { href: "/beheer/zorgtaken", label: "Zorgtaken", icon: "📋" },
+      { href: "/beheer/intake-vragen", label: "Intake vragen", icon: "📥" },
+    ],
+  },
+  {
+    label: "Inrichting",
+    items: [
+      { href: "/beheer/gemeenten", label: "Gemeenten", icon: "🏛️" },
+      { href: "/beheer/huisstijl", label: "Huisstijl & Teksten", icon: "🎨" },
+      { href: "/beheer/categorieen", label: "Categorieën", icon: "🗂️" },
+      { href: "/beheer/formulier-opties", label: "Formulier opties", icon: "📝" },
+    ],
+  },
+  {
+    label: "Systeem",
+    items: [
+      { href: "/beheer/audit", label: "Audit Log", icon: "📋" },
+      { href: "/beheer/data-update", label: "Data bijwerken", icon: "🔄" },
+      { href: "/beheer/instellingen", label: "Instellingen", icon: "⚙️" },
+      { href: "/beheer/handleiding", label: "Handleiding", icon: "📖" },
+    ],
+  },
 ]
+
+// Platte lijst voor active-check
+const alleItems = menuGroepen.flatMap((g) => g.items)
 
 export default function BeheerLayout({
   children,
@@ -89,39 +124,50 @@ export default function BeheerLayout({
           className={`
             fixed lg:static inset-y-0 left-0 z-50 lg:z-0
             w-64 bg-white border-r border-gray-200
-            transform transition-transform duration-200
+            transform transition-transform duration-200 overflow-y-auto
             ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
             lg:translate-x-0 lg:mt-0 mt-[57px]
           `}
         >
-          <nav className="p-4 space-y-1">
-            {menuItems.map((item) => {
-              const isActive = item.href === "/beheer"
-                ? pathname === "/beheer"
-                : pathname.startsWith(item.href)
+          <nav className="p-4 space-y-4">
+            {menuGroepen.map((groep, gi) => (
+              <div key={gi}>
+                {groep.label && (
+                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-3 mb-1">
+                    {groep.label}
+                  </p>
+                )}
+                <div className="space-y-0.5">
+                  {groep.items.map((item) => {
+                    const isActive = item.href === "/beheer"
+                      ? pathname === "/beheer"
+                      : pathname.startsWith(item.href)
 
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`
-                    flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
-                    transition-colors
-                    ${isActive
-                      ? "bg-blue-50 text-blue-700"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                    }
-                  `}
-                >
-                  <span className="text-lg">{item.icon}</span>
-                  {item.label}
-                </Link>
-              )
-            })}
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setSidebarOpen(false)}
+                        className={`
+                          flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
+                          transition-colors
+                          ${isActive
+                            ? "bg-blue-50 text-blue-700"
+                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                          }
+                        `}
+                      >
+                        <span className="text-base">{item.icon}</span>
+                        {item.label}
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
           </nav>
 
-          <div className="absolute bottom-4 left-4 right-4">
+          <div className="sticky bottom-0 bg-white border-t border-gray-100 p-4">
             <Link
               href="/dashboard"
               className="flex items-center gap-2 px-3 py-2 text-sm text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-50"
