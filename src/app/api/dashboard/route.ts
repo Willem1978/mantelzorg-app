@@ -6,6 +6,7 @@ import { getAanbevolenArtikelen } from "@/lib/dashboard/artikelen"
 import { buildMijlpalen } from "@/lib/dashboard/mijlpalen"
 import { berekenDeelgebieden } from "@/lib/dashboard/deelgebieden"
 import { genereerAdvies } from "@/lib/dashboard/advies"
+import { berekenImpactScore } from "@/lib/dashboard/impact-score"
 
 export const dynamic = "force-dynamic"
 
@@ -225,6 +226,19 @@ export async function GET() {
           .map((t) => t.taakNaam)
       : []
 
+    // Impact-score berekenen (uren × zwaarte)
+    const impactScore = latestTest
+      ? berekenImpactScore(
+          latestTest.taakSelecties
+            .filter((t) => t.isGeselecteerd)
+            .map((t) => ({
+              naam: t.taakNaam,
+              uren: t.urenPerWeek,
+              moeilijkheid: t.moeilijkheid,
+            }))
+        )
+      : null
+
     // Advies genereren
     const adviezen = genereerAdvies({
       belastingNiveau: (latestTest?.belastingNiveau as "LAAG" | "GEMIDDELD" | "HOOG") || null,
@@ -345,6 +359,8 @@ export async function GET() {
       ),
 
       deelgebieden,
+
+      impactScore,
 
       adviezen,
 

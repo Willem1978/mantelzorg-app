@@ -46,11 +46,11 @@ const navItems: { href: string; label: string; icon: React.ReactNode; hasBadge?:
     ),
   },
   {
-    href: "/profiel",
-    label: "Profiel",
+    href: "/leren",
+    label: "Info & tips",
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
   },
