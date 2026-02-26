@@ -1,12 +1,16 @@
 /**
  * Sessie management voor WhatsApp conversaties
  * Houdt de staat bij van belastbaarheidstest flows en onboarding
+ *
+ * Vragen en zorgtaken worden uit de database geladen via content-loader.ts
+ * met in-memory cache (5 min TTL). Fallback naar config bij DB-fout.
  */
 
-// Re-export uit centraal config bestand
+// Re-export UI-constanten (rollen, labels, statussen)
 export { HULP_VOOR_MANTELZORGER, HULP_BIJ_TAAK, HULP_CATEGORIEEN, ZORGTAKEN, UREN_OPTIES, MOEILIJKHEID_OPTIES, RELATIE_OPTIES, getScoreLevel } from "@/config/options"
 export { BALANSTEST_VRAGEN as BELASTBAARHEID_QUESTIONS } from "@/config/options"
 import { BALANSTEST_VRAGEN, ZORGTAKEN as _ZORGTAKEN, getScoreLevel } from "@/config/options"
+import { loadBalanstestVragen, loadZorgtaken } from "@/lib/content-loader"
 
 // ===========================================
 // TEST SESSIE - voor balanstest flow
@@ -386,6 +390,45 @@ export function createPendingTestResults(testSession: TestSession): OnboardingSe
     score,
     level,
   }
+}
+
+// ===========================================
+// DATABASE-BACKED VARIANTEN (async)
+// Gebruik deze in de webhook route voor DB-gestuurde content
+// ===========================================
+
+/**
+ * Haal de huidige vraag op uit de database (met cache).
+ * Fallback naar config als DB niet beschikbaar is.
+ */
+export async function getCurrentQuestionFromDb(session: TestSession) {
+  const vragen = await loadBalanstestVragen()
+  if (session.currentQuestion >= vragen.length) return null
+  return vragen[session.currentQuestion]
+}
+
+/**
+ * Bereken de score met vragen uit de database (met cache).
+ */
+export async function calculateScoreFromDb(answers: Record<string, string>): Promise<number> {
+  const vragen = await loadBalanstestVragen()
+  let totalScore = 0
+  for (const vraag of vragen) {
+    const answer = answers[vraag.id]
+    if (answer === "ja") totalScore += 2
+    else if (answer === "soms") totalScore += 1
+  }
+  return totalScore
+}
+
+/**
+ * Haal de huidige taak op uit de database (met cache).
+ */
+export async function getCurrentTaskFromDb(session: TestSession) {
+  if (session.currentTaskIndex >= session.selectedTasks.length) return null
+  const taskId = session.selectedTasks[session.currentTaskIndex]
+  const taken = await loadZorgtaken()
+  return taken.find((t) => t.id === taskId) || null
 }
 
 /**
