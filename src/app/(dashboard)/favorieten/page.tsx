@@ -326,7 +326,7 @@ function TabButton({
   )
 }
 
-// Favoriet kaart
+// Favoriet kaart — gestyled als hulpkaart (zelfde stijl als hulpvragen pagina)
 function FavorietCard({
   fav,
   onVerwijder,
@@ -337,104 +337,86 @@ function FavorietCard({
   onToggleVoltooid: (id: string, huidigeStatus: boolean) => void
 }) {
   const isVoltooid = fav.isVoltooid
-  const isHulp = fav.type === "HULP"
 
   return (
     <div className={cn(
-      "ker-card p-0 overflow-hidden transition-all",
+      "ker-card py-3 transition-shadow hover:shadow-md",
       isVoltooid && "opacity-60"
     )}>
-      {/* Gekleurde balk bovenaan */}
-      <div className={cn(
-        "h-1.5",
-        isVoltooid
-          ? "bg-[var(--accent-green)]"
-          : isHulp ? "bg-primary" : "bg-[var(--accent-orange)]"
-      )} />
-
-      <div className="p-4">
-        {/* Titel rij */}
-        <div className="flex items-start gap-3">
-          <span className="text-2xl mt-0.5">{fav.icon || (isHulp ? "💜" : "📚")}</span>
-          <div className="flex-1 min-w-0">
-            <p className={cn(
-              "font-semibold text-base leading-snug",
-              isVoltooid && "line-through text-muted-foreground"
-            )}>
-              {fav.titel}
-              {isVoltooid && <span className="ml-2 no-underline">✅</span>}
-            </p>
-            {fav.beschrijving && (
-              <p className="text-sm text-muted-foreground mt-1 leading-relaxed line-clamp-2">
-                {fav.beschrijving}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Telefoon en website als klikbare chips */}
-        {(fav.telefoon || fav.url) && (
-          <div className="flex flex-wrap gap-2 mt-3 pl-9">
-            {fav.telefoon && (
-              <a
-                href={`tel:${fav.telefoon}`}
-                className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-full bg-primary/8 text-primary text-sm font-medium hover:bg-primary/15 transition-colors"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                </svg>
-                {fav.telefoon}
-              </a>
-            )}
-            {fav.url && (
-              <a
-                href={ensureAbsoluteUrl(fav.url)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-full bg-primary/8 text-primary text-sm font-medium hover:bg-primary/15 transition-colors"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-                {c.website}
-              </a>
-            )}
-          </div>
-        )}
-
-        {/* Scheiding */}
-        <div className="h-px bg-border mt-3 mb-3 ml-9" />
-
-        {/* Actie knoppen */}
-        <div className="flex gap-2 pl-9">
-          {!isVoltooid ? (
-            <button
-              onClick={() => onToggleVoltooid(fav.id, fav.isVoltooid)}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[var(--accent-green)]/15 text-[var(--accent-green)] font-semibold text-sm hover:bg-[var(--accent-green)]/25 transition-colors min-h-[44px]"
-            >
-              <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-              </svg>
-              {c.status.afgerond}
-            </button>
-          ) : (
-            <button
-              onClick={() => onToggleVoltooid(fav.id, fav.isVoltooid)}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border border-border text-muted-foreground font-medium text-sm hover:bg-muted transition-colors min-h-[44px]"
-            >
-              {c.status.nietAfgerond}
-            </button>
+      {/* Titel + beschrijving */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <p className={cn(
+            "font-semibold text-sm text-foreground",
+            isVoltooid && "line-through text-muted-foreground"
+          )}>
+            {fav.titel}
+            {isVoltooid && <span className="ml-1.5 no-underline">✅</span>}
+          </p>
+          {fav.beschrijving && (
+            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{fav.beschrijving}</p>
           )}
-          <button
-            onClick={() => onVerwijder(fav.id)}
-            className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-[var(--accent-red-bg)] text-[var(--accent-red)] font-semibold text-sm hover:bg-[var(--accent-red)]/20 transition-colors min-h-[44px]"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-            {c.verwijderen}
-          </button>
         </div>
+        {/* Verwijderknop */}
+        <button
+          onClick={() => onVerwijder(fav.id)}
+          className="flex-shrink-0 p-1.5 rounded-full text-muted-foreground hover:text-[var(--accent-red)] hover:bg-[var(--accent-red-bg)] transition-colors"
+          aria-label={c.verwijderen}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Telefoon en website chips */}
+      {(fav.telefoon || fav.url) && (
+        <div className="flex flex-wrap gap-2 mt-2">
+          {fav.telefoon && (
+            <a
+              href={`tel:${fav.telefoon}`}
+              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full bg-primary/8 text-primary text-xs font-medium hover:bg-primary/15 transition-colors"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+              {fav.telefoon}
+            </a>
+          )}
+          {fav.url && (
+            <a
+              href={ensureAbsoluteUrl(fav.url)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full bg-primary/8 text-primary text-xs font-medium hover:bg-primary/15 transition-colors"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+              {c.website}
+            </a>
+          )}
+        </div>
+      )}
+
+      {/* Categorie chip + afgerond knop */}
+      <div className="flex items-center gap-2 mt-2 flex-wrap">
+        {fav.categorie && (
+          <span className="text-xs bg-primary-light dark:bg-primary/20 text-primary dark:text-primary/80 px-2 py-0.5 rounded-full font-medium">
+            {fav.categorie}
+          </span>
+        )}
+        <button
+          onClick={() => onToggleVoltooid(fav.id, fav.isVoltooid)}
+          className={cn(
+            "ml-auto text-xs font-medium px-2.5 py-1 rounded-full transition-colors",
+            isVoltooid
+              ? "bg-muted text-muted-foreground hover:bg-muted/80"
+              : "bg-[var(--accent-green)]/15 text-[var(--accent-green)] hover:bg-[var(--accent-green)]/25"
+          )}
+        >
+          {isVoltooid ? c.status.nietAfgerond : c.status.afgerond}
+        </button>
       </div>
     </div>
   )
