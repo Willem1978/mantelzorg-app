@@ -1045,6 +1045,41 @@ enum AppContentType {
 }
 
 // ============================================
+// GEMEENTE BEHEER
+// ============================================
+
+model Gemeente {
+  id                    String   @id @default(cuid())
+  naam                  String   @unique  // Officiële gemeentenaam
+  code                  String?  @unique  // CBS gemeentecode
+  isActief              Boolean  @default(true)
+
+  // Contactgegevens
+  contactEmail          String?
+  contactTelefoon       String?
+  websiteUrl            String?
+  wmoLoketUrl           String?
+
+  // Aangepast advies per niveau
+  adviesLaag            String?  @db.Text  // Advies tekst bij LAAG niveau
+  adviesGemiddeld       String?  @db.Text  // Advies tekst bij GEMIDDELD niveau
+  adviesHoog            String?  @db.Text  // Advies tekst bij HOOG niveau
+
+  // Aangepaste hulpbronnen links
+  mantelzorgSteunpunt   String?  // URL mantelzorgsteunpunt
+  mantelzorgSteunpuntNaam String? // Naam steunpunt
+  respijtzorgUrl        String?
+  dagopvangUrl          String?
+
+  // Metadata
+  notities              String?  @db.Text
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([isActief])
+}
+
+// ============================================
 // SITE INSTELLINGEN (huisstijl, teksten, logo)
 // ============================================
 

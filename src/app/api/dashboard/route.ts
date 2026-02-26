@@ -160,6 +160,82 @@ export async function GET() {
       else wellbeingTrend = "stable"
     }
 
+    // Deelgebied-scores berekenen
+    const deelgebieden = latestTest
+      ? berekenDeelgebieden(
+          latestTest.antwoorden.map((a) => ({
+            vraagId: a.vraagId,
+            score: a.score,
+            gewicht: a.gewicht,
+          }))
+        )
+      : []
+
+    // Gemeente-specifiek advies ophalen
+    let gemeenteAdvies: {
+      naam: string
+      adviesLaag?: string | null
+      adviesGemiddeld?: string | null
+      adviesHoog?: string | null
+      mantelzorgSteunpunt?: string | null
+      mantelzorgSteunpuntNaam?: string | null
+      contactEmail?: string | null
+      contactTelefoon?: string | null
+      websiteUrl?: string | null
+      wmoLoketUrl?: string | null
+      respijtzorgUrl?: string | null
+      dagopvangUrl?: string | null
+    } | null = null
+
+    const gebruikerGemeente = caregiver.municipality || caregiver.careRecipientMunicipality
+    if (gebruikerGemeente) {
+      try {
+        const dbGemeente = await prisma.gemeente.findFirst({
+          where: {
+            naam: { equals: gebruikerGemeente, mode: "insensitive" },
+            isActief: true,
+          },
+          select: {
+            naam: true,
+            adviesLaag: true,
+            adviesGemiddeld: true,
+            adviesHoog: true,
+            mantelzorgSteunpunt: true,
+            mantelzorgSteunpuntNaam: true,
+            contactEmail: true,
+            contactTelefoon: true,
+            websiteUrl: true,
+            wmoLoketUrl: true,
+            respijtzorgUrl: true,
+            dagopvangUrl: true,
+          },
+        })
+        if (dbGemeente) {
+          gemeenteAdvies = dbGemeente
+        }
+      } catch {
+        // Gemeente ophalen mislukt — niet erg, fallback naar generiek advies
+      }
+    }
+
+    // Zware taken namen voor advies
+    const zwareTaken = latestTest
+      ? latestTest.taakSelecties
+          .filter((t) => t.isGeselecteerd && (t.moeilijkheid === "MOEILIJK" || t.moeilijkheid === "ZEER_MOEILIJK"))
+          .map((t) => t.taakNaam)
+      : []
+
+    // Advies genereren
+    const adviezen = genereerAdvies({
+      belastingNiveau: (latestTest?.belastingNiveau as "LAAG" | "GEMIDDELD" | "HOOG") || null,
+      score: latestTest?.totaleBelastingScore ?? null,
+      trend: testTrend,
+      zwareTaken,
+      wellbeingTrend,
+      daysSinceTest: daysSinceLastTest,
+      hasCheckIn: !!monthlyCheckIn,
+    })
+
     return NextResponse.json({
       user: {
         name: caregiver.user.name,
@@ -267,6 +343,12 @@ export async function GET() {
         latestTest?.belastingNiveau || null,
         testTrend
       ),
+
+      deelgebieden,
+
+      adviezen,
+
+      gemeenteAdvies,
 
       locatie: {
         mantelzorger: {
