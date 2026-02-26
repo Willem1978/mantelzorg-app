@@ -316,3 +316,120 @@ export const actiekaartContent = {
     "op-termijn": "bg-accent-green-bg text-accent-green border-accent-green/20",
   } as Record<Urgentie, string>,
 } as const
+
+// ============================================
+// TAAK-SPECIFIEK ADVIES (per naam, per niveau)
+// ============================================
+
+/** Concrete adviesteksten per zorgtaak × belastingniveau */
+const TAAK_SPECIFIEK: Record<string, Record<"LAAG" | "GEMIDDELD" | "HOOG", string>> = {
+  "Persoonlijke verzorging": {
+    LAAG: "Je regelt de verzorging goed. Houd het vol en neem af en toe rust.",
+    GEMIDDELD: "Thuiszorg kan helpen bij wassen, aankleden of medicijnen. Vraag je huisarts of gemeente.",
+    HOOG: "Dit is te veel om alleen te doen. Vraag een WMO-indicatie aan bij je gemeente voor thuiszorg.",
+  },
+  "Wassen/aankleden": {
+    LAAG: "Je regelt de verzorging goed. Houd het vol.",
+    GEMIDDELD: "Thuiszorg kan helpen met persoonlijke verzorging. Vraag bij je gemeente naar een PGB of indicatie.",
+    HOOG: "Vraag een WMO-indicatie aan bij je gemeente voor thuiszorg.",
+  },
+  "Huishoudelijke taken": {
+    LAAG: "Het huishouden gaat goed. Wist je dat je gemeente soms huishoudelijke hulp vergoedt?",
+    GEMIDDELD: "Hulp bij het huishouden kun je aanvragen via je gemeente (WMO). Er zijn ook particuliere diensten.",
+    HOOG: "Vraag huishoudelijke hulp aan via de WMO. Je gemeente kan dit snel regelen.",
+  },
+  "Huishouden": {
+    LAAG: "Het huishouden gaat goed.",
+    GEMIDDELD: "Hulp bij het huishouden kun je aanvragen via je gemeente (WMO).",
+    HOOG: "Vraag huishoudelijke hulp aan via de WMO.",
+  },
+  "Bereiden en/of nuttigen van maaltijden": {
+    LAAG: "De maaltijden zijn geen probleem. Tip: kook extra en vries porties in.",
+    GEMIDDELD: "Tafeltje Dekje of een maaltijdservice kan warme maaltijden bezorgen. Scheelt je tijd en energie.",
+    HOOG: "Laat maaltijden bezorgen. Tafeltje Dekje levert warme maaltijden aan huis.",
+  },
+  "Maaltijden": {
+    LAAG: "Tip: kook extra en vries porties in.",
+    GEMIDDELD: "Tafeltje Dekje of maaltijdservice kan warme maaltijden bezorgen.",
+    HOOG: "Laat maaltijden bezorgen zodat je energie overhoudt voor andere dingen.",
+  },
+  "Eten maken": {
+    LAAG: "Tip: kook extra en vries porties in.",
+    GEMIDDELD: "Tafeltje Dekje of maaltijdservice kan warme maaltijden bezorgen.",
+    HOOG: "Laat maaltijden bezorgen zodat je energie overhoudt.",
+  },
+  "Boodschappen": {
+    LAAG: "De boodschappen lopen soepel. Tip: online bestellen bespaart tijd.",
+    GEMIDDELD: "Online boodschappen bestellen scheelt een rit. Of vraag een vrijwilliger om te helpen.",
+    HOOG: "Besteed boodschappen uit. Bestel online of vraag via de marktplaats een vrijwilliger.",
+  },
+  "Administratie en aanvragen": {
+    LAAG: "De administratie loopt. Tip: bewaar belangrijke papieren op één plek.",
+    GEMIDDELD: "MEE of het sociaal wijkteam kan helpen met formulieren en aanvragen. Dat is gratis.",
+    HOOG: "Laat je helpen met formulieren en aanvragen. MEE of het wijkteam kan bijspringen.",
+  },
+  "Administratie": {
+    LAAG: "Bewaar belangrijke papieren op één plek.",
+    GEMIDDELD: "MEE of het sociaal wijkteam kan helpen met administratie en formulieren.",
+    HOOG: "Laat je helpen met formulieren. MEE of het wijkteam kan bijspringen.",
+  },
+  "Vervoer": {
+    LAAG: "Het vervoer is geen probleem. Goed dat je dat regelt!",
+    GEMIDDELD: "Regiotaxi of vrijwillige vervoersdiensten kunnen helpen. Vraag bij je gemeente.",
+    HOOG: "Regiotaxi, vrijwillig vervoer of WMO-vervoer kan je ontlasten.",
+  },
+  "Vervoer/begeleiding": {
+    LAAG: "Het vervoer gaat goed.",
+    GEMIDDELD: "Regiotaxi of vrijwillige vervoersdiensten kunnen helpen.",
+    HOOG: "Regiotaxi of WMO-vervoer kan je ontlasten.",
+  },
+  "Sociaal contact en activiteiten": {
+    LAAG: "Sociaal contact is belangrijk, voor jou en je naaste. Blijf dit doen!",
+    GEMIDDELD: "Dagbesteding of een maatje-project kan sociaal contact bieden aan je naaste.",
+    HOOG: "Dagbesteding geeft je naaste sociaal contact en jou rust. Vraag ernaar bij je gemeente.",
+  },
+  "Sociaal contact": {
+    LAAG: "Sociaal contact is belangrijk. Blijf dit doen!",
+    GEMIDDELD: "Dagbesteding of een maatje-project kan sociaal contact bieden aan je naaste.",
+    HOOG: "Dagbesteding geeft je naaste sociaal contact en jou rust.",
+  },
+  "Klusjes in en om het huis": {
+    LAAG: "De klusjes gaan goed. Tip: voor grotere klussen kun je de gemeente vragen.",
+    GEMIDDELD: "Gemeente of woningcorporatie heeft vaak een klussendienst. Vrijwilligers kunnen ook helpen.",
+    HOOG: "Laat klusjes over aan anderen. Via de marktplaats of klussendienst van je gemeente.",
+  },
+  "Klusjes": {
+    LAAG: "Voor grotere klussen kun je de gemeente vragen.",
+    GEMIDDELD: "Gemeente of woningcorporatie heeft vaak een klussendienst.",
+    HOOG: "Laat klusjes over aan anderen.",
+  },
+  "Plannen en organiseren": {
+    LAAG: "Je hebt het plannen onder controle. Gebruik de agenda om overzicht te houden.",
+    GEMIDDELD: "Plan je zorgtaken in de agenda. Zo houd je overzicht en kun je beter verdelen.",
+    HOOG: "Een casemanager of het wijkteam kan helpen met het plannen en organiseren van zorg.",
+  },
+  "Huisdieren": {
+    LAAG: "De huisdieren zijn goed verzorgd. Fijn dat dat lukt!",
+    GEMIDDELD: "Een buur of vrijwilliger kan helpen met uitlaten of voeren.",
+    HOOG: "Dierenopvang of een buurthulp kan tijdelijk de zorg voor huisdieren overnemen.",
+  },
+}
+
+const DEFAULT_ADVIES: Record<"LAAG" | "GEMIDDELD" | "HOOG", string> = {
+  LAAG: "Dit gaat goed. Houd het zo vol!",
+  GEMIDDELD: "Er is hulp beschikbaar voor deze taak. Bekijk welke opties er zijn in jouw buurt.",
+  HOOG: "Zoek hulp bij deze taak. Je hoeft het niet alleen te doen.",
+}
+
+/**
+ * Haal het advies-tekst op voor een specifieke taak × belastingniveau.
+ * Werkt met alle varianten van taaknamen (web test, WhatsApp, database).
+ */
+export function getTaakAdviesTekst(
+  taakNaam: string,
+  niveau: "LAAG" | "GEMIDDELD" | "HOOG" = "GEMIDDELD"
+): string {
+  const specifiek = TAAK_SPECIFIEK[taakNaam]
+  if (specifiek) return specifiek[niveau]
+  return DEFAULT_ADVIES[niveau]
+}

@@ -45,15 +45,15 @@ const navItems: { href: string; label: string; icon: React.ReactNode; hasBadge?:
       </svg>
     ),
   },
-  {
-    href: "/leren",
-    label: "Info & tips",
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-  },
+]
+
+// Items in het Meer-menu
+const meerItems: { href: string; label: string; icon: string }[] = [
+  { href: "/leren", label: "Info & tips", icon: "💡" },
+  { href: "/agenda", label: "Agenda", icon: "📅" },
+  { href: "/belastbaarheidstest", label: "Balanstest", icon: "📊" },
+  { href: "/profiel", label: "Mijn profiel", icon: "👤" },
+  { href: "/rapport", label: "Mijn rapport", icon: "📋" },
 ]
 
 export function MobileNav() {
@@ -61,21 +61,20 @@ export function MobileNav() {
   const [zwareTakenCount, setZwareTakenCount] = useState(0)
   const nieuwsCount = useNieuwsBadge()
   const hasFetched = useRef(false)
+  const [meerOpen, setMeerOpen] = useState(false)
 
   useEffect(() => {
-    // Alleen ophalen bij eerste mount, niet bij elke route change
     if (hasFetched.current) return
     hasFetched.current = true
 
     const fetchBadgeCount = async () => {
       try {
-        // Gebruik lichtgewicht endpoint
         const res = await fetch("/api/nav-badge")
         if (res.ok) {
           const data = await res.json()
           setZwareTakenCount(data.count || 0)
         }
-      } catch (error) {
+      } catch {
         // Silently fail
       }
     }
@@ -83,53 +82,131 @@ export function MobileNav() {
     fetchBadgeCount()
   }, [])
 
-  return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden safe-area-inset-bottom">
-      {/* Verhoogd naar h-20 (80px) voor betere touch targets */}
-      <div className="flex justify-around items-center h-20 px-1">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
-          const showHulpBadge = item.hasBadge && zwareTakenCount > 0
-          const showNieuwsBadge = item.nieuwsBadge && nieuwsCount > 0
+  // Sluit Meer-menu bij navigatie
+  useEffect(() => {
+    setMeerOpen(false)
+  }, [pathname])
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                // Vergroot touch area: min 48x48px, nu 64px breed
-                "flex flex-col items-center justify-center py-3 px-4 rounded-xl transition-all min-w-[64px] min-h-[56px] relative",
-                isActive
-                  ? "text-primary bg-primary/10"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-              )}
-            >
-              <span className={cn(
-                "transition-transform duration-200 relative",
-                isActive && "scale-110"
-              )}>
-                {item.icon}
-                {showHulpBadge && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--accent-amber)] text-white text-[11px] font-bold rounded-full flex items-center justify-center">
-                    {zwareTakenCount}
-                  </span>
+  const isMeerActive = meerItems.some(
+    (item) => pathname === item.href || pathname.startsWith(item.href + "/")
+  )
+
+  return (
+    <>
+      {/* Overlay + Meer-menu sheet */}
+      {meerOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/30"
+            onClick={() => setMeerOpen(false)}
+          />
+          <div className="fixed bottom-20 left-0 right-0 z-50 px-4 pb-2 md:hidden animate-slide-up">
+            <div className="bg-card rounded-2xl border border-border shadow-xl p-3">
+              <div className="grid grid-cols-3 gap-2">
+                {meerItems.map((item) => {
+                  const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={cn(
+                        "flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all",
+                        isActive
+                          ? "bg-primary/10 text-primary"
+                          : "text-foreground hover:bg-secondary"
+                      )}
+                    >
+                      <span className="text-2xl">{item.icon}</span>
+                      <span className="text-xs font-medium">{item.label}</span>
+                    </Link>
+                  )
+                })}
+                {/* WhatsApp link */}
+                <a
+                  href="https://wa.me/14155238886?text=Hoi"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-col items-center gap-1.5 p-3 rounded-xl text-foreground hover:bg-secondary transition-all"
+                >
+                  <span className="text-2xl">💬</span>
+                  <span className="text-xs font-medium">WhatsApp</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Bottom nav bar */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden safe-area-inset-bottom">
+        <div className="flex justify-around items-center h-20 px-1">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+            const showHulpBadge = item.hasBadge && zwareTakenCount > 0
+            const showNieuwsBadge = item.nieuwsBadge && nieuwsCount > 0
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex flex-col items-center justify-center py-3 px-4 rounded-xl transition-all min-w-[64px] min-h-[56px] relative",
+                  isActive
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                 )}
-                {showNieuwsBadge && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--accent-red)] text-white text-[11px] font-bold rounded-full flex items-center justify-center animate-pulse">
-                    {nieuwsCount}
-                  </span>
-                )}
-              </span>
-              <span className={cn(
-                "text-xs mt-1 font-medium",
-                isActive && "font-semibold"
-              )}>
-                {item.label}
-              </span>
-            </Link>
-          )
-        })}
-      </div>
-    </nav>
+              >
+                <span className={cn(
+                  "transition-transform duration-200 relative",
+                  isActive && "scale-110"
+                )}>
+                  {item.icon}
+                  {showHulpBadge && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--accent-amber)] text-white text-[11px] font-bold rounded-full flex items-center justify-center">
+                      {zwareTakenCount}
+                    </span>
+                  )}
+                  {showNieuwsBadge && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--accent-red)] text-white text-[11px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                      {nieuwsCount}
+                    </span>
+                  )}
+                </span>
+                <span className={cn(
+                  "text-xs mt-1 font-medium",
+                  isActive && "font-semibold"
+                )}>
+                  {item.label}
+                </span>
+              </Link>
+            )
+          })}
+
+          {/* Meer-knop */}
+          <button
+            onClick={() => setMeerOpen(!meerOpen)}
+            className={cn(
+              "flex flex-col items-center justify-center py-3 px-4 rounded-xl transition-all min-w-[64px] min-h-[56px]",
+              meerOpen || isMeerActive
+                ? "text-primary bg-primary/10"
+                : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+            )}
+          >
+            <svg className={cn(
+              "w-6 h-6 transition-transform duration-200",
+              meerOpen && "rotate-45"
+            )} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            <span className={cn(
+              "text-xs mt-1 font-medium",
+              (meerOpen || isMeerActive) && "font-semibold"
+            )}>
+              Meer
+            </span>
+          </button>
+        </div>
+      </nav>
+    </>
   )
 }
