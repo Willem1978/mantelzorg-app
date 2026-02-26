@@ -65,7 +65,7 @@ export async function getHulpbronnenVoorTaken(
     niveauFilter.push({ zichtbaarBijHoog: true })
   }
 
-  // Landelijke hulplijnen
+  // Landelijke hulplijnen — altijd ophalen (ook zonder test)
   const landelijk = await prisma.zorgorganisatie.findMany({
     where: {
       isActief: true,
@@ -86,17 +86,60 @@ export async function getHulpbronnenVoorTaken(
     },
   })
 
+  // Hulpbronnen voor mantelzorger zelf — altijd ophalen (ook zonder test),
+  // zonder niveauFilter zodat alle hulpbronnen altijd zichtbaar zijn
+  const voorMantelzorger = mantelzorgerGemeente
+    ? await prisma.zorgorganisatie.findMany({
+        where: {
+          isActief: true,
+          gemeente: { equals: mantelzorgerGemeente, mode: "insensitive" as const },
+          doelgroep: "MANTELZORGER",
+        },
+        orderBy: { naam: "asc" },
+        select: { naam: true, telefoon: true, website: true, beschrijving: true, gemeente: true, kosten: true, dienst: true, openingstijden: true, soortHulp: true, bronLabel: true },
+      }).then((results: any[]) => results.map(h => ({ ...h, isLandelijk: false })))
+    : []
+
+  // Alle hulpbronnen per categorie — altijd ophalen (ook zonder test),
+  // ZONDER niveauFilter zodat de hulpvragen pagina altijd resultaten toont
+  const gemeenteFilter = zorgvragerGemeente
+    ? [
+        { gemeente: { equals: zorgvragerGemeente, mode: "insensitive" as const } },
+        { gemeente: null },
+      ]
+    : [{ gemeente: null }]
+
+  const alleHulpbronnen = await prisma.zorgorganisatie.findMany({
+    where: {
+      isActief: true,
+      OR: gemeenteFilter,
+      onderdeelTest: { not: null },
+    },
+    orderBy: { naam: "asc" },
+    select: { naam: true, telefoon: true, website: true, beschrijving: true, gemeente: true, onderdeelTest: true, kosten: true, dienst: true, openingstijden: true, soortHulp: true, bronLabel: true },
+  })
+
+  const perCategorie: Record<string, HulpbronResult[]> = {}
+  alleHulpbronnen.forEach((h: any) => {
+    if (h.onderdeelTest) {
+      if (!perCategorie[h.onderdeelTest]) perCategorie[h.onderdeelTest] = []
+      perCategorie[h.onderdeelTest].push({ ...h, isLandelijk: !h.gemeente })
+    }
+  })
+
+  // Zonder test: retourneer hulpbronnen zonder perTaak (dat vereist testresultaten)
   if (!latestTest) {
     return {
       perTaak: {},
-      voorMantelzorger: [],
+      voorMantelzorger,
       landelijk,
-      perCategorie: {},
+      perCategorie,
       mantelzorgerGemeente,
       zorgvragerGemeente,
     }
   }
 
+  // Met test: ook perTaak ophalen op basis van zware taken
   const isZwaarOfMatig = (m: string | null) =>
     m === "MOEILIJK" || m === "ZEER_MOEILIJK" || m === "GEMIDDELD" ||
     m === "JA" || m === "ja" || m === "SOMS" || m === "soms"
@@ -145,45 +188,6 @@ export async function getHulpbronnenVoorTaken(
 
   taakOnderdelen.forEach(({ taak }: any, i: number) => {
     perTaak[taak.taakNaam] = taakResultaten[i]
-  })
-
-  // Hulpbronnen voor mantelzorger zelf — zonder niveauFilter zodat alle hulpbronnen altijd zichtbaar zijn
-  const voorMantelzorger = mantelzorgerGemeente
-    ? await prisma.zorgorganisatie.findMany({
-        where: {
-          isActief: true,
-          gemeente: { equals: mantelzorgerGemeente, mode: "insensitive" as const },
-          doelgroep: "MANTELZORGER",
-        },
-        orderBy: { naam: "asc" },
-        select: { naam: true, telefoon: true, website: true, beschrijving: true, gemeente: true, kosten: true, dienst: true, openingstijden: true, soortHulp: true, bronLabel: true },
-      }).then((results: any[]) => results.map(h => ({ ...h, isLandelijk: false })))
-    : []
-
-  // Alle hulpbronnen per categorie — ZONDER niveauFilter zodat de hulpvragen pagina altijd resultaten toont
-  const gemeenteFilter = zorgvragerGemeente
-    ? [
-        { gemeente: { equals: zorgvragerGemeente, mode: "insensitive" as const } },
-        { gemeente: null },
-      ]
-    : [{ gemeente: null }]
-
-  const alleHulpbronnen = await prisma.zorgorganisatie.findMany({
-    where: {
-      isActief: true,
-      OR: gemeenteFilter,
-      onderdeelTest: { not: null },
-    },
-    orderBy: { naam: "asc" },
-    select: { naam: true, telefoon: true, website: true, beschrijving: true, gemeente: true, onderdeelTest: true, kosten: true, dienst: true, openingstijden: true, soortHulp: true, bronLabel: true },
-  })
-
-  const perCategorie: Record<string, HulpbronResult[]> = {}
-  alleHulpbronnen.forEach((h: any) => {
-    if (h.onderdeelTest) {
-      if (!perCategorie[h.onderdeelTest]) perCategorie[h.onderdeelTest] = []
-      perCategorie[h.onderdeelTest].push({ ...h, isLandelijk: !h.gemeente })
-    }
   })
 
   return {
