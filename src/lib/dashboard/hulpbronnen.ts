@@ -147,36 +147,36 @@ export async function getHulpbronnenVoorTaken(
     perTaak[taak.taakNaam] = taakResultaten[i]
   })
 
-  // Hulpbronnen voor mantelzorger zelf
+  // Hulpbronnen voor mantelzorger zelf — zonder niveauFilter zodat alle hulpbronnen altijd zichtbaar zijn
   const voorMantelzorger = mantelzorgerGemeente
     ? await prisma.zorgorganisatie.findMany({
         where: {
           isActief: true,
           gemeente: { equals: mantelzorgerGemeente, mode: "insensitive" as const },
           doelgroep: "MANTELZORGER",
-          AND: niveauFilter,
         },
         orderBy: { naam: "asc" },
         select: { naam: true, telefoon: true, website: true, beschrijving: true, gemeente: true, kosten: true, dienst: true, openingstijden: true, soortHulp: true, bronLabel: true },
       }).then((results: any[]) => results.map(h => ({ ...h, isLandelijk: false })))
     : []
 
-  // Alle hulpbronnen per categorie
-  const alleHulpbronnen = zorgvragerGemeente
-    ? await prisma.zorgorganisatie.findMany({
-        where: {
-          isActief: true,
-          OR: [
-            { gemeente: { equals: zorgvragerGemeente, mode: "insensitive" as const } },
-            { gemeente: null },
-          ],
-          onderdeelTest: { not: null },
-          AND: niveauFilter,
-        },
-        orderBy: { naam: "asc" },
-        select: { naam: true, telefoon: true, website: true, beschrijving: true, gemeente: true, onderdeelTest: true, kosten: true, dienst: true, openingstijden: true, soortHulp: true, bronLabel: true },
-      })
-    : []
+  // Alle hulpbronnen per categorie — ZONDER niveauFilter zodat de hulpvragen pagina altijd resultaten toont
+  const gemeenteFilter = zorgvragerGemeente
+    ? [
+        { gemeente: { equals: zorgvragerGemeente, mode: "insensitive" as const } },
+        { gemeente: null },
+      ]
+    : [{ gemeente: null }]
+
+  const alleHulpbronnen = await prisma.zorgorganisatie.findMany({
+    where: {
+      isActief: true,
+      OR: gemeenteFilter,
+      onderdeelTest: { not: null },
+    },
+    orderBy: { naam: "asc" },
+    select: { naam: true, telefoon: true, website: true, beschrijving: true, gemeente: true, onderdeelTest: true, kosten: true, dienst: true, openingstijden: true, soortHulp: true, bronLabel: true },
+  })
 
   const perCategorie: Record<string, HulpbronResult[]> = {}
   alleHulpbronnen.forEach((h: any) => {

@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { useState, useEffect, useRef, useCallback } from "react"
-import { FavorietButton } from "@/components/FavorietButton"
 import { PageIntro } from "@/components/ui/PageIntro"
 import { lerenContent } from "@/config/content"
 
@@ -29,7 +28,6 @@ export default function LerenPage() {
   const [contentError, setContentError] = useState<string | null>(null)
   const hasFetchedContent = useRef(false)
 
-  const [favorieten, setFavorieten] = useState<Record<string, string>>({})
   const [gemeenteMantelzorger, setGemeenteMantelzorger] = useState<string | null>(null)
   const [gemeenteZorgvrager, setGemeenteZorgvrager] = useState<string | null>(null)
   const [aantalNieuwItems, setAantalNieuwItems] = useState(0)
@@ -97,15 +95,7 @@ export default function LerenPage() {
     const loadAll = async () => {
       try {
         // Alle API calls tegelijk starten
-        const [favRes, gemeenteRes, gelezenRes, artikelenRes, nieuwsRes] = await Promise.all([
-          // Favorieten check
-          fetch("/api/favorieten/check", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              items: categories.map(cat => ({ type: "INFORMATIE", itemId: cat.id })),
-            }),
-          }).catch(() => null),
+        const [gemeenteRes, gelezenRes, artikelenRes, nieuwsRes] = await Promise.all([
           // Lichtgewicht gemeente endpoint (ipv zwaar /api/dashboard)
           fetch("/api/user/gemeente").catch(() => null),
           // Gelezen nieuws IDs uit database
@@ -115,16 +105,6 @@ export default function LerenPage() {
           // Gemeente nieuws ophalen
           fetch("/api/artikelen?type=GEMEENTE_NIEUWS").catch(() => null),
         ])
-
-        // Verwerk favorieten
-        if (favRes?.ok) {
-          try {
-            const data = await favRes.json()
-            setFavorieten(data.favorited || {})
-          } catch (error) {
-            console.error("Fout bij verwerken data:", error)
-          }
-        }
 
         // Verwerk gelezen IDs uit database
         if (gelezenRes?.ok) {
@@ -304,35 +284,17 @@ export default function LerenPage() {
       {/* Categorieën grid */}
       <div className="grid grid-cols-2 gap-4">
         {categories.map((category) => {
-          const favKey = `INFORMATIE:${category.id}`
-          const isFavorited = !!favorieten[favKey]
-          const favorietId = favorieten[favKey]
           const aantalArtikelen = getAantalArtikelen(category.id)
 
           return (
-            <div key={category.id} className="ker-card hover:shadow-md transition-shadow flex flex-col items-start p-5 relative">
-              <div className="absolute top-2 right-2">
-                <FavorietButton
-                  type="INFORMATIE"
-                  itemId={category.id}
-                  titel={category.title}
-                  beschrijving={category.description}
-                  categorie="Informatie"
-                  icon={category.emoji}
-                  initialFavorited={isFavorited}
-                  initialFavorietId={favorietId}
-                  size="sm"
-                />
-              </div>
-              <Link href={category.href} className="flex flex-col items-start w-full">
-                <span className="text-3xl mb-3">{category.emoji}</span>
-                <h2 className="font-bold text-lg">{category.title}</h2>
-                <p className="text-sm text-muted-foreground">{category.description}</p>
-                {aantalArtikelen > 0 && (
-                  <p className="text-sm text-primary mt-1">{c.artikelenCountFn(aantalArtikelen)}</p>
-                )}
-              </Link>
-            </div>
+            <Link key={category.id} href={category.href} className="ker-card hover:shadow-md transition-shadow flex flex-col items-start p-5 relative">
+              <span className="text-3xl mb-3">{category.emoji}</span>
+              <h2 className="font-bold text-lg">{category.title}</h2>
+              <p className="text-sm text-muted-foreground">{category.description}</p>
+              {aantalArtikelen > 0 && (
+                <p className="text-sm text-primary mt-1">{c.artikelenCountFn(aantalArtikelen)}</p>
+              )}
+            </Link>
           )
         })}
       </div>
