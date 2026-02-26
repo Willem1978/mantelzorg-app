@@ -260,7 +260,39 @@ export async function GET() {
       )
     }
 
-    return NextResponse.json(test)
+    // Gemeente-specifiek advies ophalen als gemeente bekend is
+    let gemeenteAdvies = null
+    const gemeenteNaam = test.gemeente
+    if (gemeenteNaam) {
+      try {
+        const dbGemeente = await prisma.gemeente.findFirst({
+          where: {
+            naam: { equals: gemeenteNaam, mode: "insensitive" },
+            isActief: true,
+          },
+          select: {
+            naam: true,
+            adviesLaag: true,
+            adviesGemiddeld: true,
+            adviesHoog: true,
+            mantelzorgSteunpunt: true,
+            mantelzorgSteunpuntNaam: true,
+            contactTelefoon: true,
+            websiteUrl: true,
+            wmoLoketUrl: true,
+            respijtzorgUrl: true,
+            dagopvangUrl: true,
+          },
+        })
+        if (dbGemeente) {
+          gemeenteAdvies = dbGemeente
+        }
+      } catch {
+        // Negeer database fouten
+      }
+    }
+
+    return NextResponse.json({ ...test, gemeenteAdvies })
   } catch (error) {
     console.error("Error fetching belastbaarheidstest:", error)
     return NextResponse.json(

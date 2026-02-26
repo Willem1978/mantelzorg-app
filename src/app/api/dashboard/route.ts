@@ -171,6 +171,53 @@ export async function GET() {
         )
       : []
 
+    // Gemeente-specifiek advies ophalen
+    let gemeenteAdvies: {
+      naam: string
+      adviesLaag?: string | null
+      adviesGemiddeld?: string | null
+      adviesHoog?: string | null
+      mantelzorgSteunpunt?: string | null
+      mantelzorgSteunpuntNaam?: string | null
+      contactEmail?: string | null
+      contactTelefoon?: string | null
+      websiteUrl?: string | null
+      wmoLoketUrl?: string | null
+      respijtzorgUrl?: string | null
+      dagopvangUrl?: string | null
+    } | null = null
+
+    const gebruikerGemeente = caregiver.municipality || caregiver.careRecipientMunicipality
+    if (gebruikerGemeente) {
+      try {
+        const dbGemeente = await prisma.gemeente.findFirst({
+          where: {
+            naam: { equals: gebruikerGemeente, mode: "insensitive" },
+            isActief: true,
+          },
+          select: {
+            naam: true,
+            adviesLaag: true,
+            adviesGemiddeld: true,
+            adviesHoog: true,
+            mantelzorgSteunpunt: true,
+            mantelzorgSteunpuntNaam: true,
+            contactEmail: true,
+            contactTelefoon: true,
+            websiteUrl: true,
+            wmoLoketUrl: true,
+            respijtzorgUrl: true,
+            dagopvangUrl: true,
+          },
+        })
+        if (dbGemeente) {
+          gemeenteAdvies = dbGemeente
+        }
+      } catch {
+        // Gemeente ophalen mislukt — niet erg, fallback naar generiek advies
+      }
+    }
+
     // Zware taken namen voor advies
     const zwareTaken = latestTest
       ? latestTest.taakSelecties
@@ -300,6 +347,8 @@ export async function GET() {
       deelgebieden,
 
       adviezen,
+
+      gemeenteAdvies,
 
       locatie: {
         mantelzorger: {

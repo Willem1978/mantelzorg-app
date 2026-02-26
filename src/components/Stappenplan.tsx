@@ -13,18 +13,33 @@ interface Stap {
   kleur: "red" | "amber" | "green" | "blue"
 }
 
+interface GemeenteAdvies {
+  naam: string
+  adviesLaag?: string | null
+  adviesGemiddeld?: string | null
+  adviesHoog?: string | null
+  mantelzorgSteunpunt?: string | null
+  mantelzorgSteunpuntNaam?: string | null
+  contactTelefoon?: string | null
+  websiteUrl?: string | null
+  wmoLoketUrl?: string | null
+  respijtzorgUrl?: string | null
+  dagopvangUrl?: string | null
+}
+
 interface StappenplanProps {
   niveau: "LAAG" | "GEMIDDELD" | "HOOG"
   zwaarsteKTaak?: string | null
   zwaksteGebied?: { naam: string; emoji: string } | null
   gemeente?: string | null
+  gemeenteAdvies?: GemeenteAdvies | null
 }
 
 function getStappen(props: StappenplanProps): Stap[] {
-  const { niveau, zwaarsteKTaak, zwaksteGebied, gemeente } = props
+  const { niveau, zwaarsteKTaak, zwaksteGebied, gemeente, gemeenteAdvies } = props
 
   if (niveau === "HOOG") {
-    return [
+    const stappen: Stap[] = [
       {
         nummer: 1,
         titel: "Bel de Mantelzorglijn",
@@ -39,12 +54,14 @@ function getStappen(props: StappenplanProps): Stap[] {
         titel: gemeente
           ? `Neem contact op met gemeente ${gemeente}`
           : "Neem contact op met je gemeente",
-        beschrijving: "Vraag naar mantelzorgondersteuning. Je hebt recht op hulp.",
+        beschrijving: gemeenteAdvies?.adviesHoog
+          || "Vraag naar mantelzorgondersteuning. Je hebt recht op hulp.",
         emoji: "🏛️",
-        link: gemeente
-          ? `https://www.google.com/search?q=mantelzorgondersteuning+${encodeURIComponent(gemeente)}`
-          : "/hulpvragen?tab=voor-jou",
-        linkTekst: "Zoek contactgegevens",
+        link: gemeenteAdvies?.wmoLoketUrl
+          || (gemeente
+            ? `https://www.google.com/search?q=mantelzorgondersteuning+${encodeURIComponent(gemeente)}`
+            : "/hulpvragen?tab=voor-jou"),
+        linkTekst: gemeenteAdvies?.wmoLoketUrl ? "Naar WMO-loket" : "Zoek contactgegevens",
         kleur: "red",
       },
       {
@@ -59,6 +76,21 @@ function getStappen(props: StappenplanProps): Stap[] {
         kleur: "amber",
       },
     ]
+
+    // Voeg mantelzorgsteunpunt toe als beschikbaar via gemeente
+    if (gemeenteAdvies?.mantelzorgSteunpunt) {
+      stappen.push({
+        nummer: 4,
+        titel: gemeenteAdvies.mantelzorgSteunpuntNaam || "Mantelzorgsteunpunt",
+        beschrijving: "Zij kennen de hulp in jouw gemeente en helpen je op weg.",
+        emoji: "🏠",
+        link: gemeenteAdvies.mantelzorgSteunpunt,
+        linkTekst: "Bezoek steunpunt",
+        kleur: "blue",
+      })
+    }
+
+    return stappen
   }
 
   if (niveau === "GEMIDDELD") {
@@ -92,6 +124,19 @@ function getStappen(props: StappenplanProps): Stap[] {
       })
     }
 
+    // Gemeente-specifiek advies voor GEMIDDELD
+    if (gemeenteAdvies?.adviesGemiddeld) {
+      stappen.push({
+        nummer: stappen.length + 1,
+        titel: `Tip van gemeente ${gemeenteAdvies.naam}`,
+        beschrijving: gemeenteAdvies.adviesGemiddeld,
+        emoji: "🏛️",
+        link: gemeenteAdvies.websiteUrl || undefined,
+        linkTekst: gemeenteAdvies.websiteUrl ? "Meer informatie" : undefined,
+        kleur: "blue",
+      })
+    }
+
     stappen.push({
       nummer: stappen.length + 1,
       titel: "Doe over een maand een check-in",
@@ -106,11 +151,12 @@ function getStappen(props: StappenplanProps): Stap[] {
   }
 
   // LAAG
-  return [
+  const stappen: Stap[] = [
     {
       nummer: 1,
       titel: "Goed bezig! Blijf dit doen",
-      beschrijving: "Je balans is goed. Blijf goed voor jezelf zorgen.",
+      beschrijving: gemeenteAdvies?.adviesLaag
+        || "Je balans is goed. Blijf goed voor jezelf zorgen.",
       emoji: "💚",
       kleur: "green",
     },
@@ -124,6 +170,8 @@ function getStappen(props: StappenplanProps): Stap[] {
       kleur: "blue",
     },
   ]
+
+  return stappen
 }
 
 export function Stappenplan(props: StappenplanProps) {

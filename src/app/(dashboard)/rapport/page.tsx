@@ -24,6 +24,20 @@ const TAAK_NAAR_HULP_TAB: Record<string, { tab: 'voor-jou' | 'voor-naaste', cate
   't9': { tab: 'voor-naaste', categorie: 'Klusjes in en om het huis' },
 }
 
+interface GemeenteAdvies {
+  naam: string
+  adviesLaag?: string | null
+  adviesGemiddeld?: string | null
+  adviesHoog?: string | null
+  mantelzorgSteunpunt?: string | null
+  mantelzorgSteunpuntNaam?: string | null
+  contactTelefoon?: string | null
+  websiteUrl?: string | null
+  wmoLoketUrl?: string | null
+  respijtzorgUrl?: string | null
+  dagopvangUrl?: string | null
+}
+
 interface TestResult {
   id?: string
   voornaam: string
@@ -50,6 +64,7 @@ interface TestResult {
     beschrijving: string
     urgentie: string
   }>
+  gemeenteAdvies?: GemeenteAdvies | null
 }
 
 export default function RapportPage() {
@@ -264,7 +279,8 @@ export default function RapportPage() {
 
               {/* Gemeente mantelzorgondersteuner */}
               <a
-                href={result.gemeente ? `https://www.google.com/search?q=mantelzorgondersteuning+${encodeURIComponent(result.gemeente)}` : "https://mantelzorg.nl/steunpunten"}
+                href={result.gemeenteAdvies?.wmoLoketUrl
+                  || (result.gemeente ? `https://www.google.com/search?q=mantelzorgondersteuning+${encodeURIComponent(result.gemeente)}` : "https://mantelzorg.nl/steunpunten")}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-4 p-4 bg-[var(--accent-red-bg)] rounded-xl hover:bg-red-100 transition-colors"
@@ -277,10 +293,32 @@ export default function RapportPage() {
                     {result.gemeente ? hoog.acties.gemeente.titleFn(result.gemeente) : hoog.acties.gemeente.titleFallback}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {hoog.acties.gemeente.beschrijving}
+                    {result.gemeenteAdvies?.adviesHoog || hoog.acties.gemeente.beschrijving}
                   </p>
                 </div>
               </a>
+
+              {/* Mantelzorgsteunpunt (als beschikbaar via gemeente) */}
+              {result.gemeenteAdvies?.mantelzorgSteunpunt && (
+                <a
+                  href={result.gemeenteAdvies.mantelzorgSteunpunt}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-4 p-4 bg-[var(--accent-red-bg)] rounded-xl hover:bg-red-100 transition-colors"
+                >
+                  <div className="w-12 h-12 bg-[var(--emoticon-red)] rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white text-xl">🏠</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-bold text-foreground">
+                      {result.gemeenteAdvies.mantelzorgSteunpuntNaam || "Mantelzorgsteunpunt"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Zij kennen de hulp in jouw gemeente en helpen je op weg.
+                    </p>
+                  </div>
+                </a>
+              )}
 
               {/* Mantelzorglijn */}
               <a
@@ -300,7 +338,7 @@ export default function RapportPage() {
             </div>
           </div>
 
-          {/* Taken waar hulp bij nodig is - KLIKBAAR */}
+          {/* Taken waar hulp bij nodig is - met advies per taak */}
           {takenMetAandacht.length > 0 && (
             <div className="ker-card mb-4">
               <h3 className="font-bold text-foreground mb-3">
@@ -309,30 +347,35 @@ export default function RapportPage() {
               <p className="text-sm text-muted-foreground mb-4">
                 {hoog.takenSubtitleFn(result.totaleZorguren)}
               </p>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {takenMetAandacht.map((taak) => {
                   const hulpInfo = TAAK_NAAR_HULP_TAB[taak.taakId]
                   return (
                     <Link
                       key={taak.taakId}
                       href={`/hulpvragen?tab=${hulpInfo?.tab || 'voor-naaste'}&categorie=${encodeURIComponent(hulpInfo?.categorie || taak.taakNaam)}`}
-                      className="flex items-center justify-between p-3 bg-[var(--accent-red-bg)] rounded-xl hover:bg-[var(--accent-red-bg)]/80 transition-colors cursor-pointer group"
+                      className="block p-3 bg-[var(--accent-red-bg)] rounded-xl hover:bg-[var(--accent-red-bg)]/80 transition-colors cursor-pointer group"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className={cn(
-                          "w-3 h-3 rounded-full",
-                          isZwaar(taak.moeilijkheid) ? "bg-[var(--emoticon-red)]" : "bg-[var(--emoticon-yellow)]"
-                        )} />
-                        <span className="text-foreground text-sm">{taak.taakNaam}</span>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            "w-3 h-3 rounded-full",
+                            isZwaar(taak.moeilijkheid) ? "bg-[var(--emoticon-red)]" : "bg-[var(--emoticon-yellow)]"
+                          )} />
+                          <span className="font-medium text-foreground text-sm">{taak.taakNaam}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {taak.urenPerWeek && (
+                            <span className="text-muted-foreground text-xs">{taak.urenPerWeek} uur/week</span>
+                          )}
+                          <svg className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {taak.urenPerWeek && (
-                          <span className="text-muted-foreground text-sm">{taak.urenPerWeek} uur</span>
-                        )}
-                        <svg className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </div>
+                      <p className="text-xs text-muted-foreground pl-6">
+                        {getHulpTip(taak.taakId)}
+                      </p>
                     </Link>
                   )
                 })}
@@ -416,25 +459,54 @@ export default function RapportPage() {
           {/* Hulp zoeken */}
           <div className="ker-card mb-4">
             <h3 className="font-bold text-foreground mb-3">{gem.vindHulp}</h3>
+
+            {/* Gemeente-specifiek advies */}
+            {result.gemeenteAdvies?.adviesGemiddeld && (
+              <div className="p-3 bg-[var(--accent-amber-bg)] rounded-xl mb-3 border-l-4 border-[var(--accent-amber)]">
+                <p className="text-sm text-foreground">
+                  <strong>Gemeente {result.gemeenteAdvies.naam}:</strong>{" "}
+                  {result.gemeenteAdvies.adviesGemiddeld}
+                </p>
+              </div>
+            )}
+
             <div className="space-y-2">
-              <a
-                href={result.gemeente ? `https://www.google.com/search?q=mantelzorgondersteuning+${encodeURIComponent(result.gemeente)}` : "https://mantelzorg.nl/steunpunten"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 p-3 border-2 border-border rounded-xl hover:border-primary/50 transition-colors"
-              >
-                <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-primary-foreground">🤝</span>
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium text-foreground text-sm">{gem.steunpunt.title}</p>
-                  <p className="text-xs text-muted-foreground">{gem.steunpunt.beschrijving}</p>
-                </div>
-              </a>
+              {/* Mantelzorgsteunpunt (als beschikbaar) */}
+              {result.gemeenteAdvies?.mantelzorgSteunpunt ? (
+                <a
+                  href={result.gemeenteAdvies.mantelzorgSteunpunt}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 border-2 border-border rounded-xl hover:border-primary/50 transition-colors"
+                >
+                  <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-primary-foreground">🤝</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-foreground text-sm">{result.gemeenteAdvies.mantelzorgSteunpuntNaam || gem.steunpunt.title}</p>
+                    <p className="text-xs text-muted-foreground">{gem.steunpunt.beschrijving}</p>
+                  </div>
+                </a>
+              ) : (
+                <a
+                  href={result.gemeente ? `https://www.google.com/search?q=mantelzorgondersteuning+${encodeURIComponent(result.gemeente)}` : "https://mantelzorg.nl/steunpunten"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 border-2 border-border rounded-xl hover:border-primary/50 transition-colors"
+                >
+                  <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-primary-foreground">🤝</span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-foreground text-sm">{gem.steunpunt.title}</p>
+                    <p className="text-xs text-muted-foreground">{gem.steunpunt.beschrijving}</p>
+                  </div>
+                </a>
+              )}
 
               {result.gemeente && (
                 <a
-                  href={`https://www.google.com/search?q=WMO+loket+${encodeURIComponent(result.gemeente)}`}
+                  href={result.gemeenteAdvies?.wmoLoketUrl || `https://www.google.com/search?q=WMO+loket+${encodeURIComponent(result.gemeente)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 p-3 border-2 border-border rounded-xl hover:border-primary/50 transition-colors"
@@ -590,6 +662,7 @@ export default function RapportPage() {
             : null
         }
         gemeente={result.gemeente}
+        gemeenteAdvies={result.gemeenteAdvies}
       />
 
       {/* PDF download */}
