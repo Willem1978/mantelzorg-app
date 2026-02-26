@@ -8,7 +8,8 @@ import { GerAvatar } from "@/components/GerAvatar"
 import { ResultSmiley } from "@/components/ui"
 import { PdfDownloadButton } from "@/components/PdfDownloadButton"
 import { useRapportContent } from "@/hooks/useRapportContent"
-import { berekenDeelgebieden, type DeelgebiedScore } from "@/lib/dashboard/deelgebieden"
+import { berekenDeelgebieden } from "@/lib/dashboard/deelgebieden"
+import { Stappenplan } from "@/components/Stappenplan"
 
 // Mapping van taak naar categorie voor hulpvragen pagina
 const TAAK_NAAR_HULP_TAB: Record<string, { tab: 'voor-jou' | 'voor-naaste', categorie: string }> = {
@@ -576,6 +577,20 @@ export default function RapportPage() {
           </div>
         </div>
       )}
+
+      {/* Stappenplan */}
+      <Stappenplan
+        niveau={niveau}
+        zwaarsteKTaak={zwareTaken[0]?.taakNaam || null}
+        zwaksteGebied={
+          deelgebieden.length > 0
+            ? deelgebieden.reduce((zwakste, dg) =>
+                dg.percentage > zwakste.percentage ? dg : zwakste
+              )
+            : null
+        }
+        gemeente={result.gemeente}
+      />
 
       {/* PDF download */}
       {result.id && (
