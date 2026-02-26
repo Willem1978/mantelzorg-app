@@ -36,6 +36,8 @@ interface Stats {
 export default function BeheerDashboard() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [seedStatus, setSeedStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
+  const [seedResult, setSeedResult] = useState<string | null>(null)
 
   useEffect(() => {
     fetch("/api/beheer/statistieken")
@@ -105,6 +107,21 @@ export default function BeheerDashboard() {
       link: "/beheer/hulpbronnen",
     },
   ]
+
+  async function seedContent() {
+    setSeedStatus("loading")
+    setSeedResult(null)
+    try {
+      const res = await fetch("/api/beheer/seed-content", { method: "POST" })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Onbekende fout")
+      setSeedStatus("success")
+      setSeedResult(`${data.created} nieuwe keys aangemaakt, ${data.skipped} al aanwezig.`)
+    } catch (err: any) {
+      setSeedStatus("error")
+      setSeedResult(err.message || "Er ging iets mis")
+    }
+  }
 
   const kleurMap: Record<string, string> = {
     blue: "bg-blue-50 border-blue-200",
@@ -222,6 +239,32 @@ export default function BeheerDashboard() {
             Beheer informatie, tips en gemeentenieuws
           </p>
         </Link>
+      </div>
+
+      {/* Systeemacties */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">Systeemacties</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Eenmalige acties voor het instellen van het platform.
+        </p>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={seedContent}
+            disabled={seedStatus === "loading"}
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+          >
+            {seedStatus === "loading" ? "Bezig..." : "Content keys laden"}
+          </button>
+          {seedResult && (
+            <span className={`text-sm ${seedStatus === "success" ? "text-green-600" : "text-red-600"}`}>
+              {seedResult}
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-gray-400 mt-2">
+          Vult alle bewerkbare teksten (rapport, advies, hulptips) in de database.
+          Bestaande aanpassingen worden niet overschreven.
+        </p>
       </div>
     </div>
   )
