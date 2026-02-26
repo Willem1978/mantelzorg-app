@@ -208,7 +208,7 @@ export default function InstellingenPage() {
         <dl className="space-y-2 text-sm">
           <div className="flex justify-between py-1 border-b border-gray-100">
             <dt className="text-gray-500">Applicatie</dt>
-            <dd className="text-gray-900 font-medium">MatenBuddy Beheer</dd>
+            <dd className="text-gray-900 font-medium">MantelBuddy Beheer</dd>
           </div>
           <div className="flex justify-between py-1 border-b border-gray-100">
             <dt className="text-gray-500">Framework</dt>

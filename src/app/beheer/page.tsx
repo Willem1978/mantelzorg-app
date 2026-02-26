@@ -239,6 +239,16 @@ export default function BeheerDashboard() {
             Beheer informatie, tips en gemeentenieuws
           </p>
         </Link>
+
+        <Link
+          href="/beheer/handleiding"
+          className="bg-blue-50 rounded-xl border border-blue-200 p-4 hover:shadow-md transition-shadow"
+        >
+          <h3 className="font-semibold text-gray-900">Handleiding</h3>
+          <p className="text-sm text-gray-500 mt-1">
+            Uitleg over alle functies en het inrichten van het platform
+          </p>
+        </Link>
       </div>
 
       {/* Systeemacties */}
