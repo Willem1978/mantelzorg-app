@@ -117,7 +117,7 @@ export default function GemeenteLayout({
             <Link href="/gemeente" className="flex items-center gap-2">
               <LogoIcon size={32} />
               <span className="font-semibold text-gray-900">MantelBuddy</span>
-              <span className="text-xs bg-primary-light text-primary px-2 py-0.5 rounded-full font-medium">
+              <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full font-medium">
                 {gemeenteNaam}
               </span>
             </Link>
