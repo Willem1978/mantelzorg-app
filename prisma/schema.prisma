@@ -1065,6 +1065,11 @@ model Gemeente {
   adviesGemiddeld       String?  @db.Text  // Advies tekst bij GEMIDDELD niveau
   adviesHoog            String?  @db.Text  // Advies tekst bij HOOG niveau
 
+  // Gekoppelde organisaties per belastingniveau
+  organisatieLaagId     String?  // Zorgorganisatie ID voor LAAG niveau
+  organisatieGemiddeldId String? // Zorgorganisatie ID voor GEMIDDELD niveau
+  organisatieHoogId     String?  // Zorgorganisatie ID voor HOOG niveau
+
   // Aangepaste hulpbronnen links
   mantelzorgSteunpunt   String?  // URL mantelzorgsteunpunt
   mantelzorgSteunpuntNaam String? // Naam steunpunt
