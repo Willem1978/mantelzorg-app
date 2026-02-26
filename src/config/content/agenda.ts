@@ -8,16 +8,6 @@ export const agendaContent = {
 
   addButton: "Iets toevoegen",
 
-  // Event type labels en hints (B1 taalgebruik)
-  eventTypes: {
-    CARE_TASK: { label: "Zorg", icon: "🏥", hint: "Voor de zorg" },
-    APPOINTMENT: { label: "Afspraak", icon: "📅", hint: "Arts of andere afspraak" },
-    SELF_CARE: { label: "Voor mij", icon: "🧘", hint: "Tijd voor jezelf" },
-    SOCIAL: { label: "Samen", icon: "👥", hint: "Met vrienden of familie" },
-    WORK: { label: "Werk", icon: "💼", hint: "Werk of studie" },
-    OTHER: { label: "Anders", icon: "📝", hint: "Iets anders" },
-  },
-
   // Herinnering opties
   reminderOptions: {
     none: "Geen",
@@ -30,9 +20,10 @@ export const agendaContent = {
   // Nieuw item formulier
   form: {
     title: "Nieuw in agenda",
-    stap1: "1. Waar gaat het over?",
+    stap1: "1. Welke zorgtaak?",
+    stap1Hint: "Kies de taak die je gaat doen.",
     stap2: "2. Wat moet je doen?",
-    stap2Placeholder: "Bijvoorbeeld: Naar de dokter",
+    stap2Placeholder: "Bijvoorbeeld: Boodschappen halen bij Albert Heijn",
     stap3: "3. Wanneer?",
     heleDag: "De hele dag",
     datum: "Datum",

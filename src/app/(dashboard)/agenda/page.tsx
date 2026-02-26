@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback } from "react"
 import { Button, Card, CardContent } from "@/components/ui"
 import { cn } from "@/lib/utils"
-import { eventTypeColors } from "@/config/colors"
 import { agendaContent } from "@/config/content"
+import { ZORGTAKEN } from "@/config/options"
 
 const c = agendaContent
 
@@ -19,16 +19,6 @@ interface CalendarEvent {
   eventType: string
   color?: string
 }
-
-// B1 taalgebruik - korte, simpele woorden
-const eventTypes = [
-  { value: "CARE_TASK", label: c.eventTypes.CARE_TASK.label, icon: c.eventTypes.CARE_TASK.icon, color: eventTypeColors.CARE_TASK, hint: c.eventTypes.CARE_TASK.hint },
-  { value: "APPOINTMENT", label: c.eventTypes.APPOINTMENT.label, icon: c.eventTypes.APPOINTMENT.icon, color: eventTypeColors.APPOINTMENT, hint: c.eventTypes.APPOINTMENT.hint },
-  { value: "SELF_CARE", label: c.eventTypes.SELF_CARE.label, icon: c.eventTypes.SELF_CARE.icon, color: eventTypeColors.SELF_CARE, hint: c.eventTypes.SELF_CARE.hint },
-  { value: "SOCIAL", label: c.eventTypes.SOCIAL.label, icon: c.eventTypes.SOCIAL.icon, color: eventTypeColors.SOCIAL, hint: c.eventTypes.SOCIAL.hint },
-  { value: "WORK", label: c.eventTypes.WORK.label, icon: c.eventTypes.WORK.icon, color: eventTypeColors.WORK, hint: c.eventTypes.WORK.hint },
-  { value: "OTHER", label: c.eventTypes.OTHER.label, icon: c.eventTypes.OTHER.icon, color: eventTypeColors.OTHER, hint: c.eventTypes.OTHER.hint },
-]
 
 const reminderOptions = [
   { value: 0, label: c.reminderOptions.none },
@@ -47,7 +37,7 @@ export default function AgendaPage() {
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [location, setLocation] = useState("")
-  const [eventType, setEventType] = useState("OTHER")
+  const [zorgtaakId, setZorgtaakId] = useState<string | null>(null)
   const [startDate, setStartDate] = useState("")
   const [startTime, setStartTime] = useState("")
   const [endTime, setEndTime] = useState("")
@@ -98,12 +88,11 @@ export default function AgendaPage() {
           title,
           description,
           location,
-          eventType,
+          eventType: "CARE_TASK",
           startTime: startDateTime,
           endTime: endDateTime,
           isAllDay,
           reminderMinutes: reminder || null,
-          color: eventTypes.find(t => t.value === eventType)?.color,
         }),
       })
 
@@ -123,7 +112,7 @@ export default function AgendaPage() {
     setTitle("")
     setDescription("")
     setLocation("")
-    setEventType("OTHER")
+    setZorgtaakId(null)
     setStartDate("")
     setStartTime("")
     setEndTime("")
@@ -131,8 +120,10 @@ export default function AgendaPage() {
     setReminder(0)
   }
 
-  const getEventTypeInfo = (type: string) => {
-    return eventTypes.find(t => t.value === type) || eventTypes[5]
+  // Zoek de zorgtaak-emoji uit de event titel
+  const getEventIcon = (eventTitle: string) => {
+    const matchedTask = ZORGTAKEN.find(t => t.emoji && eventTitle.startsWith(t.emoji))
+    return matchedTask?.emoji || "🏥"
   }
 
   const formatTime = (dateString: string) => {
@@ -241,27 +232,41 @@ export default function AgendaPage() {
                   </button>
                 </div>
 
-                {/* Stap 1: Waar gaat het over */}
+                {/* Stap 1: Welke zorgtaak */}
                 <div>
-                  <label className="block text-base font-medium text-foreground mb-3">
+                  <label className="block text-base font-medium text-foreground mb-2">
                     {c.form.stap1}
                   </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {eventTypes.map((type) => (
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {c.form.stap1Hint}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {ZORGTAKEN.map((taak) => (
                       <button
-                        key={type.value}
+                        key={taak.id}
                         type="button"
-                        onClick={() => setEventType(type.value)}
+                        onClick={() => {
+                          setZorgtaakId(taak.id)
+                          if (!title) {
+                            setTitle(`${taak.emoji} ${taak.naam}`)
+                          }
+                        }}
                         className={cn(
-                          "p-3 sm:p-4 rounded-xl border-2 transition-all text-center",
-                          eventType === type.value
+                          "flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-left",
+                          zorgtaakId === taak.id
                             ? "border-primary bg-primary/10"
                             : "border-border hover:border-primary/50"
                         )}
                       >
-                        <span className="text-2xl sm:text-3xl block">{type.icon}</span>
-                        <p className="text-sm font-medium mt-1 text-foreground">{type.label}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{type.hint}</p>
+                        <span className="text-xl flex-shrink-0">{taak.emoji}</span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground leading-tight truncate">
+                            {taak.naam}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {taak.beschrijving}
+                          </p>
+                        </div>
                       </button>
                     ))}
                   </div>
@@ -440,16 +445,12 @@ export default function AgendaPage() {
                 </h3>
                 <div className="space-y-2">
                   {dayEvents.map((event) => {
-                    const typeInfo = getEventTypeInfo(event.eventType)
+                    const icon = getEventIcon(event.title)
                     return (
                       <Card key={event.id} className="overflow-hidden">
-                        <div
-                          className="h-1"
-                          style={{ backgroundColor: event.color || typeInfo.color }}
-                        />
                         <CardContent className="p-4">
                           <div className="flex gap-3">
-                            <div className="text-2xl">{typeInfo.icon}</div>
+                            <div className="text-2xl">{icon}</div>
                             <div className="flex-1 min-w-0">
                               <h4 className="font-medium text-foreground">
                                 {event.title}
