@@ -29,6 +29,8 @@ const DEFAULTS: Array<{
   { categorie: "kleuren", sleutel: "kleuren.scoreLaag", waarde: "#2E7D32", label: "Score laag (groen)", type: "color", groep: "Score kleuren", volgorde: 10 },
   { categorie: "kleuren", sleutel: "kleuren.scoreGemiddeld", waarde: "#C86800", label: "Score gemiddeld (oranje)", type: "color", groep: "Score kleuren", volgorde: 11 },
   { categorie: "kleuren", sleutel: "kleuren.scoreHoog", waarde: "#B71C1C", label: "Score hoog (rood)", type: "color", groep: "Score kleuren", volgorde: 12 },
+  { categorie: "kleuren", sleutel: "kleuren.uitlegblokBg", waarde: "#E6FFFA", label: "Achtergrondkleur", type: "color", groep: "Kleur uitlegblokken", volgorde: 20 },
+  { categorie: "kleuren", sleutel: "kleuren.uitlegblokBorder", waarde: "#2C7A7B", label: "Rand kleur (links)", type: "color", groep: "Kleur uitlegblokken", volgorde: 21 },
 
   // ── Teksten ──
   { categorie: "teksten", sleutel: "teksten.landing.heroTitle", waarde: "Samen zorgen, samen sterk", label: "Hero titel (landingspagina)", type: "text", groep: "Landingspagina", volgorde: 1 },
