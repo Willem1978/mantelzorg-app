@@ -14,6 +14,8 @@ const CSS_VAR_MAP: Record<string, string> = {
   "kleuren.scoreLaag": "--accent-green",
   "kleuren.scoreGemiddeld": "--accent-amber",
   "kleuren.scoreHoog": "--accent-red",
+  "kleuren.uitlegblokBg": "--uitlegblok-bg",
+  "kleuren.uitlegblokBorder": "--uitlegblok-border",
 }
 
 /**

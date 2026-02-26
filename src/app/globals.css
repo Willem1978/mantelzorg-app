@@ -47,6 +47,9 @@
   --accent-amber-bg: #FFF3E0;
   --accent-red: #B71C1C;
   --accent-red-bg: #FFEBEE;
+
+  /* Uitlegblokken */
+  --uitlegblok-bg: #E6FFFA;
 }
 
 .dark {
@@ -79,6 +82,8 @@
   --accent-amber-bg: #3D2A10;
   --accent-red: #EF5350;
   --accent-red-bg: #3D1A1A;
+
+  --uitlegblok-bg: #234E52;
 }
 
 @theme inline {
@@ -834,9 +839,9 @@ html {
    ============================================ */
 
 .ker-page-intro {
-  background: linear-gradient(135deg, var(--primary-light) 0%, var(--card) 100%);
+  background: var(--uitlegblok-bg);
   border: 1px solid var(--border);
-  border-left: 4px solid var(--primary);
+  border-left: 4px solid var(--uitlegblok-border, var(--primary));
   border-radius: 1rem;
   padding: 1.25rem 1.5rem;
   margin-bottom: 1.5rem;

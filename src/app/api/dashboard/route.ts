@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma"
 import { getHulpbronnenVoorTaken } from "@/lib/dashboard/hulpbronnen"
 import { getAanbevolenArtikelen } from "@/lib/dashboard/artikelen"
 import { buildMijlpalen } from "@/lib/dashboard/mijlpalen"
+import { berekenDeelgebieden } from "@/lib/dashboard/deelgebieden"
+import { genereerAdvies } from "@/lib/dashboard/advies"
 
 export const dynamic = "force-dynamic"
 
