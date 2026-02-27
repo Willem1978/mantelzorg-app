@@ -9,6 +9,7 @@ import { GerAvatar } from "@/components/GerAvatar"
 import { ContextBalk } from "@/components/dashboard/ContextBalk"
 import { dashboardContent } from "@/config/content"
 import { getTaakAdviesTekst } from "@/config/actiekaarten"
+import { WelkomBanner } from "@/components/dashboard/WelkomBanner"
 
 const c = dashboardContent
 
@@ -308,6 +309,9 @@ function DashboardContentView() {
           </p>
         </div>
       </div>
+
+      {/* WELKOMSTBANNER — na onboarding */}
+      <WelkomBanner userName={userName} />
 
       {/* CONTEXTBALK — compact statusoverzicht */}
       {data?.test?.hasTest && (
