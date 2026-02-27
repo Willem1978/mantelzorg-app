@@ -1,9 +1,16 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import dynamic from "next/dynamic"
 import { AdminSpinner, AdminEmptyState } from "@/components/admin"
 import { useToast } from "@/components/ui/Toast"
 import { ARTIKEL_CATEGORIEEN, ARTIKEL_TYPES, ARTIKEL_STATUSSEN, ARTIKEL_SUB_HOOFDSTUKKEN, BRON_LABELS } from "@/config/options"
+
+// Lazy-load rich text editor (SSR niet nodig)
+const RichTextEditor = dynamic(
+  () => import("@/components/ui/RichTextEditor").then((mod) => mod.RichTextEditor),
+  { ssr: false, loading: () => <div className="h-[200px] bg-gray-50 rounded-lg animate-pulse" /> }
+)
 
 interface Artikel {
   id: string
@@ -297,12 +304,10 @@ export default function ArtikelenPage() {
 
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Uitgebreide inhoud</label>
-                <textarea
-                  value={formulier.inhoud}
-                  onChange={(e) => setFormulier({ ...formulier, inhoud: e.target.value })}
-                  rows={5}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  placeholder="Optioneel: uitgebreide artikelinhoud..."
+                <RichTextEditor
+                  content={formulier.inhoud}
+                  onChange={(html) => setFormulier({ ...formulier, inhoud: html })}
+                  placeholder="Schrijf hier de uitgebreide artikelinhoud..."
                 />
               </div>
 

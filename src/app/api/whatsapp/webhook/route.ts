@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { parseIncomingWhatsAppMessage } from '@/lib/twilio'
+import { createLogger } from '@/lib/logger'
+
+const log = createLogger('whatsapp')
 import {
   getTestSession,
   getHulpSession,
@@ -52,11 +55,7 @@ export async function POST(request: NextRequest) {
     const buttonText = formDataObj.ButtonText as string | undefined
     const userInput = buttonText || message.body
 
-    console.log('Inkomend WhatsApp bericht:', {
-      from: message.from,
-      body: message.body,
-      buttonText,
-    })
+    log.info({ from: message.from, buttonText }, 'Inkomend WhatsApp bericht')
 
     // Zoek gekoppelde gebruiker
     const phoneWithPrefix = message.from
@@ -165,7 +164,7 @@ export async function POST(request: NextRequest) {
       quickReplyButtons
     )
   } catch (error) {
-    console.error('Webhook error:', error)
+    log.error({ error }, 'Webhook error')
     return sendTwiML('Sorry, er is iets misgegaan. Probeer het later opnieuw.')
   }
 }
