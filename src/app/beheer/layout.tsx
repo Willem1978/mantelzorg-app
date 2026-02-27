@@ -49,6 +49,13 @@ const menuGroepen: { label: string; items: { href: string; label: string; icon: 
     ],
   },
   {
+    label: "AI Agents",
+    items: [
+      { href: "/beheer/analytics", label: "Analytics & Signalen", icon: "📈" },
+      { href: "/beheer/moderatie", label: "Moderatie", icon: "🛡️" },
+    ],
+  },
+  {
     label: "Systeem",
     items: [
       { href: "/beheer/audit", label: "Audit Log", icon: "📋" },
