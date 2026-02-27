@@ -59,7 +59,7 @@ export async function POST(req: Request) {
   const { messages: uiMessages } = await req.json()
 
   // Converteer UI messages (met parts) naar model messages (met content)
-  const messages = convertToModelMessages(uiMessages)
+  const messages = await convertToModelMessages(uiMessages)
 
   // Haal gebruikerscontext op voor gepersonaliseerde antwoorden
   const caregiver = await prisma.caregiver.findUnique({
