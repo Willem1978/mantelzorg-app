@@ -3,6 +3,7 @@ import { streamText, tool, stepCountIs, convertToModelMessages } from "ai"
 import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { berekenDeelgebieden } from "@/lib/dashboard/deelgebieden"
 
 const anthropic = createAnthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -24,11 +25,27 @@ WAT JE DOET:
 - Geef praktische tips
 - Verwijs naar de juiste pagina's in de app
 - Zoek hulpbronnen en organisaties via je tools
+- Bespreek en interpreteer balanstest resultaten (gebruik je tools hiervoor)
 
 WAT JE NIET DOET:
 - Geen medisch advies geven
 - Geen diagnoses stellen
 - Bij crisis: verwijs altijd naar 112 of de huisarts
+
+BALANSTEST COACH:
+Als iemand vraagt over hun testresultaten, balanstest, score, of hoe het met ze gaat:
+1. Gebruik de tool "bekijkBalanstest" om hun laatste resultaten op te halen
+2. Leg de resultaten uit in begrijpelijke taal
+3. Focus op de 3 deelgebieden: Energie, Gevoel en Tijd
+4. Bij HOOG niveau: wees zorgzaam maar duidelijk, verwijs naar hulp
+5. Bij GEMIDDELD niveau: erken de druk, geef concrete tips
+6. Bij LAAG niveau: complimenteer, moedig aan om balans te houden
+7. Noem specifieke zorgtaken die zwaar zijn en zoek hulpbronnen daarvoor
+8. Als er alarmen zijn (hoge belasting, emotionele nood etc.), benoem deze voorzichtig
+
+Bij vragen over trend/voortgang: gebruik "bekijkTestTrend" om veranderingen te tonen.
+
+Verwijs altijd naar /rapport voor het volledige rapport en /balanstest voor het overzicht.
 
 APP PAGINA'S waar je naar kunt verwijzen:
 - /hulpvragen — Hulp zoeken bij jou in de buurt
@@ -262,6 +279,167 @@ export async function POST(req: Request) {
               respijtzorg: gem.respijtzorgUrl,
               dagopvang: gem.dagopvangUrl,
             },
+          }
+        },
+      }),
+
+      bekijkBalanstest: tool({
+        description: "Bekijk de meest recente balanstest resultaten van de gebruiker. Gebruik dit als iemand vraagt over hun testresultaten, score, hoe het met ze gaat, of als je advies wilt geven op basis van hun situatie.",
+        inputSchema: z.object({}),
+        execute: async () => {
+          const test = await prisma.belastbaarheidTest.findFirst({
+            where: { caregiver: { userId: session.user.id }, isCompleted: true },
+            orderBy: { completedAt: "desc" },
+            select: {
+              id: true,
+              totaleBelastingScore: true,
+              belastingNiveau: true,
+              totaleZorguren: true,
+              completedAt: true,
+              antwoorden: {
+                select: { vraagId: true, vraagTekst: true, antwoord: true, score: true, gewicht: true },
+                orderBy: { vraagId: "asc" },
+              },
+              taakSelecties: {
+                where: { isGeselecteerd: true },
+                select: { taakNaam: true, urenPerWeek: true, moeilijkheid: true },
+                orderBy: { urenPerWeek: "desc" },
+              },
+              alarmLogs: {
+                select: { type: true, beschrijving: true, urgentie: true },
+              },
+            },
+          })
+
+          if (!test) {
+            return {
+              gevonden: false,
+              bericht: "Deze gebruiker heeft nog geen balanstest gedaan. Verwijs naar /belastbaarheidstest om de test te doen.",
+            }
+          }
+
+          // Bereken deelgebied-scores
+          const deelgebieden = berekenDeelgebieden(
+            test.antwoorden.map((a) => ({ vraagId: a.vraagId, score: a.score, gewicht: a.gewicht }))
+          )
+
+          // Bepaal zware taken (MOEILIJK of ZEER_MOEILIJK)
+          const zwareTaken = test.taakSelecties.filter(
+            (t) => t.moeilijkheid === "MOEILIJK" || t.moeilijkheid === "ZEER_MOEILIJK"
+          )
+
+          return {
+            gevonden: true,
+            testDatum: test.completedAt?.toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" }),
+            totaalScore: test.totaleBelastingScore,
+            maxScore: 24,
+            niveau: test.belastingNiveau,
+            totaleZorguren: test.totaleZorguren,
+            deelgebieden: deelgebieden.map((d) => ({
+              naam: d.naam,
+              emoji: d.emoji,
+              score: d.score,
+              maxScore: d.maxScore,
+              percentage: d.percentage,
+              niveau: d.niveau,
+              tip: d.tip,
+            })),
+            zorgtaken: test.taakSelecties.map((t) => ({
+              taak: t.taakNaam,
+              urenPerWeek: t.urenPerWeek,
+              moeilijkheid: t.moeilijkheid,
+            })),
+            zwareTaken: zwareTaken.map((t) => t.taakNaam),
+            alarmen: test.alarmLogs.map((a) => ({
+              type: a.type,
+              beschrijving: a.beschrijving,
+              urgentie: a.urgentie,
+            })),
+            vragenMetJa: test.antwoorden
+              .filter((a) => a.antwoord === "ja")
+              .map((a) => a.vraagTekst),
+          }
+        },
+      }),
+
+      bekijkTestTrend: tool({
+        description: "Bekijk de trend van meerdere balanstesten over tijd. Gebruik dit als iemand vraagt of het beter of slechter gaat, of naar hun voortgang.",
+        inputSchema: z.object({}),
+        execute: async () => {
+          const tests = await prisma.belastbaarheidTest.findMany({
+            where: { caregiver: { userId: session.user.id }, isCompleted: true },
+            orderBy: { completedAt: "asc" },
+            take: 8,
+            select: {
+              totaleBelastingScore: true,
+              belastingNiveau: true,
+              totaleZorguren: true,
+              completedAt: true,
+              antwoorden: {
+                select: { vraagId: true, score: true, gewicht: true },
+              },
+            },
+          })
+
+          if (tests.length === 0) {
+            return {
+              gevonden: false,
+              bericht: "Deze gebruiker heeft nog geen balanstesten gedaan. Verwijs naar /belastbaarheidstest.",
+            }
+          }
+
+          if (tests.length === 1) {
+            return {
+              gevonden: true,
+              aantalTests: 1,
+              bericht: "Er is pas 1 test gedaan. Na de volgende test kan ik een trend laten zien.",
+              laatsteScore: tests[0].totaleBelastingScore,
+              laatsteNiveau: tests[0].belastingNiveau,
+            }
+          }
+
+          const eerste = tests[0]
+          const laatste = tests[tests.length - 1]
+          const scoreVerschil = (laatste.totaleBelastingScore ?? 0) - (eerste.totaleBelastingScore ?? 0)
+
+          // Bereken deelgebieden voor eerste en laatste test
+          const deelgebiedenEerst = berekenDeelgebieden(
+            eerste.antwoorden.map((a) => ({ vraagId: a.vraagId, score: a.score, gewicht: a.gewicht }))
+          )
+          const deelgebiedenLaatst = berekenDeelgebieden(
+            laatste.antwoorden.map((a) => ({ vraagId: a.vraagId, score: a.score, gewicht: a.gewicht }))
+          )
+
+          return {
+            gevonden: true,
+            aantalTests: tests.length,
+            periode: {
+              van: eerste.completedAt?.toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" }),
+              tot: laatste.completedAt?.toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" }),
+            },
+            scoreTrend: {
+              eersteScore: eerste.totaleBelastingScore,
+              laatsteScore: laatste.totaleBelastingScore,
+              verschil: scoreVerschil,
+              richting: scoreVerschil < 0 ? "verbeterd" : scoreVerschil > 0 ? "verslechterd" : "gelijk",
+            },
+            zorguren: {
+              eerst: eerste.totaleZorguren,
+              laatst: laatste.totaleZorguren,
+            },
+            deelgebiedTrend: deelgebiedenEerst.map((d, i) => ({
+              naam: d.naam,
+              emoji: d.emoji,
+              eersteNiveau: d.niveau,
+              laatsteNiveau: deelgebiedenLaatst[i].niveau,
+              eerstePercentage: d.percentage,
+              laatstePercentage: deelgebiedenLaatst[i].percentage,
+            })),
+            alleScores: tests.map((t) => ({
+              datum: t.completedAt?.toLocaleDateString("nl-NL", { day: "numeric", month: "short" }),
+              score: t.totaleBelastingScore,
+              niveau: t.belastingNiveau,
+            })),
           }
         },
       }),
