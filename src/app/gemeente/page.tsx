@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { AdminSpinner } from "@/components/admin"
 
 interface DashboardData {
@@ -127,29 +128,38 @@ export default function GemeenteDashboard() {
       value: data.totaalMantelzorgers,
       sub: `${data.nieuweDezeMaand} nieuwe deze maand`,
       color: "bg-primary-light border-primary",
-      iconColor: "text-primary",
+      href: "/gemeente/demografie",
     },
     {
       label: "Gem. belastingscore",
       value: data.gemiddeldeScore,
       sub: <TrendIcon trend={data.scoreTrend} />,
       color: "bg-blue-50 border-blue-200",
-      iconColor: "text-blue-600",
+      href: "/gemeente/trends",
     },
     {
       label: "Actieve alarmen",
       value: data.actieveAlarmen,
       sub: "Niet afgehandeld",
       color: data.actieveAlarmen > 0 ? "bg-red-50 border-red-200" : "bg-gray-50 border-gray-200",
-      iconColor: data.actieveAlarmen > 0 ? "text-red-600" : "text-gray-500",
+      href: "/gemeente/alarmen",
     },
     {
       label: "Open hulpvragen",
       value: data.hulpvragen.open,
       sub: `${data.hulpvragen.totaal} totaal`,
       color: "bg-amber-50 border-amber-200",
-      iconColor: "text-amber-600",
+      href: "/gemeente/hulpvragen",
     },
+  ]
+
+  const snelLinks = [
+    { label: "Demografie", emoji: "👥", href: "/gemeente/demografie", beschrijving: "Leeftijd, relaties, wijken" },
+    { label: "Trends", emoji: "📈", href: "/gemeente/trends", beschrijving: "Maand- en seizoensoverzicht" },
+    { label: "Hulpvragen", emoji: "🤝", href: "/gemeente/hulpvragen", beschrijving: "Status en categorieën" },
+    { label: "Signalering", emoji: "🔔", href: "/gemeente/alarmen", beschrijving: "Alarmen en urgentie" },
+    { label: "Rapportages", emoji: "📄", href: "/gemeente/rapportages", beschrijving: "CSV en HTML exports" },
+    { label: "Content", emoji: "📝", href: "/gemeente/content", beschrijving: "Artikelen beheren" },
   ]
 
   return (
@@ -162,14 +172,21 @@ export default function GemeenteDashboard() {
         </p>
       </div>
 
-      {/* KPI Tiles */}
+      {/* KPI Tiles — klikbaar */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {kpiTiles.map((tile) => (
-          <div key={tile.label} className={`p-5 rounded-xl border ${tile.color}`}>
+          <Link
+            key={tile.label}
+            href={tile.href}
+            className={`p-5 rounded-xl border ${tile.color} hover:shadow-md transition-shadow group`}
+          >
             <p className="text-sm text-gray-600">{tile.label}</p>
             <p className="text-3xl font-bold text-gray-900 mt-1">{tile.value}</p>
-            <div className="mt-2 text-xs text-gray-500">{tile.sub}</div>
-          </div>
+            <div className="mt-2 text-xs text-gray-500 flex items-center justify-between">
+              <span>{tile.sub}</span>
+              <span className="text-gray-400 group-hover:text-primary transition-colors">→</span>
+            </div>
+          </Link>
         ))}
       </div>
 
@@ -227,6 +244,31 @@ export default function GemeenteDashboard() {
           </>
         )}
       </div>
+
+      {/* Snelle navigatie */}
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900 mb-3">Snel naar</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {snelLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="p-4 bg-white rounded-xl border border-gray-200 hover:border-primary/40 hover:shadow-md transition-all group"
+            >
+              <span className="text-2xl">{link.emoji}</span>
+              <p className="font-medium text-gray-900 mt-1 group-hover:text-primary transition-colors">
+                {link.label}
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">{link.beschrijving}</p>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* Laatste update */}
+      <p className="text-xs text-gray-400 text-center">
+        Laatst bijgewerkt: {new Date().toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+      </p>
     </div>
   )
 }
