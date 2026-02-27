@@ -49,6 +49,7 @@ const navItems: { href: string; label: string; icon: React.ReactNode; hasBadge?:
 
 // Items in het Meer-menu
 const meerItems: { href: string; label: string; icon: string }[] = [
+  { href: "/ai-assistent", label: "Vraag Ger", icon: "🤖" },
   { href: "/leren", label: "Info & tips", icon: "💡" },
   { href: "/agenda", label: "Agenda", icon: "📅" },
   { href: "/belastbaarheidstest", label: "Balanstest", icon: "📊" },
