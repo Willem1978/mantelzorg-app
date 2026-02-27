@@ -48,7 +48,21 @@ function parseButtons(text: string): { cleanText: string; buttons: ParsedButton[
 export function AiChat() {
   const router = useRouter()
   const { messages, sendMessage, status, error } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/ai/chat" }),
+    transport: new DefaultChatTransport({
+      api: "/api/ai/chat",
+      // Convert UI messages (parts format) to model messages (content format)
+      // before sending to server, so streamText receives valid ModelMessage[]
+      prepareSendMessagesRequest: async ({ messages: msgs, body, ...rest }) => {
+        const converted = msgs.map((msg) => ({
+          role: msg.role,
+          content: msg.parts
+            ?.filter((p): p is { type: "text"; text: string } => p.type === "text")
+            .map((p) => p.text)
+            .join("") || "",
+        }))
+        return { ...rest, body: { ...body, messages: converted } }
+      },
+    }),
   })
   const [input, setInput] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)

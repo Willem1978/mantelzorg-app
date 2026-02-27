@@ -1,5 +1,5 @@
 import { createAnthropic } from "@ai-sdk/anthropic"
-import { streamText, tool, stepCountIs, convertToModelMessages } from "ai"
+import { streamText, tool, stepCountIs } from "ai"
 import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -112,22 +112,29 @@ export async function POST(req: Request) {
     return new Response("Niet ingelogd", { status: 401 })
   }
 
-  const { messages: uiMessages } = await req.json()
+  const body = await req.json()
+  const rawMessages = body.messages
 
-  // Converteer UI messages (parts format) naar model messages (content format)
-  // convertToModelMessages is async in AI SDK v6 - must be awaited
-  let messages
-  try {
-    messages = await convertToModelMessages(uiMessages)
-    console.log("[AI Chat] Converted", uiMessages?.length, "UI messages to", messages.length, "model messages")
-  } catch (conversionError) {
-    console.error("[AI Chat] Message conversion failed:", conversionError)
-    console.error("[AI Chat] Raw UI messages:", JSON.stringify(uiMessages))
-    return new Response(
-      JSON.stringify({ error: "Fout bij het verwerken van berichten." }),
-      { status: 400, headers: { "Content-Type": "application/json" } }
-    )
-  }
+  // Handle both UI messages (parts format) and pre-converted model messages (content format).
+  // The client's prepareSendMessagesRequest converts to content format, but we also
+  // handle the parts format as a fallback for older clients.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const messages = rawMessages.map((msg: any) => {
+    // Already in model format (has content)
+    if (msg.content !== undefined) {
+      return { role: msg.role, content: msg.content }
+    }
+    // UI format (has parts) — convert to model format
+    if (msg.parts) {
+      const text = msg.parts
+        .filter((p: { type: string }) => p.type === "text")
+        .map((p: { type: string; text?: string }) => p.text || "")
+        .join("")
+      return { role: msg.role, content: text }
+    }
+    // Fallback
+    return { role: msg.role, content: "" }
+  })
 
   // Haal gebruikerscontext op voor gepersonaliseerde antwoorden
   const caregiver = await prisma.caregiver.findUnique({
