@@ -726,16 +726,24 @@ export default function BeheerHulpbronnenPage() {
             <button
               onClick={() => csvInputRef.current?.click()}
               disabled={importing}
-              className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--accent-blue,#3b82f6)] text-white hover:opacity-90 transition disabled:opacity-50"
+              className="group relative px-4 py-2 rounded-lg text-sm font-medium bg-[var(--accent-blue,#3b82f6)] text-white hover:opacity-90 transition disabled:opacity-50"
+              title="Importeer organisaties vanuit een CSV-bestand (Excel export)"
             >
-              {importing ? "Importeren..." : "CSV Import"}
+              <span className="flex items-center gap-1.5">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+                {importing ? "Importeren..." : "Bestand importeren"}
+              </span>
             </button>
             <button
               onClick={handleVerrijk}
               disabled={verrijking}
               className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--accent-green)] text-white hover:opacity-90 transition disabled:opacity-50"
+              title="Vul ontbrekende gemeente- en provinciegegevens aan via PDOK (overheidsdata)"
             >
-              {verrijking ? "Verrijken..." : "📍 Data verrijken"}
+              <span className="flex items-center gap-1.5">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                {verrijking ? "Verrijken..." : "Locaties aanvullen"}
+              </span>
             </button>
             <button
               onClick={() => {
@@ -754,8 +762,12 @@ export default function BeheerHulpbronnenPage() {
                 setShowScraper(!showScraper)
               }}
               className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--accent-amber)] text-white hover:opacity-90 transition"
+              title="Zoek online naar hulporganisaties op basis van gemeente en/of dienst"
             >
-              🔍 Web zoeken
+              <span className="flex items-center gap-1.5">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                {showScraper ? "Zoeken sluiten" : "Organisaties zoeken"}
+              </span>
             </button>
             <button
               onClick={() => {
@@ -774,12 +786,26 @@ export default function BeheerHulpbronnenPage() {
                 setShowForm(true)
               }}
               className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--primary)] text-white hover:opacity-90 transition"
+              title="Voeg handmatig een nieuwe hulporganisatie toe"
             >
-              + Toevoegen
+              <span className="flex items-center gap-1.5">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                Handmatig toevoegen
+              </span>
             </button>
           </div>
         )}
       </div>
+
+      {/* Uitleg knoppen */}
+      {isLoggedIn && activeTab === "hulp" && beheerModus && (
+        <div className="mb-4 p-3 rounded-lg bg-muted/40 border border-border text-xs text-muted-foreground grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div><strong className="text-foreground">Bestand importeren:</strong> Upload een CSV/Excel-bestand met organisaties</div>
+          <div><strong className="text-foreground">Locaties aanvullen:</strong> Vul automatisch ontbrekende gemeente/provincie aan</div>
+          <div><strong className="text-foreground">Organisaties zoeken:</strong> Zoek online naar hulpdiensten per gemeente of onderwerp</div>
+          <div><strong className="text-foreground">Handmatig toevoegen:</strong> Voeg zelf een organisatie toe met naam, adres en dienst</div>
+        </div>
+      )}
 
       {/* Verrijk resultaat banner */}
       {verrijkResult && (
