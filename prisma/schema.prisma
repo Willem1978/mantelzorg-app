@@ -1,11 +1,13 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [vector]
 }
 
 model User {
@@ -422,6 +424,10 @@ model Zorgorganisatie {
   bronLabel             String?             // Bronlabel: Landelijk, Gemeente, Zvw, Wlz, Overig
   zorgverzekeraar       Boolean             @default(false) // Tag: valt onder zorgverzekeraar
 
+  // Vector embedding voor semantische zoek (pgvector, 1536 dimensies)
+  // Gegenereerd door OpenAI text-embedding-3-small
+  embedding             Unsupported("vector(1536)")?
+
   @@index([isActief, gemeente])
   @@index([isActief, onderdeelTest])
   @@index([gemeente])
@@ -478,6 +484,10 @@ model Artikel {
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   aangemaaaktDoor String?         // User ID van de maker
+
+  // Vector embedding voor semantische zoek (pgvector, 1536 dimensies)
+  // Gegenereerd door OpenAI text-embedding-3-small
+  embedding             Unsupported("vector(1536)")?
 
   @@index([categorie, isActief])
   @@index([type, isActief])
