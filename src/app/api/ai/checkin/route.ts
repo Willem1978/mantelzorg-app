@@ -60,25 +60,27 @@ export async function POST(req: Request) {
     return { role: msg.role, content: "" }
   })
 
+  // Twee gemeenten: zorgtaken → gemeente zorgvrager, mantelzorger hulp → gemeente mantelzorger
   const caregiver = await prisma.caregiver.findUnique({
     where: { userId: session.user.id },
-    select: { municipality: true, city: true },
+    select: { municipality: true, city: true, careRecipientMunicipality: true, careRecipientCity: true },
   })
 
-  const gemeente = caregiver?.municipality || caregiver?.city || null
+  const gemeenteMantelzorger = caregiver?.municipality || caregiver?.city || null
+  const gemeenteZorgvrager = caregiver?.careRecipientMunicipality || caregiver?.careRecipientCity || gemeenteMantelzorger
   const userId = session.user.id
 
   try {
     const result = streamText({
       model: anthropic("claude-sonnet-4-20250514"),
-      system: buildCheckinBuddyPrompt(gemeente),
+      system: buildCheckinBuddyPrompt(gemeenteZorgvrager || gemeenteMantelzorger),
       messages,
       maxOutputTokens: 1000,
       stopWhen: stepCountIs(5),
       tools: {
-        bekijkBalanstest: createBekijkBalanstestTool({ userId, gemeente }),
+        bekijkBalanstest: createBekijkBalanstestTool({ userId, gemeenteZorgvrager, gemeenteMantelzorger }),
         bekijkCheckInTrend: createBekijkCheckInTrendTool({ userId }),
-        zoekHulpbronnen: createZoekHulpbronnenTool({ gemeente }),
+        zoekHulpbronnen: createZoekHulpbronnenTool({ gemeenteZorgvrager, gemeenteMantelzorger }),
         zoekArtikelen: createZoekArtikelenTool(),
         registreerAlarm: createRegistreerAlarmTool({ userId }),
       },

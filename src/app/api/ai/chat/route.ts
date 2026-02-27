@@ -52,33 +52,36 @@ export async function POST(req: Request) {
     return { role: msg.role, content: "" }
   })
 
-  // Haal gebruikerscontext op
+  // Haal gebruikerscontext op — twee gemeenten: mantelzorger en zorgvrager
+  // Hulp bij zorgtaken (verzorging, boodschappen, klusjes) → gemeente zorgvrager
+  // Hulp voor de mantelzorger zelf (steunpunt, emotioneel) → gemeente mantelzorger
   const caregiver = await prisma.caregiver.findUnique({
     where: { userId: session.user.id },
-    select: { municipality: true, city: true },
+    select: { municipality: true, city: true, careRecipientMunicipality: true, careRecipientCity: true },
   })
 
-  const gemeente = caregiver?.municipality || caregiver?.city || null
+  const gemeenteMantelzorger = caregiver?.municipality || caregiver?.city || null
+  const gemeenteZorgvrager = caregiver?.careRecipientMunicipality || caregiver?.careRecipientCity || gemeenteMantelzorger
   const userId = session.user.id
 
   try {
     // Pre-fetch balanstest + hulpbronnen zodat de AI direct kan antwoorden
-    const userContext = await prefetchUserContext(userId, gemeente)
+    const userContext = await prefetchUserContext(userId, gemeenteMantelzorger, gemeenteZorgvrager)
     const contextBlock = buildContextBlock(userContext)
 
     const result = streamText({
       model: anthropic("claude-sonnet-4-20250514"),
-      system: buildAssistentPrompt(gemeente, contextBlock),
+      system: buildAssistentPrompt(gemeenteZorgvrager || gemeenteMantelzorger, contextBlock),
       messages,
       maxOutputTokens: 2048,
       stopWhen: stepCountIs(3),
       tools: {
         // Tools beschikbaar voor extra zoekopdrachten (niet nodig voor standaard vragen)
         bekijkTestTrend: createBekijkTestTrendTool({ userId }),
-        zoekHulpbronnen: createZoekHulpbronnenTool({ gemeente }),
+        zoekHulpbronnen: createZoekHulpbronnenTool({ gemeenteZorgvrager, gemeenteMantelzorger }),
         zoekArtikelen: createZoekArtikelenTool(),
         gemeenteInfo: createGemeenteInfoTool(),
-        semantischZoeken: createSemantischZoekenTool(gemeente),
+        semantischZoeken: createSemantischZoekenTool(gemeenteZorgvrager || gemeenteMantelzorger),
       },
     })
 

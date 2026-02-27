@@ -20,7 +20,23 @@ function getOnderdeelVarianten(taakNaam: string): string[] {
   return [taakNaam, ...varianten]
 }
 
-export async function prefetchUserContext(userId: string, gemeente: string | null) {
+/**
+ * Pre-fetch met twee gemeenten:
+ * - gemeenteMantelzorger: voor hulp AAN de mantelzorger (steunpunt, emotioneel)
+ * - gemeenteZorgvrager: voor hulp BIJ zorgtaken (verzorging, boodschappen, klusjes)
+ *
+ * Voorbeeld: mantelzorger woont in Arnhem, zorgvrager in Zutphen
+ * → Hulp bij boodschappen/verzorging komt uit Zutphen
+ * → Mantelzorgsteunpunt komt uit Arnhem
+ */
+export async function prefetchUserContext(
+  userId: string,
+  gemeenteMantelzorger: string | null,
+  gemeenteZorgvrager?: string | null,
+) {
+  // Fallback: als alleen één gemeente wordt meegegeven (backwards compatibility)
+  const gemZorgvrager = gemeenteZorgvrager ?? gemeenteMantelzorger
+
   // 1) Haal de laatste balanstest op
   const test = await prisma.belastbaarheidTest.findFirst({
     where: { caregiver: { userId }, isCompleted: true },
@@ -48,8 +64,9 @@ export async function prefetchUserContext(userId: string, gemeente: string | nul
 
   if (!test) {
     // Geen test? Haal alsnog alle hulpbronnen per categorie op
-    const alleHulp = await fetchAlleHulpbronnenPerCategorie(gemeente)
-    const mantelzorgerHulp = await fetchMantelzorgerHulp(gemeente)
+    // Zorgtaken-hulp → gemeente zorgvrager, mantelzorger-hulp → gemeente mantelzorger
+    const alleHulp = await fetchAlleHulpbronnenPerCategorie(gemZorgvrager)
+    const mantelzorgerHulp = await fetchMantelzorgerHulp(gemeenteMantelzorger)
     return { heeftTest: false as const, alleHulpPerCategorie: alleHulp, hulpVoorMantelzorger: mantelzorgerHulp }
   }
 
@@ -61,10 +78,11 @@ export async function prefetchUserContext(userId: string, gemeente: string | nul
   // 3) Coach adviezen
   const adviesMap = await loadCoachAdviezen()
 
-  // 4) Gemeente contact
+  // 4) Gemeente contact — zorgtaken worden bij zorgvrager gedaan
+  const gemeenteVoorContact = gemZorgvrager || gemeenteMantelzorger
   const gemeenteContact =
-    gemeente && test.belastingNiveau
-      ? await resolveGemeenteContact(gemeente, test.belastingNiveau)
+    gemeenteVoorContact && test.belastingNiveau
+      ? await resolveGemeenteContact(gemeenteVoorContact, test.belastingNiveau)
       : null
 
   // 5) Zware taken
@@ -72,15 +90,15 @@ export async function prefetchUserContext(userId: string, gemeente: string | nul
     (t) => t.moeilijkheid === "MOEILIJK" || t.moeilijkheid === "ZEER_MOEILIJK"
   )
 
-  // 6) Hulpbronnen per zware taak — zelfde logica als hulpvragen pagina
+  // 6) Hulpbronnen per zware taak — gemeente ZORGVRAGER (daar vindt de zorg plaats)
   const niveauFilter: Record<string, unknown>[] = []
   if (test.belastingNiveau === "LAAG") niveauFilter.push({ zichtbaarBijLaag: true })
   else if (test.belastingNiveau === "GEMIDDELD") niveauFilter.push({ zichtbaarBijGemiddeld: true })
   else if (test.belastingNiveau === "HOOG") niveauFilter.push({ zichtbaarBijHoog: true })
 
-  const gemeenteFilter = gemeente
+  const gemeenteFilter = gemZorgvrager
     ? [
-        { gemeente: { equals: gemeente, mode: "insensitive" as const } },
+        { gemeente: { equals: gemZorgvrager, mode: "insensitive" as const } },
         { gemeente: null },
       ]
     : [{ gemeente: null }]
@@ -125,11 +143,11 @@ export async function prefetchUserContext(userId: string, gemeente: string | nul
     }
   }
 
-  // 7) Hulpbronnen voor de mantelzorger zelf
-  const hulpVoorMantelzorger = await fetchMantelzorgerHulp(gemeente)
+  // 7) Hulpbronnen voor de mantelzorger zelf — gemeente MANTELZORGER (daar woont de mantelzorger)
+  const hulpVoorMantelzorger = await fetchMantelzorgerHulp(gemeenteMantelzorger)
 
-  // 8) Alle hulpbronnen per categorie (voor wanneer de gebruiker over een specifieke categorie vraagt)
-  const alleHulpPerCategorie = await fetchAlleHulpbronnenPerCategorie(gemeente)
+  // 8) Alle hulpbronnen per categorie — gemeente ZORGVRAGER (zorgtaken vinden daar plaats)
+  const alleHulpPerCategorie = await fetchAlleHulpbronnenPerCategorie(gemZorgvrager)
 
   // Bouw het resultaat
   const probleemDeelgebieden = deelgebieden.filter(
@@ -159,11 +177,16 @@ export async function prefetchUserContext(userId: string, gemeente: string | nul
     })),
     zwareTaken: zwareTaken.map((t) => {
       const tid = TAAK_ID_MAP[t.taakNaam]
+      // Niveau-specifiek advies (taak.t1.HOOG) met fallback naar generiek (taak.t1.advies)
+      const niveauAdvies = tid && test.belastingNiveau
+        ? adviesMap[`taak.${tid}.${test.belastingNiveau}`] || null
+        : null
+      const generiekAdvies = tid ? (adviesMap[`taak.${tid}.advies`] || null) : null
       return {
         taak: t.taakNaam,
         urenPerWeek: t.urenPerWeek,
         moeilijkheid: t.moeilijkheid,
-        advies: tid ? (adviesMap[`taak.${tid}.advies`] || null) : null,
+        advies: niveauAdvies || generiekAdvies,
       }
     }),
     hulpVoorNaaste,
