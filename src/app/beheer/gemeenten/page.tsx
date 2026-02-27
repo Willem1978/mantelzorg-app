@@ -32,6 +32,7 @@ interface Organisatie {
   id: string
   naam: string
   type: string
+  dienst: string | null
 }
 
 interface PdokGemeente {
@@ -145,6 +146,7 @@ export default function GemeentenPage() {
           id: o.id,
           naam: o.naam,
           type: o.type,
+          dienst: o.dienst || null,
         }))
       )
     } catch {
@@ -484,7 +486,7 @@ export default function GemeentenPage() {
               >
                 <option value="">-- Geen organisatie --</option>
                 {organisaties.map((o) => (
-                  <option key={o.id} value={o.id}>{o.naam} ({o.type})</option>
+                  <option key={o.id} value={o.id}>{o.naam}{o.dienst ? ` — ${o.dienst}` : ''}</option>
                 ))}
               </select>
             </div>
@@ -511,7 +513,7 @@ export default function GemeentenPage() {
               >
                 <option value="">-- Geen organisatie --</option>
                 {organisaties.map((o) => (
-                  <option key={o.id} value={o.id}>{o.naam} ({o.type})</option>
+                  <option key={o.id} value={o.id}>{o.naam}{o.dienst ? ` — ${o.dienst}` : ''}</option>
                 ))}
               </select>
             </div>
@@ -538,7 +540,7 @@ export default function GemeentenPage() {
               >
                 <option value="">-- Geen organisatie --</option>
                 {organisaties.map((o) => (
-                  <option key={o.id} value={o.id}>{o.naam} ({o.type})</option>
+                  <option key={o.id} value={o.id}>{o.naam}{o.dienst ? ` — ${o.dienst}` : ''}</option>
                 ))}
               </select>
             </div>
