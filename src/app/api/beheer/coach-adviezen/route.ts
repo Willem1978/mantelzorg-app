@@ -104,7 +104,7 @@ export async function POST(request: Request) {
       actie: "UPDATE",
       entiteit: "CoachAdvies",
       entiteitId: result.id,
-      details: `Coach advies bijgewerkt: ${sleutel}`,
+      details: { sleutel, label },
     })
 
     return NextResponse.json({ item: result })
