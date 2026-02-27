@@ -1,5 +1,5 @@
 import { createAnthropic } from "@ai-sdk/anthropic"
-import { streamText, tool, stepCountIs } from "ai"
+import { streamText, tool, stepCountIs, convertToModelMessages } from "ai"
 import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -56,7 +56,10 @@ export async function POST(req: Request) {
     return new Response("Niet ingelogd", { status: 401 })
   }
 
-  const { messages } = await req.json()
+  const { messages: uiMessages } = await req.json()
+
+  // Converteer UI messages (met parts) naar model messages (met content)
+  const messages = convertToModelMessages(uiMessages)
 
   // Haal gebruikerscontext op voor gepersonaliseerde antwoorden
   const caregiver = await prisma.caregiver.findUnique({
