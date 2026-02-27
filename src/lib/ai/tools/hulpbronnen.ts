@@ -68,7 +68,12 @@ export function createZoekHulpbronnenTool(ctx: { gemeente: string | null }) {
       })
 
       if (resultaten.length === 0) {
-        return { gevonden: 0, bericht: "Geen hulpbronnen gevonden. Probeer een bredere zoekterm." }
+        return {
+          gevonden: 0,
+          bericht: gem
+            ? `Geen hulpbronnen gevonden in ${gem}. Geef de gebruiker algemeen advies over dit onderwerp en verwijs naar de gemeente of huisarts.`
+            : "Geen hulpbronnen gevonden. Geef de gebruiker algemeen advies over dit onderwerp en verwijs naar de gemeente of huisarts.",
+        }
       }
 
       return {

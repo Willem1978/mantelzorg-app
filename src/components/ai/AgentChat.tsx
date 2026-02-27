@@ -84,7 +84,7 @@ export function AgentChat({
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [input, setInput] = useState("")
 
-  const { messages, sendMessage, status } = useChat({
+  const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
       api: apiEndpoint,
       prepareSendMessagesRequest: async ({ messages: msgs, body, ...rest }) => {
@@ -239,6 +239,15 @@ export function AgentChat({
               <div className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:300ms]" />
             </div>
             <span className="text-xs">Ger denkt na...</span>
+          </div>
+        )}
+
+        {/* Error */}
+        {error && (
+          <div className="bg-[var(--accent-red-bg)] border border-[var(--accent-red)]/20 rounded-xl p-3">
+            <p className="text-sm text-foreground">
+              Er ging iets mis. Probeer het later opnieuw.
+            </p>
           </div>
         )}
 
