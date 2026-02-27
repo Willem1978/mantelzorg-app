@@ -11,6 +11,9 @@ import {
   createGemeenteInfoTool,
 } from "@/lib/ai/tools"
 
+// Vercel serverless function timeout: AI tool calls + DB queries need more than default 10s
+export const maxDuration = 30
+
 const anthropic = createAnthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 })
@@ -63,7 +66,7 @@ export async function POST(req: Request) {
       system: buildAssistentPrompt(gemeente),
       messages,
       maxOutputTokens: 2048,
-      stopWhen: stepCountIs(5),
+      stopWhen: stepCountIs(3),
       tools: {
         bekijkBalanstest: createBekijkBalanstestTool({ userId, gemeente }),
         bekijkTestTrend: createBekijkTestTrendTool({ userId }),

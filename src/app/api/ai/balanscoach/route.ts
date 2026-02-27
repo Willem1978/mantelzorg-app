@@ -20,6 +20,9 @@ import {
   createGenereerRapportSamenvattingTool,
 } from "@/lib/ai/tools"
 
+// Vercel serverless function timeout: AI tool calls + DB queries need more than default 10s
+export const maxDuration = 30
+
 const anthropic = createAnthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 })
