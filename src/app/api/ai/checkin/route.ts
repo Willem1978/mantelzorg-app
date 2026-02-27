@@ -1,14 +1,25 @@
+/**
+ * Check-in Buddy API endpoint.
+ *
+ * Wordt aangeroepen na de maandelijkse check-in.
+ * - Voert een empathisch gesprek over hoe het gaat
+ * - Detecteert alarmsignalen (EMOTIONELE_NOOD, SOCIAAL_ISOLEMENT, etc.)
+ * - Stelt proactief hulpbronnen voor
+ * - Schrijft AlarmLog bij kritieke signalen
+ *
+ * Het eerste bericht bevat de check-in antwoorden als context.
+ */
 import { createAnthropic } from "@ai-sdk/anthropic"
 import { streamText, stepCountIs } from "ai"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { buildAssistentPrompt } from "@/lib/ai/prompts/assistent"
+import { buildCheckinBuddyPrompt } from "@/lib/ai/prompts/checkin-buddy"
 import {
   createBekijkBalanstestTool,
-  createBekijkTestTrendTool,
+  createBekijkCheckInTrendTool,
   createZoekHulpbronnenTool,
   createZoekArtikelenTool,
-  createGemeenteInfoTool,
+  createRegistreerAlarmTool,
 } from "@/lib/ai/tools"
 
 const anthropic = createAnthropic({
@@ -17,9 +28,8 @@ const anthropic = createAnthropic({
 
 export async function POST(req: Request) {
   if (!process.env.ANTHROPIC_API_KEY) {
-    console.error("[AI Chat] ANTHROPIC_API_KEY is niet geconfigureerd")
     return new Response(
-      JSON.stringify({ error: "AI-chat is niet beschikbaar. De ANTHROPIC_API_KEY is niet geconfigureerd." }),
+      JSON.stringify({ error: "AI is niet beschikbaar." }),
       { status: 503, headers: { "Content-Type": "application/json" } }
     )
   }
@@ -32,7 +42,6 @@ export async function POST(req: Request) {
   const body = await req.json()
   const rawMessages = body.messages
 
-  // Handle both UI messages (parts format) and pre-converted model messages (content format)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const messages = rawMessages.map((msg: any) => {
     if (msg.content !== undefined) {
@@ -48,7 +57,6 @@ export async function POST(req: Request) {
     return { role: msg.role, content: "" }
   })
 
-  // Haal gebruikerscontext op
   const caregiver = await prisma.caregiver.findUnique({
     where: { userId: session.user.id },
     select: { municipality: true, city: true },
@@ -60,25 +68,25 @@ export async function POST(req: Request) {
   try {
     const result = streamText({
       model: anthropic("claude-sonnet-4-20250514"),
-      system: buildAssistentPrompt(gemeente),
+      system: buildCheckinBuddyPrompt(gemeente),
       messages,
-      maxOutputTokens: 2048,
+      maxOutputTokens: 1000,
       stopWhen: stepCountIs(5),
       tools: {
         bekijkBalanstest: createBekijkBalanstestTool({ userId, gemeente }),
-        bekijkTestTrend: createBekijkTestTrendTool({ userId }),
+        bekijkCheckInTrend: createBekijkCheckInTrendTool({ userId }),
         zoekHulpbronnen: createZoekHulpbronnenTool({ gemeente }),
         zoekArtikelen: createZoekArtikelenTool(),
-        gemeenteInfo: createGemeenteInfoTool(),
+        registreerAlarm: createRegistreerAlarmTool({ userId }),
       },
     })
 
     return result.toUIMessageStreamResponse()
   } catch (error) {
-    console.error("[AI Chat] Fout bij het genereren van een antwoord:", error)
+    console.error("[Check-in Buddy] Fout:", error)
     const message = error instanceof Error ? error.message : "Onbekende fout"
     return new Response(
-      JSON.stringify({ error: `AI-chat fout: ${message}` }),
+      JSON.stringify({ error: `Check-in buddy fout: ${message}` }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     )
   }
