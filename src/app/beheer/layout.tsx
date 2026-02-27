@@ -35,6 +35,7 @@ const menuGroepen: { label: string; items: { href: string; label: string; icon: 
     items: [
       { href: "/beheer/balanstest-vragen", label: "Balanstest & Check-in", icon: "❓" },
       { href: "/beheer/zorgtaken", label: "Zorgtaken", icon: "📋" },
+      { href: "/beheer/coach-adviezen", label: "Coach adviezen", icon: "🤖" },
       { href: "/beheer/intake-vragen", label: "Intake vragen", icon: "📥" },
     ],
   },
