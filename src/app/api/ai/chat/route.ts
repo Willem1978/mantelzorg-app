@@ -9,6 +9,7 @@ import {
   createZoekHulpbronnenTool,
   createZoekArtikelenTool,
   createGemeenteInfoTool,
+  createSemantischZoekenTool,
 } from "@/lib/ai/tools"
 
 // Vercel serverless function timeout: AI tool calls + DB queries need more than default 10s
@@ -77,6 +78,7 @@ export async function POST(req: Request) {
         zoekHulpbronnen: createZoekHulpbronnenTool({ gemeente }),
         zoekArtikelen: createZoekArtikelenTool(),
         gemeenteInfo: createGemeenteInfoTool(),
+        semantischZoeken: createSemantischZoekenTool(gemeente),
       },
     })
 
