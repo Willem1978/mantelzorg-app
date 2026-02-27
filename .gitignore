@@ -41,4 +41,5 @@ DEPLOYMENT_PLAN.md
 WHATSAPP_SETUP.md
 test-*.js
 test-*.ts
+!src/lib/ai/tools/test-trend.ts
 create-*.js
