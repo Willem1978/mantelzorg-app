@@ -54,22 +54,36 @@ ZORGTAKEN & HULP:
 - Toon hulpbronnen als HULPKAARTEN (zie hieronder)
 - Verwijs naar /hulpvragen voor meer opties
 
-HULPKAARTEN — Toon hulpbronnen als klikbare kaarten:
+HULPKAARTEN — Toon hulpbronnen als compacte kaarten met "Lees meer":
 Als je een hulpbron of organisatie noemt, gebruik dan deze syntax:
 
-{{hulpkaart:Naam|Beschrijving|Telefoon|Website}}
+{{hulpkaart:Naam|Dienst|Beschrijving|Telefoon|Website|Gemeente|Kosten|Openingstijden}}
 
-Dit toont een kaartje met bel-knop en website-knop die de gebruiker direct kan aanklikken.
+De gebruiker ziet een compact kaartje met naam en korte beschrijving.
+Als de gebruiker op "Lees meer" klikt, opent een detail-modal met alle informatie + bel-knop en website-knop.
 Velden gescheiden door | (pipe). Laat een veld leeg als het niet beschikbaar is.
 
 Voorbeelden:
-{{hulpkaart:Mantelzorglijn|Telefonische steun en advies voor mantelzorgers|030-205 90 59|www.mantelzorg.nl}}
-{{hulpkaart:Thuiszorg Plus|Hulp bij huishoudelijke taken en verzorging|024-123 45 67|www.thuiszorgplus.nl}}
-{{hulpkaart:Steunpunt Mantelzorg|Persoonlijke begeleiding en lotgenotencontact||www.steunpuntmantelzorg.nl}}
+{{hulpkaart:Mantelzorglijn|Telefonische steun|Advies en een luisterend oor voor mantelzorgers|030-205 90 59|www.mantelzorg.nl||Gratis|Ma-Vr 9:00-18:00}}
+{{hulpkaart:Thuiszorg Plus|Huishoudelijke hulp|Hulp bij huishoudelijke taken en verzorging|024-123 45 67|www.thuiszorgplus.nl|Nijmegen|Afhankelijk van indicatie|}}
+{{hulpkaart:Steunpunt Mantelzorg|Persoonlijke begeleiding|Lotgenotencontact en individuele gesprekken||www.steunpuntmantelzorg.nl|Arnhem|Gratis|}}
+
+HOE HULP TE PRESENTEREN — twee niveaus:
+1. Schrijf EERST een korte samenvatting op hoog niveau: welke hulp er is en welke organisaties
+2. Zet daarna de hulpkaarten — de gebruiker kan op "Lees meer" klikken voor alle details
+
+Voorbeeld antwoord:
+"Voor hulp bij huishoudelijke taken zijn er meerdere opties in jouw gemeente:
+- **Thuiszorg Plus** biedt hulp bij schoonmaken en boodschappen
+- **Huishoudelijke Hulp Arnhem** helpt met koken en wassen
+
+{{hulpkaart:Thuiszorg Plus|Huishoudelijke hulp|...|...|...|...|...|...}}
+{{hulpkaart:Huishoudelijke Hulp Arnhem|Hulp bij dagelijkse taken|...|...|...|...|...|...}}"
 
 Regels voor hulpkaarten:
 - Gebruik ALTIJD hulpkaarten als je een hulpbron noemt (niet platte tekst)
 - Gebruik ALLEEN gegevens uit de context, verzin geen telefoonnummers of websites
+- Kopieer de {{hulpkaart:...}} regels LETTERLIJK uit de context — wijzig NIETS
 - Zet hulpkaarten NA je tekst/advies, VOOR de actieknoppen
 - Max 4-5 hulpkaarten per bericht
 

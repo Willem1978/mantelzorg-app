@@ -103,12 +103,15 @@ export async function prefetchUserContext(userId: string, gemeente: string | nul
       orderBy: { naam: "asc" },
       select: {
         naam: true,
+        dienst: true,
         beschrijving: true,
         telefoon: true,
         website: true,
         email: true,
         soortHulp: true,
         kosten: true,
+        gemeente: true,
+        openingstijden: true,
       },
     })
 
@@ -196,6 +199,7 @@ async function fetchAlleHulpbronnenPerCategorie(gemeente: string | null) {
     orderBy: { naam: "asc" },
     select: {
       naam: true,
+      dienst: true,
       telefoon: true,
       website: true,
       email: true,
@@ -204,6 +208,7 @@ async function fetchAlleHulpbronnenPerCategorie(gemeente: string | null) {
       kosten: true,
       onderdeelTest: true,
       gemeente: true,
+      openingstijden: true,
     },
   })
 
@@ -217,11 +222,15 @@ async function fetchAlleHulpbronnenPerCategorie(gemeente: string | null) {
     if (matches.length > 0) {
       perCategorie[zorgtaak.naam] = matches.slice(0, 5).map((h) => ({
         naam: h.naam,
+        dienst: h.dienst,
         telefoon: h.telefoon,
         website: h.website,
         email: h.email,
+        beschrijving: h.beschrijving,
         soortHulp: h.soortHulp,
         kosten: h.kosten,
+        gemeente: h.gemeente,
+        openingstijden: h.openingstijden,
         lokaal: !!h.gemeente,
       }))
     }
@@ -246,6 +255,7 @@ async function fetchMantelzorgerHulp(gemeente: string | null) {
     orderBy: { naam: "asc" },
     select: {
       naam: true,
+      dienst: true,
       beschrijving: true,
       telefoon: true,
       website: true,
@@ -253,6 +263,8 @@ async function fetchMantelzorgerHulp(gemeente: string | null) {
       soortHulp: true,
       kosten: true,
       onderdeelTest: true,
+      gemeente: true,
+      openingstijden: true,
     },
   })
 }
@@ -317,9 +329,9 @@ BALANSTEST (${ctx.testDatum}):
 
   if (ctx.gemeenteContact) {
     const gc = ctx.gemeenteContact
-    const beschrijving = gc.beschrijving || gc.adviesTekst || `Hulpverlener gemeente ${gc.gemeente}`
+    const dienst = gc.beschrijving || gc.adviesTekst || `Hulpverlener gemeente ${gc.gemeente}`
     block += `\n\nGEMEENTE HULPVERLENER — kopieer letterlijk:`
-    block += `\n  {{hulpkaart:${gc.naam}|${beschrijving}|${gc.telefoon || ""}|${gc.website || ""}}}`
+    block += `\n  {{hulpkaart:${gc.naam}|${dienst}||${gc.telefoon || ""}|${gc.website || ""}|${gc.gemeente || ""}||}}`
     if (gc.email) block += `\n  Email: ${gc.email}`
   }
 
@@ -339,10 +351,14 @@ BALANSTEST (${ctx.testDatum}):
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function formatHulpkaart(b: any): string {
-  const beschrijving = b.beschrijving || b.soortHulp || ""
+  const dienst = b.dienst || b.soortHulp || ""
+  const beschrijving = b.beschrijving || ""
   const telefoon = b.telefoon || ""
   const website = b.website || ""
-  return `{{hulpkaart:${b.naam}|${beschrijving}|${telefoon}|${website}}}`
+  const gemeente = b.gemeente || ""
+  const kosten = b.kosten || ""
+  const openingstijden = b.openingstijden || ""
+  return `{{hulpkaart:${b.naam}|${dienst}|${beschrijving}|${telefoon}|${website}|${gemeente}|${kosten}|${openingstijden}}}`
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
