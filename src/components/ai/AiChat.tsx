@@ -167,8 +167,26 @@ export function AiChat() {
             </div>
             <div className="bg-[var(--accent-red-bg)] border border-[var(--accent-red)]/20 rounded-2xl rounded-tl-md p-3">
               <p className="text-sm text-foreground">
-                Er ging iets mis. Probeer het opnieuw.
+                {error.message?.includes("503") || error.message?.includes("niet beschikbaar")
+                  ? "De AI-assistent is tijdelijk niet beschikbaar. Neem contact op met de beheerder."
+                  : "Er ging iets mis bij het versturen van je bericht. Probeer het opnieuw."
+                }
               </p>
+              <button
+                onClick={() => {
+                  const lastUserMsg = [...messages].reverse().find(m => m.role === "user")
+                  if (lastUserMsg) {
+                    const text = lastUserMsg.parts
+                      ?.filter((p): p is { type: "text"; text: string } => p.type === "text")
+                      .map(p => p.text)
+                      .join("") || ""
+                    if (text) handleSend(text)
+                  }
+                }}
+                className="mt-2 text-xs text-primary hover:underline"
+              >
+                Opnieuw proberen
+              </button>
             </div>
           </div>
         )}
