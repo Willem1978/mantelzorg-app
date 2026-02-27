@@ -1,6 +1,8 @@
 import Link from "next/link"
 import { LogoIcon } from "@/components/ui"
 import { landingContent as c } from "@/config/content"
+import { GerAvatar } from "@/components/GerAvatar"
+import { PublicGerChat } from "@/components/ai/PublicGerChat"
 
 export default function LandingPage() {
   return (
@@ -19,6 +21,14 @@ export default function LandingPage() {
       <main className="flex-1">
         <section className="px-4 py-12 md:py-20">
           <div className="max-w-4xl mx-auto text-center">
+            {/* Ger introductie */}
+            <div className="flex flex-col items-center mb-8">
+              <GerAvatar size="lg" />
+              <p className="mt-4 text-lg text-muted-foreground italic">
+                &ldquo;Hoi, ik ben Ger. Zorg je voor iemand? Ik help je graag.&rdquo;
+              </p>
+            </div>
+
             <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
               {c.hero.title}
             </h1>
@@ -178,6 +188,9 @@ export default function LandingPage() {
           </div>
         </section>
       </main>
+
+      {/* Ger chat widget — altijd beschikbaar */}
+      <PublicGerChat />
 
       {/* Footer */}
       <footer className="bg-foreground text-card py-8 px-4">
