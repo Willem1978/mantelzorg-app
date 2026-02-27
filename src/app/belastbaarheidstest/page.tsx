@@ -378,12 +378,12 @@ export default function BelastbaarheidstestPage() {
         console.error("Fout bij opslaan test:", response.status)
       }
 
-      // Redirect naar dashboard na opslaan
-      router.push("/dashboard?from=test")
+      // Redirect naar persoonlijk advies na opslaan
+      router.push("/rapport/persoonlijk")
     } catch (error) {
       console.error("Error saving test:", error)
-      // Bij error toch naar dashboard
-      router.push("/dashboard")
+      // Bij error toch naar advies pagina
+      router.push("/rapport/persoonlijk")
     }
     setIsSaving(false)
   }
