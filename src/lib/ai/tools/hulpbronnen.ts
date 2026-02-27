@@ -1,10 +1,29 @@
 /**
  * Tool: zoekHulpbronnen
  * Zoekt zorgorganisaties op basis van zoekterm, gemeente en/of categorie.
+ * Gebruikt TAAK_NAAM_VARIANTEN voor correcte categorie-matching.
  */
 import { tool } from "ai"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
+import { TAAK_NAAM_VARIANTEN } from "@/config/options"
+
+// Bouwt een lijst van alle mogelijke onderdeelTest waarden voor een categorie
+function getCategorieVarianten(categorie: string): string[] {
+  // Directe match als dbValue
+  const directVarianten = TAAK_NAAM_VARIANTEN[categorie]
+  if (directVarianten) return [categorie, ...directVarianten]
+
+  // Zoek of dit een variant is van een dbValue
+  for (const [dbValue, varianten] of Object.entries(TAAK_NAAM_VARIANTEN)) {
+    if (varianten.some((v) => v.toLowerCase() === categorie.toLowerCase())) {
+      return [dbValue, ...varianten]
+    }
+  }
+
+  // Geen match gevonden, gebruik de categorie zelf
+  return [categorie]
+}
 
 export function createZoekHulpbronnenTool(ctx: { gemeente: string | null }) {
   return tool({
@@ -26,13 +45,14 @@ export function createZoekHulpbronnenTool(ctx: { gemeente: string | null }) {
       if (gem) {
         where.OR = [
           { gemeente: { equals: gem, mode: "insensitive" } },
-          { dekkingNiveau: "LANDELIJK" },
           { gemeente: null },
         ]
       }
 
       if (categorie) {
-        where.onderdeelTest = { contains: categorie, mode: "insensitive" }
+        // Gebruik alle naamvarianten voor correcte matching
+        const varianten = getCategorieVarianten(categorie)
+        where.onderdeelTest = { in: varianten }
       }
 
       if (zoekterm) {

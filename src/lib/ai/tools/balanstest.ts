@@ -10,6 +10,7 @@ import { berekenDeelgebieden } from "@/lib/dashboard/deelgebieden"
 import { loadCoachAdviezen } from "@/lib/ai/coach-advies"
 import { resolveGemeenteContact } from "@/lib/ai/gemeente-resolver"
 import { DEELGEBIED_SLEUTEL_MAP, TAAK_ID_MAP } from "@/lib/ai/types"
+import { TAAK_NAAM_VARIANTEN } from "@/config/options"
 import type { HulpbronResult } from "@/lib/ai/types"
 
 export function createBekijkBalanstestTool(ctx: { userId: string; gemeente: string | null }) {
@@ -71,17 +72,18 @@ export function createBekijkBalanstestTool(ctx: { userId: string; gemeente: stri
           : null
 
       // Hulpbronnen per zware taak (max 3 taken, 3 bronnen per taak)
+      // Gebruik TAAK_NAAM_VARIANTEN voor correcte matching (zelfde als hulpvragen pagina)
       const hulpPerTaak: Record<string, HulpbronResult[]> = {}
       for (const taak of zwareTaken.slice(0, 3)) {
+        const varianten = [taak.taakNaam, ...(TAAK_NAAM_VARIANTEN[taak.taakNaam] || [])]
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const taakWhere: Record<string, any> = {
           isActief: true,
-          onderdeelTest: { contains: taak.taakNaam, mode: "insensitive" },
+          onderdeelTest: { in: varianten },
         }
         if (ctx.gemeente) {
           taakWhere.OR = [
             { gemeente: { equals: ctx.gemeente, mode: "insensitive" } },
-            { dekkingNiveau: "LANDELIJK" },
             { gemeente: null },
           ]
         }

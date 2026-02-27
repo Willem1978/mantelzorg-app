@@ -1,14 +1,27 @@
 /**
  * Pre-fetcht alle AI context (balanstest, hulpbronnen, gemeente) zodat
  * de AI in één stap kan antwoorden zonder multi-step tool calls.
+ *
+ * Gebruikt dezelfde zoeklogica als de hulpvragen-pagina:
+ * - ZORGTAKEN + TAAK_NAAM_VARIANTEN voor categorie-matching
+ * - doelgroep: "MANTELZORGER" voor hulp aan de mantelzorger zelf
  */
 import { prisma } from "@/lib/prisma"
 import { berekenDeelgebieden } from "@/lib/dashboard/deelgebieden"
 import { loadCoachAdviezen } from "@/lib/ai/coach-advies"
 import { resolveGemeenteContact } from "@/lib/ai/gemeente-resolver"
 import { DEELGEBIED_SLEUTEL_MAP, TAAK_ID_MAP } from "@/lib/ai/types"
+import { ZORGTAKEN, TAAK_NAAM_VARIANTEN } from "@/config/options"
+
+// Mapping van taakNaam (dbValue) naar alle mogelijke onderdeelTest waarden
+// Identiek aan TAAK_NAAR_ONDERDEEL_VARIANTEN in hulpbronnen.ts
+function getOnderdeelVarianten(taakNaam: string): string[] {
+  const varianten = TAAK_NAAM_VARIANTEN[taakNaam] || []
+  return [taakNaam, ...varianten]
+}
 
 export async function prefetchUserContext(userId: string, gemeente: string | null) {
+  // 1) Haal de laatste balanstest op
   const test = await prisma.belastbaarheidTest.findFirst({
     where: { caregiver: { userId }, isCompleted: true },
     orderBy: { completedAt: "desc" },
@@ -24,7 +37,7 @@ export async function prefetchUserContext(userId: string, gemeente: string | nul
       },
       taakSelecties: {
         where: { isGeselecteerd: true },
-        select: { taakNaam: true, urenPerWeek: true, moeilijkheid: true },
+        select: { taakId: true, taakNaam: true, urenPerWeek: true, moeilijkheid: true },
         orderBy: { urenPerWeek: "desc" },
       },
       alarmLogs: {
@@ -34,65 +47,59 @@ export async function prefetchUserContext(userId: string, gemeente: string | nul
   })
 
   if (!test) {
-    return { heeftTest: false as const }
+    // Geen test? Haal alsnog alle hulpbronnen per categorie op
+    const alleHulp = await fetchAlleHulpbronnenPerCategorie(gemeente)
+    const mantelzorgerHulp = await fetchMantelzorgerHulp(gemeente)
+    return { heeftTest: false as const, alleHulpPerCategorie: alleHulp, hulpVoorMantelzorger: mantelzorgerHulp }
   }
 
-  // Bereken deelgebieden
+  // 2) Bereken deelgebieden
   const deelgebieden = berekenDeelgebieden(
     test.antwoorden.map((a) => ({ vraagId: a.vraagId, score: a.score, gewicht: a.gewicht }))
   )
 
-  // Coach adviezen
+  // 3) Coach adviezen
   const adviesMap = await loadCoachAdviezen()
 
-  // Gemeente contact
+  // 4) Gemeente contact
   const gemeenteContact =
     gemeente && test.belastingNiveau
       ? await resolveGemeenteContact(gemeente, test.belastingNiveau)
       : null
 
-  // Zware taken
+  // 5) Zware taken
   const zwareTaken = test.taakSelecties.filter(
     (t) => t.moeilijkheid === "MOEILIJK" || t.moeilijkheid === "ZEER_MOEILIJK"
   )
 
-  // Hulpbronnen per zware taak + voor mantelzorger zelf
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const gemeenteFilter: any[] = gemeente
+  // 6) Hulpbronnen per zware taak — zelfde logica als hulpvragen pagina
+  const niveauFilter: Record<string, unknown>[] = []
+  if (test.belastingNiveau === "LAAG") niveauFilter.push({ zichtbaarBijLaag: true })
+  else if (test.belastingNiveau === "GEMIDDELD") niveauFilter.push({ zichtbaarBijGemiddeld: true })
+  else if (test.belastingNiveau === "HOOG") niveauFilter.push({ zichtbaarBijHoog: true })
+
+  const gemeenteFilter = gemeente
     ? [
-        { gemeente: { equals: gemeente, mode: "insensitive" } },
-        { dekkingNiveau: "LANDELIJK" },
+        { gemeente: { equals: gemeente, mode: "insensitive" as const } },
         { gemeente: null },
       ]
-    : []
+    : [{ gemeente: null }]
 
-  // Bepaal visibility op basis van belastingniveau
-  const niveauFilter =
-    test.belastingNiveau === "HOOG"
-      ? { zichtbaarBijHoog: true }
-      : test.belastingNiveau === "GEMIDDELD"
-        ? { zichtbaarBijGemiddeld: true }
-        : { zichtbaarBijLaag: true }
-
-  // 1) Hulpbronnen voor de naaste (op basis van zorgtaken categorieën)
-  const taakNamen = zwareTaken.slice(0, 5).map((t) => t.taakNaam)
+  // Hulp per zware taak — PARALLEL ophalen (zelfde als hulpbronnen.ts)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const hulpVoorNaaste: Record<string, any[]> = {}
 
-  for (const taakNaam of taakNamen) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: Record<string, any> = {
-      isActief: true,
-      onderdeelTest: { contains: taakNaam, mode: "insensitive" },
-      ...niveauFilter,
-    }
-    if (gemeenteFilter.length > 0) {
-      where.OR = gemeenteFilter
-    }
+  const taakQueries = zwareTaken.slice(0, 5).map(async (taak) => {
+    const varianten = getOnderdeelVarianten(taak.taakNaam)
 
     const resultaten = await prisma.zorgorganisatie.findMany({
-      where,
-      take: 3,
+      where: {
+        isActief: true,
+        onderdeelTest: { in: varianten },
+        OR: gemeenteFilter,
+        AND: niveauFilter,
+      },
+      take: 5,
       orderBy: { naam: "asc" },
       select: {
         naam: true,
@@ -102,63 +109,26 @@ export async function prefetchUserContext(userId: string, gemeente: string | nul
         email: true,
         soortHulp: true,
         kosten: true,
-        doelgroep: true,
       },
     })
 
+    return { taakNaam: taak.taakNaam, resultaten }
+  })
+
+  const taakResultaten = await Promise.all(taakQueries)
+  for (const { taakNaam, resultaten } of taakResultaten) {
     if (resultaten.length > 0) {
       hulpVoorNaaste[taakNaam] = resultaten
     }
   }
 
-  // 2) Hulpbronnen voor de mantelzorger zelf
-  const mantelzorgCategorieen = [
-    "Emotionele steun",
-    "Vervangende mantelzorg",
-    "Persoonlijke begeleiding",
-    "Informatie en advies",
-  ]
+  // 7) Hulpbronnen voor de mantelzorger zelf
+  const hulpVoorMantelzorger = await fetchMantelzorgerHulp(gemeente)
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mantelzorgWhere: Record<string, any> = {
-    isActief: true,
-    ...niveauFilter,
-    OR: [
-      { doelgroep: "MANTELZORGER" },
-      ...mantelzorgCategorieen.map((cat) => ({
-        onderdeelTest: { contains: cat, mode: "insensitive" },
-      })),
-    ],
-  }
-  if (gemeente) {
-    mantelzorgWhere.AND = [
-      {
-        OR: [
-          { gemeente: { equals: gemeente, mode: "insensitive" } },
-          { dekkingNiveau: "LANDELIJK" },
-          { gemeente: null },
-        ],
-      },
-    ]
-  }
+  // 8) Alle hulpbronnen per categorie (voor wanneer de gebruiker over een specifieke categorie vraagt)
+  const alleHulpPerCategorie = await fetchAlleHulpbronnenPerCategorie(gemeente)
 
-  const hulpVoorMantelzorger = await prisma.zorgorganisatie.findMany({
-    where: mantelzorgWhere,
-    take: 6,
-    orderBy: { naam: "asc" },
-    select: {
-      naam: true,
-      beschrijving: true,
-      telefoon: true,
-      website: true,
-      email: true,
-      soortHulp: true,
-      kosten: true,
-      onderdeelTest: true,
-    },
-  })
-
-  // Bouw context tekst
+  // Bouw het resultaat
   const probleemDeelgebieden = deelgebieden.filter(
     (d) => d.niveau === "HOOG" || d.niveau === "GEMIDDELD"
   )
@@ -195,6 +165,7 @@ export async function prefetchUserContext(userId: string, gemeente: string | nul
     }),
     hulpVoorNaaste,
     hulpVoorMantelzorger,
+    alleHulpPerCategorie,
     gemeenteContact,
     alarmen: test.alarmLogs.map((a) => ({
       type: a.type,
@@ -205,15 +176,104 @@ export async function prefetchUserContext(userId: string, gemeente: string | nul
 }
 
 /**
+ * Haalt ALLE hulpbronnen per categorie op (zonder niveaufilter),
+ * zodat de AI altijd iets kan aanbieden.
+ */
+async function fetchAlleHulpbronnenPerCategorie(gemeente: string | null) {
+  const gemeenteFilter = gemeente
+    ? [
+        { gemeente: { equals: gemeente, mode: "insensitive" as const } },
+        { gemeente: null },
+      ]
+    : [{ gemeente: null }]
+
+  const alle = await prisma.zorgorganisatie.findMany({
+    where: {
+      isActief: true,
+      OR: gemeenteFilter,
+      onderdeelTest: { not: null },
+    },
+    orderBy: { naam: "asc" },
+    select: {
+      naam: true,
+      telefoon: true,
+      website: true,
+      email: true,
+      beschrijving: true,
+      soortHulp: true,
+      kosten: true,
+      onderdeelTest: true,
+      gemeente: true,
+    },
+  })
+
+  // Groepeer per categorie — gebruik dezelfde ZORGTAKEN mapping
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const perCategorie: Record<string, any[]> = {}
+
+  for (const zorgtaak of ZORGTAKEN) {
+    const varianten = getOnderdeelVarianten(zorgtaak.dbValue)
+    const matches = alle.filter((h) => h.onderdeelTest && varianten.includes(h.onderdeelTest))
+    if (matches.length > 0) {
+      perCategorie[zorgtaak.naam] = matches.slice(0, 5).map((h) => ({
+        naam: h.naam,
+        telefoon: h.telefoon,
+        website: h.website,
+        email: h.email,
+        soortHulp: h.soortHulp,
+        kosten: h.kosten,
+        lokaal: !!h.gemeente,
+      }))
+    }
+  }
+
+  return perCategorie
+}
+
+/**
+ * Haalt hulpbronnen op die specifiek voor de mantelzorger zijn (doelgroep=MANTELZORGER).
+ */
+async function fetchMantelzorgerHulp(gemeente: string | null) {
+  if (!gemeente) return []
+
+  return prisma.zorgorganisatie.findMany({
+    where: {
+      isActief: true,
+      gemeente: { equals: gemeente, mode: "insensitive" as const },
+      doelgroep: "MANTELZORGER",
+    },
+    take: 8,
+    orderBy: { naam: "asc" },
+    select: {
+      naam: true,
+      beschrijving: true,
+      telefoon: true,
+      website: true,
+      email: true,
+      soortHulp: true,
+      kosten: true,
+      onderdeelTest: true,
+    },
+  })
+}
+
+/**
  * Bouwt een context-blok dat als injectie in het systeem-prompt kan worden gebruikt.
  */
 export function buildContextBlock(ctx: Awaited<ReturnType<typeof prefetchUserContext>>): string {
   if (!ctx.heeftTest) {
-    return `\n\n--- GEBRUIKERSCONTEXT ---\nDeze gebruiker heeft nog GEEN balanstest gedaan. Moedig aan om de test te doen via /belastbaarheidstest (duurt 5 minuten).`
+    let block = `\n\n--- GEBRUIKERSCONTEXT ---
+Deze gebruiker heeft nog GEEN balanstest gedaan. Moedig aan om de test te doen via /belastbaarheidstest (duurt 5 minuten).`
+
+    // Toch hulpbronnen tonen als die er zijn
+    block += buildHulpPerCategorieBlock(ctx.alleHulpPerCategorie)
+    block += buildMantelzorgerHulpBlock(ctx.hulpVoorMantelzorger)
+    block += `\n--- EINDE CONTEXT ---`
+    return block
   }
 
   let block = `\n\n--- GEBRUIKERSCONTEXT (AUTOMATISCH GELADEN) ---
-Je HOEFT GEEN tools aan te roepen voor deze informatie. Het is al beschikbaar:
+Je HOEFT GEEN tools aan te roepen voor deze informatie. Het is al beschikbaar.
 
 BALANSTEST (${ctx.testDatum}):
 - Totaalscore: ${ctx.totaalScore}/24 → Niveau: ${ctx.niveau}
@@ -237,9 +297,10 @@ BALANSTEST (${ctx.testDatum}):
     }
   }
 
+  // Hulp per zware taak
   const hulpNaaste = Object.entries(ctx.hulpVoorNaaste)
   if (hulpNaaste.length > 0) {
-    block += `\n\nBESCHIKBARE HULP VOOR DE NAASTE (per zorgtaak):`
+    block += `\n\nBESCHIKBARE HULP PER ZORGTAAK (voor de naaste):`
     for (const [taak, bronnen] of hulpNaaste) {
       block += `\n\n  ${taak}:`
       for (const b of bronnen) {
@@ -253,18 +314,11 @@ BALANSTEST (${ctx.testDatum}):
     }
   }
 
-  if (ctx.hulpVoorMantelzorger.length > 0) {
-    block += `\n\nBESCHIKBARE HULP VOOR JOU (mantelzorger):`
-    for (const b of ctx.hulpVoorMantelzorger) {
-      block += `\n  • ${b.naam}`
-      if (b.soortHulp) block += ` — ${b.soortHulp}`
-      if (b.onderdeelTest) block += ` [${b.onderdeelTest}]`
-      if (b.telefoon) block += ` | Tel: ${b.telefoon}`
-      if (b.email) block += ` | Email: ${b.email}`
-      if (b.website) block += ` | Web: ${b.website}`
-      if (b.kosten) block += ` | Kosten: ${b.kosten}`
-    }
-  }
+  // Alle hulp per categorie (ook niet-zware taken)
+  block += buildHulpPerCategorieBlock(ctx.alleHulpPerCategorie)
+
+  // Hulp voor mantelzorger
+  block += buildMantelzorgerHulpBlock(ctx.hulpVoorMantelzorger)
 
   if (ctx.gemeenteContact) {
     const gc = ctx.gemeenteContact
@@ -277,12 +331,48 @@ BALANSTEST (${ctx.testDatum}):
   }
 
   if (ctx.alarmen.length > 0) {
-    block += `\n\n⚠️ ALARMEN:`
+    block += `\n\nALARMEN:`
     for (const a of ctx.alarmen) {
       block += `\n  • ${a.type}: ${a.beschrijving} (${a.urgentie})`
     }
   }
 
   block += `\n--- EINDE CONTEXT ---`
+  return block
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildHulpPerCategorieBlock(perCategorie: Record<string, any[]>): string {
+  const entries = Object.entries(perCategorie)
+  if (entries.length === 0) return ""
+
+  let block = `\n\nALLE HULPCATEGORIEËN (10 standaard categorieën):`
+  for (const [categorie, bronnen] of entries) {
+    block += `\n\n  ${categorie} (${bronnen.length} hulpbron${bronnen.length !== 1 ? "nen" : ""}):`
+    for (const b of bronnen) {
+      block += `\n  • ${b.naam}`
+      if (b.soortHulp) block += ` — ${b.soortHulp}`
+      if (b.telefoon) block += ` | Tel: ${b.telefoon}`
+      if (b.email) block += ` | Email: ${b.email}`
+      if (b.website) block += ` | Web: ${b.website}`
+    }
+  }
+  return block
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildMantelzorgerHulpBlock(hulp: any[]): string {
+  if (!hulp || hulp.length === 0) return ""
+
+  let block = `\n\nBESCHIKBARE HULP VOOR JOU (mantelzorger):`
+  for (const b of hulp) {
+    block += `\n  • ${b.naam}`
+    if (b.soortHulp) block += ` — ${b.soortHulp}`
+    if (b.onderdeelTest) block += ` [${b.onderdeelTest}]`
+    if (b.telefoon) block += ` | Tel: ${b.telefoon}`
+    if (b.email) block += ` | Email: ${b.email}`
+    if (b.website) block += ` | Web: ${b.website}`
+    if (b.kosten) block += ` | Kosten: ${b.kosten}`
+  }
   return block
 }
