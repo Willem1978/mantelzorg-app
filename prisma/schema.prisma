@@ -1045,6 +1045,21 @@ enum AppContentType {
 }
 
 // ============================================
+// COACH ADVIEZEN (Ger AI coaching teksten)
+// ============================================
+
+model CoachAdvies {
+  id        String   @id @default(cuid())
+  sleutel   String   @unique  // bijv. "totaal.LAAG", "energie.HOOG", "taak.t1.GEMIDDELD"
+  label     String?           // Leesbaar label voor admin UI
+  advies    String   @db.Text // De adviestekst die Ger gebruikt
+  isActief  Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+
+  @@index([isActief])
+}
+
+// ============================================
 // GEMEENTE BEHEER
 // ============================================
 
