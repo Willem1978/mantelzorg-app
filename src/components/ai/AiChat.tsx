@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import { cn } from "@/lib/utils"
+import { parseHulpkaarten, HulpKaart } from "@/components/ai/HulpKaart"
 
 /**
  * Button syntax for Ger:
@@ -161,9 +162,13 @@ export function AiChat() {
           if (!rawText) return null
 
           const isAssistant = message.role === "assistant"
+          // Parse hulpkaarten eerst, dan knoppen uit de resterende tekst
+          const { cleanText: textWithoutCards, kaarten } = isAssistant
+            ? parseHulpkaarten(rawText)
+            : { cleanText: rawText, kaarten: [] }
           const { cleanText, buttons } = isAssistant
-            ? parseButtons(rawText)
-            : { cleanText: rawText, buttons: [] }
+            ? parseButtons(textWithoutCards)
+            : { cleanText: textWithoutCards, buttons: [] }
 
           return (
             <div
@@ -212,6 +217,15 @@ export function AiChat() {
                     )}>
                       {formatMessage(cleanText)}
                     </div>
+                  </div>
+                )}
+
+                {/* Hulpkaarten */}
+                {kaarten.length > 0 && (
+                  <div className="flex flex-col gap-2 w-full">
+                    {kaarten.map((kaart, i) => (
+                      <HulpKaart key={i} kaart={kaart} />
+                    ))}
                   </div>
                 )}
 

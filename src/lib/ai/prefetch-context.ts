@@ -300,16 +300,11 @@ BALANSTEST (${ctx.testDatum}):
   // Hulp per zware taak
   const hulpNaaste = Object.entries(ctx.hulpVoorNaaste)
   if (hulpNaaste.length > 0) {
-    block += `\n\nBESCHIKBARE HULP PER ZORGTAAK (voor de naaste):`
+    block += `\n\nHULP BIJ ZWARE ZORGTAKEN — kopieer de {{hulpkaart:...}} regels letterlijk als je ze wilt tonen:`
     for (const [taak, bronnen] of hulpNaaste) {
       block += `\n\n  ${taak}:`
       for (const b of bronnen) {
-        block += `\n  • ${b.naam}`
-        if (b.soortHulp) block += ` — ${b.soortHulp}`
-        if (b.telefoon) block += ` | Tel: ${b.telefoon}`
-        if (b.email) block += ` | Email: ${b.email}`
-        if (b.website) block += ` | Web: ${b.website}`
-        if (b.kosten) block += ` | Kosten: ${b.kosten}`
+        block += `\n  ${formatHulpkaart(b)}`
       }
     }
   }
@@ -322,12 +317,10 @@ BALANSTEST (${ctx.testDatum}):
 
   if (ctx.gemeenteContact) {
     const gc = ctx.gemeenteContact
-    block += `\n\nGEMEENTE HULPVERLENER:`
-    block += `\n  • ${gc.naam} (${gc.gemeente})`
-    if (gc.telefoon) block += ` | Tel: ${gc.telefoon}`
-    if (gc.email) block += ` | Email: ${gc.email}`
-    if (gc.website) block += ` | Web: ${gc.website}`
-    if (gc.adviesTekst) block += `\n  Advies: ${gc.adviesTekst}`
+    const beschrijving = gc.beschrijving || gc.adviesTekst || `Hulpverlener gemeente ${gc.gemeente}`
+    block += `\n\nGEMEENTE HULPVERLENER — kopieer letterlijk:`
+    block += `\n  {{hulpkaart:${gc.naam}|${beschrijving}|${gc.telefoon || ""}|${gc.website || ""}}}`
+    if (gc.email) block += `\n  Email: ${gc.email}`
   }
 
   if (ctx.alarmen.length > 0) {
@@ -341,20 +334,27 @@ BALANSTEST (${ctx.testDatum}):
   return block
 }
 
+/**
+ * Genereert de exacte {{hulpkaart:...}} syntax zodat de AI deze kan kopiëren.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function formatHulpkaart(b: any): string {
+  const beschrijving = b.beschrijving || b.soortHulp || ""
+  const telefoon = b.telefoon || ""
+  const website = b.website || ""
+  return `{{hulpkaart:${b.naam}|${beschrijving}|${telefoon}|${website}}}`
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function buildHulpPerCategorieBlock(perCategorie: Record<string, any[]>): string {
   const entries = Object.entries(perCategorie)
   if (entries.length === 0) return ""
 
-  let block = `\n\nALLE HULPCATEGORIEËN (10 standaard categorieën):`
+  let block = `\n\nALLE HULP PER CATEGORIE — kopieer de {{hulpkaart:...}} regels letterlijk als je ze wilt tonen:`
   for (const [categorie, bronnen] of entries) {
-    block += `\n\n  ${categorie} (${bronnen.length} hulpbron${bronnen.length !== 1 ? "nen" : ""}):`
+    block += `\n\n  ${categorie} (${bronnen.length}):`
     for (const b of bronnen) {
-      block += `\n  • ${b.naam}`
-      if (b.soortHulp) block += ` — ${b.soortHulp}`
-      if (b.telefoon) block += ` | Tel: ${b.telefoon}`
-      if (b.email) block += ` | Email: ${b.email}`
-      if (b.website) block += ` | Web: ${b.website}`
+      block += `\n  ${formatHulpkaart(b)}`
     }
   }
   return block
@@ -364,15 +364,9 @@ function buildHulpPerCategorieBlock(perCategorie: Record<string, any[]>): string
 function buildMantelzorgerHulpBlock(hulp: any[]): string {
   if (!hulp || hulp.length === 0) return ""
 
-  let block = `\n\nBESCHIKBARE HULP VOOR JOU (mantelzorger):`
+  let block = `\n\nHULP VOOR JOU (mantelzorger) — kopieer de {{hulpkaart:...}} regels letterlijk:`
   for (const b of hulp) {
-    block += `\n  • ${b.naam}`
-    if (b.soortHulp) block += ` — ${b.soortHulp}`
-    if (b.onderdeelTest) block += ` [${b.onderdeelTest}]`
-    if (b.telefoon) block += ` | Tel: ${b.telefoon}`
-    if (b.email) block += ` | Email: ${b.email}`
-    if (b.website) block += ` | Web: ${b.website}`
-    if (b.kosten) block += ` | Kosten: ${b.kosten}`
+    block += `\n  ${formatHulpkaart(b)}`
   }
   return block
 }
