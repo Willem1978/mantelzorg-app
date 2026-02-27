@@ -13,7 +13,10 @@ import { DEELGEBIED_SLEUTEL_MAP, TAAK_ID_MAP } from "@/lib/ai/types"
 import { TAAK_NAAM_VARIANTEN } from "@/config/options"
 import type { HulpbronResult } from "@/lib/ai/types"
 
-export function createBekijkBalanstestTool(ctx: { userId: string; gemeente: string | null }) {
+export function createBekijkBalanstestTool(ctx: { userId: string; gemeenteZorgvrager: string | null; gemeenteMantelzorger: string | null } | { userId: string; gemeente: string | null }) {
+  // Ondersteun zowel het nieuwe (twee gemeenten) als het oude (één gemeente) formaat
+  const gemeenteZorgvrager = "gemeenteZorgvrager" in ctx ? ctx.gemeenteZorgvrager : ctx.gemeente
+  const gemeenteMantelzorger = "gemeenteMantelzorger" in ctx ? ctx.gemeenteMantelzorger : ctx.gemeente
   return tool({
     description:
       "Bekijk de meest recente balanstest resultaten van de gebruiker. ROEP DIT ALTIJD AAN als de gebruiker vraagt hoe het gaat, over resultaten, of als je wilt coachen. Retourneert scores, deelgebieden, zorgtaken, alarmen, EN de gekoppelde gemeente-hulpbron.",
@@ -65,14 +68,15 @@ export function createBekijkBalanstestTool(ctx: { userId: string; gemeente: stri
 
       const adviesMap = await loadCoachAdviezen()
 
-      // Gemeente contact
+      // Gemeente contact — gebruik gemeente zorgvrager voor zorgtaak-gerelateerde hulp
+      const gemeenteVoorContact = gemeenteZorgvrager || gemeenteMantelzorger
       const gemeenteContact =
-        ctx.gemeente && test.belastingNiveau
-          ? await resolveGemeenteContact(ctx.gemeente, test.belastingNiveau)
+        gemeenteVoorContact && test.belastingNiveau
+          ? await resolveGemeenteContact(gemeenteVoorContact, test.belastingNiveau)
           : null
 
       // Hulpbronnen per zware taak (max 3 taken, 3 bronnen per taak)
-      // Gebruik TAAK_NAAM_VARIANTEN voor correcte matching (zelfde als hulpvragen pagina)
+      // Zorgtaken → gemeente zorgvrager (daar vindt de zorg plaats)
       const hulpPerTaak: Record<string, HulpbronResult[]> = {}
       for (const taak of zwareTaken.slice(0, 3)) {
         const varianten = [taak.taakNaam, ...(TAAK_NAAM_VARIANTEN[taak.taakNaam] || [])]
@@ -81,9 +85,14 @@ export function createBekijkBalanstestTool(ctx: { userId: string; gemeente: stri
           isActief: true,
           onderdeelTest: { in: varianten },
         }
-        if (ctx.gemeente) {
+        if (gemeenteZorgvrager) {
           taakWhere.OR = [
-            { gemeente: { equals: ctx.gemeente, mode: "insensitive" } },
+            { gemeente: { equals: gemeenteZorgvrager, mode: "insensitive" } },
+            { gemeente: null },
+          ]
+        } else if (gemeenteMantelzorger) {
+          taakWhere.OR = [
+            { gemeente: { equals: gemeenteMantelzorger, mode: "insensitive" } },
             { gemeente: null },
           ]
         }

@@ -25,20 +25,35 @@ function getCategorieVarianten(categorie: string): string[] {
   return [categorie]
 }
 
-export function createZoekHulpbronnenTool(ctx: { gemeente: string | null }) {
+export function createZoekHulpbronnenTool(ctx: { gemeenteZorgvrager: string | null; gemeenteMantelzorger: string | null } | { gemeente: string | null }) {
+  // Ondersteun zowel het nieuwe (twee gemeenten) als het oude (één gemeente) formaat
+  const ctxZorgvrager = "gemeenteZorgvrager" in ctx ? ctx.gemeenteZorgvrager : ctx.gemeente
+  const ctxMantelzorger = "gemeenteMantelzorger" in ctx ? ctx.gemeenteMantelzorger : ctx.gemeente
+
   return tool({
     description:
-      "Zoek hulporganisaties en zorgaanbieders. Gebruik dit om lokale hulp te vinden voor specifieke problemen, deelgebieden of zorgtaken.",
+      "Zoek hulporganisaties en zorgaanbieders. Gebruik dit om lokale hulp te vinden voor specifieke problemen, deelgebieden of zorgtaken. " +
+      "Zorgtaken (verzorging, boodschappen, klusjes) worden gezocht in de gemeente van de zorgvrager. " +
+      "Hulp voor de mantelzorger zelf (steunpunt, emotioneel) wordt gezocht in de gemeente van de mantelzorger.",
     inputSchema: z.object({
       zoekterm: z.string().optional().describe("Zoekterm voor naam of beschrijving"),
-      gemeente: z.string().optional().describe("Gemeente naam om lokaal te zoeken"),
+      gemeente: z.string().optional().describe("Gemeente naam om lokaal te zoeken (overschrijft de standaard)"),
       categorie: z
         .string()
         .optional()
         .describe("Categorie/taak zoals: Persoonlijke verzorging, Huishoudelijke taken, Vervangende mantelzorg, Emotionele steun, etc."),
     }),
     execute: async ({ zoekterm, gemeente: zoekGemeente, categorie }) => {
-      const gem = zoekGemeente || ctx.gemeente
+      // Bepaal de juiste gemeente: zorgtaken → zorgvrager, mantelzorger hulp → mantelzorger
+      const isMantelzorgerHulp = categorie && (
+        categorie.toLowerCase().includes("emotioneel") ||
+        categorie.toLowerCase().includes("steunpunt") ||
+        categorie.toLowerCase().includes("mantelzorg") ||
+        categorie.toLowerCase().includes("lotgenoot") ||
+        categorie.toLowerCase().includes("zelfzorg")
+      )
+      const defaultGemeente = isMantelzorgerHulp ? ctxMantelzorger : ctxZorgvrager
+      const gem = zoekGemeente || defaultGemeente || ctxZorgvrager || ctxMantelzorger
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const where: Record<string, any> = { isActief: true }
 
