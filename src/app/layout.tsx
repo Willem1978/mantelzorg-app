@@ -1,22 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Montserrat, Open_Sans } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import { branding, pageTitle } from "@/config/branding";
 import "./globals.css";
-
-const montserrat = Montserrat({
-  variable: "--font-montserrat",
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["600", "700"],
-});
-
-const openSans = Open_Sans({
-  variable: "--font-opensans",
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["400", "700"],
-});
 
 export const metadata: Metadata = {
   title: pageTitle(),
@@ -45,9 +30,16 @@ export default function RootLayout({
     <html lang="nl" suppressHydrationWarning>
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        {/* Google Fonts via CDN - faalt gracefully naar system fonts */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Open+Sans:wght@400;700&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body
-        className={`${montserrat.variable} ${openSans.variable} antialiased`}
+        className="antialiased"
         suppressHydrationWarning
       >
         <Providers>{children}</Providers>
