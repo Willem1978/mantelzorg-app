@@ -7,6 +7,7 @@ import { Button, SmileyGroup } from "@/components/ui"
 import { cn } from "@/lib/utils"
 import { searchStreets } from "@/lib/pdok"
 import { GerAvatar } from "@/components/GerAvatar"
+import { AgentChat } from "@/components/ai/AgentChat"
 
 // ============================================
 // STREET SEARCH COMPONENT
@@ -982,6 +983,15 @@ export default function BelastbaarheidstestPage() {
                 </div>
               </div>
             </div>
+
+            {/* Persoonlijk advies van Ger (Balanscoach) */}
+            {isLoggedIn && (
+              <AgentChat
+                apiEndpoint="/api/ai/balanscoach"
+                title="Persoonlijk advies van Ger"
+                initialMessage={`Hier zijn mijn balanstest resultaten:\n- Score: ${score} van 24\n- Niveau: ${niveau.niveau}\n- Zorgtijd: ${totaleUren} uur per week\n- Zorgtaken: ${zwareTaken.map(t => t.naam).join(", ") || "geen geselecteerd"}\n\nGeef me persoonlijk advies.`}
+              />
+            )}
           </div>
         </main>
 
