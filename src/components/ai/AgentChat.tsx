@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import { cn } from "@/lib/utils"
+import { parseHulpkaarten, HulpKaart } from "@/components/ai/HulpKaart"
 
 /**
  * Button syntax parsing (shared with AiChat):
@@ -188,13 +189,21 @@ export function AgentChat({
           .map((message) => {
             const rawText = getMessageText(message)
             if (!rawText) return null
-            const { cleanText, buttons } = parseButtons(rawText)
+            const { cleanText: textWithoutCards, kaarten } = parseHulpkaarten(rawText)
+            const { cleanText, buttons } = parseButtons(textWithoutCards)
 
             return (
               <div key={message.id}>
                 {cleanText && (
                   <div className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
                     {formatMessage(cleanText)}
+                  </div>
+                )}
+                {kaarten.length > 0 && (
+                  <div className="flex flex-col gap-2 mt-2">
+                    {kaarten.map((kaart, i) => (
+                      <HulpKaart key={i} kaart={kaart} />
+                    ))}
                   </div>
                 )}
                 {buttons.length > 0 && (
