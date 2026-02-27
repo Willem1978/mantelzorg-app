@@ -21,6 +21,9 @@ export default function InstellingenPage() {
     gemiddeldMax: 60,
   })
   const [opgeslagen, setOpgeslagen] = useState(false)
+  const [embeddingStatus, setEmbeddingStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
+  const [embeddingResult, setEmbeddingResult] = useState<string | null>(null)
+  const [embeddingForce, setEmbeddingForce] = useState(false)
   const { showSuccess, showError } = useToast()
 
   useEffect(() => {
@@ -58,6 +61,30 @@ export default function InstellingenPage() {
     } catch (error) {
       console.error(error)
       showError("Er ging iets mis bij het opslaan")
+    }
+  }
+
+  async function generateEmbeddings() {
+    setEmbeddingStatus("loading")
+    setEmbeddingResult(null)
+    try {
+      const res = await fetch("/api/ai/embeddings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "all", force: embeddingForce }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Onbekende fout")
+      setEmbeddingStatus("success")
+      const parts = []
+      if (data.artikelen !== undefined) parts.push(`${data.artikelen} artikelen`)
+      if (data.zorgorganisaties !== undefined) parts.push(`${data.zorgorganisaties} organisaties`)
+      setEmbeddingResult(`Embeddings gegenereerd: ${parts.join(", ")}`)
+      showSuccess("Embeddings succesvol gegenereerd")
+    } catch (err: any) {
+      setEmbeddingStatus("error")
+      setEmbeddingResult(err.message || "Er ging iets mis")
+      showError(err.message || "Er ging iets mis bij het genereren van embeddings")
     }
   }
 
@@ -153,6 +180,41 @@ export default function InstellingenPage() {
             <span className="text-sm text-green-600 font-medium">Instellingen opgeslagen</span>
           )}
         </div>
+      </div>
+
+      {/* AI Embeddings */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">AI Embeddings</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Genereer zoek-embeddings voor artikelen en hulporganisaties. Dit maakt de AI-zoekfunctie mogelijk.
+        </p>
+        <div className="flex items-center gap-4 flex-wrap">
+          <button
+            onClick={generateEmbeddings}
+            disabled={embeddingStatus === "loading"}
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+          >
+            {embeddingStatus === "loading" ? "Bezig met genereren..." : "Embeddings genereren"}
+          </button>
+          <label className="flex items-center gap-2 text-sm text-gray-600">
+            <input
+              type="checkbox"
+              checked={embeddingForce}
+              onChange={(e) => setEmbeddingForce(e.target.checked)}
+              className="rounded border-gray-300"
+            />
+            Alles opnieuw genereren
+          </label>
+          {embeddingResult && (
+            <span className={`text-sm ${embeddingStatus === "success" ? "text-green-600" : "text-red-600"}`}>
+              {embeddingResult}
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-gray-400 mt-2">
+          Standaard worden alleen nieuwe/missende embeddings aangemaakt.
+          Vink &quot;Alles opnieuw genereren&quot; aan om alle embeddings te verversen.
+        </p>
       </div>
 
       {/* Snelkoppelingen */}
