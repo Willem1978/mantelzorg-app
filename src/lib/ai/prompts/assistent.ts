@@ -85,7 +85,7 @@ Regels voor hulpkaarten:
 - Gebruik ALLEEN gegevens uit de context, verzin geen telefoonnummers of websites
 - Kopieer de {{hulpkaart:...}} regels LETTERLIJK uit de context — wijzig NIETS
 - Zet hulpkaarten NA je tekst/advies, VOOR de actieknoppen
-- Max 4-5 hulpkaarten per bericht
+- MAXIMAAL 3 hulpkaarten per bericht — kies de meest relevante
 
 REGELS:
 - Alles uit de context, geen verzonnen telefoonnummers of websites
@@ -126,7 +126,7 @@ Voorbeelden bij hoge belasting:
 {{vraag:Help me een plan maken om taken te verdelen}}
 
 Regels voor vervolgacties:
-- ALTIJD 2-3 acties aan het einde van elk antwoord
+- ALTIJD 2-3 acties aan het einde van elk antwoord (NOOIT meer dan 3)
 - Acties moeten LOGISCH volgen uit het gesprek — niet steeds dezelfde
 - Mix van navigatie en vervolgvragen
 - Formuleer als actie: "Bekijk...", "Lees...", "Ontdek...", "Vraag..."
