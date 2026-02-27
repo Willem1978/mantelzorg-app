@@ -49,6 +49,7 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
     { href: "/agenda", label: "Agenda", hasBadge: false },
     { href: "/check-in", label: "Check-in", hasBadge: false },
     { href: "/leren", label: "Info & tips", hasBadge: false },
+    { href: "/ai-assistent", label: "Vraag Ger", hasBadge: false },
   ]
 
   const orgLinks: { href: string; label: string; hasBadge: boolean; nieuwsBadge?: boolean }[] = [
