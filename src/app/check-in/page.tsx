@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
 import { SmileyGroup, ResultSmiley } from "@/components/ui"
 import { useToast } from "@/components/ui/Toast"
+import { AgentChat } from "@/components/ai/AgentChat"
 
 export default function CheckInPage() {
   const router = useRouter()
@@ -384,6 +385,14 @@ export default function CheckInPage() {
                 ))}
               </div>
             )}
+
+            {/* Persoonlijk advies van Ger (Check-in Buddy) */}
+            <AgentChat
+              apiEndpoint="/api/ai/checkin"
+              title="Even bijpraten met Ger"
+              defaultOpen={mood.kleur !== "green"}
+              initialMessage={`Hier zijn mijn check-in antwoorden:\n- Vermoeidheid (c1): ${answers["c1"] || "niet ingevuld"}\n- Tijd voor mezelf (c2): ${answers["c2"] || "niet ingevuld"}\n- Zorgen (c3): ${answers["c3"] || "niet ingevuld"}\n- Steun gevoel (c4): ${answers["c4"] || "niet ingevuld"}\n- Hulp nodig bij: ${answers["c5"] || "niets"}\n- Algehele stemming: ${mood.label}\n\nHoe gaat het met me?`}
+            />
 
             {/* Desktop: button in de card */}
             <div className="hidden lg:block mt-6">
