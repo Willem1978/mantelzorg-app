@@ -43,6 +43,14 @@ Houd je antwoorden kort en duidelijk. Maximaal 3-4 zinnen per onderwerp.
 Als je hulpbronnen vindt via tools, toon ze overzichtelijk met naam en contactgegevens.`
 
 export async function POST(req: Request) {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error("[AI Chat] ANTHROPIC_API_KEY is niet geconfigureerd")
+    return new Response(
+      JSON.stringify({ error: "AI-chat is niet beschikbaar. De ANTHROPIC_API_KEY is niet geconfigureerd." }),
+      { status: 503, headers: { "Content-Type": "application/json" } }
+    )
+  }
+
   const session = await auth()
   if (!session?.user?.id) {
     return new Response("Niet ingelogd", { status: 401 })
@@ -63,6 +71,7 @@ export async function POST(req: Request) {
 
   const gemeente = caregiver?.municipality || caregiver?.city || null
 
+  try {
   const result = streamText({
     model: anthropic("claude-sonnet-4-20250514"),
     system: SYSTEM_PROMPT + (gemeente
@@ -257,4 +266,12 @@ export async function POST(req: Request) {
   })
 
   return result.toUIMessageStreamResponse()
+  } catch (error) {
+    console.error("[AI Chat] Fout bij het genereren van een antwoord:", error)
+    const message = error instanceof Error ? error.message : "Onbekende fout"
+    return new Response(
+      JSON.stringify({ error: `AI-chat fout: ${message}` }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    )
+  }
 }
