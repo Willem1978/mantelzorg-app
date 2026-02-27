@@ -256,37 +256,39 @@ export function PublicGerChat() {
                   </div>
                 )}
 
+                {/* Hulpkaarten — max 3, subtiel amber */}
                 {kaarten.length > 0 && (
-                  <div className="flex flex-col gap-2 w-full">
-                    {kaarten.map((kaart, i) => (
+                  <div className="flex flex-col gap-1 w-full">
+                    {kaarten.slice(0, 3).map((kaart, i) => (
                       <HulpKaart key={i} kaart={kaart} />
                     ))}
                   </div>
                 )}
 
+                {/* Vervolgacties — max 3, subtiel groen */}
                 {buttons.length > 0 && (
-                  <div className="flex flex-col gap-1.5 w-full">
-                    {buttons.map((btn, i) => (
+                  <div className="flex flex-col gap-1 w-full">
+                    {buttons.slice(0, 3).map((btn, i) => (
                       <button
                         key={i}
                         onClick={() => handleButtonClick(btn)}
                         disabled={isLoading}
                         className={cn(
-                          "flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-xs font-medium transition-all text-left",
-                          "bg-primary/5 border border-primary/20 text-foreground hover:bg-primary/10 hover:border-primary/40",
+                          "flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs transition-all text-left",
+                          "bg-[var(--accent-green-bg)]/60 border border-[var(--accent-green)]/15 text-foreground hover:border-[var(--accent-green)]/30 hover:bg-[var(--accent-green-bg)]",
                           isLoading && "opacity-50 cursor-not-allowed"
                         )}
                       >
-                        <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold flex-shrink-0">
+                        <span className="w-5 h-5 rounded-full bg-[var(--accent-green)]/15 text-[var(--accent-green)] flex items-center justify-center text-[10px] font-bold flex-shrink-0">
                           {i + 1}
                         </span>
-                        <span className="flex-1">{btn.label}</span>
+                        <span className="flex-1 truncate">{btn.label}</span>
                         {btn.type === "knop" ? (
-                          <svg className="w-3.5 h-3.5 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-3.5 h-3.5 text-[var(--accent-green)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                           </svg>
                         ) : (
-                          <svg className="w-3.5 h-3.5 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-3.5 h-3.5 text-[var(--accent-green)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                           </svg>
                         )}
