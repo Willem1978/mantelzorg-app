@@ -115,7 +115,19 @@ export async function POST(req: Request) {
   const { messages: uiMessages } = await req.json()
 
   // Converteer UI messages (parts format) naar model messages (content format)
-  const messages = await convertToModelMessages(uiMessages)
+  // convertToModelMessages is async in AI SDK v6 - must be awaited
+  let messages
+  try {
+    messages = await convertToModelMessages(uiMessages)
+    console.log("[AI Chat] Converted", uiMessages?.length, "UI messages to", messages.length, "model messages")
+  } catch (conversionError) {
+    console.error("[AI Chat] Message conversion failed:", conversionError)
+    console.error("[AI Chat] Raw UI messages:", JSON.stringify(uiMessages))
+    return new Response(
+      JSON.stringify({ error: "Fout bij het verwerken van berichten." }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    )
+  }
 
   // Haal gebruikerscontext op voor gepersonaliseerde antwoorden
   const caregiver = await prisma.caregiver.findUnique({
