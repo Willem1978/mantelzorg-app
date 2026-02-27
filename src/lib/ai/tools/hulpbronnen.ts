@@ -45,12 +45,19 @@ export function createZoekHulpbronnenTool(ctx: { gemeenteZorgvrager: string | nu
     }),
     execute: async ({ zoekterm, gemeente: zoekGemeente, categorie }) => {
       // Bepaal de juiste gemeente: zorgtaken → zorgvrager, mantelzorger hulp → mantelzorger
+      const categorieLC = categorie?.toLowerCase() || ""
       const isMantelzorgerHulp = categorie && (
-        categorie.toLowerCase().includes("emotioneel") ||
-        categorie.toLowerCase().includes("steunpunt") ||
-        categorie.toLowerCase().includes("mantelzorg") ||
-        categorie.toLowerCase().includes("lotgenoot") ||
-        categorie.toLowerCase().includes("zelfzorg")
+        categorieLC.includes("emotioneel") ||
+        categorieLC.includes("steunpunt") ||
+        categorieLC.includes("mantelzorg") ||
+        categorieLC.includes("lotgenoot") ||
+        categorieLC.includes("zelfzorg") ||
+        categorieLC.includes("respijt") ||
+        categorieLC.includes("vervangende zorg") ||
+        categorieLC.includes("begeleiding") ||
+        categorieLC.includes("informatie en advies") ||
+        categorieLC.includes("educatie") ||
+        categorieLC.includes("cursus")
       )
       const defaultGemeente = isMantelzorgerHulp ? ctxMantelzorger : ctxZorgvrager
       const gem = zoekGemeente || defaultGemeente || ctxZorgvrager || ctxMantelzorger
@@ -64,8 +71,13 @@ export function createZoekHulpbronnenTool(ctx: { gemeenteZorgvrager: string | nu
         ]
       }
 
-      if (categorie) {
-        // Gebruik alle naamvarianten voor correcte matching
+      // Bij mantelzorger-hulp: filter op doelgroep MANTELZORGER
+      if (isMantelzorgerHulp) {
+        where.doelgroep = "MANTELZORGER"
+      }
+
+      if (categorie && !isMantelzorgerHulp) {
+        // Gebruik alle naamvarianten voor correcte matching (alleen voor zorgtaken)
         const varianten = getCategorieVarianten(categorie)
         where.onderdeelTest = { in: varianten }
       }

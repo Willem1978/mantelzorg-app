@@ -142,11 +142,16 @@ export function createBekijkBalanstestTool(ctx: { userId: string; gemeenteZorgvr
         })),
         zwareTaken: zwareTaken.map((t) => {
           const tid = TAAK_ID_MAP[t.taakNaam]
+          // Niveau-specifiek advies (taak.t1.HOOG) met fallback naar generiek (taak.t1.advies)
+          const niveauAdvies = tid && test.belastingNiveau
+            ? adviesMap[`taak.${tid}.${test.belastingNiveau}`] || null
+            : null
+          const generiekAdvies = tid ? (adviesMap[`taak.${tid}.advies`] || null) : null
           return {
             taak: t.taakNaam,
             urenPerWeek: t.urenPerWeek,
             moeilijkheid: t.moeilijkheid,
-            advies: tid ? (adviesMap[`taak.${tid}.advies`] || null) : null,
+            advies: niveauAdvies || generiekAdvies,
           }
         }),
         hulpPerTaak,

@@ -19,6 +19,20 @@ interface AdviesGroep {
   items: CoachAdvies[]
 }
 
+// Zorgtaken worden per taak gegroepeerd met 3 niveaus, net als deelgebieden
+const ZORGTAAK_GROEPEN = [
+  { prefix: "taak.t1", naam: "Persoonlijke verzorging", emoji: "🛁" },
+  { prefix: "taak.t2", naam: "Huishoudelijke taken", emoji: "🏠" },
+  { prefix: "taak.t3", naam: "Maaltijden", emoji: "🍽️" },
+  { prefix: "taak.t4", naam: "Boodschappen", emoji: "🛒" },
+  { prefix: "taak.t5", naam: "Administratie", emoji: "📋" },
+  { prefix: "taak.t6", naam: "Vervoer", emoji: "🚗" },
+  { prefix: "taak.t7", naam: "Sociaal contact", emoji: "👥" },
+  { prefix: "taak.t8", naam: "Klusjes", emoji: "🔨" },
+  { prefix: "taak.t9", naam: "Plannen & organiseren", emoji: "📅" },
+  { prefix: "taak.t10", naam: "Huisdieren", emoji: "🐕" },
+]
+
 function groepeerAdviezen(adviezen: CoachAdvies[]): AdviesGroep[] {
   const groepen: AdviesGroep[] = [
     {
@@ -45,12 +59,20 @@ function groepeerAdviezen(adviezen: CoachAdvies[]): AdviesGroep[] {
       beschrijving: "Advies over het deelgebied Tijd (dagelijks leven, plannen, hobby's)",
       items: adviezen.filter((a) => a.sleutel.startsWith("tijd.")),
     },
-    {
-      titel: "Zorgtaken",
-      emoji: "📋",
-      beschrijving: "Advies per zorgtaak wanneer deze als zwaar wordt ervaren",
-      items: adviezen.filter((a) => a.sleutel.startsWith("taak.")),
-    },
+    // Zorgtaken — elke taak met 3 niveaus (LAAG/GEMIDDELD/HOOG), net als deelgebieden
+    ...ZORGTAAK_GROEPEN.map((taak) => ({
+      titel: taak.naam,
+      emoji: taak.emoji,
+      beschrijving: `Advies voor "${taak.naam}" per belastingniveau (hulp uit gemeente zorgvrager)`,
+      items: adviezen
+        .filter((a) => a.sleutel.startsWith(`${taak.prefix}.`))
+        .sort((a, b) => {
+          const volgorde = ["LAAG", "GEMIDDELD", "HOOG"]
+          const nA = volgorde.findIndex((n) => a.sleutel.endsWith(`.${n}`))
+          const nB = volgorde.findIndex((n) => b.sleutel.endsWith(`.${n}`))
+          return nA - nB
+        }),
+    })),
   ]
   return groepen.filter((g) => g.items.length > 0)
 }
