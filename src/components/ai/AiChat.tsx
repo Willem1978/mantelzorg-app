@@ -1,11 +1,52 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import { cn } from "@/lib/utils"
 
+/**
+ * Button syntax for Ger:
+ *   {{knop:Label:/pad}}        → navigation button (goes to /pad)
+ *   {{vraag:Vraagtekst}}       → chat action button (sends text to Ger)
+ */
+const BUTTON_REGEX = /\{\{(knop|vraag):([^}]+)\}\}/g
+
+interface ParsedButton {
+  type: "knop" | "vraag"
+  label: string
+  target: string // path for knop, question text for vraag
+}
+
+function parseButtons(text: string): { cleanText: string; buttons: ParsedButton[] } {
+  const buttons: ParsedButton[] = []
+  const cleanText = text.replace(BUTTON_REGEX, (_, type: string, content: string) => {
+    if (type === "knop") {
+      // Format: knop:Label:/pad
+      const lastColon = content.lastIndexOf(":/")
+      if (lastColon !== -1) {
+        buttons.push({
+          type: "knop",
+          label: content.substring(0, lastColon).trim(),
+          target: content.substring(lastColon + 1).trim(),
+        })
+      }
+    } else if (type === "vraag") {
+      // Format: vraag:Tekst
+      buttons.push({
+        type: "vraag",
+        label: content.trim(),
+        target: content.trim(),
+      })
+    }
+    return "" // Remove button markers from text
+  })
+  return { cleanText: cleanText.trimEnd(), buttons }
+}
+
 export function AiChat() {
+  const router = useRouter()
   const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({ api: "/api/ai/chat" }),
   })
@@ -17,9 +58,9 @@ export function AiChat() {
   const isLoading = status === "submitted" || status === "streaming"
 
   const suggesties = [
+    { tekst: "Hoe gaat het met mij?", emoji: "📊" },
     { tekst: "Welke hulp is er bij mij in de buurt?", emoji: "🏠" },
     { tekst: "Ik ben moe, wat kan ik doen?", emoji: "😴" },
-    { tekst: "Hoe vraag ik respijtzorg aan?", emoji: "🤝" },
     { tekst: "Tips voor beter slapen", emoji: "🌙" },
   ]
 
@@ -33,16 +74,24 @@ export function AiChat() {
     }
   }, [messages.length])
 
-  const handleSend = (text: string) => {
+  const handleSend = useCallback((text: string) => {
     if (!text.trim() || isLoading) return
     sendMessage({ text: text.trim() })
     setInput("")
-  }
+  }, [isLoading, sendMessage])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     handleSend(input)
   }
+
+  const handleButtonClick = useCallback((button: ParsedButton) => {
+    if (button.type === "knop") {
+      router.push(button.target)
+    } else {
+      handleSend(button.target)
+    }
+  }, [router, handleSend])
 
   // Haal tekst uit message parts (AI SDK v6)
   const getMessageText = (message: typeof messages[number]): string => {
@@ -94,8 +143,13 @@ export function AiChat() {
 
         {/* Berichten */}
         {messages.map((message) => {
-          const text = getMessageText(message)
-          if (!text) return null
+          const rawText = getMessageText(message)
+          if (!rawText) return null
+
+          const isAssistant = message.role === "assistant"
+          const { cleanText, buttons } = isAssistant
+            ? parseButtons(rawText)
+            : { cleanText: rawText, buttons: [] }
 
           return (
             <div
@@ -123,21 +177,60 @@ export function AiChat() {
                 )}
               </div>
 
-              {/* Bericht */}
-              <div
-                className={cn(
-                  "max-w-[85%] rounded-2xl p-3 shadow-sm",
-                  message.role === "user"
-                    ? "bg-primary text-primary-foreground rounded-tr-md"
-                    : "bg-card border border-border rounded-tl-md"
+              {/* Bericht + Knoppen */}
+              <div className={cn(
+                "max-w-[85%] flex flex-col gap-2",
+                message.role === "user" && "items-end"
+              )}>
+                {/* Tekst bubble */}
+                {cleanText && (
+                  <div
+                    className={cn(
+                      "rounded-2xl p-3 shadow-sm",
+                      message.role === "user"
+                        ? "bg-primary text-primary-foreground rounded-tr-md"
+                        : "bg-card border border-border rounded-tl-md"
+                    )}
+                  >
+                    <div className={cn(
+                      "text-sm leading-relaxed whitespace-pre-wrap",
+                      message.role === "user" ? "text-primary-foreground" : "text-foreground"
+                    )}>
+                      {formatMessage(cleanText)}
+                    </div>
+                  </div>
                 )}
-              >
-                <div className={cn(
-                  "text-sm leading-relaxed whitespace-pre-wrap",
-                  message.role === "user" ? "text-primary-foreground" : "text-foreground"
-                )}>
-                  {formatMessage(text)}
-                </div>
+
+                {/* Actieknoppen */}
+                {buttons.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {buttons.map((btn, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleButtonClick(btn)}
+                        disabled={isLoading}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all",
+                          btn.type === "knop"
+                            ? "bg-primary text-primary-foreground hover:opacity-90 shadow-sm"
+                            : "bg-card border border-primary/30 text-primary hover:bg-primary/5 hover:border-primary/50",
+                          isLoading && "opacity-50 cursor-not-allowed"
+                        )}
+                      >
+                        {btn.type === "knop" ? (
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                          </svg>
+                        ) : (
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          </svg>
+                        )}
+                        {btn.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )
