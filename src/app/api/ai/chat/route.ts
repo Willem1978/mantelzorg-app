@@ -3,8 +3,8 @@ import { streamText, stepCountIs } from "ai"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { buildAssistentPrompt } from "@/lib/ai/prompts/assistent"
+import { prefetchUserContext, buildContextBlock } from "@/lib/ai/prefetch-context"
 import {
-  createBekijkBalanstestTool,
   createBekijkTestTrendTool,
   createZoekHulpbronnenTool,
   createZoekArtikelenTool,
@@ -61,14 +61,18 @@ export async function POST(req: Request) {
   const userId = session.user.id
 
   try {
+    // Pre-fetch balanstest + hulpbronnen zodat de AI direct kan antwoorden
+    const userContext = await prefetchUserContext(userId, gemeente)
+    const contextBlock = buildContextBlock(userContext)
+
     const result = streamText({
       model: anthropic("claude-sonnet-4-20250514"),
-      system: buildAssistentPrompt(gemeente),
+      system: buildAssistentPrompt(gemeente, contextBlock),
       messages,
       maxOutputTokens: 2048,
       stopWhen: stepCountIs(3),
       tools: {
-        bekijkBalanstest: createBekijkBalanstestTool({ userId, gemeente }),
+        // Tools beschikbaar voor extra zoekopdrachten (niet nodig voor standaard vragen)
         bekijkTestTrend: createBekijkTestTrendTool({ userId }),
         zoekHulpbronnen: createZoekHulpbronnenTool({ gemeente }),
         zoekArtikelen: createZoekArtikelenTool(),
