@@ -14,8 +14,8 @@ export const rapportContent = {
     geenResultaten: "Geen resultaten",
     geenTest: "Je hebt nog geen test gedaan.",
     nietIngelogd: "Log eerst in om je resultaten te bekijken.",
-    algemeenFout: "Er ging iets mis. Probeer het later opnieuw.",
-    laadFout: "Er ging iets mis bij het laden. Probeer het later opnieuw.",
+    algemeenFout: "Oeps, dat lukte niet. Probeer het later opnieuw.",
+    laadFout: "Oeps, dat lukte niet. Probeer het later opnieuw.",
   },
 
   geenTest: {
@@ -26,7 +26,7 @@ export const rapportContent = {
 
   niveaus: {
     HOOG: {
-      title: "Je bent overbelast",
+      title: "Het is te zwaar",
       subtitle: "Dit is niet vol te houden. Je hebt nu hulp nodig.",
       acties: {
         title: "Dit moet je nu doen",

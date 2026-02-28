@@ -78,7 +78,7 @@ export const profielContent = {
     opslaan: "Opslaan",
     opslaanBezig: "Even geduld...",
     opgeslagen: "Gegevens opgeslagen!",
-    fout: "Er ging iets mis",
+    fout: "Oeps, dat lukte niet. Probeer het opnieuw.",
     bewerken: "Bewerken",
   },
 
@@ -94,7 +94,7 @@ export const profielContent = {
     nummerOntkoppelen: "Nummer ontkoppelen",
     ontkoppeld: "Telefoonnummer ontkoppeld!",
     opgeslagen: "Telefoonnummer opgeslagen!",
-    fout: "Er ging iets mis",
+    fout: "Oeps, dat lukte niet. Probeer het opnieuw.",
     validatieFout: "Voer een geldig 06-nummer in (bijv. 06 12345678)",
     letOp: "Let op:",
     waarschuwing: "Als je een nieuw nummer koppelt, wordt het oude nummer ontkoppeld. Berichten via WhatsApp worden dan aan het nieuwe nummer gekoppeld.",
@@ -112,7 +112,7 @@ export const profielContent = {
     opslaanBezig: "Opslaan...",
     wijzigen: "Wachtwoord wijzigen",
     gewijzigd: "Wachtwoord gewijzigd!",
-    fout: "Er ging iets mis",
+    fout: "Oeps, dat lukte niet. Probeer het opnieuw.",
     teKort: "Wachtwoord moet minimaal 8 tekens zijn",
     nietOvereen: "Wachtwoorden komen niet overeen",
   },
@@ -122,9 +122,9 @@ export const profielContent = {
     title: "Laatste Balanstest",
     emoji: "📊",
     niveaus: {
-      laag: "Lage belasting",
-      gemiddeld: "Gemiddelde belasting",
-      hoog: "Hoge belasting",
+      laag: "Goed vol te houden",
+      gemiddeld: "Matig belastend",
+      hoog: "Te zwaar",
     } as Record<string, string>,
   },
 
@@ -186,8 +186,8 @@ export const profielContent = {
     annuleren: "Annuleren",
     verwijderenBezig: "Verwijderen...",
     definitief: "Definitief verwijderen",
-    fout: "Er is iets misgegaan",
-    verwijderFout: "Er is iets misgegaan bij het verwijderen",
+    fout: "Oeps, dat lukte niet. Probeer het opnieuw.",
+    verwijderFout: "Oeps, dat lukte niet. Probeer het opnieuw.",
   },
 
   // Hulp sectie

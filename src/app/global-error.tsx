@@ -28,10 +28,10 @@ export default function GlobalError({
             textAlign: "center",
           }}>
             <h1 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#111827", marginBottom: "0.5rem" }}>
-              Er ging iets mis
+              Oeps, dat lukte niet
             </h1>
             <p style={{ color: "#6b7280", fontSize: "0.875rem", marginBottom: "0.5rem" }}>
-              Er ging iets mis bij het laden van de pagina. Probeer het opnieuw.
+              Er ging iets fout bij het laden van de pagina. Probeer het opnieuw.
             </p>
             <p style={{ color: "#9ca3af", fontSize: "0.75rem", marginBottom: "1rem" }}>
               Lukt het niet? Sluit de app en open hem opnieuw.

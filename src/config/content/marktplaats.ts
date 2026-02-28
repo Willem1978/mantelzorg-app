@@ -3,7 +3,7 @@
  */
 
 export const marktplaatsContent = {
-  title: "Marktplaats",
+  title: "Hulpaanvragen",
   subtitle: "Vraag hulp bij een zorgtaak. Vrijwilligers bij jou in de buurt kunnen helpen.",
 
   // Intro blok
@@ -69,15 +69,15 @@ export const marktplaatsContent = {
 
   // Fouten
   errors: {
-    laden: "Er ging iets mis bij het laden. Probeer het opnieuw.",
-    versturen: "Er ging iets mis. Probeer het opnieuw.",
+    laden: "Oeps, dat lukte niet. Probeer het opnieuw.",
+    versturen: "Oeps, dat lukte niet. Probeer het opnieuw.",
     veldVerplicht: "Dit veld is verplicht",
   },
 
   // Breadcrumbs
   breadcrumb: {
     home: "Home",
-    marktplaats: "Marktplaats",
+    marktplaats: "Hulpaanvragen",
   },
 
   // Taak zwaarte badges

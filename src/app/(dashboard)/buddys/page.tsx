@@ -185,7 +185,7 @@ export default function BuddysPage() {
               key={t.id}
               onClick={() => toggleTaak(t.dbValue)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
+                "flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all border min-h-[40px]",
                 selectedTaken.includes(t.dbValue)
                   ? "bg-primary text-primary-foreground border-primary"
                   : "bg-card text-foreground border-border hover:border-primary/30"
@@ -200,7 +200,7 @@ export default function BuddysPage() {
 
       {/* Beschikbaarheid filter */}
       <div className="flex items-center gap-2 mb-4">
-        <span className="text-xs text-muted-foreground">Type hulp:</span>
+        <span className="text-sm text-muted-foreground">Type hulp:</span>
         {[
           { value: "", label: "Alle" },
           { value: "EENMALIG", label: "Eenmalig" },
@@ -210,7 +210,7 @@ export default function BuddysPage() {
             key={opt.value}
             onClick={() => setBeschikbaarheid(opt.value)}
             className={cn(
-              "px-3 py-1 rounded-lg text-xs font-medium transition-all",
+              "px-4 py-2 rounded-lg text-sm font-medium transition-all min-h-[40px]",
               beschikbaarheid === opt.value
                 ? "bg-primary text-primary-foreground"
                 : "bg-muted text-muted-foreground hover:bg-secondary"

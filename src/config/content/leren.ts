@@ -28,8 +28,8 @@ export const lerenContent = {
   artikelenCountFn: (aantal: number) => `${aantal} artikelen`,
 
   laden: "Laden...",
-  fout: "Er ging iets mis",
-  foutLadenCategorieen: "Fout bij laden van categorieën",
-  foutLadenCategorieenBeschrijving: "Er ging iets mis bij het laden van categorieën.",
+  fout: "Oeps, dat lukte niet",
+  foutLadenCategorieen: "Oeps, dat lukte niet",
+  foutLadenCategorieenBeschrijving: "Oeps, dat lukte niet. Probeer het opnieuw.",
   opnieuw: "Opnieuw proberen",
 } as const

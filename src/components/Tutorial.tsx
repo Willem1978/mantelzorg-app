@@ -47,7 +47,7 @@ export function Tutorial({ userName, onComplete }: TutorialProps) {
         setTutorialSteps(data.content || data.steps || [])
       } catch (error) {
         console.error("Error loading tutorial content:", error)
-        setContentError("Er ging iets mis bij het laden.")
+        setContentError("Oeps, dat lukte niet. Probeer het opnieuw.")
       } finally {
         setContentLoading(false)
       }
@@ -101,7 +101,7 @@ export function Tutorial({ userName, onComplete }: TutorialProps) {
     return (
       <div className="fixed inset-0 z-[100] bg-background flex items-center justify-center">
         <div className="text-center max-w-md mx-auto px-4">
-          <p className="text-foreground font-medium mb-2">Er ging iets mis</p>
+          <p className="text-foreground font-medium mb-2">Oeps, dat lukte niet</p>
           <p className="text-muted-foreground text-sm mb-4">{contentError}</p>
           <button
             onClick={() => window.location.reload()}
