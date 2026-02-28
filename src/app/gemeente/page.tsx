@@ -25,6 +25,15 @@ interface DashboardData {
   kAnonimiteit?: boolean
   minimumNietBereikt?: boolean
   bericht?: string
+  // Opvolging data (Taak 15)
+  recenteTests?: { datum: string; niveau: string; score: number }[]
+  geplandeCheckIns?: number
+  isActief?: boolean
+  setupStatus?: {
+    heeftContact: boolean
+    heeftAdvies: boolean
+    heeftHulpbronnen: boolean
+  }
 }
 
 function TrendIcon({ trend }: { trend: "omhoog" | "omlaag" | "stabiel" | null }) {
@@ -244,6 +253,62 @@ export default function GemeenteDashboard() {
           </>
         )}
       </div>
+
+      {/* Setup status indicator (Taak 12) */}
+      {data.setupStatus && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-3">Gemeente-instellingen</h2>
+          <div className="grid grid-cols-3 gap-4">
+            {[
+              { label: "Contactgegevens", klaar: data.setupStatus.heeftContact, link: "/beheer/gemeenten" },
+              { label: "Advies per niveau", klaar: data.setupStatus.heeftAdvies, link: "/beheer/gemeenten" },
+              { label: "Hulpbronnen", klaar: data.setupStatus.heeftHulpbronnen, link: "/gemeente/hulpbronnen" },
+            ].map((item) => (
+              <Link
+                key={item.label}
+                href={item.link}
+                className={`p-3 rounded-lg border text-center text-sm ${
+                  item.klaar
+                    ? "bg-green-50 border-green-200 text-green-700"
+                    : "bg-amber-50 border-amber-200 text-amber-700"
+                }`}
+              >
+                <span className="text-lg block mb-1">{item.klaar ? "✅" : "⚠️"}</span>
+                <span className="font-medium">{item.label}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recente opvolging (Taak 15) */}
+      {data.recenteTests && data.recenteTests.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-3">Recente balanstests</h2>
+          <div className="space-y-2">
+            {data.recenteTests.map((test, i) => (
+              <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                <span className="text-sm text-gray-600">{test.datum}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-900">{test.score}/24</span>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                    test.niveau === "LAAG" ? "bg-green-100 text-green-700"
+                      : test.niveau === "GEMIDDELD" ? "bg-amber-100 text-amber-700"
+                        : "bg-red-100 text-red-700"
+                  }`}>
+                    {test.niveau}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          {data.geplandeCheckIns != null && data.geplandeCheckIns > 0 && (
+            <p className="text-xs text-gray-500 mt-3">
+              {data.geplandeCheckIns} check-in herinnering{data.geplandeCheckIns !== 1 ? "en" : ""} gepland
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Snelle navigatie */}
       <div>

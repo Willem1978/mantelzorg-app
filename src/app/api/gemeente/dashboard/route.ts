@@ -111,6 +111,38 @@ export async function GET() {
       },
     })
 
+    // Recente tests (laatste 5)
+    const recenteTestLijst = tests.slice(0, 5).map((t) => ({
+      datum: t.completedAt
+        ? new Date(t.completedAt).toLocaleDateString("nl-NL", { day: "numeric", month: "short" })
+        : "—",
+      niveau: t.belastingNiveau,
+      score: t.totaleBelastingScore,
+    }))
+
+    // Setup status: check gemeente-instellingen
+    let setupStatus = null
+    if (gemeenteNaam) try {
+      const gem = await prisma.gemeente.findFirst({
+        where: { naam: { equals: gemeenteNaam as string, mode: "insensitive" } },
+        select: {
+          contactEmail: true,
+          contactTelefoon: true,
+          adviesLaag: true,
+          adviesGemiddeld: true,
+          adviesHoog: true,
+          mantelzorgSteunpunt: true,
+        },
+      })
+      if (gem) {
+        setupStatus = {
+          heeftContact: !!(gem.contactEmail || gem.contactTelefoon),
+          heeftAdvies: !!(gem.adviesLaag || gem.adviesGemiddeld || gem.adviesHoog),
+          heeftHulpbronnen: !!gem.mantelzorgSteunpunt,
+        }
+      }
+    } catch { /* gemeente not found */ }
+
     // Audit log
     logGemeenteAudit(userId, "BEKEKEN", "Dashboard", { gemeente: gemeenteNaam })
 
@@ -127,6 +159,8 @@ export async function GET() {
         open: openHulpvragen,
       },
       nieuweDezeMaand: recenteTests.length,
+      recenteTests: recenteTestLijst,
+      setupStatus,
     })
   } catch (err) {
     console.error("Gemeente dashboard error:", err)

@@ -271,6 +271,82 @@ export default function PersoonlijkRapportPage() {
         </section>
       )}
 
+      {/* Top 3 concrete acties */}
+      <section className="bg-card rounded-xl p-6 border shadow-sm">
+        <h2 className="text-lg font-bold mb-1">Jouw top 3 acties</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Dit zijn de belangrijkste stappen voor jou op dit moment.
+        </p>
+        <div className="space-y-3">
+          {(() => {
+            const acties: { nr: number; tekst: string; link: string; linkLabel: string }[] = []
+
+            // Actie 1: Gebaseerd op niveau
+            if (niveau === "HOOG") {
+              acties.push({
+                nr: 1,
+                tekst: "Neem contact op met het WMO-loket of mantelzorgsteunpunt in je gemeente voor professionele ondersteuning.",
+                link: "/hulpvragen?tab=voor-jou",
+                linkLabel: "Zoek hulp",
+              })
+            } else if (niveau === "GEMIDDELD") {
+              acties.push({
+                nr: 1,
+                tekst: "Bekijk of je hulp kunt krijgen bij de taken die je het zwaarst vindt.",
+                link: "/hulpvragen?tab=voor-naaste",
+                linkLabel: "Bekijk hulpopties",
+              })
+            } else {
+              acties.push({
+                nr: 1,
+                tekst: "Blijf zorgen voor jezelf. Plan regelmatig iets leuks voor jezelf in.",
+                link: "/leren",
+                linkLabel: "Lees tips",
+              })
+            }
+
+            // Actie 2: Gebaseerd op zware taken
+            if (zwareTaken.length > 0) {
+              acties.push({
+                nr: 2,
+                tekst: `Zoek een MantelBuddy die kan helpen met ${zwareTaken[0]?.naam?.toLowerCase() || "zware taken"}.`,
+                link: "/buddys",
+                linkLabel: "Zoek een buddy",
+              })
+            } else {
+              acties.push({
+                nr: 2,
+                tekst: "Maak contact met andere mantelzorgers. Een luisterend oor helpt enorm.",
+                link: "/buddys",
+                linkLabel: "Vind een buddy",
+              })
+            }
+
+            // Actie 3: Check-in planning
+            acties.push({
+              nr: 3,
+              tekst: "Plan je volgende check-in. Zo houd je bij hoe het met je gaat.",
+              link: "/dashboard",
+              linkLabel: "Naar dashboard",
+            })
+
+            return acties.map((a) => (
+              <div key={a.nr} className="flex items-start gap-3 p-3 bg-primary/5 rounded-lg">
+                <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold flex-shrink-0">
+                  {a.nr}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-foreground">{a.tekst}</p>
+                  <Link href={a.link} className="text-xs font-semibold text-primary hover:underline mt-1 inline-block">
+                    {a.linkLabel} →
+                  </Link>
+                </div>
+              </div>
+            ))
+          })()}
+        </div>
+      </section>
+
       {/* Persoonlijke adviezen */}
       {adviezen.length > 0 && (
         <section className="space-y-3">
