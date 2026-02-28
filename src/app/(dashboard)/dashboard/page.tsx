@@ -6,11 +6,10 @@ import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
-import { ContextBalk } from "@/components/dashboard/ContextBalk"
+import { DashboardGerChat, type GerChatContext } from "@/components/dashboard/DashboardGerChat"
+import { BalansThermometer } from "@/components/dashboard/BalansThermometer"
 import { dashboardContent } from "@/config/content"
 import { getTaakAdviesTekst } from "@/config/actiekaarten"
-import { WelkomBanner } from "@/components/dashboard/WelkomBanner"
-import { DashboardGerChat } from "@/components/dashboard/DashboardGerChat"
 
 const c = dashboardContent
 
@@ -270,229 +269,143 @@ function DashboardContentView() {
   const matigTaken = data?.test?.zorgtaken?.filter(t => isMatig(t.moeilijkheid)) || []
   const lichtTaken = data?.test?.zorgtaken?.filter(t => isLicht(t.moeilijkheid)) || []
 
-  // Bepaal max 3 CTA's op basis van urgentie
-  const ctas: { label: string; href: string; emoji: string; variant: "primary" | "secondary" }[] = []
-
-  if (!data?.test?.hasTest) {
-    ctas.push({ label: "Start de balanstest", href: "/belastbaarheidstest", emoji: "📊", variant: "primary" })
-  } else {
-    if (zwareTaken.length > 0) {
-      ctas.push({ label: "Hulp zoeken", href: "/hulpvragen?tab=voor-naaste", emoji: "🤝", variant: "primary" })
-    }
-    if (!data?.checkIns?.weeklyDone) {
-      ctas.push({ label: "Check-in doen", href: "/check-in", emoji: "💬", variant: "secondary" })
-    }
-    if (data?.test?.needsNewTest) {
-      ctas.push({ label: "Nieuwe balanstest", href: "/belastbaarheidstest", emoji: "📊", variant: "secondary" })
-    }
-    if (ctas.length < 3) {
-      ctas.push({ label: "Plan je agenda", href: "/agenda", emoji: "📅", variant: "secondary" })
-    }
-    if (ctas.length < 3) {
-      ctas.push({ label: "Bekijk je rapport", href: "/rapport", emoji: "📋", variant: "secondary" })
-    }
+  // Context voor de Ger chat
+  const gerContext: GerChatContext = {
+    userName,
+    hasTest: data?.test?.hasTest || false,
+    hasProfile: data?.user?.profileCompleted || false,
+    niveau: data?.test?.niveau,
+    score: data?.test?.score,
+    zwareTaken: zwareTaken.length,
+    needsNewTest: data?.test?.needsNewTest || false,
+    checkInDone: data?.checkIns?.weeklyDone || false,
+    isFirstVisit: !data?.user?.profileCompleted && !data?.test?.hasTest,
   }
-
-  // Focuskaart: wat is nu het belangrijkst?
-  const topAdvies = data?.adviezen?.[0]
 
   return (
     <div className="ker-page-content">
-      {/* Compacte header */}
-      <div className="flex items-center gap-3 mb-3">
-        <GerAvatar size="md" />
-        <div>
-          <h1 className="text-xl font-bold text-foreground">
-            {c.greeting(userName)}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {getGreeting()}
-          </p>
+      {/* GER CHAT — de primaire interface, neemt het hele scherm in */}
+      <DashboardGerChat context={gerContext} />
+
+      {/* BALANSTEST THERMOMETER — alleen tonen als er testresultaten zijn */}
+      {data?.test?.hasTest && data.test.score !== undefined && data.test.niveau && (
+        <div className="mt-6">
+          <BalansThermometer
+            score={data.test.score}
+            niveau={data.test.niveau}
+          />
+          {/* Trend indicator */}
+          {data.test.daysSinceTest !== undefined && data.test.daysSinceTest > 60 && (
+            <p className="text-xs text-muted-foreground mt-2 text-center">
+              Test is {data.test.daysSinceTest} dagen oud —{" "}
+              <Link href="/belastbaarheidstest" className="text-primary font-medium hover:underline">
+                doe een nieuwe
+              </Link>
+            </p>
+          )}
         </div>
-      </div>
-
-      {/* WELKOMSTBANNER — na onboarding */}
-      <WelkomBanner userName={userName} />
-
-      {/* GER CHAT — prominent, direct na de header */}
-      <DashboardGerChat />
-
-      {/* CONTEXTBALK — compact statusoverzicht */}
-      {data?.test?.hasTest && (
-        <ContextBalk
-          niveau={data.test.niveau || null}
-          score={data.test.score || null}
-          totaalUren={data.impactScore?.totaalUren || null}
-          impactTotaal={data.impactScore?.totaal || null}
-          impactNiveau={data.impactScore?.niveau || null}
-          daysSinceTest={data.test.daysSinceTest || null}
-          zwareTaken={zwareTaken.length}
-          checkInDone={data.checkIns?.weeklyDone || false}
-        />
       )}
 
-      {/* FOCUS — 1 kaart met het belangrijkste */}
-      {!data?.test?.hasTest ? (
-        <section className="mb-6">
-          <div className="ker-card">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                <span className="text-2xl">{c.geenTest.emoji}</span>
-              </div>
-              <div className="flex-1">
-                <h2 className="font-bold text-lg text-foreground">
-                  {c.geenTest.title}
-                </h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {c.geenTest.subtitle}
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-      ) : topAdvies ? (
-        <section className="mb-6">
-          <div
-            className={cn(
-              "ker-card border-l-4",
-              topAdvies.prioriteit === "hoog" && "border-l-[var(--accent-red)] bg-[var(--accent-red-bg)]",
-              topAdvies.prioriteit === "gemiddeld" && "border-l-[var(--accent-amber)] bg-[var(--accent-amber-bg)]",
-              topAdvies.prioriteit === "laag" && "border-l-[var(--accent-green)] bg-[var(--accent-green-bg)]"
-            )}
-          >
-            <div className="flex items-start gap-3">
-              <span className="text-2xl flex-shrink-0">{topAdvies.emoji}</span>
-              <div className="flex-1 min-w-0">
-                <h2 className="font-bold text-base text-foreground">{topAdvies.titel}</h2>
-                <p className="text-sm text-muted-foreground mt-1">{topAdvies.tekst}</p>
-              </div>
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      {/* MAX 3 CTA'S — grote knoppen */}
-      <section className="mb-8">
-        <div className="grid gap-2">
-          {ctas.slice(0, 3).map((cta, i) => (
-            <Link key={i} href={cta.href}>
-              <div
-                className={cn(
-                  "flex items-center gap-3 p-4 rounded-xl transition-all",
-                  cta.variant === "primary"
-                    ? "bg-primary text-primary-foreground hover:opacity-90"
-                    : "bg-secondary hover:bg-secondary/80 text-foreground"
-                )}
-              >
-                <span className="text-xl">{cta.emoji}</span>
-                <span className="font-medium">{cta.label}</span>
-                <svg className="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* DETAILS — inklapbaar */}
+      {/* DETAILS — inklapbaar, onder de chat */}
 
       {/* Zorgtaken details */}
       {data?.test?.zorgtaken && data.test.zorgtaken.length > 0 && (
-        <CollapsibleSection
-          title={c.zorgtaken.sectionTitle}
-          emoji={c.zorgtaken.sectionEmoji}
-          subtitle={c.zorgtaken.subtitle}
-          badge={zwareTaken.length > 0 ? `${zwareTaken.length} zwaar` : undefined}
-        >
-          {/* Impact-score tonen */}
-          {data.impactScore && (
-            <div className="ker-card mb-3 p-3">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-semibold text-foreground">Zorgdruk</p>
-                <span
-                  className={cn(
-                    "text-xs font-bold px-2 py-0.5 rounded-full",
-                    data.impactScore.niveau === "LAAG" && "bg-[var(--accent-green-bg)] text-[var(--accent-green)]",
-                    data.impactScore.niveau === "GEMIDDELD" && "bg-[var(--accent-amber-bg)] text-[var(--accent-amber)]",
-                    data.impactScore.niveau === "HOOG" && "bg-[var(--accent-red-bg)] text-[var(--accent-red)]"
-                  )}
-                >
-                  {data.impactScore.niveau === "LAAG" ? "Beheersbaar" : data.impactScore.niveau === "GEMIDDELD" ? "Aandacht nodig" : "Te zwaar"}
-                </span>
-              </div>
-              <div className="flex items-baseline gap-3 text-sm text-muted-foreground">
-                <span>{data.impactScore.totaalUren} uur/week</span>
-                <span>·</span>
-                <span>Impact: {data.impactScore.totaal}</span>
-              </div>
-              {/* Top 3 zwaarste taken */}
-              {data.impactScore.perTaak.filter(t => t.impact > 0).slice(0, 3).map((t, i) => (
-                <div key={i} className="flex items-center justify-between mt-2 text-xs">
-                  <span className="text-foreground">{t.naam}</span>
-                  <span className="text-muted-foreground">{t.uren}u × {t.zwaarte} = {t.impact}</span>
+        <div className="mt-6">
+          <CollapsibleSection
+            title={c.zorgtaken.sectionTitle}
+            emoji={c.zorgtaken.sectionEmoji}
+            subtitle={c.zorgtaken.subtitle}
+            badge={zwareTaken.length > 0 ? `${zwareTaken.length} zwaar` : undefined}
+          >
+            {/* Impact-score tonen */}
+            {data.impactScore && (
+              <div className="ker-card mb-3 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-semibold text-foreground">Zorgdruk</p>
+                  <span
+                    className={cn(
+                      "text-xs font-bold px-2 py-0.5 rounded-full",
+                      data.impactScore.niveau === "LAAG" && "bg-[var(--accent-green-bg)] text-[var(--accent-green)]",
+                      data.impactScore.niveau === "GEMIDDELD" && "bg-[var(--accent-amber-bg)] text-[var(--accent-amber)]",
+                      data.impactScore.niveau === "HOOG" && "bg-[var(--accent-red-bg)] text-[var(--accent-red)]"
+                    )}
+                  >
+                    {data.impactScore.niveau === "LAAG" ? "Beheersbaar" : data.impactScore.niveau === "GEMIDDELD" ? "Aandacht nodig" : "Te zwaar"}
+                  </span>
                 </div>
-              ))}
-            </div>
-          )}
-
-          {/* Zware en matige taken */}
-          <div className="space-y-2">
-            {zwareTaken.map((taak, i) => {
-              const adviesTekst = getTaakAdviesTekst(taak.naam, data?.test?.niveau || "GEMIDDELD")
-              return (
-                <Link key={`zwaar-${i}`} href="/hulpvragen?tab=voor-naaste" className="block">
-                  <div className="ker-card bg-[var(--accent-red-bg)] border-l-4 border-[var(--accent-red)] hover:shadow-md transition-all py-3">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-semibold text-sm">{taak.naam}</span>
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-red)]/15 text-[var(--accent-red)]">
-                        {c.zorgtaken.niveaus.zwaar}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{adviesTekst}</p>
+                <div className="flex items-baseline gap-3 text-sm text-muted-foreground">
+                  <span>{data.impactScore.totaalUren} uur/week</span>
+                  <span>·</span>
+                  <span>Impact: {data.impactScore.totaal}</span>
+                </div>
+                {/* Top 3 zwaarste taken */}
+                {data.impactScore.perTaak.filter(t => t.impact > 0).slice(0, 3).map((t, i) => (
+                  <div key={i} className="flex items-center justify-between mt-2 text-xs">
+                    <span className="text-foreground">{t.naam}</span>
+                    <span className="text-muted-foreground">{t.uren}u × {t.zwaarte} = {t.impact}</span>
                   </div>
-                </Link>
-              )
-            })}
-            {matigTaken.map((taak, i) => {
-              const adviesTekst = getTaakAdviesTekst(taak.naam, data?.test?.niveau || "GEMIDDELD")
-              return (
-                <Link key={`matig-${i}`} href="/hulpvragen?tab=voor-naaste" className="block">
-                  <div className="ker-card bg-[var(--accent-amber-bg)] border-l-4 border-[var(--accent-amber)] hover:shadow-md transition-all py-3">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-semibold text-sm">{taak.naam}</span>
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-amber)]/15 text-[var(--accent-amber)]">
-                        {c.zorgtaken.niveaus.matig}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{adviesTekst}</p>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
+                ))}
+              </div>
+            )}
 
-          {lichtTaken.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {lichtTaken.map((taak, i) => (
-                <span key={i} className="text-sm bg-[var(--accent-green-bg)] text-foreground px-2.5 py-1 rounded-full">
-                  {taak.naam}
-                </span>
-              ))}
+            {/* Zware en matige taken */}
+            <div className="space-y-2">
+              {zwareTaken.map((taak, i) => {
+                const adviesTekst = getTaakAdviesTekst(taak.naam, data?.test?.niveau || "GEMIDDELD")
+                return (
+                  <Link key={`zwaar-${i}`} href="/hulpvragen?tab=voor-naaste" className="block">
+                    <div className="ker-card bg-[var(--accent-red-bg)] border-l-4 border-[var(--accent-red)] hover:shadow-md transition-all py-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-semibold text-sm">{taak.naam}</span>
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-red)]/15 text-[var(--accent-red)]">
+                          {c.zorgtaken.niveaus.zwaar}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{adviesTekst}</p>
+                    </div>
+                  </Link>
+                )
+              })}
+              {matigTaken.map((taak, i) => {
+                const adviesTekst = getTaakAdviesTekst(taak.naam, data?.test?.niveau || "GEMIDDELD")
+                return (
+                  <Link key={`matig-${i}`} href="/hulpvragen?tab=voor-naaste" className="block">
+                    <div className="ker-card bg-[var(--accent-amber-bg)] border-l-4 border-[var(--accent-amber)] hover:shadow-md transition-all py-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-semibold text-sm">{taak.naam}</span>
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[var(--accent-amber)]/15 text-[var(--accent-amber)]">
+                          {c.zorgtaken.niveaus.matig}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{adviesTekst}</p>
+                    </div>
+                  </Link>
+                )
+              })}
             </div>
-          )}
-        </CollapsibleSection>
+
+            {lichtTaken.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {lichtTaken.map((taak, i) => (
+                  <span key={i} className="text-sm bg-[var(--accent-green-bg)] text-foreground px-2.5 py-1 rounded-full">
+                    {taak.naam}
+                  </span>
+                ))}
+              </div>
+            )}
+          </CollapsibleSection>
+        </div>
       )}
 
       {/* Meer adviezen */}
-      {data?.adviezen && data.adviezen.length > 1 && (
+      {data?.adviezen && data.adviezen.length > 0 && (
         <CollapsibleSection
-          title="Meer adviezen"
+          title="Adviezen"
           emoji="💡"
-          subtitle={`${data.adviezen.length - 1} extra ${data.adviezen.length - 1 === 1 ? "advies" : "adviezen"} voor jou`}
+          subtitle={`${data.adviezen.length} ${data.adviezen.length === 1 ? "advies" : "adviezen"} voor jou`}
         >
           <div className="space-y-3">
-            {data.adviezen.slice(1).map((advies) => (
+            {data.adviezen.map((advies) => (
               <div
                 key={advies.id}
                 className={cn(
@@ -525,6 +438,33 @@ function DashboardContentView() {
           </div>
         </CollapsibleSection>
       )}
+
+      {/* SNELLE ACTIES — naar beneden verplaatst */}
+      <section className="mt-6 mb-6">
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          Snelle acties
+        </h2>
+        <div className="grid grid-cols-3 gap-2">
+          <Link href="/belastbaarheidstest">
+            <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-secondary hover:bg-secondary/80 transition-all text-center">
+              <span className="text-2xl">📊</span>
+              <span className="text-xs font-medium text-foreground">Doe de test</span>
+            </div>
+          </Link>
+          <Link href="/leren">
+            <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-secondary hover:bg-secondary/80 transition-all text-center">
+              <span className="text-2xl">📚</span>
+              <span className="text-xs font-medium text-foreground">Lees een artikel</span>
+            </div>
+          </Link>
+          <Link href="/hulpvragen">
+            <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-secondary hover:bg-secondary/80 transition-all text-center">
+              <span className="text-2xl">🔍</span>
+              <span className="text-xs font-medium text-foreground">Zoek hulp</span>
+            </div>
+          </Link>
+        </div>
+      </section>
 
       {/* Aanbevolen artikelen */}
       {data?.aanbevolenArtikelen && data.aanbevolenArtikelen.length > 0 && (
@@ -581,11 +521,4 @@ function DashboardContentView() {
       </div>
     </div>
   )
-}
-
-function getGreeting(): string {
-  const hour = new Date().getHours()
-  if (hour < 12) return c.greetings.morning
-  if (hour < 18) return c.greetings.afternoon
-  return c.greetings.evening
 }
