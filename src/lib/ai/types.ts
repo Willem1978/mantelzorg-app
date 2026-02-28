@@ -31,16 +31,16 @@ export const DEELGEBIED_SLEUTEL_MAP: Record<string, string> = {
   "Jouw tijd": "tijd",
 }
 
-/** Mapping van taaknamen naar taak-IDs voor CoachAdvies lookup */
+/** Mapping van taaknamen naar taak-IDs — gesynchroniseerd met database seed */
 export const TAAK_ID_MAP: Record<string, string> = {
-  "Persoonlijke verzorging": "t1",
-  "Huishoudelijke taken": "t2",
-  "Bereiden en/of nuttigen van maaltijden": "t3",
-  "Boodschappen": "t4",
-  "Administratie en aanvragen": "t5",
-  "Vervoer": "t6",
-  "Sociaal contact en activiteiten": "t7",
-  "Klusjes in en om het huis": "t8",
-  "Plannen en organiseren": "t9",
+  "Administratie en aanvragen": "t1",
+  "Plannen en organiseren": "t2",
+  "Boodschappen": "t3",
+  "Sociaal contact en activiteiten": "t4",
+  "Vervoer": "t5",
+  "Persoonlijke verzorging": "t6",
+  "Bereiden en/of nuttigen van maaltijden": "t7",
+  "Huishoudelijke taken": "t8",
+  "Klusjes in en om het huis": "t9",
   "Huisdieren": "t10",
 }

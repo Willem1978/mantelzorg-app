@@ -2,6 +2,7 @@ import Link from "next/link"
 import { LogoIcon } from "@/components/ui"
 import { landingContent as c } from "@/config/content"
 import { GerAvatar } from "@/components/GerAvatar"
+import { GerHeroChat } from "@/components/ai/GerHeroChat"
 import { PublicGerChat } from "@/components/ai/PublicGerChat"
 
 export default function LandingPage() {
@@ -17,37 +18,38 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero section */}
+      {/* Hero section — Ger centraal */}
       <main className="flex-1">
-        <section className="px-4 py-12 md:py-20">
+        <section className="px-4 py-8 md:py-14">
           <div className="max-w-4xl mx-auto text-center">
             {/* Ger introductie */}
-            <div className="flex flex-col items-center mb-8">
+            <div className="flex flex-col items-center mb-6">
               <GerAvatar size="lg" />
-              <p className="mt-4 text-lg text-muted-foreground italic">
-                &ldquo;Hoi, ik ben Ger. Zorg je voor iemand? Ik help je graag.&rdquo;
+              <h1 className="mt-4 text-3xl md:text-4xl font-bold text-foreground">
+                {c.hero.title}
+              </h1>
+              <p className="mt-2 text-lg text-muted-foreground max-w-xl mx-auto">
+                {c.hero.subtitle}
               </p>
             </div>
 
-            <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-4">
-              {c.hero.title}
-            </h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-12">
-              {c.hero.subtitle}
-            </p>
+            {/* Ingebed Ger chatvenster */}
+            <div className="mb-12">
+              <GerHeroChat />
+            </div>
 
-            {/* Two paths */}
+            {/* Two paths — onder het chatvenster */}
             <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
               {/* Mantelzorger kaart */}
               <Link href="/mantelzorger" className="block group">
                 <div className="ker-card h-full hover:shadow-lg transition-all border-2 border-transparent hover:border-primary">
-                  <div className="w-20 h-20 mx-auto mb-6 bg-[var(--accent-amber-bg)] rounded-full flex items-center justify-center">
-                    <span className="text-4xl">🧡</span>
+                  <div className="w-16 h-16 mx-auto mb-4 bg-[var(--accent-amber-bg)] rounded-full flex items-center justify-center">
+                    <span className="text-3xl">🧡</span>
                   </div>
-                  <h2 className="text-xl font-bold text-foreground mb-3">
+                  <h2 className="text-xl font-bold text-foreground mb-2">
                     {c.cards.mantelzorger.title}
                   </h2>
-                  <p className="text-muted-foreground mb-6">
+                  <p className="text-muted-foreground mb-4 text-sm">
                     {c.cards.mantelzorger.beschrijving}
                   </p>
                   <div className="ker-btn ker-btn-primary w-full group-hover:bg-primary/90 flex items-center justify-center gap-2">
@@ -62,13 +64,13 @@ export default function LandingPage() {
               {/* MantelBuddy vrijwilliger kaart */}
               <Link href="/word-mantelbuddy" className="block group">
                 <div className="ker-card h-full hover:shadow-lg transition-all border-2 border-transparent hover:border-[var(--accent-green)]">
-                  <div className="w-20 h-20 mx-auto mb-6 bg-[var(--accent-green-bg)] rounded-full flex items-center justify-center">
-                    <span className="text-4xl">🤝</span>
+                  <div className="w-16 h-16 mx-auto mb-4 bg-[var(--accent-green-bg)] rounded-full flex items-center justify-center">
+                    <span className="text-3xl">🤝</span>
                   </div>
-                  <h2 className="text-xl font-bold text-foreground mb-3">
+                  <h2 className="text-xl font-bold text-foreground mb-2">
                     {c.cards.buddy.title}
                   </h2>
-                  <p className="text-muted-foreground mb-6">
+                  <p className="text-muted-foreground mb-4 text-sm">
                     {c.cards.buddy.beschrijving}
                   </p>
                   <div className="ker-btn bg-[var(--accent-green)] text-white w-full group-hover:opacity-90 flex items-center justify-center gap-2">
@@ -189,7 +191,7 @@ export default function LandingPage() {
         </section>
       </main>
 
-      {/* Ger chat widget — altijd beschikbaar */}
+      {/* Floating Ger chat — fallback op alle pagina's */}
       <PublicGerChat />
 
       {/* Footer */}

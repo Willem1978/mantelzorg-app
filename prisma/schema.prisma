@@ -111,6 +111,8 @@ model Caregiver {
   careRecipientName         String?
   careRecipientNeighborhood String?
   careRecipientStreet       String?
+  careRecipientLatitude     Float?
+  careRecipientLongitude    Float?
   municipality              String?
   neighborhood              String?
   profileCompleted          Boolean                 @default(false)
@@ -549,6 +551,11 @@ model MantelBuddy {
   telefoon          String
   postcode          String
   woonplaats        String
+
+  // Locatie (geocoded van postcode)
+  latitude          Float?
+  longitude         Float?
+  maxReisafstand    Int?                // Max km bereid te reizen (standaard 10)
 
   // Wat wil de buddy doen
   hulpvormen        String[]            // gesprek, boodschappen, vervoer, klusjes, oppas, administratie
