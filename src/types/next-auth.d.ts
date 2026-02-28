@@ -4,6 +4,7 @@ declare module "next-auth" {
   interface User extends DefaultUser {
     role: string
     caregiverId: string | null
+    buddyId: string | null
     gemeenteNaam: string | null
     gemeenteRollen: string[]
     sessionVersion: number
@@ -14,6 +15,7 @@ declare module "next-auth" {
       id: string
       role: string
       caregiverId: string | null
+      buddyId: string | null
       gemeenteNaam: string | null
       gemeenteRollen: string[]
       sessionVersion: number
@@ -26,6 +28,7 @@ declare module "next-auth/jwt" {
     id: string
     role: string
     caregiverId: string | null
+    buddyId: string | null
     gemeenteNaam: string | null
     gemeenteRollen: string[]
     sessionVersion: number

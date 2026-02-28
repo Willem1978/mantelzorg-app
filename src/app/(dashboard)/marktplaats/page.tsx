@@ -14,6 +14,17 @@ const c = marktplaatsContent
 // TYPES
 // ============================================
 
+interface BuddyReactie {
+  id: string
+  status: string
+  bericht: string | null
+  buddy: {
+    voornaam: string
+    woonplaats: string
+    gemiddeldeScore: number
+  }
+}
+
 interface BuddyTaak {
   id: string
   titel: string
@@ -24,16 +35,7 @@ interface BuddyTaak {
   isFlexibel: boolean
   status: string
   createdAt: string
-  reacties: {
-    id: string
-    status: string
-    bericht: string | null
-    buddy: {
-      voornaam: string
-      woonplaats: string
-      gemiddeldeScore: number
-    }
-  }[]
+  reacties: BuddyReactie[]
 }
 
 interface MarktplaatsData {
@@ -122,6 +124,18 @@ export default function MarktplaatsPage() {
 
     fetchData()
   }, [])
+
+  const refreshData = async () => {
+    try {
+      const res = await fetch("/api/marktplaats")
+      if (res.ok) {
+        const json = await res.json()
+        setData(json)
+      }
+    } catch {
+      // Negeer fouten bij refresh
+    }
+  }
 
   // Als er een taak-id in de URL zit, ga direct naar formulier
   useEffect(() => {
@@ -263,7 +277,7 @@ export default function MarktplaatsPage() {
 
           {/* Toon bestaande hulpvragen eronder */}
           {data && data.taken.length > 0 && (
-            <MijnHulpvragen taken={data.taken} />
+            <MijnHulpvragen taken={data.taken} onRefresh={refreshData} />
           )}
         </div>
       </div>
@@ -465,7 +479,7 @@ export default function MarktplaatsPage() {
         {/* Mijn hulpvragen */}
         {data && data.taken.length > 0 && (
           <div className="mt-8">
-            <MijnHulpvragen taken={data.taken} />
+            <MijnHulpvragen taken={data.taken} onRefresh={refreshData} />
           </div>
         )}
       </div>
@@ -477,7 +491,26 @@ export default function MarktplaatsPage() {
 // MIJN HULPVRAGEN COMPONENT
 // ============================================
 
-function MijnHulpvragen({ taken }: { taken: BuddyTaak[] }) {
+function MijnHulpvragen({ taken, onRefresh }: { taken: BuddyTaak[]; onRefresh?: () => void }) {
+  const [actieBezig, setActieBezig] = useState<string | null>(null)
+
+  const handleReactie = async (taakId: string, reactieId: string, actie: "accepteer" | "afwijzen") => {
+    setActieBezig(reactieId)
+    try {
+      const res = await fetch(`/api/marktplaats/${taakId}/reacties/${reactieId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ actie }),
+      })
+      if (!res.ok) throw new Error("Mislukt")
+      onRefresh?.()
+    } catch {
+      // Fout afhandelen
+    } finally {
+      setActieBezig(null)
+    }
+  }
+
   return (
     <div>
       <h2 className="text-lg font-semibold text-foreground mb-3">
@@ -526,28 +559,85 @@ function MijnHulpvragen({ taken }: { taken: BuddyTaak[] }) {
 
                   {/* Reacties van buddy's */}
                   {taak.reacties.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-border">
-                      <p className="text-xs font-semibold text-foreground mb-2">
+                    <div className="mt-3 pt-3 border-t border-border space-y-3">
+                      <p className="text-xs font-semibold text-foreground">
                         {taak.reacties.length} reactie{taak.reacties.length !== 1 ? "s" : ""}
                       </p>
-                      {taak.reacties.map((reactie) => (
-                        <div
-                          key={reactie.id}
-                          className="flex items-center gap-2 text-sm text-muted-foreground"
-                        >
-                          <span className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                            {reactie.buddy.voornaam.charAt(0)}
-                          </span>
-                          <span>
-                            {reactie.buddy.voornaam} uit {reactie.buddy.woonplaats}
-                          </span>
-                          {reactie.buddy.gemiddeldeScore > 0 && (
-                            <span className="text-xs">
-                              ⭐ {reactie.buddy.gemiddeldeScore.toFixed(1)}
-                            </span>
-                          )}
-                        </div>
-                      ))}
+                      {taak.reacties.map((reactie) => {
+                        const rStatus = c.mijnVragen.reactieStatus[reactie.status] || reactie.status
+
+                        return (
+                          <div key={reactie.id} className="space-y-2">
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
+                                {reactie.buddy.voornaam.charAt(0)}
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                <span className="font-medium text-foreground">
+                                  {reactie.buddy.voornaam}
+                                </span>
+                                <span className="text-muted-foreground">
+                                  {" "}uit {reactie.buddy.woonplaats}
+                                </span>
+                                {reactie.buddy.gemiddeldeScore > 0 && (
+                                  <span className="ml-1 text-xs">
+                                    ⭐ {reactie.buddy.gemiddeldeScore.toFixed(1)}
+                                  </span>
+                                )}
+                              </div>
+                              {reactie.status !== "INTERESSE" && (
+                                <span className={cn(
+                                  "text-xs font-medium px-2 py-0.5 rounded-full shrink-0",
+                                  reactie.status === "GEACCEPTEERD"
+                                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                                    : "bg-gray-100 text-gray-500 dark:bg-gray-800/30 dark:text-gray-400"
+                                )}>
+                                  {rStatus}
+                                </span>
+                              )}
+                            </div>
+
+                            {reactie.bericht && (
+                              <p className="text-sm text-muted-foreground pl-9 italic">
+                                &ldquo;{reactie.bericht}&rdquo;
+                              </p>
+                            )}
+
+                            {/* Accept/Decline knoppen voor INTERESSE status */}
+                            {reactie.status === "INTERESSE" && (
+                              <div className="flex gap-2 pl-9">
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleReactie(taak.id, reactie.id, "accepteer")}
+                                  isLoading={actieBezig === reactie.id}
+                                  disabled={!!actieBezig}
+                                >
+                                  {actieBezig === reactie.id ? c.mijnVragen.bezig : c.mijnVragen.accepteer}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleReactie(taak.id, reactie.id, "afwijzen")}
+                                  disabled={!!actieBezig}
+                                >
+                                  {c.mijnVragen.afwijzen}
+                                </Button>
+                              </div>
+                            )}
+
+                            {/* Chat link na acceptatie */}
+                            {reactie.status === "GEACCEPTEERD" && (
+                              <div className="pl-9">
+                                <Link href={`/chat?buddy=${reactie.buddy.voornaam}`}>
+                                  <Button size="sm" variant="outline">
+                                    💬 {c.mijnVragen.chatOpenen}
+                                  </Button>
+                                </Link>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
                     </div>
                   )}
                 </CardContent>

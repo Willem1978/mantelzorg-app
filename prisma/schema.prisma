@@ -31,6 +31,7 @@ model User {
   magicLinks     MagicLinkToken[]
   orgMember      OrganisationMember?
   sessions       Session[]
+  berichten      Bericht[]
 }
 
 model Account {
@@ -606,6 +607,7 @@ model BuddyMatch {
   buddy             MantelBuddy         @relation(fields: [buddyId], references: [id], onDelete: Cascade)
   caregiver         Caregiver           @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
   taakReacties      BuddyTaakReactie[]
+  berichten         Bericht[]
 
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
@@ -694,6 +696,24 @@ model BuddyBeoordeling {
   createdAt         DateTime            @default(now())
 
   @@index([buddyId])
+}
+
+model Bericht {
+  id                String              @id @default(cuid())
+  matchId           String
+  afzenderId        String              // User id
+
+  inhoud            String
+  isGelezen         Boolean             @default(false)
+  gelezenOp         DateTime?
+
+  match             BuddyMatch          @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  afzender          User                @relation(fields: [afzenderId], references: [id])
+
+  createdAt         DateTime            @default(now())
+
+  @@index([matchId])
+  @@index([matchId, createdAt])
 }
 
 // ============================================
@@ -812,6 +832,10 @@ enum NotificationType {
   HELP_REQUEST_UPDATE
   TIP
   SYSTEM
+  BUDDY_REACTIE           // Buddy reageert op hulpvraag
+  REACTIE_GEACCEPTEERD    // Mantelzorger accepteert buddy
+  REACTIE_AFGEWEZEN       // Mantelzorger wijst buddy af
+  BUDDY_BERICHT           // Nieuw chatbericht
 }
 
 enum HelpCategory {
