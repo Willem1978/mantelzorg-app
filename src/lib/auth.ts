@@ -23,9 +23,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
+          console.error("[AUTH] Geen email of wachtwoord meegegeven")
           return null
         }
 
+        try {
         const user = await prisma.user.findUnique({
           where: {
             email: credentials.email as string,
@@ -36,6 +38,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         })
 
         if (!user || !user.password) {
+          console.error("[AUTH] Gebruiker niet gevonden of geen wachtwoord:", credentials.email)
           return null
         }
 
@@ -45,6 +48,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         )
 
         if (!isPasswordValid) {
+          console.error("[AUTH] Wachtwoord onjuist voor:", credentials.email)
           return null
         }
 
@@ -84,6 +88,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           gemeenteNaam: user.gemeenteNaam || null,
           gemeenteRollen: user.gemeenteRollen || [],
           sessionVersion: updatedUser.sessionVersion,
+        }
+        } catch (error) {
+          console.error("[AUTH] Database/login fout:", error)
+          return null
         }
       },
     }),
