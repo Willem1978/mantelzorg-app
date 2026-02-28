@@ -7,15 +7,16 @@ import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
 
 const zorgtaken = [
-  { id: "t1", naam: "Administratie en geldzaken" },
-  { id: "t2", naam: "Regelen en afspraken maken" },
-  { id: "t3", naam: "Boodschappen doen" },
-  { id: "t4", naam: "Bezoek en gezelschap" },
-  { id: "t5", naam: "Vervoer naar afspraken" },
+  { id: "t1", naam: "Administratie" },
+  { id: "t2", naam: "Plannen & organiseren" },
+  { id: "t3", naam: "Boodschappen" },
+  { id: "t4", naam: "Sociaal contact" },
+  { id: "t5", naam: "Vervoer" },
   { id: "t6", naam: "Persoonlijke verzorging" },
-  { id: "t7", naam: "Eten en drinken" },
-  { id: "t8", naam: "Huishouden" },
-  { id: "t9", naam: "Klusjes in en om huis" },
+  { id: "t7", naam: "Maaltijden" },
+  { id: "t8", naam: "Huishoudelijke taken" },
+  { id: "t9", naam: "Klusjes" },
+  { id: "t10", naam: "Huisdieren" },
 ]
 
 const urenOpties = [

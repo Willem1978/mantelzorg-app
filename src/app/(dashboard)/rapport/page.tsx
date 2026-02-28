@@ -14,7 +14,7 @@ import { Stappenplan } from "@/components/Stappenplan"
 // Mapping van taak naar categorie voor hulpvragen pagina
 const TAAK_NAAR_HULP_TAB: Record<string, { tab: 'voor-jou' | 'voor-naaste', categorie: string }> = {
   't1': { tab: 'voor-naaste', categorie: 'Administratie en aanvragen' },
-  't2': { tab: 'voor-naaste', categorie: 'Administratie en aanvragen' },
+  't2': { tab: 'voor-naaste', categorie: 'Plannen en organiseren' },
   't3': { tab: 'voor-naaste', categorie: 'Boodschappen' },
   't4': { tab: 'voor-naaste', categorie: 'Sociaal contact en activiteiten' },
   't5': { tab: 'voor-naaste', categorie: 'Vervoer' },
@@ -22,6 +22,7 @@ const TAAK_NAAR_HULP_TAB: Record<string, { tab: 'voor-jou' | 'voor-naaste', cate
   't7': { tab: 'voor-naaste', categorie: 'Bereiden en/of nuttigen van maaltijden' },
   't8': { tab: 'voor-naaste', categorie: 'Huishoudelijke taken' },
   't9': { tab: 'voor-naaste', categorie: 'Klusjes in en om het huis' },
+  't10': { tab: 'voor-naaste', categorie: 'Huisdieren' },
 }
 
 interface GemeenteAdvies {
@@ -711,15 +712,16 @@ function getVraagTekst(vraagId: string): string {
 
 function getTaakNaam(taakId: string): string {
   const taken: Record<string, string> = {
-    t1: "Persoonlijke verzorging",
-    t2: "Huishoudelijke taken",
-    t3: "Medicijnen",
-    t4: "Vervoer",
-    t5: "Administratie",
-    t6: "Gezelschap",
-    t7: "Toezicht",
-    t8: "Medische zorg",
+    t1: "Administratie",
+    t2: "Plannen & organiseren",
+    t3: "Boodschappen",
+    t4: "Sociaal contact",
+    t5: "Vervoer",
+    t6: "Persoonlijke verzorging",
+    t7: "Maaltijden",
+    t8: "Huishoudelijke taken",
     t9: "Klusjes",
+    t10: "Huisdieren",
   }
   return taken[taakId] || taakId
 }

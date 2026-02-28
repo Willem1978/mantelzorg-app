@@ -21,15 +21,15 @@ interface AdviesGroep {
 
 // Zorgtaken worden per taak gegroepeerd met 3 niveaus, net als deelgebieden
 const ZORGTAAK_GROEPEN = [
-  { prefix: "taak.t1", naam: "Persoonlijke verzorging", emoji: "🛁" },
-  { prefix: "taak.t2", naam: "Huishoudelijke taken", emoji: "🏠" },
-  { prefix: "taak.t3", naam: "Maaltijden", emoji: "🍽️" },
-  { prefix: "taak.t4", naam: "Boodschappen", emoji: "🛒" },
-  { prefix: "taak.t5", naam: "Administratie", emoji: "📋" },
-  { prefix: "taak.t6", naam: "Vervoer", emoji: "🚗" },
-  { prefix: "taak.t7", naam: "Sociaal contact", emoji: "👥" },
-  { prefix: "taak.t8", naam: "Klusjes", emoji: "🔨" },
-  { prefix: "taak.t9", naam: "Plannen & organiseren", emoji: "📅" },
+  { prefix: "taak.t1", naam: "Administratie", emoji: "📋" },
+  { prefix: "taak.t2", naam: "Plannen & organiseren", emoji: "📅" },
+  { prefix: "taak.t3", naam: "Boodschappen", emoji: "🛒" },
+  { prefix: "taak.t4", naam: "Sociaal contact", emoji: "👥" },
+  { prefix: "taak.t5", naam: "Vervoer", emoji: "🚗" },
+  { prefix: "taak.t6", naam: "Persoonlijke verzorging", emoji: "🛁" },
+  { prefix: "taak.t7", naam: "Maaltijden", emoji: "🍽️" },
+  { prefix: "taak.t8", naam: "Huishoudelijke taken", emoji: "🏠" },
+  { prefix: "taak.t9", naam: "Klusjes", emoji: "🔨" },
   { prefix: "taak.t10", naam: "Huisdieren", emoji: "🐕" },
 ]
 

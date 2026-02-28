@@ -86,15 +86,16 @@ export const rapportContent = {
 
   // Hulptips per taak
   hulpTips: {
-    t1: "Thuiszorg kan helpen met wassen, aankleden en andere persoonlijke verzorging.",
-    t2: "Huishoudelijke hulp kun je aanvragen via de WMO van je gemeente.",
-    t3: "Een apotheek kan medicijnen in weekdozen klaarzetten. Thuiszorg kan toezien op inname.",
-    t4: "De gemeente kan aangepast vervoer regelen (Regiotaxi, WMO-vervoer).",
-    t5: "Vraag bij je gemeente naar vrijwillige hulp bij administratie en formulieren.",
-    t6: "Dagbesteding of vrijwilligers kunnen voor gezelschap zorgen.",
-    t7: "Vervangende mantelzorg of dagopvang kan toezicht overnemen zodat jij even rust hebt.",
-    t8: "Thuiszorg of wijkverpleging kan medische handelingen overnemen.",
+    t1: "Vraag bij je gemeente naar vrijwillige hulp bij administratie en formulieren.",
+    t2: "Een casemanager of mantelzorgconsulent kan helpen met het organiseren van de zorg.",
+    t3: "Laat boodschappen bezorgen of vraag hulp van vrijwilligers via de gemeente.",
+    t4: "Dagbesteding of vrijwilligers kunnen voor gezelschap en activiteiten zorgen.",
+    t5: "De gemeente kan aangepast vervoer regelen (Regiotaxi, Wmo-vervoer).",
+    t6: "Thuiszorg kan helpen met wassen, aankleden en andere persoonlijke verzorging.",
+    t7: "Maaltijdservice kan kant-en-klare maaltijden bezorgen. Dat scheelt tijd en energie.",
+    t8: "Huishoudelijke hulp kun je aanvragen via de Wmo van je gemeente.",
     t9: "Vrijwilligers of een klussenbus kunnen helpen met klussen in huis.",
+    t10: "Vraag bij je gemeente of buren naar hulp bij het uitlaten of verzorgen van huisdieren.",
     default: "Vraag bij je gemeente naar hulpmogelijkheden.",
   } as Record<string, string>,
 } as const
