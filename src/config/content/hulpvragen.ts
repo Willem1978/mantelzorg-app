@@ -8,11 +8,11 @@ export const hulpvragenContent = {
   subtitleHartje: "hartje",
   subtitleSuffix: " om iets te bewaren.",
   belastingInfo: (niveau: string) =>
-    `De hulp is afgestemd op jouw situatie (${niveau} belasting).`,
+    `De hulp past bij jouw situatie (${niveau}).`,
   belastingNiveaus: {
-    LAAG: "lage",
-    GEMIDDELD: "gemiddelde",
-    HOOG: "hoge",
+    LAAG: "goed vol te houden",
+    GEMIDDELD: "matig belastend",
+    HOOG: "zwaar belastend",
   } as Record<string, string>,
 
   tabs: {
@@ -115,12 +115,12 @@ export const hulpvragenContent = {
   },
 
   errors: {
-    ladenTitle: "Er ging iets mis bij het laden",
+    ladenTitle: "Oeps, dat lukte niet",
     ladenSubtitle:
       "Probeer het opnieuw. Werkt het nog steeds niet? Neem dan contact met ons op.",
     opnieuwProberen: "Opnieuw proberen",
-    contentLaden: "Fout bij laden van content",
-    categorieFout: "Er ging iets mis bij het laden van categorieën.",
+    contentLaden: "Oeps, dat lukte niet. Probeer het opnieuw.",
+    categorieFout: "Oeps, dat lukte niet. Probeer het opnieuw.",
   },
 
   terug: "Terug",

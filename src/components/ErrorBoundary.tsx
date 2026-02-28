@@ -41,10 +41,10 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="text-center max-w-md">
             <p className="text-4xl mb-3">😵</p>
             <h2 className="text-lg font-bold text-foreground mb-2">
-              Er ging iets mis
+              Oeps, dat lukte niet
             </h2>
             <p className="text-sm text-muted-foreground mb-4">
-              Dit onderdeel kon niet geladen worden. Probeer de pagina te vernieuwen.
+              Er ging iets fout. Druk op de knop om het opnieuw te proberen.
             </p>
             <button
               onClick={() => this.setState({ hasError: false, error: null })}

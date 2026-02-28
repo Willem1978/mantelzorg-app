@@ -316,28 +316,26 @@ function DashboardContentView() {
             {data.impactScore && (
               <div className="ker-card mb-3 p-3">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-semibold text-foreground">Zorgdruk</p>
+                  <p className="text-sm font-semibold text-foreground">Hoe zwaar is het?</p>
                   <span
                     className={cn(
-                      "text-xs font-bold px-2 py-0.5 rounded-full",
+                      "text-sm font-bold px-2.5 py-1 rounded-full",
                       data.impactScore.niveau === "LAAG" && "bg-[var(--accent-green-bg)] text-[var(--accent-green)]",
                       data.impactScore.niveau === "GEMIDDELD" && "bg-[var(--accent-amber-bg)] text-[var(--accent-amber)]",
                       data.impactScore.niveau === "HOOG" && "bg-[var(--accent-red-bg)] text-[var(--accent-red)]"
                     )}
                   >
-                    {data.impactScore.niveau === "LAAG" ? "Beheersbaar" : data.impactScore.niveau === "GEMIDDELD" ? "Aandacht nodig" : "Te zwaar"}
+                    {data.impactScore.niveau === "LAAG" ? "Goed" : data.impactScore.niveau === "GEMIDDELD" ? "Matig" : "Zwaar"}
                   </span>
                 </div>
-                <div className="flex items-baseline gap-3 text-sm text-muted-foreground">
-                  <span>{data.impactScore.totaalUren} uur/week</span>
-                  <span>·</span>
-                  <span>Impact: {data.impactScore.totaal}</span>
-                </div>
+                <p className="text-sm text-muted-foreground">
+                  {data.impactScore.totaalUren} uur zorg per week
+                </p>
                 {/* Top 3 zwaarste taken */}
                 {data.impactScore.perTaak.filter(t => t.impact > 0).slice(0, 3).map((t, i) => (
-                  <div key={i} className="flex items-center justify-between mt-2 text-xs">
+                  <div key={i} className="flex items-center justify-between mt-2 text-sm">
                     <span className="text-foreground">{t.naam}</span>
-                    <span className="text-muted-foreground">{t.uren}u × {t.zwaarte} = {t.impact}</span>
+                    <span className="text-muted-foreground">{t.uren} uur/week</span>
                   </div>
                 ))}
               </div>
@@ -439,23 +437,23 @@ function DashboardContentView() {
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
           Snelle acties
         </h2>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-3">
           <Link href="/belastbaarheidstest">
-            <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-secondary hover:bg-secondary/80 transition-all text-center">
-              <span className="text-2xl">📊</span>
-              <span className="text-xs font-medium text-foreground">Doe de test</span>
+            <div className="flex flex-col items-center gap-2 p-5 rounded-xl bg-secondary hover:bg-secondary/80 transition-all text-center min-h-[80px]">
+              <span className="text-3xl">📊</span>
+              <span className="text-sm font-medium text-foreground">Doe de test</span>
             </div>
           </Link>
           <Link href="/leren">
-            <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-secondary hover:bg-secondary/80 transition-all text-center">
-              <span className="text-2xl">📚</span>
-              <span className="text-xs font-medium text-foreground">Lees een artikel</span>
+            <div className="flex flex-col items-center gap-2 p-5 rounded-xl bg-secondary hover:bg-secondary/80 transition-all text-center min-h-[80px]">
+              <span className="text-3xl">📚</span>
+              <span className="text-sm font-medium text-foreground">Lees een artikel</span>
             </div>
           </Link>
           <Link href="/hulpvragen">
-            <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-secondary hover:bg-secondary/80 transition-all text-center">
-              <span className="text-2xl">🔍</span>
-              <span className="text-xs font-medium text-foreground">Zoek hulp</span>
+            <div className="flex flex-col items-center gap-2 p-5 rounded-xl bg-secondary hover:bg-secondary/80 transition-all text-center min-h-[80px]">
+              <span className="text-3xl">🔍</span>
+              <span className="text-sm font-medium text-foreground">Vind hulp</span>
             </div>
           </Link>
         </div>

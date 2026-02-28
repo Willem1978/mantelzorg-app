@@ -6,8 +6,8 @@ import { useEffect, useState, useRef } from "react"
 import { cn } from "@/lib/utils"
 import { useNieuwsBadge } from "@/hooks/useNieuwsBadge"
 
-// B1 taalgebruik - simpele, duidelijke woorden
-const navItems: { href: string; label: string; icon: React.ReactNode; hasBadge?: boolean; nieuwsBadge?: boolean }[] = [
+// B1 taalgebruik - simpele, duidelijke woorden. Max 4 bottom tabs
+const navItems: { href: string; label: string; icon: React.ReactNode; hasBadge?: boolean; nieuwsBadge?: boolean; matchPaths?: string[] }[] = [
   {
     href: "/dashboard",
     label: "Home",
@@ -26,15 +26,7 @@ const navItems: { href: string; label: string; icon: React.ReactNode; hasBadge?:
       </svg>
     ),
     hasBadge: true,
-  },
-  {
-    href: "/marktplaats",
-    label: "Marktplaats",
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-      </svg>
-    ),
+    matchPaths: ["/hulpvragen", "/buddys", "/marktplaats"],
   },
   {
     href: "/check-in",
@@ -45,16 +37,23 @@ const navItems: { href: string; label: string; icon: React.ReactNode; hasBadge?:
       </svg>
     ),
   },
+  {
+    href: "/leren",
+    label: "Info",
+    icon: (
+      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
 ]
 
-// Items in het Meer-menu
+// Items in het Meer-menu — vereenvoudigd
 const meerItems: { href: string; label: string; icon: string }[] = [
-  { href: "/ai-assistent", label: "Vraag Ger", icon: "🤖" },
-  { href: "/leren", label: "Info & tips", icon: "💡" },
-  { href: "/agenda", label: "Agenda", icon: "📅" },
-  { href: "/belastbaarheidstest", label: "Balanstest", icon: "📊" },
   { href: "/profiel", label: "Mijn profiel", icon: "👤" },
+  { href: "/belastbaarheidstest", label: "Balanstest", icon: "📊" },
   { href: "/rapport", label: "Mijn rapport", icon: "📋" },
+  { href: "/agenda", label: "Agenda", icon: "📅" },
 ]
 
 export function MobileNav() {
@@ -142,7 +141,9 @@ export function MobileNav() {
       <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden safe-area-inset-bottom">
         <div className="flex justify-around items-center h-20 px-1">
           {navItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+            const isActive = item.matchPaths
+              ? item.matchPaths.some(p => pathname === p || pathname.startsWith(p + "/"))
+              : (pathname === item.href || pathname.startsWith(item.href + "/"))
             const showHulpBadge = item.hasBadge && zwareTakenCount > 0
             const showNieuwsBadge = item.nieuwsBadge && nieuwsCount > 0
 

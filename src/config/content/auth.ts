@@ -17,7 +17,7 @@ export const authContent = {
     error: {
       title: "Dat lukte niet",
       tekst: "Je e-mail of wachtwoord is niet goed. Kijk het na en probeer opnieuw.",
-      generic: "Er ging iets mis",
+      generic: "Oeps, dat lukte niet",
       invalidCredentials: "Ongeldige inloggegevens",
     },
     form: {
@@ -98,7 +98,7 @@ export const authContent = {
       gegevensGebruik: "Jullie mogen mijn gegevens gebruiken om mij te helpen",
     },
     errors: {
-      generic: "Er ging iets mis",
+      generic: "Oeps, dat lukte niet",
       emailVerplicht: "Vul je e-mailadres in",
       wachtwoordMin: "Je wachtwoord moet minimaal 8 tekens zijn",
       wachtwoordOngelijk: "De wachtwoorden zijn niet hetzelfde",

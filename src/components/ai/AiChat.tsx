@@ -291,7 +291,7 @@ export function AiChat() {
               <p className="text-sm text-foreground">
                 {error.message?.includes("503") || error.message?.includes("niet beschikbaar")
                   ? "De AI-assistent is tijdelijk niet beschikbaar. Neem contact op met de beheerder."
-                  : "Er ging iets mis bij het versturen van je bericht. Probeer het opnieuw."
+                  : "Oeps, dat lukte niet. Probeer het opnieuw."
                 }
               </p>
               <button

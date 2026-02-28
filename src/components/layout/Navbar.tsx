@@ -41,16 +41,12 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
     fetchBadgeCount()
   }, [])
 
-  // B1 taalgebruik - simpele menu woorden
-  const caregiverLinks: { href: string; label: string; hasBadge: boolean; nieuwsBadge?: boolean; buddyBadge?: boolean }[] = [
+  // B1 taalgebruik - simpele menu woorden, max 4 items
+  const caregiverLinks: { href: string; label: string; hasBadge: boolean; nieuwsBadge?: boolean }[] = [
     { href: "/dashboard", label: "Home", hasBadge: false },
     { href: "/hulpvragen", label: "Hulp", hasBadge: true },
-    { href: "/buddys", label: "Buddyhulp", hasBadge: false, buddyBadge: true },
-    { href: "/marktplaats", label: "Marktplaats", hasBadge: false },
-    { href: "/agenda", label: "Agenda", hasBadge: false },
     { href: "/check-in", label: "Check-in", hasBadge: false },
     { href: "/leren", label: "Info & tips", hasBadge: false },
-    { href: "/ai-assistent", label: "Vraag Ger", hasBadge: false },
   ]
 
   const orgLinks: { href: string; label: string; hasBadge: boolean; nieuwsBadge?: boolean }[] = [
@@ -78,13 +74,17 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
               {links.map((link) => {
                 const showHulpBadge = link.hasBadge && zwareTakenCount > 0
                 const showNieuwsBadge = link.nieuwsBadge && nieuwsCount > 0
+                // "Hulp" tab is ook actief op /buddys en /marktplaats
+                const isActive = pathname === link.href
+                  || pathname.startsWith(link.href + "/")
+                  || (link.href === "/hulpvragen" && (pathname === "/buddys" || pathname === "/marktplaats" || pathname.startsWith("/buddys/") || pathname.startsWith("/marktplaats/")))
                 return (
                   <Link
                     key={link.href}
                     href={link.href}
                     className={cn(
                       "whitespace-nowrap px-4 lg:px-5 py-2 rounded-lg text-sm font-medium transition-colors relative",
-                      pathname === link.href
+                      isActive
                         ? "bg-primary/10 text-primary"
                         : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                     )}

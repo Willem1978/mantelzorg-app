@@ -1337,36 +1337,51 @@ function HulpPageContent() {
         </div>
       )}
 
-      {/* Mijn vragen + buddy buttons - altijd zichtbaar onderaan */}
-      <div className="mt-6 space-y-2">
+      {/* Snelle acties onderaan — buddy zoeken, hulpvraag plaatsen, mijn vragen */}
+      <div className="mt-6 space-y-3">
         {activeTab !== 'buddyhulp' && (
           <Link
             href="/buddys"
             className="block w-full ker-card bg-gradient-to-r from-[var(--accent-green-bg)] to-[var(--accent-green-bg)]/50 hover:shadow-md transition-all"
           >
             <div className="flex items-center gap-3">
-              <span className="text-2xl">🤝</span>
+              <span className="text-3xl">🤝</span>
               <div className="flex-1 text-left">
                 <h3 className="font-semibold text-foreground text-sm">Zoek een MantelBuddy</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Vind een vrijwilliger op de kaart die bij je past</p>
+                <p className="text-sm text-muted-foreground mt-0.5">Vind een vrijwilliger op de kaart</p>
               </div>
-              <svg className="w-4 h-4 text-[var(--accent-green)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-[var(--accent-green)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </div>
           </Link>
         )}
-        <button
-          onClick={() => setShowVragenTab(true)}
-          className="w-full ker-card bg-gradient-to-r from-primary/5 to-primary/10 hover:from-primary/10 hover:to-primary/15 transition-colors cursor-pointer"
+        <Link
+          href="/marktplaats"
+          className="block w-full ker-card bg-gradient-to-r from-primary/5 to-primary/10 hover:shadow-md transition-all"
         >
           <div className="flex items-center gap-3">
-            <span className="text-2xl">📝</span>
+            <span className="text-3xl">📝</span>
             <div className="flex-1 text-left">
-              <h3 className="font-semibold text-foreground text-sm">{c.buddy.title}</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">{c.buddy.beschrijving}</p>
+              <h3 className="font-semibold text-foreground text-sm">Plaats een hulpaanvraag</h3>
+              <p className="text-sm text-muted-foreground mt-0.5">Vraag hulp bij een zorgtaak</p>
             </div>
-            <svg className="w-4 h-4 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </Link>
+        <button
+          onClick={() => setShowVragenTab(true)}
+          className="w-full ker-card hover:bg-secondary/50 transition-colors cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">📋</span>
+            <div className="flex-1 text-left">
+              <h3 className="font-semibold text-foreground text-sm">Mijn vragen bekijken</h3>
+              <p className="text-sm text-muted-foreground mt-0.5">Bekijk je eerder gestelde hulpvragen</p>
+            </div>
+            <svg className="w-5 h-5 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </div>

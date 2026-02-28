@@ -256,7 +256,7 @@ export function AgentChat({
         {error && (
           <div className="bg-[var(--accent-red-bg)] border border-[var(--accent-red)]/20 rounded-xl p-3">
             <p className="text-sm text-foreground">
-              Er ging iets mis. Probeer het later opnieuw.
+              Oeps, dat lukte niet. Probeer het later opnieuw.
             </p>
           </div>
         )}

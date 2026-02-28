@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils"
 
 interface GerAvatarProps {
-  size?: "sm" | "md" | "lg"
+  size?: "xs" | "sm" | "md" | "lg"
   className?: string
   animate?: boolean
   typing?: boolean
@@ -11,6 +11,7 @@ interface GerAvatarProps {
 
 export function GerAvatar({ size = "md", className, animate = false, typing = false }: GerAvatarProps) {
   const sizeClasses = {
+    xs: "w-7 h-7",
     sm: "w-12 h-12",
     md: "w-20 h-20",
     lg: "w-28 h-28",

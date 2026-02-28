@@ -389,7 +389,7 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
         {error && (
           <div className="bg-[var(--accent-red-bg)] border border-[var(--accent-red)]/20 rounded-xl p-3">
             <p className="text-sm text-foreground">
-              Sorry, er ging iets mis. Probeer het nog eens.
+              Oeps, dat lukte niet. Probeer het nog eens.
             </p>
           </div>
         )}

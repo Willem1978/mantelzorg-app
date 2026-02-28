@@ -18,7 +18,7 @@ export const common = {
   // Laad- en foutstatussen
   status: {
     laden: "Even laden...",
-    fout: "Er ging iets mis",
+    fout: "Oeps, dat lukte niet. Probeer het opnieuw.",
     geenResultaten: "Geen resultaten gevonden",
     opnieuw: "Opnieuw proberen",
   },

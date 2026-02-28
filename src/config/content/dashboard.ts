@@ -48,17 +48,17 @@ export const dashboardContent = {
 
   // Zorgtaken sectie
   zorgtaken: {
-    sectionTitle: "Je Zorgtaken",
+    sectionTitle: "Je zorgtaken",
     sectionEmoji: "📋",
     title: "Jouw zorgtaken",
     subtitle: "Dit zijn je taken. Rode en oranje taken zijn zwaar. Druk op een taak om hulp te vinden.",
     niveaus: {
-      licht: "Gaan goed",
+      licht: "Goed",
       matig: "Matig",
       zwaar: "Zwaar",
     },
     hulpbronCount: (count: number) => `${count} hulpbron${count !== 1 ? "nen" : ""} beschikbaar`,
-    zoekHulp: "Zoek hulp",
+    zoekHulp: "Vind hulp",
     goedeTaken: "Taken die goed gaan",
     urenPerWeek: (uren: number) => `(${uren}u/week)`,
   },

@@ -36,7 +36,7 @@ const NIVEAU_CONFIG = {
     bgColor: "var(--accent-green-bg)",
   },
   GEMIDDELD: {
-    label: "Let op",
+    label: "Matig",
     beschrijving: "Je doet heel veel",
     emoji: "🧡",
     color: "var(--accent-amber)",
@@ -127,16 +127,15 @@ export function BalansThermometer({
           }}
         />
       </div>
-      <div className="flex justify-between text-[10px] text-muted-foreground -mt-2">
+      <div className="flex justify-between text-xs text-muted-foreground -mt-2">
         <span>Goed</span>
-        <span>Let op</span>
+        <span>Matig</span>
         <span>Zwaar</span>
       </div>
 
-      {/* === Deelgebieden: energie, gevoel, tijd === */}
+      {/* === Energie, gevoel, tijd === */}
       {deelgebieden.length > 0 && (
         <div className="space-y-2.5 pt-2 border-t border-border/50">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Deelgebieden</p>
           {deelgebieden.map((dg) => {
             const dgConfig = NIVEAU_CONFIG[dg.niveau]
             return (
