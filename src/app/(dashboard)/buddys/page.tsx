@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { cn } from "@/lib/utils"
-import { ZORGTAKEN } from "@/config/options"
+import { ZORGTAKEN, HULPVORM_LABELS, HULPVORM_LABELS_LEGACY } from "@/config/options"
 import { BuddyKaart, type BuddyOpKaart } from "@/components/BuddyKaart"
 import Link from "next/link"
 
@@ -42,13 +42,20 @@ interface ProfielData {
 // HULPVORM LABELS
 // ============================================
 
-const HULPVORM_LABELS: Record<string, { label: string; emoji: string }> = {
-  administratie: { label: "Administratie", emoji: "📋" },
-  boodschappen: { label: "Boodschappen", emoji: "🛒" },
-  vervoer: { label: "Vervoer", emoji: "🚗" },
-  gesprek: { label: "Gesprek", emoji: "💬" },
-  oppas: { label: "Oppas", emoji: "🏠" },
-  klusjes: { label: "Klusjes", emoji: "🔨" },
+// Hulpvorm lookup: ondersteunt zowel nieuwe dbValue keys als legacy keys
+function getHulpvormInfo(h: string): { label: string; emoji: string } {
+  // Probeer eerst nieuwe dbValue lookup
+  if (HULPVORM_LABELS[h]) return HULPVORM_LABELS[h]
+  // Legacy lookup
+  const legacyLabel = HULPVORM_LABELS_LEGACY[h]
+  if (legacyLabel) {
+    const legacyEmoji: Record<string, string> = {
+      administratie: "📋", boodschappen: "🛒", vervoer: "🚗",
+      gesprek: "💬", oppas: "🏠", klusjes: "🔨",
+    }
+    return { label: legacyLabel, emoji: legacyEmoji[h] || "🤝" }
+  }
+  return { label: h, emoji: "🤝" }
 }
 
 const BESCHIKBAARHEID_LABELS: Record<string, string> = {
@@ -312,13 +319,13 @@ export default function BuddysPage() {
                 {/* Hulpvormen */}
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   {m.hulpvormen.map((h) => {
-                    const info = HULPVORM_LABELS[h]
+                    const info = getHulpvormInfo(h)
                     return (
                       <span
                         key={h}
                         className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-xs text-foreground"
                       >
-                        {info?.emoji || "🤝"} {info?.label || h}
+                        {info.emoji} {info.label}
                       </span>
                     )
                   })}

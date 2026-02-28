@@ -55,7 +55,8 @@ export interface BuddyMatch {
 // MAPPING: zorgtaak dbValue → buddy hulpvorm(en)
 // ============================================
 
-const ZORGTAAK_NAAR_HULPVORM: Record<string, string[]> = {
+// Legacy mapping: voor buddys die met de oude 6 hulpvormen zijn geregistreerd
+const ZORGTAAK_NAAR_HULPVORM_LEGACY: Record<string, string[]> = {
   "Administratie en aanvragen": ["administratie"],
   "Plannen en organiseren": ["administratie"],
   "Boodschappen": ["boodschappen"],
@@ -68,6 +69,21 @@ const ZORGTAAK_NAAR_HULPVORM: Record<string, string[]> = {
   "Huisdieren": ["gesprek", "oppas"],
 }
 
+// Inverse mapping: legacy hulpvorm → welke zorgtaken het dekt
+const LEGACY_HULPVORM_NAAR_ZORGTAKEN: Record<string, string[]> = {
+  administratie: ["Administratie en aanvragen", "Plannen en organiseren"],
+  boodschappen: ["Boodschappen", "Bereiden en/of nuttigen van maaltijden"],
+  gesprek: ["Sociaal contact en activiteiten", "Huisdieren"],
+  vervoer: ["Vervoer"],
+  oppas: ["Persoonlijke verzorging", "Huisdieren"],
+  klusjes: ["Huishoudelijke taken", "Klusjes in en om het huis"],
+}
+
+/** Check of een hulpvorm een legacy waarde is (6 oude waarden) */
+function isLegacyHulpvorm(hulpvorm: string): boolean {
+  return ["gesprek", "boodschappen", "vervoer", "klusjes", "oppas", "administratie"].includes(hulpvorm)
+}
+
 // ============================================
 // SCORE BEREKENING
 // ============================================
@@ -75,6 +91,10 @@ const ZORGTAAK_NAAR_HULPVORM: Record<string, string[]> = {
 /**
  * Bereken taak-overlap score (0-100).
  * Kijkt hoeveel van de gevraagde zorgtaken de buddy kan aanbieden.
+ *
+ * Ondersteunt twee formats van buddyHulpvormen:
+ * - Nieuw: dbValues (bijv. "Boodschappen", "Vervoer") → directe match
+ * - Legacy: 6 generieke waarden (bijv. "boodschappen", "vervoer") → via mapping
  */
 export function berekenTaakOverlap(
   gevraagdeZorgtaken: string[],
@@ -82,13 +102,27 @@ export function berekenTaakOverlap(
 ): number {
   if (gevraagdeZorgtaken.length === 0) return 50 // Geen taken opgegeven → neutrale score
 
-  const buddySet = new Set(buddyHulpvormen)
+  // Bepaal of buddy het nieuwe of legacy format gebruikt
+  const usesLegacy = buddyHulpvormen.length > 0 && buddyHulpvormen.every(isLegacyHulpvorm)
+
   let matches = 0
 
-  for (const taak of gevraagdeZorgtaken) {
-    const benodigdeHulpvormen = ZORGTAAK_NAAR_HULPVORM[taak] || []
-    if (benodigdeHulpvormen.some((h) => buddySet.has(h))) {
-      matches++
+  if (usesLegacy) {
+    // Legacy: vertaal via ZORGTAAK_NAAR_HULPVORM_LEGACY
+    const buddySet = new Set(buddyHulpvormen)
+    for (const taak of gevraagdeZorgtaken) {
+      const benodigdeHulpvormen = ZORGTAAK_NAAR_HULPVORM_LEGACY[taak] || []
+      if (benodigdeHulpvormen.some((h) => buddySet.has(h))) {
+        matches++
+      }
+    }
+  } else {
+    // Nieuw: directe match op dbValue
+    const buddySet = new Set(buddyHulpvormen)
+    for (const taak of gevraagdeZorgtaken) {
+      if (buddySet.has(taak)) {
+        matches++
+      }
     }
   }
 
