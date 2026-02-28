@@ -16,16 +16,17 @@ export interface ZorgtaakDef {
   emoji?: string
 }
 
+// Volgorde en IDs zijn gesynchroniseerd met de database seed (src/app/api/seed/content/route.ts)
 export const ZORGTAKEN: ZorgtaakDef[] = [
-  { id: "t1", naam: "Persoonlijke verzorging", beschrijving: "Wassen, aankleden, naar toilet", dbValue: "Persoonlijke verzorging", emoji: "🛁" },
-  { id: "t2", naam: "Huishoudelijke taken", beschrijving: "Schoonmaken, opruimen", dbValue: "Huishoudelijke taken", emoji: "🏠" },
-  { id: "t3", naam: "Maaltijden", beschrijving: "Koken, eten bereiden", dbValue: "Bereiden en/of nuttigen van maaltijden", emoji: "🍽️" },
-  { id: "t4", naam: "Boodschappen", beschrijving: "Boodschappen doen", dbValue: "Boodschappen", emoji: "🛒" },
-  { id: "t5", naam: "Administratie", beschrijving: "Post, rekeningen, formulieren", dbValue: "Administratie en aanvragen", emoji: "📋" },
-  { id: "t6", naam: "Vervoer", beschrijving: "Brengen, halen, begeleiden", dbValue: "Vervoer", emoji: "🚗" },
-  { id: "t7", naam: "Sociaal contact", beschrijving: "Gezelschap, uitjes, activiteiten", dbValue: "Sociaal contact en activiteiten", emoji: "👥" },
-  { id: "t8", naam: "Klusjes", beschrijving: "Klusjes in en om het huis", dbValue: "Klusjes in en om het huis", emoji: "🔨" },
-  { id: "t9", naam: "Plannen & organiseren", beschrijving: "Afspraken, planning", dbValue: "Plannen en organiseren", emoji: "📅" },
+  { id: "t1", naam: "Administratie", beschrijving: "Rekeningen, post, verzekeringen", dbValue: "Administratie en aanvragen", emoji: "📋" },
+  { id: "t2", naam: "Plannen & organiseren", beschrijving: "Arts, thuiszorg, afspraken", dbValue: "Plannen en organiseren", emoji: "📅" },
+  { id: "t3", naam: "Boodschappen", beschrijving: "Supermarkt, apotheek", dbValue: "Boodschappen", emoji: "🛒" },
+  { id: "t4", naam: "Sociaal contact", beschrijving: "Gesprekken, uitjes, wandelen", dbValue: "Sociaal contact en activiteiten", emoji: "👥" },
+  { id: "t5", naam: "Vervoer", beschrijving: "Ziekenhuis, huisarts, familie", dbValue: "Vervoer", emoji: "🚗" },
+  { id: "t6", naam: "Persoonlijke verzorging", beschrijving: "Wassen, aankleden, medicijnen", dbValue: "Persoonlijke verzorging", emoji: "🛁" },
+  { id: "t7", naam: "Maaltijden", beschrijving: "Koken, maaltijden, dieet", dbValue: "Bereiden en/of nuttigen van maaltijden", emoji: "🍽️" },
+  { id: "t8", naam: "Huishoudelijke taken", beschrijving: "Schoonmaken, was, opruimen", dbValue: "Huishoudelijke taken", emoji: "🏠" },
+  { id: "t9", naam: "Klusjes", beschrijving: "Reparaties, tuin, onderhoud", dbValue: "Klusjes in en om het huis", emoji: "🔨" },
   { id: "t10", naam: "Huisdieren", beschrijving: "Verzorging huisdieren", dbValue: "Huisdieren", emoji: "🐕" },
 ]
 

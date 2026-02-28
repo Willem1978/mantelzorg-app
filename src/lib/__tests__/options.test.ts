@@ -45,16 +45,16 @@ describe("TAAK_NAAR_ONDERDEEL", () => {
     })
   })
 
-  it("t6 mapt naar 'Vervoer' (niet naar iets anders)", () => {
-    expect(TAAK_NAAR_ONDERDEEL["t6"]).toBe("Vervoer")
+  it("t6 mapt naar 'Persoonlijke verzorging'", () => {
+    expect(TAAK_NAAR_ONDERDEEL["t6"]).toBe("Persoonlijke verzorging")
   })
 
-  it("t1 mapt naar 'Persoonlijke verzorging'", () => {
-    expect(TAAK_NAAR_ONDERDEEL["t1"]).toBe("Persoonlijke verzorging")
+  it("t1 mapt naar 'Administratie en aanvragen'", () => {
+    expect(TAAK_NAAR_ONDERDEEL["t1"]).toBe("Administratie en aanvragen")
   })
 
-  it("t5 mapt naar 'Administratie en aanvragen'", () => {
-    expect(TAAK_NAAR_ONDERDEEL["t5"]).toBe("Administratie en aanvragen")
+  it("t5 mapt naar 'Vervoer'", () => {
+    expect(TAAK_NAAR_ONDERDEEL["t5"]).toBe("Vervoer")
   })
 })
 
@@ -75,8 +75,8 @@ describe("TAAK_NAAM_VARIANTEN", () => {
 
 describe("zorgtaakById", () => {
   it("vindt taak op ID", () => {
-    expect(zorgtaakById("t1")?.naam).toBe("Persoonlijke verzorging")
-    expect(zorgtaakById("t6")?.naam).toBe("Vervoer")
+    expect(zorgtaakById("t1")?.naam).toBe("Administratie")
+    expect(zorgtaakById("t6")?.naam).toBe("Persoonlijke verzorging")
   })
 
   it("retourneert undefined voor onbekend ID", () => {
@@ -86,8 +86,8 @@ describe("zorgtaakById", () => {
 
 describe("zorgtaakByDbValue", () => {
   it("vindt taak op dbValue", () => {
-    expect(zorgtaakByDbValue("Vervoer")?.id).toBe("t6")
-    expect(zorgtaakByDbValue("Boodschappen")?.id).toBe("t4")
+    expect(zorgtaakByDbValue("Vervoer")?.id).toBe("t5")
+    expect(zorgtaakByDbValue("Boodschappen")?.id).toBe("t3")
   })
 
   it("retourneert undefined voor onbekende dbValue", () => {

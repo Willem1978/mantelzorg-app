@@ -287,28 +287,103 @@ Nieuw component op gemeente-dashboard met:
 
 ---
 
-## Prioriteitsvolgorde
+## Drie iteraties
 
-| # | Taak | Impact | Inspanning | Sprint |
-|---|------|--------|------------|--------|
-| 1 | 5A: Kritieke fixes (mapping, API keys) | Hoog | Laag | Week 1 |
-| 2 | 2A: Match-algoritme + geocoding | Hoog | Gemiddeld | Week 1-2 |
-| 3 | 1A: Homepage redesign — Ger centraal | Hoog | Gemiddeld | Week 1-2 |
-| 4 | 2D: PDOK geocoding integratie | Hoog | Laag | Week 1 |
-| 5 | 2B: Leaflet kaartweergave | Hoog | Gemiddeld | Week 2 |
-| 6 | 3A: Hulpvragenflow herstructureren | Hoog | Hoog | Week 2-3 |
-| 7 | 2C: Buddy zoek/matchpagina | Hoog | Gemiddeld | Week 2-3 |
-| 8 | 4A: Gemeente onboarding wizard | Hoog | Hoog | Week 2-3 |
-| 9 | 1B: Ger op dashboard prominenter | Gemiddeld | Laag | Week 3 |
-| 10 | 4B: Activering & handhaving gemeente | Gemiddeld | Laag | Week 3 |
-| 11 | 3B: Hulpvraag bij naaste-locatie | Gemiddeld | Laag | Week 3 |
-| 12 | 4C: Balanstest opvolging (e-mail, check-in, alarm) | Hoog | Gemiddeld | Week 3-4 |
-| 13 | 5B: Persoonlijk advies na test | Gemiddeld | Gemiddeld | Week 3-4 |
-| 14 | 4D: Gemeente dashboard opvolging | Gemiddeld | Laag | Week 4 |
-| 15 | 3C: Navigatie aanpassen | Laag | Laag | Week 4 |
-| 16 | 1C: Ger visuele upgrade | Laag | Laag | Week 4 |
-| 17 | 5C: Testdekking | Gemiddeld | Hoog | Doorlopend |
-| 18 | 5D: Performance/monitoring | Laag | Gemiddeld | Doorlopend |
+### Iteratie 1 — Fundament & Kern (Week 1–2)
+
+**Doel:** De technische basis leggen waarop alle andere features bouwen. Bugs fixen, geocoding werkend krijgen, het match-algoritme bouwen en Ger zichtbaar maken op de homepage.
+
+| # | Taak | Spoor | Inspanning | Afhankelijkheid |
+|---|------|-------|------------|-----------------|
+| 1 | **5A: Kritieke fixes** — TAAK_NAAR_ONDERDEEL mapping fixen, API keys uit git | Spoor 5 | Laag | Geen — eerst doen |
+| 2 | **Prisma schema update** — lat/lng velden op MantelBuddy en Caregiver | Spoor 2 | Laag | Geen |
+| 3 | **2D: PDOK geocoding** — postcode → coördinaten via PDOK Locatieserver + Haversine | Spoor 2 | Laag | Prisma schema |
+| 4 | **2A: Match-algoritme** — taak-overlap (50%) + afstand (30%) + beschikbaarheid (20%) | Spoor 2 | Gemiddeld | Geocoding |
+| 5 | **1A: Homepage redesign** — Ger centraal met ingebed chatvenster, suggestieknoppen | Spoor 1 | Gemiddeld | Geen |
+
+**Deliverables na Iteratie 1:**
+- Alle 9 TAAK_NAAR_ONDERDEEL mappings correct
+- API keys verwijderd uit repository
+- Werkend match-algoritme met geocoding (API endpoint `/api/buddys/match`)
+- Homepage met Ger als centraal element (niet meer alleen floating button)
+- Database klaar met lat/lng velden
+
+**Definition of Done:** Match-endpoint retourneert gesorteerde buddylijst met percentages. Homepage toont ingebed Ger-chatvenster. Geen API keys in git.
+
+---
+
+### Iteratie 2 — Visueel & Functioneel (Week 2–3)
+
+**Doel:** De matching zichtbaar en bruikbaar maken met een kaart, de hulpvragenflow integreren, gemeenten beter onboarden en Ger op het dashboard tonen.
+
+| # | Taak | Spoor | Inspanning | Afhankelijkheid |
+|---|------|-------|------------|-----------------|
+| 6 | **2B: Leaflet kaartweergave** — buddys op de kaart met matchpercentage-markers, radiusfilter | Spoor 2 | Gemiddeld | Match-algoritme (Iter. 1) |
+| 7 | **2C: Buddy zoek/matchpagina** — `/buddys` pagina met kaart + gesorteerde lijst | Spoor 2 | Gemiddeld | Kaartweergave |
+| 8 | **3A: Hulpvragenflow herstructureren** — zorgtaak kiezen → tabs (buddys / organisaties) | Spoor 3 | Hoog | Match-algoritme (Iter. 1) |
+| 9 | **4A: Gemeente onboarding wizard** — 5-stappen stepper voor gemeente-setup | Spoor 4 | Hoog | Geen |
+| 10 | **1B: Ger op dashboard** — Ger-kaart bovenaan met proactieve berichten | Spoor 1 | Laag | Homepage redesign (Iter. 1) |
+
+**Deliverables na Iteratie 2:**
+- Kaartweergave met buddys in de buurt (Leaflet), klikbare markers met profielpopup
+- Complete buddy-zoekpagina (`/buddys`) met kaart + lijst + filters
+- Eén geïntegreerde hulpvragenflow: zorgtaak → buddy of organisatie
+- Werkende gemeente onboarding wizard met 5 stappen
+- Ger-kaart op het dashboard met context-aware berichten
+
+**Definition of Done:** Mantelzorger kan via `/buddys` een buddy zoeken op kaart, filteren op afstand, en hulp aanvragen. Gemeente kan via wizard volledig worden opgezet. Dashboard toont Ger-kaart met laatste advies.
+
+---
+
+### Iteratie 3 — Automatisering & Afronding (Week 3–4)
+
+**Doel:** Automatische opvolging na de balanstest, gemeenteportaal robuust maken, navigatie en visuele polish, testdekking verhogen.
+
+| # | Taak | Spoor | Inspanning | Afhankelijkheid |
+|---|------|-------|------------|-----------------|
+| 11 | **4C: Balanstest opvolging** — e-mail na test, auto check-in planning, alarm naar gemeente | Spoor 4 | Gemiddeld | Geen |
+| 12 | **4B: Activering & handhaving** — isActief afdwingen, setup-status indicator | Spoor 4 | Laag | Wizard (Iter. 2) |
+| 13 | **3B: Hulpvraag bij naaste-locatie** — kaart centraal op adres naaste, niet mantelzorger | Spoor 3 | Laag | Matching + kaart (Iter. 1–2) |
+| 14 | **5B: Persoonlijk advies na test** — score + subdomeinen + top 3 acties + Ger bericht | Spoor 5 | Gemiddeld | Geen |
+| 15 | **4D: Gemeente dashboard opvolging** — nieuwe tests, open alarmen, geplande check-ins | Spoor 4 | Laag | Balanstest opvolging |
+| 16 | **3C: Navigatie aanpassen** — "Buddyhulp" label, badge met matches | Spoor 3 | Laag | Buddy-pagina (Iter. 2) |
+| 17 | **1C: Ger visuele upgrade** — animaties, typindicator, consistent kleurschema | Spoor 1 | Laag | Ger redesign (Iter. 1–2) |
+| 18 | **5C: Testdekking** — van 29 → 60+ tests, focus op matching, geocoding, wizard | Spoor 5 | Hoog | Alle features |
+| 19 | **5D: Performance/monitoring** — structured logging, error boundaries, caching | Spoor 5 | Gemiddeld | Alle features |
+
+**Deliverables na Iteratie 3:**
+- Automatische e-mail na balanstest met score-samenvatting en gemeente-specifiek advies
+- Automatische check-in reminder planning (HOOG=1w, GEMIDDELD=2w, LAAG=4w)
+- Geanonimiseerde alarmnotificatie naar gemeente bij CRITICAL/HIGH
+- Gemeente-portaal met isActief-check en opvolgingsdashboard
+- Verbeterd persoonlijk rapport met actiestappen
+- Gepolijste navigatie en Ger-animaties
+- 60+ tests met focus op kernfunctionaliteit
+
+**Definition of Done:** Volledige automatische opvolging actief. Gemeenteportaal robuust met activering en opvolging. Navigatie sluit aan op nieuwe features. Testdekking >60 tests.
+
+---
+
+### Iteratie-overzicht
+
+```
+Iteratie 1 (Week 1–2)     Iteratie 2 (Week 2–3)       Iteratie 3 (Week 3–4)
+━━━━━━━━━━━━━━━━━━━━━     ━━━━━━━━━━━━━━━━━━━━━━━     ━━━━━━━━━━━━━━━━━━━━━━━
+Fundament & Kern           Visueel & Functioneel       Automatisering & Afronding
+
+✦ Kritieke bugfixes        ✦ Leaflet kaart             ✦ E-mail na balanstest
+✦ Prisma lat/lng           ✦ Buddy zoekpagina          ✦ Auto check-in planning
+✦ PDOK geocoding           ✦ Hulpvragenflow            ✦ Gemeente-alarmnotificatie
+✦ Match-algoritme          ✦ Gemeente wizard           ✦ isActief handhaving
+✦ Homepage Ger centraal    ✦ Ger op dashboard          ✦ Persoonlijk advies
+                                                       ✦ Gemeente opvolging
+                                                       ✦ Navigatie + visuele polish
+                                                       ✦ Testdekking 60+
+                                                       ✦ Performance/monitoring
+
+Taken: 5                   Taken: 5                    Taken: 9
+Inspanning: ~40%           Inspanning: ~35%            Inspanning: ~25%
+```
 
 ---
 
