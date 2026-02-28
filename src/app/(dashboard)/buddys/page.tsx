@@ -79,22 +79,26 @@ export default function BuddysPage() {
 
     async function loadProfiel() {
       try {
-        const res = await fetch("/api/profiel")
+        const res = await fetch("/api/profile")
         if (res.ok) {
           const data = await res.json()
           const p: ProfielData = {
-            careRecipientLatitude: data.profiel?.careRecipientLatitude || null,
-            careRecipientLongitude: data.profiel?.careRecipientLongitude || null,
-            careRecipientCity: data.profiel?.careRecipientCity || null,
-            zorgtaken: data.profiel?.zorgtaken || [],
+            careRecipientLatitude: data.careRecipientLatitude || null,
+            careRecipientLongitude: data.careRecipientLongitude || null,
+            careRecipientCity: data.naasteWoonplaats || null,
+            zorgtaken: data.zorgtaken || [],
           }
           setProfiel(p)
           if (p.zorgtaken.length > 0) {
             setSelectedTaken(p.zorgtaken)
           }
+        } else {
+          // API fout (401, 404) — gebruik standaard leeg profiel
+          setProfiel({ careRecipientLatitude: null, careRecipientLongitude: null, careRecipientCity: null, zorgtaken: [] })
         }
       } catch {
-        // Profiel niet beschikbaar — gebruik standaard
+        // Netwerk fout — gebruik standaard leeg profiel zodat pagina niet blijft hangen
+        setProfiel({ careRecipientLatitude: null, careRecipientLongitude: null, careRecipientCity: null, zorgtaken: [] })
       }
     }
     loadProfiel()
