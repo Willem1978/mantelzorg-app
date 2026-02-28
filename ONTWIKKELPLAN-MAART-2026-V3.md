@@ -2,7 +2,7 @@
 
 **Datum:** 28 februari 2026
 **Status:** MantelBuddy v2.5.0 + 7 AI agents operationeel
-**Focus:** Ger prominenter, buddy-matching met kaart, hulpvragenflow verbeteren
+**Focus:** Ger prominenter, buddy-matching met kaart, hulpvragenflow verbeteren, gemeente onboarding wizard
 
 ---
 
@@ -19,10 +19,12 @@
 | Buddy matching / match-percentage | 0% |
 | Kaartweergave buddys in de buurt | 0% |
 | Ger prominent op homepage (nu klein floating button) | 30% |
+| Gemeente onboarding wizard | 0% |
+| Balanstest opvolging (e-mail, check-in, alarm-notificatie) | 0% |
 
 ---
 
-## Wat er moet gebeuren — 4 sporen
+## Wat er moet gebeuren — 5 sporen
 
 ### Spoor 1: Ger prominent op de homepage
 
@@ -191,21 +193,79 @@ npm install -D @types/leaflet
 
 ---
 
-### Spoor 4: Technische verbeteringen en bugfixes
+### Spoor 4: Gemeente Onboarding Wizard
 
-#### 4A. Kritieke fixes (eerst doen)
+**Probleem:** Gemeenten moeten nu handmatig aangemaakt worden via losse pagina's. Stappen worden vergeten, `isActief` wordt niet afgedwongen, en er is geen opvolging na de balanstest (geen e-mail, geen geplande check-in, geen alarm-notificatie naar gemeente).
+
+**Oplossing:** Stapsgewijze wizard die het complete onboarding-proces begeleidt + automatische opvolging.
+
+#### 4A. Onboarding wizard (`/beheer/gemeenten/nieuw`)
+Nieuwe pagina met stepper UI (5 stappen):
+
+1. **Gemeente kiezen** — PDOK autocomplete (al beschikbaar), CBS-code auto-invullen, check of gemeente al bestaat
+2. **Contactgegevens** — e-mail, telefoon, website, WMO loket URL (minimaal e-mail of telefoon verplicht)
+3. **Lokale hulpbronnen koppelen** — automatisch zoeken naar bestaande `Zorgorganisatie` records voor deze gemeente, checkboxes om te koppelen, standaard-suggesties (mantelzorgsteunpunt, WMO loket, huisartsenpost, respijtzorg)
+4. **Advies per belastingniveau** — tekstvelden voor advies LAAG/GEMIDDELD/HOOG + organisatie koppelen per niveau, standaard-templates als placeholder
+5. **Eerste beheerder aanmaken** — e-mailadres + naam, rol kiezen (COMMUNICATIE/HULPBRONNEN/BELEID/alles), direct account aanmaken of uitnodigingslink genereren
+
+Na voltooiing: gemeente aangemaakt met `isActief: true`, checklist-overzicht getoond.
+
+**Bestanden:**
+- Nieuw: `src/app/beheer/gemeenten/nieuw/page.tsx` — wizard UI (stepper)
+- Nieuw: `src/app/api/beheer/gemeenten/onboarding/route.ts` — gecombineerd endpoint dat gemeente + hulpbronnen + advies + gebruiker aanmaakt
+- Nieuw: `src/app/api/beheer/gemeenten/hulpbronnen-zoek/route.ts` — zoek bestaande hulpbronnen voor gemeente
+- `src/app/beheer/gemeenten/page.tsx` — link naar wizard + setup-status indicator
+
+#### 4B. Activering & handhaving
+- `isActief` check afdwingen in gemeente-portaal login (nu kan een inactieve gemeente nog inloggen)
+- Setup-status indicator op gemeenten-overzicht: groen vinkje per voltooide stap, percentage completeness
+- Knop "Onboarding hervatten" als niet alles af is
+
+**Bestanden:**
+- `src/lib/gemeente-auth.ts` — `isActief` check toevoegen
+- `src/app/beheer/gemeenten/page.tsx` — setup-status badges
+- Nieuw: `src/app/api/beheer/gemeenten/[id]/activeer/route.ts` — toggle `isActief` met validatie
+
+#### 4C. Balanstest opvolging automatiseren
+Na test-voltooiing automatisch:
+- **E-mail** met score-samenvatting, top 3 aanbevelingen, link naar rapport, gemeente-specifieke contactgegevens
+- **Check-in reminder plannen**: HOOG → 1 week, GEMIDDELD → 2 weken, LAAG → 4 weken
+- **Gemeente-notificatie bij alarm**: geanonimiseerde e-mail naar `Gemeente.contactEmail` bij CRITICAL/HIGH alarm
+- **Fix: gemeente op test** voor ingelogde users (haal municipality uit Caregiver profiel)
+- **Fix: WhatsApp alarm detectie** — `checkAlarmindicatoren()` toevoegen aan WhatsApp handler
+
+**Bestanden:**
+- Nieuw: `src/lib/email/balanstest-resultaat.ts` — e-mail template na test
+- Nieuw: `src/lib/email/gemeente-alarm-notificatie.ts` — alarm-notificatie template
+- Nieuw: `src/lib/check-in/plan-check-in.ts` — auto-planning check-in reminder
+- `src/app/api/belastbaarheidstest/route.ts` — triggers toevoegen
+- `src/lib/whatsapp/belastbaarheidstest.ts` — alarm detectie fix
+
+#### 4D. Gemeente dashboard opvolging
+Nieuw component op gemeente-dashboard met:
+- Nieuwe tests deze week (waarvan HOOG)
+- Open alarmen
+- Geplande check-ins + niet-uitgevoerde check-ins
+- Knoppen naar alarmen en rapportage
+
+**Bestanden:**
+- Nieuw: `src/components/gemeente/OpvolgingKaart.tsx`
+- Nieuw: `src/app/api/gemeente/opvolging/route.ts`
+- `src/app/gemeente/page.tsx` — kaart toevoegen
+
+---
+
+### Spoor 5: Technische verbeteringen en bugfixes
+
+#### 5A. Kritieke fixes (eerst doen)
 - [ ] **TAAK_NAAR_ONDERDEEL mapping fixen** — alle 9 mappings zijn verkeerd (zie PLAN.md)
 - [ ] **API keys uit git verwijderen** — .env.production bevat OpenAI keys
-- [ ] **Gemeente opslaan bij test** — ingelogde gebruiker krijgt geen gemeente op test
-- [ ] **WhatsApp alarm detectie** — tests missen alarmsignalen
 
 **Bestanden:**
 - `src/config/options.ts` — TAAK_NAAR_ONDERDEEL fixen
 - `.env.production` — verwijderen, naar Vercel env vars
-- `src/app/belastbaarheidstest/page.tsx` — gemeente meesturen
-- `src/app/api/whatsapp/webhook/handlers/` — alarm detectie
 
-#### 4B. Persoonlijk advies na balanstest
+#### 5B. Persoonlijk advies na balanstest
 - Pagina `/rapport/persoonlijk` verbeteren met directe feedback
 - Score + subdomeinen + top 3 actiestappen
 - Ger automatisch bericht na test
@@ -215,12 +275,12 @@ npm install -D @types/leaflet
 - `src/app/(dashboard)/rapport/persoonlijk/page.tsx` — uitbreiden
 - `src/app/api/ai/balanscoach/route.ts` — proactief bericht genereren
 
-#### 4C. Testdekking uitbreiden
+#### 5C. Testdekking uitbreiden
 - Van 29 naar 60+ tests
-- Focus op: matching-algoritme, geocoding, API routes
+- Focus op: matching-algoritme, geocoding, API routes, wizard
 - E2E tests voor hulpvragenflow
 
-#### 4D. Performance en monitoring
+#### 5D. Performance en monitoring
 - Structured logging (pino) consistent doorvoeren
 - Error boundaries op alle pagina's
 - API response caching waar mogelijk
@@ -231,20 +291,24 @@ npm install -D @types/leaflet
 
 | # | Taak | Impact | Inspanning | Sprint |
 |---|------|--------|------------|--------|
-| 1 | 4A: Kritieke fixes (mapping, API keys, gemeente) | Hoog | Laag | Week 1 |
+| 1 | 5A: Kritieke fixes (mapping, API keys) | Hoog | Laag | Week 1 |
 | 2 | 2A: Match-algoritme + geocoding | Hoog | Gemiddeld | Week 1-2 |
 | 3 | 1A: Homepage redesign — Ger centraal | Hoog | Gemiddeld | Week 1-2 |
 | 4 | 2D: PDOK geocoding integratie | Hoog | Laag | Week 1 |
 | 5 | 2B: Leaflet kaartweergave | Hoog | Gemiddeld | Week 2 |
 | 6 | 3A: Hulpvragenflow herstructureren | Hoog | Hoog | Week 2-3 |
 | 7 | 2C: Buddy zoek/matchpagina | Hoog | Gemiddeld | Week 2-3 |
-| 8 | 1B: Ger op dashboard prominenter | Gemiddeld | Laag | Week 3 |
-| 9 | 3B: Hulpvraag bij naaste-locatie | Gemiddeld | Laag | Week 3 |
-| 10 | 4B: Persoonlijk advies na test | Gemiddeld | Gemiddeld | Week 3-4 |
-| 11 | 3C: Navigatie aanpassen | Laag | Laag | Week 4 |
-| 12 | 1C: Ger visuele upgrade | Laag | Laag | Week 4 |
-| 13 | 4C: Testdekking | Gemiddeld | Hoog | Doorlopend |
-| 14 | 4D: Performance/monitoring | Laag | Gemiddeld | Doorlopend |
+| 8 | 4A: Gemeente onboarding wizard | Hoog | Hoog | Week 2-3 |
+| 9 | 1B: Ger op dashboard prominenter | Gemiddeld | Laag | Week 3 |
+| 10 | 4B: Activering & handhaving gemeente | Gemiddeld | Laag | Week 3 |
+| 11 | 3B: Hulpvraag bij naaste-locatie | Gemiddeld | Laag | Week 3 |
+| 12 | 4C: Balanstest opvolging (e-mail, check-in, alarm) | Hoog | Gemiddeld | Week 3-4 |
+| 13 | 5B: Persoonlijk advies na test | Gemiddeld | Gemiddeld | Week 3-4 |
+| 14 | 4D: Gemeente dashboard opvolging | Gemiddeld | Laag | Week 4 |
+| 15 | 3C: Navigatie aanpassen | Laag | Laag | Week 4 |
+| 16 | 1C: Ger visuele upgrade | Laag | Laag | Week 4 |
+| 17 | 5C: Testdekking | Gemiddeld | Hoog | Doorlopend |
+| 18 | 5D: Performance/monitoring | Laag | Gemiddeld | Doorlopend |
 
 ---
 
@@ -266,22 +330,41 @@ npm install -D @types/leaflet
 src/
 ├── lib/
 │   ├── matching.ts                    # Match-algoritme (taak-overlap + afstand + beschikbaarheid)
-│   └── geocode.ts                     # PDOK geocoding + Haversine formule
+│   ├── geocode.ts                     # PDOK geocoding + Haversine formule
+│   ├── email/
+│   │   ├── balanstest-resultaat.ts    # E-mail template na balanstest
+│   │   └── gemeente-alarm-notificatie.ts  # Alarm-notificatie naar gemeente
+│   └── check-in/
+│       └── plan-check-in.ts           # Auto-planning check-in reminder
 ├── components/
 │   ├── ai/
 │   │   ├── GerHeroChat.tsx            # Ingebed chatvenster homepage
 │   │   └── GerDashboardCard.tsx       # Ger-kaart voor dashboard
 │   ├── BuddyKaart.tsx                 # Leaflet kaartcomponent
 │   ├── BuddyMarker.tsx               # Custom marker met matchpercentage
-│   └── BuddyProfielPopup.tsx          # Popup bij klik op buddy
+│   ├── BuddyProfielPopup.tsx          # Popup bij klik op buddy
+│   ├── beheer/
+│   │   └── GemeenteHulpbronnenZoek.tsx  # Hulpbronnen-zoek in wizard
+│   └── gemeente/
+│       └── OpvolgingKaart.tsx         # Opvolging dashboard-kaart
 ├── app/
 │   ├── (dashboard)/
 │   │   └── buddys/
 │   │       └── page.tsx               # Buddy zoek/matchpagina
+│   ├── beheer/
+│   │   └── gemeenten/
+│   │       └── nieuw/
+│   │           └── page.tsx           # Gemeente onboarding wizard
 │   └── api/
-│       └── buddys/
-│           ├── match/route.ts         # Match API endpoint
-│           └── geocode/route.ts       # Geocoding endpoint
+│       ├── buddys/
+│       │   ├── match/route.ts         # Match API endpoint
+│       │   └── geocode/route.ts       # Geocoding endpoint
+│       ├── beheer/gemeenten/
+│       │   ├── onboarding/route.ts    # Wizard submit endpoint
+│       │   ├── hulpbronnen-zoek/route.ts  # Hulpbronnen zoeken voor gemeente
+│       │   └── [id]/activeer/route.ts # Toggle isActief
+│       └── gemeente/
+│           └── opvolging/route.ts     # Opvolgingsdata endpoint
 ```
 
 ### Gewijzigde bestanden overzicht
@@ -294,6 +377,12 @@ src/
 │   │   ├── dashboard/page.tsx         # Ger-kaart toevoegen
 │   │   ├── hulpvragen/page.tsx        # Tabs: buddys + organisaties
 │   │   └── marktplaats/page.tsx       # Link naar buddys
+│   ├── beheer/
+│   │   └── gemeenten/page.tsx         # Link naar wizard + setup-status
+│   ├── gemeente/
+│   │   └── page.tsx                   # Opvolgingskaart toevoegen
+│   └── api/
+│       └── belastbaarheidstest/route.ts  # E-mail + check-in triggers
 ├── components/
 │   ├── GerAvatar.tsx                  # Animaties
 │   ├── ai/PublicGerChat.tsx           # Embedded variant
@@ -301,6 +390,9 @@ src/
 ├── config/
 │   ├── options.ts                     # TAAK_NAAR_ONDERDEEL fix
 │   └── content/navigation.ts         # Route labels
+├── lib/
+│   ├── gemeente-auth.ts              # isActief check
+│   └── whatsapp/belastbaarheidstest.ts  # Alarm detectie fix
 ├── prisma/
 │   └── schema.prisma                  # lat/lng velden
 ```
@@ -313,20 +405,19 @@ src/
 |----------------|-------------------------------|
 | Content migratie naar database | Grootste deel al gedaan (artikelen, hulpbronnen, intake). Overige items werken prima hardcoded |
 | PWA uitbreiding | Basis PWA werkt al (manifest + service worker). Native app niet nodig |
-| Gemeente onboarding wizard | Nice-to-have, maar buddymatching heeft meer impact voor eindgebruikers |
 | SOS-knop | Mantelzorglijn telefoon staat overal al. Crisis-detectie zit in Ger |
 | Weekplan met favorieten | Complexe feature met weinig bewezen vraag. Eerst basisflow goed maken |
-| Email na balanstest | Belangrijk maar ondergeschikt aan de match-flow |
 | Actiekaarten concept | Te abstract. Ger + buddymatching biedt concreter resultaat |
 
 ---
 
 ## Samenvatting
 
-Dit plan focust op drie dingen die het meeste verschil maken voor gebruikers:
+Dit plan focust op vier dingen die het meeste verschil maken:
 
 1. **Ger is het gezicht** — niet verstopt maar centraal, op de homepage en het dashboard
 2. **Buddys vinden die passen** — matchpercentage + kaart maakt het concreet en vertrouwenwekkend
 3. **Eén hulpvragenflow** — niet twee losse systemen, maar zorgtaak → buddy of organisatie in één beweging
+4. **Gemeenten goed onboarden** — wizard voor snelle setup + automatische opvolging na balanstest (e-mail, check-in, alarmnotificatie)
 
-De technische basis (7 AI agents, 10 zorgtaken, balanstest, profielen met twee locaties) is er al. Nu gaat het om het verbinden van die elementen tot een samenhangende ervaring.
+De technische basis (7 AI agents, 10 zorgtaken, balanstest, profielen met twee locaties, gemeenteportaal) is er al. Nu gaat het om het verbinden van die elementen tot een samenhangende ervaring — zowel voor eindgebruikers als voor gemeenten.
