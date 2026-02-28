@@ -8,6 +8,7 @@ export const navigation = {
     { href: "/dashboard", label: "Home" },
     { href: "/leren", label: "Informatie" },
     { href: "/hulpvragen", label: "Hulp" },
+    { href: "/buddys", label: "Buddyhulp" },
     { href: "/balanstest", label: "Balanstest" },
   ],
 
