@@ -26,52 +26,52 @@ const STANDAARD_ADVIEZEN: Record<string, { label: string; advies: string }> = {
   "tijd.HOOG": { label: "Tijd – Rood", advies: "De zorg kost veel van je tijd. Zoek vervangende zorg zodat je lucht krijgt." },
 
   // Zorgtaken — per niveau (LAAG/GEMIDDELD/HOOG), net als deelgebieden
-  // Persoonlijke verzorging
-  "taak.t1.LAAG": { label: "Persoonlijke verzorging – Groen", advies: "De verzorging gaat goed. Blijf alert op veranderingen in de zorgbehoefte." },
-  "taak.t1.GEMIDDELD": { label: "Persoonlijke verzorging – Oranje", advies: "Thuiszorg kan helpen met wassen en aankleden. Vraag via de Wmo van je gemeente." },
-  "taak.t1.HOOG": { label: "Persoonlijke verzorging – Rood", advies: "De persoonlijke verzorging is zwaar. Schakel thuiszorg in via de Wmo. Je hoeft dit niet alleen te doen." },
+  // t1: Administratie
+  "taak.t1.LAAG": { label: "Administratie – Groen", advies: "De administratie is onder controle. Denk aan een ordner-systeem voor overzicht." },
+  "taak.t1.GEMIDDELD": { label: "Administratie – Oranje", advies: "Vraag bij je gemeente naar vrijwillige hulp bij administratie en formulieren." },
+  "taak.t1.HOOG": { label: "Administratie – Rood", advies: "De administratie loopt over. Schakel een vrijwilliger of bewindvoerder in. De gemeente kan helpen." },
 
-  // Huishoudelijke taken
-  "taak.t2.LAAG": { label: "Huishoudelijke taken – Groen", advies: "Het huishouden loopt goed. Probeer het zo te houden." },
-  "taak.t2.GEMIDDELD": { label: "Huishoudelijke taken – Oranje", advies: "Huishoudelijke hulp kun je aanvragen via de Wmo van je gemeente." },
-  "taak.t2.HOOG": { label: "Huishoudelijke taken – Rood", advies: "Het huishouden kost te veel energie. Vraag huishoudelijke hulp aan via de Wmo. Dit is er juist voor." },
+  // t2: Plannen & organiseren
+  "taak.t2.LAAG": { label: "Plannen & organiseren – Groen", advies: "Planning gaat goed. Een vast weekritme helpt om overzicht te houden." },
+  "taak.t2.GEMIDDELD": { label: "Plannen & organiseren – Oranje", advies: "Een casemanager of mantelzorgconsulent kan helpen met het organiseren van de zorg." },
+  "taak.t2.HOOG": { label: "Plannen & organiseren – Rood", advies: "De organisatie van de zorg is overweldigend. Vraag een casemanager aan die de regie kan overnemen." },
 
-  // Maaltijden
-  "taak.t3.LAAG": { label: "Maaltijden – Groen", advies: "Maaltijden gaan goed. Blijf letten op goede voeding voor jullie beiden." },
-  "taak.t3.GEMIDDELD": { label: "Maaltijden – Oranje", advies: "Maaltijdservice kan kant-en-klare maaltijden bezorgen. Dat scheelt tijd en energie." },
-  "taak.t3.HOOG": { label: "Maaltijden – Rood", advies: "Maaltijden verzorgen is zwaar. Schakel maaltijdservice in of vraag thuiszorg om hulp bij eten en drinken." },
+  // t3: Boodschappen
+  "taak.t3.LAAG": { label: "Boodschappen – Groen", advies: "Boodschappen doen lukt goed. Denk aan online bestellen als het drukker wordt." },
+  "taak.t3.GEMIDDELD": { label: "Boodschappen – Oranje", advies: "Laat boodschappen bezorgen of vraag hulp van vrijwilligers via de gemeente." },
+  "taak.t3.HOOG": { label: "Boodschappen – Rood", advies: "Boodschappen kosten te veel tijd. Schakel boodschappenhulp in via vrijwilligers of de Wmo." },
 
-  // Boodschappen
-  "taak.t4.LAAG": { label: "Boodschappen – Groen", advies: "Boodschappen doen lukt goed. Denk aan online bestellen als het drukker wordt." },
-  "taak.t4.GEMIDDELD": { label: "Boodschappen – Oranje", advies: "Laat boodschappen bezorgen of vraag hulp van vrijwilligers via de gemeente." },
-  "taak.t4.HOOG": { label: "Boodschappen – Rood", advies: "Boodschappen kosten te veel tijd. Schakel boodschappenhulp in via vrijwilligers of de Wmo." },
+  // t4: Sociaal contact
+  "taak.t4.LAAG": { label: "Sociaal contact – Groen", advies: "Sociaal contact is goed geregeld. Blijf activiteiten ondernemen samen." },
+  "taak.t4.GEMIDDELD": { label: "Sociaal contact – Oranje", advies: "Dagbesteding of vrijwilligers kunnen voor gezelschap en activiteiten zorgen." },
+  "taak.t4.HOOG": { label: "Sociaal contact – Rood", advies: "Sociaal contact is zwaar om te organiseren. Dagopvang of dagbesteding kan overnemen zodat jij lucht krijgt." },
 
-  // Administratie
-  "taak.t5.LAAG": { label: "Administratie – Groen", advies: "De administratie is onder controle. Denk aan een ordner-systeem voor overzicht." },
-  "taak.t5.GEMIDDELD": { label: "Administratie – Oranje", advies: "Vraag bij je gemeente naar vrijwillige hulp bij administratie en formulieren." },
-  "taak.t5.HOOG": { label: "Administratie – Rood", advies: "De administratie loopt over. Schakel een vrijwilliger of bewindvoerder in. De gemeente kan helpen." },
+  // t5: Vervoer
+  "taak.t5.LAAG": { label: "Vervoer – Groen", advies: "Vervoer gaat goed. Houd rekening met toekomstige veranderingen in mobiliteit." },
+  "taak.t5.GEMIDDELD": { label: "Vervoer – Oranje", advies: "De gemeente kan aangepast vervoer regelen (Regiotaxi, Wmo-vervoer)." },
+  "taak.t5.HOOG": { label: "Vervoer – Rood", advies: "Vervoer kost veel tijd. Vraag Wmo-vervoer aan of schakel vrijwilligers in voor ritten." },
 
-  // Vervoer
-  "taak.t6.LAAG": { label: "Vervoer – Groen", advies: "Vervoer gaat goed. Houd rekening met toekomstige veranderingen in mobiliteit." },
-  "taak.t6.GEMIDDELD": { label: "Vervoer – Oranje", advies: "De gemeente kan aangepast vervoer regelen (Regiotaxi, Wmo-vervoer)." },
-  "taak.t6.HOOG": { label: "Vervoer – Rood", advies: "Vervoer kost veel tijd. Vraag Wmo-vervoer aan of schakel vrijwilligers in voor ritten." },
+  // t6: Persoonlijke verzorging
+  "taak.t6.LAAG": { label: "Persoonlijke verzorging – Groen", advies: "De verzorging gaat goed. Blijf alert op veranderingen in de zorgbehoefte." },
+  "taak.t6.GEMIDDELD": { label: "Persoonlijke verzorging – Oranje", advies: "Thuiszorg kan helpen met wassen en aankleden. Vraag via de Wmo van je gemeente." },
+  "taak.t6.HOOG": { label: "Persoonlijke verzorging – Rood", advies: "De persoonlijke verzorging is zwaar. Schakel thuiszorg in via de Wmo. Je hoeft dit niet alleen te doen." },
 
-  // Sociaal contact
-  "taak.t7.LAAG": { label: "Sociaal contact – Groen", advies: "Sociaal contact is goed geregeld. Blijf activiteiten ondernemen samen." },
-  "taak.t7.GEMIDDELD": { label: "Sociaal contact – Oranje", advies: "Dagbesteding of vrijwilligers kunnen voor gezelschap en activiteiten zorgen." },
-  "taak.t7.HOOG": { label: "Sociaal contact – Rood", advies: "Sociaal contact is zwaar om te organiseren. Dagopvang of dagbesteding kan overnemen zodat jij lucht krijgt." },
+  // t7: Maaltijden
+  "taak.t7.LAAG": { label: "Maaltijden – Groen", advies: "Maaltijden gaan goed. Blijf letten op goede voeding voor jullie beiden." },
+  "taak.t7.GEMIDDELD": { label: "Maaltijden – Oranje", advies: "Maaltijdservice kan kant-en-klare maaltijden bezorgen. Dat scheelt tijd en energie." },
+  "taak.t7.HOOG": { label: "Maaltijden – Rood", advies: "Maaltijden verzorgen is zwaar. Schakel maaltijdservice in of vraag thuiszorg om hulp bij eten en drinken." },
 
-  // Klusjes
-  "taak.t8.LAAG": { label: "Klusjes – Groen", advies: "Klusjes in huis lukken goed. Vraag hulp als het zwaarder wordt." },
-  "taak.t8.GEMIDDELD": { label: "Klusjes – Oranje", advies: "Vrijwilligers of een klussenbus kunnen helpen met klussen in en om het huis." },
-  "taak.t8.HOOG": { label: "Klusjes – Rood", advies: "Klusjes kosten te veel energie. Schakel de klussenbus of woningaanpassingen in via de Wmo." },
+  // t8: Huishoudelijke taken
+  "taak.t8.LAAG": { label: "Huishoudelijke taken – Groen", advies: "Het huishouden loopt goed. Probeer het zo te houden." },
+  "taak.t8.GEMIDDELD": { label: "Huishoudelijke taken – Oranje", advies: "Huishoudelijke hulp kun je aanvragen via de Wmo van je gemeente." },
+  "taak.t8.HOOG": { label: "Huishoudelijke taken – Rood", advies: "Het huishouden kost te veel energie. Vraag huishoudelijke hulp aan via de Wmo. Dit is er juist voor." },
 
-  // Plannen & organiseren
-  "taak.t9.LAAG": { label: "Plannen & organiseren – Groen", advies: "Planning gaat goed. Een vast weekritme helpt om overzicht te houden." },
-  "taak.t9.GEMIDDELD": { label: "Plannen & organiseren – Oranje", advies: "Een casemanager of mantelzorgconsulent kan helpen met het organiseren van de zorg." },
-  "taak.t9.HOOG": { label: "Plannen & organiseren – Rood", advies: "De organisatie van de zorg is overweldigend. Vraag een casemanager aan die de regie kan overnemen." },
+  // t9: Klusjes
+  "taak.t9.LAAG": { label: "Klusjes – Groen", advies: "Klusjes in huis lukken goed. Vraag hulp als het zwaarder wordt." },
+  "taak.t9.GEMIDDELD": { label: "Klusjes – Oranje", advies: "Vrijwilligers of een klussenbus kunnen helpen met klussen in en om het huis." },
+  "taak.t9.HOOG": { label: "Klusjes – Rood", advies: "Klusjes kosten te veel energie. Schakel de klussenbus of woningaanpassingen in via de Wmo." },
 
-  // Huisdieren
+  // t10: Huisdieren
   "taak.t10.LAAG": { label: "Huisdieren – Groen", advies: "Huisdierenverzorging gaat goed. Denk aan een noodplan voor als je er even niet bent." },
   "taak.t10.GEMIDDELD": { label: "Huisdieren – Oranje", advies: "Vraag bij je gemeente of buren naar hulp bij het uitlaten of verzorgen van huisdieren." },
   "taak.t10.HOOG": { label: "Huisdieren – Rood", advies: "Huisdierenverzorging is te veel. Schakel een dierenoppas of vrijwilligers in." },

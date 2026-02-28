@@ -41,15 +41,16 @@ export async function POST(request: Request) {
 
     // 3. ZORGTAKEN
     const zorgtaken = [
-      { taakId: "t1", naam: "Administratie en geldzaken", beschrijving: "Rekeningen, post, verzekeringen", volgorde: 1 },
-      { taakId: "t2", naam: "Regelen en afspraken maken", beschrijving: "Arts, thuiszorg, dagbesteding", volgorde: 2 },
-      { taakId: "t3", naam: "Boodschappen doen", beschrijving: "Supermarkt, apotheek", volgorde: 3 },
-      { taakId: "t4", naam: "Bezoek en gezelschap", beschrijving: "Gesprekken, uitjes, wandelen", volgorde: 4 },
-      { taakId: "t5", naam: "Vervoer naar afspraken", beschrijving: "Ziekenhuis, huisarts, familie", volgorde: 5 },
+      { taakId: "t1", naam: "Administratie", beschrijving: "Rekeningen, post, verzekeringen", volgorde: 1 },
+      { taakId: "t2", naam: "Plannen & organiseren", beschrijving: "Arts, thuiszorg, afspraken", volgorde: 2 },
+      { taakId: "t3", naam: "Boodschappen", beschrijving: "Supermarkt, apotheek", volgorde: 3 },
+      { taakId: "t4", naam: "Sociaal contact", beschrijving: "Gesprekken, uitjes, wandelen", volgorde: 4 },
+      { taakId: "t5", naam: "Vervoer", beschrijving: "Ziekenhuis, huisarts, familie", volgorde: 5 },
       { taakId: "t6", naam: "Persoonlijke verzorging", beschrijving: "Wassen, aankleden, medicijnen", volgorde: 6 },
-      { taakId: "t7", naam: "Eten en drinken", beschrijving: "Koken, maaltijden, dieet", volgorde: 7 },
-      { taakId: "t8", naam: "Huishouden", beschrijving: "Schoonmaken, was, opruimen", volgorde: 8 },
-      { taakId: "t9", naam: "Klusjes in en om huis", beschrijving: "Reparaties, tuin, onderhoud", volgorde: 9 },
+      { taakId: "t7", naam: "Maaltijden", beschrijving: "Koken, maaltijden, dieet", volgorde: 7 },
+      { taakId: "t8", naam: "Huishoudelijke taken", beschrijving: "Schoonmaken, was, opruimen", volgorde: 8 },
+      { taakId: "t9", naam: "Klusjes", beschrijving: "Reparaties, tuin, onderhoud", volgorde: 9 },
+      { taakId: "t10", naam: "Huisdieren", beschrijving: "Verzorging huisdieren", volgorde: 10 },
     ]
     for (const t of zorgtaken) {
       await prisma.zorgtaak.upsert({ where: { taakId: t.taakId }, create: t, update: { naam: t.naam, beschrijving: t.beschrijving, volgorde: t.volgorde } })
@@ -163,7 +164,7 @@ export async function POST(request: Request) {
       "Persoonlijke verzorging": "t6", "Huishoudelijke taken": "t8", "Vervoer": "t5",
       "Administratie en aanvragen": "t1", "Plannen en organiseren": "t2",
       "Sociaal contact en activiteiten": "t4", "Bereiden en/of nuttigen van maaltijden": "t7",
-      "Boodschappen": "t3", "Klusjes in en om het huis": "t9", "Huisdieren": "t4",
+      "Boodschappen": "t3", "Klusjes in en om het huis": "t9", "Huisdieren": "t10",
     }
     const taakMappings = [
       { bronNaam: "Persoonlijke verzorging", doelCategorie: "Persoonlijke verzorging" },
