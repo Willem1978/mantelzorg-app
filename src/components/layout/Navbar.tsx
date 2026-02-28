@@ -107,11 +107,6 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
           </div>
 
           <div className="flex items-center space-x-1 sm:space-x-2">
-            {userName && (
-              <span className="text-sm text-muted-foreground hidden lg:block">
-                Hoi <span className="font-medium text-foreground">{userName}</span>
-              </span>
-            )}
             <ThemeToggle />
             <FavorietenIcon />
             <NotificationBell />
