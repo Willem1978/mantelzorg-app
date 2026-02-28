@@ -170,7 +170,7 @@ export default function RapportPage() {
     return (
       <div className="ker-page-content">
         <div className="flex items-start gap-4 mb-6">
-          <GerAvatar size="md" />
+          <GerAvatar size="md" animate />
           <div className="pt-1">
             <h1 className="text-xl font-bold text-foreground">{c.fouten.geenResultaten}</h1>
             <p className="text-muted-foreground mt-1">{error}</p>
@@ -223,7 +223,7 @@ export default function RapportPage() {
     <div className="ker-page-content">
       {/* Header */}
       <div className="flex items-start gap-4 mb-6">
-        <GerAvatar size="md" />
+        <GerAvatar size="md" animate />
         <div className="pt-1">
           <h1 className="text-xl font-bold text-foreground">
             {c.header.greeting(result.voornaam)}

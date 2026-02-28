@@ -23,7 +23,7 @@ export default function LandingPage() {
           <div className="max-w-4xl mx-auto text-center">
             {/* Ger introductie */}
             <div className="flex flex-col items-center mb-6">
-              <GerAvatar size="lg" />
+              <GerAvatar size="lg" animate />
               <h1 className="mt-4 text-3xl md:text-4xl font-bold text-foreground">
                 {c.hero.title}
               </h1>

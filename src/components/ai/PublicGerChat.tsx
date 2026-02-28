@@ -127,7 +127,7 @@ export function PublicGerChat() {
         aria-label="Praat met Ger"
       >
         <div className="relative">
-          <GerAvatar size="md" />
+          <GerAvatar size="md" animate />
           {/* Pulserende ring */}
           <div className="absolute inset-0 rounded-full border-2 border-primary/40 animate-ping" />
           {/* Tekstballon */}
@@ -144,7 +144,7 @@ export function PublicGerChat() {
     <div className="fixed bottom-6 right-6 z-50 w-[380px] max-w-[calc(100vw-2rem)] h-[560px] max-h-[calc(100vh-6rem)] bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-gradient-to-r from-primary/5 to-transparent">
-        <GerAvatar size="sm" className="!w-10 !h-10" />
+        <GerAvatar size="sm" className="!w-10 !h-10" animate />
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-foreground text-sm">Ger</p>
           <p className="text-xs text-muted-foreground">Je persoonlijke coach</p>

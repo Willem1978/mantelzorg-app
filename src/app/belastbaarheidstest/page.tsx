@@ -479,7 +479,7 @@ export default function BelastbaarheidstestPage() {
           {/* Mobiel: Header met Ger */}
           <div className="px-4 pt-8 pb-4 lg:p-0 lg:text-center lg:max-w-md">
             <div className="flex items-start gap-4 lg:flex-col lg:items-center lg:gap-6">
-              <GerAvatar size="lg" className="lg:w-32 lg:h-32" />
+              <GerAvatar size="lg" className="lg:w-32 lg:h-32" animate />
               <div className="pt-2 lg:pt-0">
                 <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Goedendag!</h1>
                 <p className="text-muted-foreground mt-1 lg:mt-3 lg:text-lg">

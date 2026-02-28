@@ -302,7 +302,7 @@ export default function CheckInPage() {
           {/* Header met Ger */}
           <div className="px-4 pt-8 pb-4 lg:p-0 lg:text-center lg:max-w-md">
             <div className="flex items-start gap-4 lg:flex-col lg:items-center lg:gap-6">
-              <GerAvatar size="md" className="lg:w-24 lg:h-24" />
+              <GerAvatar size="md" className="lg:w-24 lg:h-24" animate />
               <div className="pt-1 lg:pt-0">
                 <h2 className="text-xl lg:text-2xl font-bold text-foreground">Klaar!</h2>
                 <p className="text-muted-foreground text-sm lg:text-base mt-1 lg:mt-3">
@@ -440,7 +440,7 @@ export default function CheckInPage() {
           {/* Header met Ger */}
           <div className="px-4 pb-4 lg:p-0 lg:text-center lg:max-w-md">
             <div className="flex items-start gap-4 lg:flex-col lg:items-center lg:gap-6">
-              <GerAvatar size="md" className="lg:w-24 lg:h-24" />
+              <GerAvatar size="md" className="lg:w-24 lg:h-24" animate />
               <div className="pt-1 lg:pt-0">
                 <h2 className="text-xl lg:text-2xl font-bold text-foreground">Maandelijkse check-in</h2>
                 <p className="text-muted-foreground text-sm lg:text-base mt-1 lg:mt-3">
@@ -575,7 +575,7 @@ export default function CheckInPage() {
         {/* Header met Ger */}
         <div className="px-4 pb-4 lg:p-0 lg:text-center lg:max-w-md">
           <div className="flex items-start gap-4 lg:flex-col lg:items-center lg:gap-6">
-            <GerAvatar size="md" className="lg:w-24 lg:h-24" />
+            <GerAvatar size="md" className="lg:w-24 lg:h-24" animate />
             <div className="pt-1 lg:pt-0">
               <h2 className="text-xl lg:text-2xl font-bold text-foreground">Hoe gaat het met je?</h2>
               <p className="text-muted-foreground text-sm lg:text-base mt-1 lg:mt-3">

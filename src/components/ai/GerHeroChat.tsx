@@ -116,7 +116,7 @@ export function GerHeroChat() {
       <div className="bg-card border border-border rounded-2xl shadow-lg overflow-hidden">
         {/* Header met Ger */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-border bg-gradient-to-r from-primary/5 to-transparent">
-          <GerAvatar size="sm" className="!w-10 !h-10" />
+          <GerAvatar size="sm" className="!w-10 !h-10" animate />
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-foreground">Ger</p>
             <p className="text-xs text-muted-foreground">Je persoonlijke coach</p>
