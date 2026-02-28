@@ -171,3 +171,140 @@ export async function sendWelcomeEmail(email: string, name?: string): Promise<bo
     text: `Welkom bij ${APP_NAME}! Ga naar je dashboard: ${dashboardUrl}`,
   })
 }
+
+// --- Balanstest opvolging emails ---
+
+export async function sendBalanstestResultEmail(
+  email: string,
+  naam: string,
+  score: number,
+  niveau: "LAAG" | "GEMIDDELD" | "HOOG",
+  gemeenteAdvies?: string | null,
+): Promise<boolean> {
+  const rapportUrl = `${BASE_URL}/rapport/persoonlijk`
+
+  const niveauKleur = {
+    LAAG: "#16a34a",
+    GEMIDDELD: "#f59e0b",
+    HOOG: "#ef4444",
+  }[niveau]
+
+  const niveauLabel = {
+    LAAG: "Laag",
+    GEMIDDELD: "Gemiddeld",
+    HOOG: "Hoog",
+  }[niveau]
+
+  const niveauTekst = {
+    LAAG: "Dat is goed nieuws! Je belasting is op dit moment beheersbaar.",
+    GEMIDDELD: "Je belasting is gemiddeld. Het is verstandig om hulp te overwegen bij taken die je zwaar vallen.",
+    HOOG: "Je belasting is hoog. We raden je aan om actie te ondernemen en hulp te zoeken.",
+  }[niveau]
+
+  const checkInInterval = niveau === "HOOG" ? "1 week" : niveau === "GEMIDDELD" ? "2 weken" : "4 weken"
+
+  return sendEmail({
+    to: email,
+    subject: `Je balanstest resultaat - ${APP_NAME}`,
+    html: emailWrapper(`
+      <h1 style="font-size:20px; color:#111827; margin:0 0 8px;">
+        Hoi ${naam}, hier is je resultaat
+      </h1>
+      <p style="font-size:15px; color:#4b5563; line-height:1.6; margin:0 0 16px;">
+        Bedankt voor het invullen van de balanstest. Hieronder je samenvatting.
+      </p>
+      <div style="background:#f9fafb; border-radius:12px; padding:20px; text-align:center; margin:0 0 20px;">
+        <p style="font-size:13px; color:#6b7280; margin:0 0 8px;">Je belastingscore</p>
+        <p style="font-size:36px; font-weight:700; color:${niveauKleur}; margin:0;">${score}/24</p>
+        <p style="font-size:14px; font-weight:600; color:${niveauKleur}; margin:4px 0 0;">
+          ${niveauLabel} belasting
+        </p>
+      </div>
+      <p style="font-size:15px; color:#4b5563; line-height:1.6; margin:0 0 16px;">
+        ${niveauTekst}
+      </p>
+      ${gemeenteAdvies ? `
+      <div style="background:#f0fdf4; border-left:4px solid #16a34a; padding:12px 16px; border-radius:0 8px 8px 0; margin:0 0 20px;">
+        <p style="font-size:13px; font-weight:600; color:#166534; margin:0 0 4px;">Advies van je gemeente</p>
+        <p style="font-size:14px; color:#15803d; margin:0; line-height:1.5;">${gemeenteAdvies}</p>
+      </div>` : ""}
+      <div style="text-align:center; margin:24px 0;">
+        <a href="${rapportUrl}" style="display:inline-block; padding:14px 32px; background:#2C7A7B; color:white; text-decoration:none; border-radius:12px; font-weight:600; font-size:16px;">
+          Bekijk je persoonlijk rapport
+        </a>
+      </div>
+      <p style="font-size:13px; color:#9ca3af; margin:0; text-align:center;">
+        Over ${checkInInterval} sturen we je een check-in om te kijken hoe het gaat.
+      </p>
+    `),
+    text: `Hoi ${naam}, je balanstest score is ${score}/24 (${niveauLabel}). Bekijk je rapport: ${rapportUrl}`,
+  })
+}
+
+export async function sendCheckInReminderEmail(
+  email: string,
+  naam: string,
+): Promise<boolean> {
+  const checkInUrl = `${BASE_URL}/dashboard`
+
+  return sendEmail({
+    to: email,
+    subject: `Hoe gaat het met je? - ${APP_NAME}`,
+    html: emailWrapper(`
+      <h1 style="font-size:20px; color:#111827; margin:0 0 8px;">
+        Hoi ${naam}, hoe gaat het?
+      </h1>
+      <p style="font-size:15px; color:#4b5563; line-height:1.6; margin:0 0 24px;">
+        Het is weer even tijd om stil te staan bij hoe het met je gaat als mantelzorger.
+        Vul de korte check-in in zodat we je beter kunnen helpen.
+      </p>
+      <div style="text-align:center; margin:24px 0;">
+        <a href="${checkInUrl}" style="display:inline-block; padding:14px 32px; background:#2C7A7B; color:white; text-decoration:none; border-radius:12px; font-weight:600; font-size:16px;">
+          Check-in invullen
+        </a>
+      </div>
+    `),
+    text: `Hoi ${naam}, hoe gaat het? Vul de check-in in: ${checkInUrl}`,
+  })
+}
+
+export async function sendAlarmNotificationEmail(
+  email: string,
+  gemeenteNaam: string,
+  alarmType: string,
+  urgentie: string,
+  beschrijving: string,
+): Promise<boolean> {
+  const dashboardUrl = `${BASE_URL}/gemeente`
+
+  const urgentieKleur: Record<string, string> = {
+    CRITICAL: "#dc2626",
+    HIGH: "#f59e0b",
+    MEDIUM: "#3b82f6",
+    LOW: "#6b7280",
+  }
+
+  return sendEmail({
+    to: email,
+    subject: `[${urgentie}] Nieuw alarm in ${gemeenteNaam} - ${APP_NAME}`,
+    html: emailWrapper(`
+      <h1 style="font-size:20px; color:#111827; margin:0 0 8px;">
+        Nieuw alarm: ${gemeenteNaam}
+      </h1>
+      <div style="background:#fef2f2; border-left:4px solid ${urgentieKleur[urgentie] || "#6b7280"}; padding:12px 16px; border-radius:0 8px 8px 0; margin:0 0 20px;">
+        <p style="font-size:13px; font-weight:600; color:${urgentieKleur[urgentie] || "#6b7280"}; margin:0 0 4px;">${urgentie} - ${alarmType.replace(/_/g, " ")}</p>
+        <p style="font-size:14px; color:#374151; margin:0; line-height:1.5;">${beschrijving}</p>
+      </div>
+      <p style="font-size:14px; color:#4b5563; margin:0 0 20px;">
+        Er is een geanonimiseerde melding binnengekomen uit uw gemeente.
+        Ga naar het gemeenteportaal voor meer informatie.
+      </p>
+      <div style="text-align:center; margin:24px 0;">
+        <a href="${dashboardUrl}" style="display:inline-block; padding:14px 32px; background:#2C7A7B; color:white; text-decoration:none; border-radius:12px; font-weight:600; font-size:16px;">
+          Naar gemeenteportaal
+        </a>
+      </div>
+    `),
+    text: `[${urgentie}] Nieuw alarm in ${gemeenteNaam}: ${beschrijving}`,
+  })
+}

@@ -5,9 +5,11 @@ import { cn } from "@/lib/utils"
 interface GerAvatarProps {
   size?: "sm" | "md" | "lg"
   className?: string
+  animate?: boolean
+  typing?: boolean
 }
 
-export function GerAvatar({ size = "md", className }: GerAvatarProps) {
+export function GerAvatar({ size = "md", className, animate = false, typing = false }: GerAvatarProps) {
   const sizeClasses = {
     sm: "w-12 h-12",
     md: "w-20 h-20",
@@ -20,8 +22,12 @@ export function GerAvatar({ size = "md", className }: GerAvatarProps) {
       <div
         className={cn(
           "rounded-full overflow-hidden bg-gradient-to-b from-[#E8D5B7] to-[#D4C4A8] flex items-end justify-center",
-          sizeClasses[size]
+          sizeClasses[size],
+          animate && "animate-[ger-bounce_2s_ease-in-out_infinite]",
         )}
+        style={animate ? {
+          animation: "ger-bounce 2s ease-in-out infinite",
+        } : undefined}
       >
         {/* Simpele Ger illustratie */}
         <svg viewBox="0 0 100 100" className="w-full h-full">
@@ -58,6 +64,31 @@ export function GerAvatar({ size = "md", className }: GerAvatarProps) {
           <text x="62.5" y="84" textAnchor="middle" fill="white" fontSize="5" fontWeight="bold">Ger</text>
         </svg>
       </div>
+
+      {/* Typindicator */}
+      {typing && (
+        <div className="absolute -bottom-1 -right-1 bg-card border border-border rounded-full px-2 py-1 flex items-center gap-0.5 shadow-sm">
+          <span className="w-1.5 h-1.5 bg-primary rounded-full animate-[typing-dot_1.4s_ease-in-out_infinite]" style={{ animationDelay: "0s" }} />
+          <span className="w-1.5 h-1.5 bg-primary rounded-full animate-[typing-dot_1.4s_ease-in-out_infinite]" style={{ animationDelay: "0.2s" }} />
+          <span className="w-1.5 h-1.5 bg-primary rounded-full animate-[typing-dot_1.4s_ease-in-out_infinite]" style={{ animationDelay: "0.4s" }} />
+        </div>
+      )}
+
+      {/* Online indicator */}
+      {!typing && animate && (
+        <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-[var(--accent-green)] rounded-full border-2 border-card" />
+      )}
+
+      <style jsx>{`
+        @keyframes ger-bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-3px); }
+        }
+        @keyframes typing-dot {
+          0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+          30% { transform: translateY(-3px); opacity: 1; }
+        }
+      `}</style>
     </div>
   )
 }

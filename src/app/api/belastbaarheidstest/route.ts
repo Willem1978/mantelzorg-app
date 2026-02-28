@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { BALANSTEST_VRAGEN, UREN_MAP, TAAK_NAAR_ONDERDEEL } from "@/config/options"
+import { sendBalanstestResultEmail, sendAlarmNotificationEmail } from "@/lib/email"
 
 export const dynamic = 'force-dynamic'
 
@@ -156,6 +157,53 @@ export async function POST(request: Request) {
         where: { id: session.user.caregiverId },
         data: { intakeCompleted: true },
       })
+    }
+
+    // --- Opvolging: emails versturen (async, niet blokkeren) ---
+    const emailAddr = registratie?.email
+    const voornaam = registratie?.voornaam || "Mantelzorger"
+    const gemeenteNaam = registratie?.gemeente
+
+    // 1. Email naar mantelzorger met resultaat
+    if (emailAddr) {
+      let adviesTekst: string | null = null
+      if (gemeenteNaam) {
+        try {
+          const gem = await prisma.gemeente.findFirst({
+            where: { naam: { equals: gemeenteNaam, mode: "insensitive" }, isActief: true },
+            select: { adviesLaag: true, adviesGemiddeld: true, adviesHoog: true },
+          })
+          if (gem) {
+            adviesTekst = belastingNiveau === "HOOG" ? gem.adviesHoog
+              : belastingNiveau === "GEMIDDELD" ? gem.adviesGemiddeld
+              : gem.adviesLaag
+          }
+        } catch { /* gemeente advies niet beschikbaar */ }
+      }
+
+      sendBalanstestResultEmail(emailAddr, voornaam, score, belastingNiveau, adviesTekst)
+        .catch((err) => console.error("[Email] Balanstest result email mislukt:", err))
+    }
+
+    // 2. Alarm notificatie naar gemeente (geanonimiseerd)
+    if (alarmen.length > 0 && gemeenteNaam) {
+      try {
+        const gem = await prisma.gemeente.findFirst({
+          where: { naam: { equals: gemeenteNaam, mode: "insensitive" }, isActief: true },
+          select: { contactEmail: true, naam: true },
+        })
+        if (gem?.contactEmail) {
+          for (const alarm of alarmen) {
+            sendAlarmNotificationEmail(
+              gem.contactEmail,
+              gem.naam,
+              alarm.type,
+              alarm.urgentie,
+              alarm.beschrijving,
+            ).catch((err) => console.error("[Email] Alarm notificatie mislukt:", err))
+          }
+        }
+      } catch { /* gemeente niet gevonden */ }
     }
 
     return NextResponse.json({

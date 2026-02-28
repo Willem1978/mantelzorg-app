@@ -42,9 +42,10 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
   }, [])
 
   // B1 taalgebruik - simpele menu woorden
-  const caregiverLinks: { href: string; label: string; hasBadge: boolean; nieuwsBadge?: boolean }[] = [
+  const caregiverLinks: { href: string; label: string; hasBadge: boolean; nieuwsBadge?: boolean; buddyBadge?: boolean }[] = [
     { href: "/dashboard", label: "Home", hasBadge: false },
     { href: "/hulpvragen", label: "Hulp", hasBadge: true },
+    { href: "/buddys", label: "Buddyhulp", hasBadge: false, buddyBadge: true },
     { href: "/marktplaats", label: "Marktplaats", hasBadge: false },
     { href: "/agenda", label: "Agenda", hasBadge: false },
     { href: "/check-in", label: "Check-in", hasBadge: false },
