@@ -10,6 +10,7 @@ import { ContextBalk } from "@/components/dashboard/ContextBalk"
 import { dashboardContent } from "@/config/content"
 import { getTaakAdviesTekst } from "@/config/actiekaarten"
 import { WelkomBanner } from "@/components/dashboard/WelkomBanner"
+import { DashboardGerChat } from "@/components/dashboard/DashboardGerChat"
 
 const c = dashboardContent
 
@@ -312,6 +313,9 @@ function DashboardContentView() {
 
       {/* WELKOMSTBANNER — na onboarding */}
       <WelkomBanner userName={userName} />
+
+      {/* GER CHAT — prominent, direct na de header */}
+      <DashboardGerChat />
 
       {/* CONTEXTBALK — compact statusoverzicht */}
       {data?.test?.hasTest && (

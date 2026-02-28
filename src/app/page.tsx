@@ -2,7 +2,6 @@ import Link from "next/link"
 import { LogoIcon } from "@/components/ui"
 import { landingContent as c } from "@/config/content"
 import { GerAvatar } from "@/components/GerAvatar"
-import { GerHeroChat } from "@/components/ai/GerHeroChat"
 import { PublicGerChat } from "@/components/ai/PublicGerChat"
 
 export default function LandingPage() {
@@ -33,12 +32,7 @@ export default function LandingPage() {
               </p>
             </div>
 
-            {/* Ingebed Ger chatvenster */}
-            <div className="mb-12">
-              <GerHeroChat />
-            </div>
-
-            {/* Two paths — onder het chatvenster */}
+            {/* Two paths */}
             <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
               {/* Mantelzorger kaart */}
               <Link href="/mantelzorger" className="block group">
