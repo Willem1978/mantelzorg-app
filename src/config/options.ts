@@ -309,7 +309,35 @@ export const BUDDY_STATUSSEN = [
   { value: "AFGEWEZEN", label: "Afgewezen", kleur: "bg-red-100 text-red-700" },
 ] as const
 
-export const HULPVORM_LABELS: Record<string, string> = {
+// ============================================
+// BUDDY HULPVORM MAPPING (single source of truth)
+// ============================================
+
+// Buddy-registratie: de buddy kiest uit dezelfde 10 ZORGTAKEN als de mantelzorger.
+// De hulpvorm-id is gelijk aan de zorgtaak-id (t1-t10), opgeslagen als dbValue in de hulpvormen[] array.
+// Dit maakt matching 1:1 zonder indirecte mapping.
+
+/** Map een zorgtaak dbValue naar BuddyTaakCategorie (voor BuddyTaak records) */
+export const ZORGTAAK_NAAR_CATEGORIE: Record<string, string> = {
+  "Administratie en aanvragen": "ADMINISTRATIE",
+  "Plannen en organiseren": "ADMINISTRATIE",
+  "Boodschappen": "BOODSCHAPPEN",
+  "Sociaal contact en activiteiten": "GESPREK",
+  "Vervoer": "VERVOER",
+  "Persoonlijke verzorging": "OPPAS",
+  "Bereiden en/of nuttigen van maaltijden": "OVERIG",
+  "Huishoudelijke taken": "KLUSJES",
+  "Klusjes in en om het huis": "KLUSJES",
+  "Huisdieren": "OVERIG",
+}
+
+/** Labels voor hulpvormen — nu gebaseerd op ZORGTAKEN dbValues */
+export const HULPVORM_LABELS: Record<string, { label: string; emoji: string }> = Object.fromEntries(
+  ZORGTAKEN.map((t) => [t.dbValue, { label: t.naam, emoji: t.emoji || "📌" }])
+)
+
+/** Legacy hulpvorm labels (6 generieke waarden) voor backwards compat */
+export const HULPVORM_LABELS_LEGACY: Record<string, string> = {
   gesprek: "Gesprek",
   boodschappen: "Boodschappen",
   vervoer: "Vervoer",

@@ -30,21 +30,27 @@ export const volunteerContent = {
   },
 
   stap2: {
-    title: "Wat wil je doen?",
-    subtitle: "Selecteer de manieren waarop je wilt helpen",
+    title: "Waarbij wil je helpen?",
+    subtitle: "Kies de taken waarbij je de zorgvrager wilt ondersteunen",
     hulpTitle: "Ik wil helpen met:",
     beschikbaarheidTitle: "Beschikbaarheid",
     terug: "Terug",
     volgende: "Volgende",
   },
 
+  // De 10 hulpcategorieën — hulp voor de naaste (zorgvrager).
+  // IDs komen overeen met ZORGTAKEN dbValues uit config/options.ts.
   hulpOpties: [
-    { id: "gesprek", label: "Gesprek / luisterend oor", icon: "☕", beschrijving: "Even bijpraten, koffiedrinken" },
-    { id: "boodschappen", label: "Boodschappen doen", icon: "🛒", beschrijving: "Supermarkt, apotheek" },
-    { id: "vervoer", label: "Vervoer", icon: "🚗", beschrijving: "Naar afspraken of uitjes" },
-    { id: "klusjes", label: "Klusjes in huis", icon: "🔧", beschrijving: "Kleine reparaties, tuin" },
-    { id: "oppas", label: "Oppas/gezelschap", icon: "🏠", beschrijving: "Bij de zorgvrager zijn" },
-    { id: "administratie", label: "Administratie", icon: "📋", beschrijving: "Papierwerk, formulieren" },
+    { id: "Administratie en aanvragen", label: "Administratie", icon: "📋", beschrijving: "Rekeningen, post, verzekeringen" },
+    { id: "Plannen en organiseren", label: "Plannen & organiseren", icon: "📅", beschrijving: "Arts, thuiszorg, afspraken" },
+    { id: "Boodschappen", label: "Boodschappen", icon: "🛒", beschrijving: "Supermarkt, apotheek" },
+    { id: "Sociaal contact en activiteiten", label: "Sociaal contact", icon: "👥", beschrijving: "Gesprekken, uitjes, wandelen" },
+    { id: "Vervoer", label: "Vervoer", icon: "🚗", beschrijving: "Ziekenhuis, huisarts, familie" },
+    { id: "Persoonlijke verzorging", label: "Persoonlijke verzorging", icon: "🛁", beschrijving: "Wassen, aankleden, medicijnen" },
+    { id: "Bereiden en/of nuttigen van maaltijden", label: "Maaltijden", icon: "🍽️", beschrijving: "Koken, maaltijden, dieet" },
+    { id: "Huishoudelijke taken", label: "Huishoudelijke taken", icon: "🏠", beschrijving: "Schoonmaken, was, opruimen" },
+    { id: "Klusjes in en om het huis", label: "Klusjes", icon: "🔨", beschrijving: "Reparaties, tuin, onderhoud" },
+    { id: "Huisdieren", label: "Huisdieren", icon: "🐕", beschrijving: "Verzorging huisdieren" },
   ],
 
   beschikbaarheidOpties: [

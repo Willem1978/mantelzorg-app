@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { AdminSpinner, AdminEmptyState } from "@/components/admin"
-import { BUDDY_STATUSSEN, HULPVORM_LABELS } from "@/config/options"
+import { BUDDY_STATUSSEN, HULPVORM_LABELS, HULPVORM_LABELS_LEGACY } from "@/config/options"
 
 interface Buddy {
   id: string
@@ -30,7 +30,14 @@ interface Buddy {
 
 const statusStappen = BUDDY_STATUSSEN
 
-const hulpvormLabels = HULPVORM_LABELS
+// Ondersteunt zowel nieuwe dbValue-based hulpvormen als legacy waarden
+function getHulpvormLabel(h: string): string {
+  const info = HULPVORM_LABELS[h]
+  if (info) return `${info.emoji} ${info.label}`
+  const legacy = HULPVORM_LABELS_LEGACY[h]
+  if (legacy) return legacy
+  return h
+}
 
 function MantelBuddiesContent() {
   const [buddies, setBuddies] = useState<Buddy[]>([])
@@ -180,7 +187,7 @@ function MantelBuddiesContent() {
                       <div className="flex flex-wrap gap-1 mt-2">
                         {buddy.hulpvormen.map((h) => (
                           <span key={h} className="text-xs px-2 py-0.5 rounded bg-blue-50 text-blue-700">
-                            {hulpvormLabels[h] || h}
+                            {getHulpvormLabel(h)}
                           </span>
                         ))}
                       </div>

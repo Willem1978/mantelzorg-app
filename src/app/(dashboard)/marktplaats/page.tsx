@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { ZORGTAKEN } from "@/config/options"
+import { ZORGTAKEN, ZORGTAAK_NAAR_CATEGORIE } from "@/config/options"
 import { marktplaatsContent } from "@/config/content"
 import { Button, Card, CardContent, PageIntro, Breadcrumbs } from "@/components/ui"
 
@@ -46,18 +46,12 @@ interface MarktplaatsData {
 // CATEGORIE MAPPING
 // ============================================
 
-// Map de 10 ZORGTAKEN naar BuddyTaakCategorie enum values
-const ZORGTAAK_NAAR_CATEGORIE: Record<string, string> = {
-  t1: "OPPAS",           // Persoonlijke verzorging → Oppas (bij zorgvrager zijn)
-  t2: "KLUSJES",         // Huishoudelijke taken → Klusjes
-  t3: "OVERIG",          // Maaltijden → Overig
-  t4: "BOODSCHAPPEN",    // Boodschappen → Boodschappen
-  t5: "ADMINISTRATIE",   // Administratie → Administratie
-  t6: "VERVOER",         // Vervoer → Vervoer
-  t7: "GESPREK",         // Sociaal contact → Gesprek
-  t8: "KLUSJES",         // Klusjes → Klusjes
-  t9: "ADMINISTRATIE",   // Plannen & organiseren → Administratie
-  t10: "OVERIG",         // Huisdieren → Overig
+// Mapping komt nu uit config/options.ts (ZORGTAAK_NAAR_CATEGORIE)
+// Lookup helper: taak-id → BuddyTaakCategorie via dbValue
+function getCategorieVoorTaak(taakId: string): string {
+  const taak = ZORGTAKEN.find((t) => t.id === taakId)
+  if (!taak) return "OVERIG"
+  return ZORGTAAK_NAAR_CATEGORIE[taak.dbValue] || "OVERIG"
 }
 
 // Zwaarte badge helper
@@ -148,7 +142,7 @@ export default function MarktplaatsPage() {
     const taakDef = ZORGTAKEN.find((t) => t.id === gekozenTaak)
     if (!taakDef) return
 
-    const categorie = ZORGTAAK_NAAR_CATEGORIE[gekozenTaak] || "OVERIG"
+    const categorie = getCategorieVoorTaak(gekozenTaak)
     const volledigeTitel = titel || `Hulp bij ${taakDef.naam.toLowerCase()}`
 
     setSubmitting(true)

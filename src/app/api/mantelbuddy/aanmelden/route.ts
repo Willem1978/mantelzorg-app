@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { geocodePostcode } from "@/lib/geocode"
 
 export async function POST(request: Request) {
   try {
@@ -43,6 +44,9 @@ export async function POST(request: Request) {
     if (beschikbaarheid === "eenmalig") beschikbaarheidEnum = "EENMALIG"
     if (beschikbaarheid === "vast") beschikbaarheidEnum = "VAST"
 
+    // Geocodeer postcode naar lat/lng voor afstandsmatching
+    const coords = await geocodePostcode(postcode)
+
     // Maak nieuwe MantelBuddy aan
     const mantelBuddy = await prisma.mantelBuddy.create({
       data: {
@@ -52,6 +56,8 @@ export async function POST(request: Request) {
         telefoon,
         postcode,
         woonplaats: woonplaats || "",
+        latitude: coords?.latitude ?? null,
+        longitude: coords?.longitude ?? null,
         hulpvormen: hulpvormen || [],
         beschikbaarheid: beschikbaarheidEnum,
         motivatie,
