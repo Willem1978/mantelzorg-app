@@ -293,16 +293,11 @@ function DashboardContentView() {
           <BalansThermometer
             score={data.test.score}
             niveau={data.test.niveau}
+            zorgtaken={data.test.zorgtaken?.map(t => ({ naam: t.naam, moeilijkheid: t.moeilijkheid }))}
+            deelgebieden={data.deelgebieden}
+            totaalUren={data.impactScore?.totaalUren}
+            daysSinceTest={data.test.daysSinceTest}
           />
-          {/* Trend indicator */}
-          {data.test.daysSinceTest !== undefined && data.test.daysSinceTest > 60 && (
-            <p className="text-xs text-muted-foreground mt-2 text-center">
-              Test is {data.test.daysSinceTest} dagen oud —{" "}
-              <Link href="/belastbaarheidstest" className="text-primary font-medium hover:underline">
-                doe een nieuwe
-              </Link>
-            </p>
-          )}
         </div>
       )}
 

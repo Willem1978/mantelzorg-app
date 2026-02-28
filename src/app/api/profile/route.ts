@@ -27,6 +27,20 @@ export async function GET() {
       return NextResponse.json({ error: "Profiel niet gevonden" }, { status: 404 })
     }
 
+    // Haal zorgtaken op uit de meest recente balanstest
+    const latestTest = await prisma.belastbaarheidTest.findFirst({
+      where: { caregiverId: session.user.caregiverId, isCompleted: true },
+      orderBy: { completedAt: "desc" },
+      select: {
+        taakSelecties: {
+          where: { isGeselecteerd: true },
+          select: { taakNaam: true },
+        },
+      },
+    })
+
+    const zorgtaken = latestTest?.taakSelecties?.map((z) => z.taakNaam) || []
+
     return NextResponse.json({
       naam: caregiver.user.name,
       email: caregiver.user.email,
@@ -44,6 +58,11 @@ export async function GET() {
       naasteWoonplaats: caregiver.careRecipientCity,
       naasteGemeente: caregiver.careRecipientMunicipality,
       naasteWijk: caregiver.careRecipientNeighborhood,
+      // Locatie coördinaten naaste
+      careRecipientLatitude: caregiver.careRecipientLatitude,
+      careRecipientLongitude: caregiver.careRecipientLongitude,
+      // Zorgtaken
+      zorgtaken,
       // Status
       profileCompleted: caregiver.profileCompleted,
       intakeCompleted: caregiver.intakeCompleted,

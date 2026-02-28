@@ -174,7 +174,7 @@ export default function PersoonlijkRapportPage() {
     <div className="max-w-2xl mx-auto p-4 sm:p-6 space-y-8">
       {/* Header met Ger */}
       <div className="flex items-start gap-4">
-        <GerAvatar size="md" />
+        <GerAvatar size="md" animate />
         <div>
           <h1 className="text-xl font-bold text-foreground">
             Je persoonlijke advies
