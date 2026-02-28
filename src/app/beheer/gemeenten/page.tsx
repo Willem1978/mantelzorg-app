@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import Link from "next/link"
 import { AdminSpinner, AdminEmptyState } from "@/components/admin"
 
 const PDOK_BASE_URL = "https://api.pdok.nl/bzk/locatieserver/search/v3_1"
@@ -284,12 +285,20 @@ export default function GemeentenPage() {
             Beheer gemeenten en hun specifieke content en advies
           </p>
         </div>
-        <button
-          onClick={openNieuw}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-        >
-          + Gemeente toevoegen
-        </button>
+        <div className="flex gap-2">
+          <Link
+            href="/beheer/gemeenten/nieuw"
+            className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700"
+          >
+            Wizard
+          </Link>
+          <button
+            onClick={openNieuw}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+          >
+            + Snel toevoegen
+          </button>
+        </div>
       </div>
 
       {/* Zoek */}

@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useEffect, useRef, Suspense } from "react"
+import { useState, useEffect, useRef, Suspense, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { FavorietButton } from "@/components/FavorietButton"
 import { ContentModal } from "@/components/ui/ContentModal"
 import { hulpvragenContent } from "@/config/content"
+import { ZORGTAKEN } from "@/config/options"
 
 const c = hulpvragenContent
 
@@ -106,7 +107,18 @@ interface HulpvraagCategorie {
   hint: string
 }
 
-type TabType = 'voor-jou' | 'voor-naaste'
+type TabType = 'voor-jou' | 'voor-naaste' | 'buddyhulp'
+
+interface BuddyMatchResult {
+  buddyId: string
+  voornaam: string
+  woonplaats: string
+  hulpvormen: string[]
+  beschikbaarheid: string
+  vogGoedgekeurd: boolean
+  matchPercentage: number
+  afstandKm: number | null
+}
 
 // Wrapper component voor Suspense boundary (nodig voor useSearchParams)
 export default function HulpPage() {
@@ -144,6 +156,10 @@ function HulpPageContent() {
 
   // Derived: flat list for backwards compatibility
   const CATEGORIEEN_ZORGVRAGER = CATEGORIEEN_ZORGVRAGER_GROEPEN.flatMap((g) => g.categorieen)
+
+  // Buddy match state
+  const [buddyMatches, setBuddyMatches] = useState<BuddyMatchResult[]>([])
+  const [buddyLoading, setBuddyLoading] = useState(false)
 
   // Favorieten state
   const [favorieten, setFavorieten] = useState<Record<string, string>>({})
@@ -391,6 +407,43 @@ function HulpPageContent() {
     setSelectedCategorie(null)
     setBereikFilter('alle')
   }
+
+  // Buddy matches laden
+  const loadBuddyMatches = useCallback(async () => {
+    setBuddyLoading(true)
+    try {
+      // Bepaal zorgtaken op basis van geselecteerde categorie of zware taken
+      const zorgtaken = hulpData?.zwareTaken
+        ?.map(t => t.naam)
+        .filter(Boolean) || []
+
+      const res = await fetch("/api/buddys/match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          zorgtaken,
+          latitude: null,
+          longitude: null,
+          maxAfstandKm: 20,
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setBuddyMatches(data.matches || [])
+      }
+    } catch {
+      // Silently fail
+    } finally {
+      setBuddyLoading(false)
+    }
+  }, [hulpData])
+
+  // Laad buddys wanneer tab actief wordt
+  useEffect(() => {
+    if (activeTab === 'buddyhulp' && buddyMatches.length === 0 && !buddyLoading) {
+      loadBuddyMatches()
+    }
+  }, [activeTab, buddyMatches.length, buddyLoading, loadBuddyMatches])
 
   const handleTabClick = (tab: TabType) => {
     if (activeTab === tab) {
@@ -699,7 +752,7 @@ function HulpPageContent() {
         const aantalZwareTaken = hulpData?.zwareTaken?.length || 0
 
         return (
-          <div className="grid grid-cols-2 gap-2 mb-6">
+          <div className="grid grid-cols-3 gap-2 mb-6">
             <button
               onClick={() => handleTabClick('voor-jou')}
               className={cn(
@@ -743,6 +796,18 @@ function HulpPageContent() {
                   {aantalZwareTaken}
                 </span>
               )}
+            </button>
+            <button
+              onClick={() => handleTabClick('buddyhulp')}
+              className={cn(
+                "py-3 px-2 rounded-xl font-medium text-sm transition-all text-center relative",
+                activeTab === 'buddyhulp'
+                  ? "bg-[var(--accent-green)] text-white"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              )}
+            >
+              <span className="text-lg block mb-1">🤝</span>
+              Buddyhulp
             </button>
           </div>
         )
@@ -1175,14 +1240,128 @@ function HulpPageContent() {
         </div>
       )}
 
-      {/* MantelBuddy inschakelen - altijd zichtbaar onderaan */}
-      <div className="mt-6">
+      {/* TAB: BUDDYHULP */}
+      {activeTab === 'buddyhulp' && (
+        <div className="space-y-4">
+          <div className="bg-[var(--accent-green-bg)] rounded-xl p-4 mb-2">
+            <p className="text-sm text-foreground">
+              <span className="font-medium">Buddyhulp.</span> Vind een vrijwilliger die bij jou en je naaste past.
+              Gefilterd op jouw zorgtaken.
+            </p>
+          </div>
+
+          {buddyLoading && (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent-green)]" />
+            </div>
+          )}
+
+          {!buddyLoading && buddyMatches.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-4xl mb-3">🤝</p>
+              <p className="text-foreground font-medium">Nog geen buddys beschikbaar</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Er zijn momenteel geen buddys in jouw regio. Kom later terug!
+              </p>
+            </div>
+          )}
+
+          {!buddyLoading && buddyMatches.length > 0 && (
+            <>
+              <p className="text-sm text-muted-foreground">
+                {buddyMatches.length} buddy{buddyMatches.length !== 1 ? "'s" : ""} gevonden
+              </p>
+              <div className="space-y-3">
+                {buddyMatches.slice(0, 5).map((m) => (
+                  <div key={m.buddyId} className="bg-card border border-border rounded-xl p-4 hover:border-[var(--accent-green)]/30 transition-all">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-[var(--accent-green-bg)] flex items-center justify-center flex-shrink-0">
+                        <span className="text-sm font-bold text-[var(--accent-green)]">
+                          {m.voornaam.charAt(0)}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-foreground text-sm">{m.voornaam}</h3>
+                          {m.vogGoedgekeurd && (
+                            <span className="text-[10px] bg-[var(--accent-green-bg)] text-[var(--accent-green)] px-1.5 py-0.5 rounded-full">VOG ✓</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {m.woonplaats}
+                          {m.afstandKm != null && ` · ${m.afstandKm} km`}
+                        </p>
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {m.hulpvormen.slice(0, 3).map((h) => (
+                            <span key={h} className="text-[10px] bg-muted px-1.5 py-0.5 rounded">{h}</span>
+                          ))}
+                        </div>
+                      </div>
+                      <div
+                        className={cn(
+                          "w-12 h-12 rounded-full flex items-center justify-center border-2 flex-shrink-0",
+                          m.matchPercentage >= 75
+                            ? "border-[var(--accent-green)] bg-[var(--accent-green-bg)]"
+                            : m.matchPercentage >= 50
+                              ? "border-[var(--accent-amber)] bg-[var(--accent-amber-bg)]"
+                              : "border-border bg-muted"
+                        )}
+                      >
+                        <span className={cn(
+                          "text-sm font-bold",
+                          m.matchPercentage >= 75
+                            ? "text-[var(--accent-green)]"
+                            : m.matchPercentage >= 50
+                              ? "text-[var(--accent-amber)]"
+                              : "text-muted-foreground"
+                        )}>
+                          {m.matchPercentage}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <Link
+                href="/buddys"
+                className="ker-btn ker-btn-primary w-full text-center flex items-center justify-center gap-2"
+              >
+                Bekijk alle buddys op de kaart
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Mijn vragen + buddy buttons - altijd zichtbaar onderaan */}
+      <div className="mt-6 space-y-2">
+        {activeTab !== 'buddyhulp' && (
+          <Link
+            href="/buddys"
+            className="block w-full ker-card bg-gradient-to-r from-[var(--accent-green-bg)] to-[var(--accent-green-bg)]/50 hover:shadow-md transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🤝</span>
+              <div className="flex-1 text-left">
+                <h3 className="font-semibold text-foreground text-sm">Zoek een MantelBuddy</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Vind een vrijwilliger op de kaart die bij je past</p>
+              </div>
+              <svg className="w-4 h-4 text-[var(--accent-green)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </Link>
+        )}
         <button
           onClick={() => setShowVragenTab(true)}
           className="w-full ker-card bg-gradient-to-r from-primary/5 to-primary/10 hover:from-primary/10 hover:to-primary/15 transition-colors cursor-pointer"
         >
           <div className="flex items-center gap-3">
-            <span className="text-2xl">🤝</span>
+            <span className="text-2xl">📝</span>
             <div className="flex-1 text-left">
               <h3 className="font-semibold text-foreground text-sm">{c.buddy.title}</h3>
               <p className="text-xs text-muted-foreground mt-0.5">{c.buddy.beschrijving}</p>
