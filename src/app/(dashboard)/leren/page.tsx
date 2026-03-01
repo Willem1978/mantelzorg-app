@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState, useEffect, useRef, useCallback } from "react"
-import { PageIntro } from "@/components/ui/PageIntro"
+import { GerPageIntro } from "@/components/ui"
 import { lerenContent } from "@/config/content"
 
 const c = lerenContent
@@ -221,14 +221,13 @@ export default function LerenPage() {
 
   return (
     <div className="ker-page-content pb-24">
+      <GerPageIntro tekst="Hier vind je artikelen en tips over mantelzorg. Lees op je eigen tempo en ontdek wat bij jou past. Wat kan ik voor jou doen?" />
+
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <span className="text-3xl">{c.emoji}</span>
         <h1 className="text-2xl font-bold">{c.title}</h1>
       </div>
-
-      {/* C2.1: Introductietekst */}
-      <PageIntro tekst={c.subtitle} />
 
       {/* Gemeente Nieuws - bovenaan als er nieuws is */}
       <Link

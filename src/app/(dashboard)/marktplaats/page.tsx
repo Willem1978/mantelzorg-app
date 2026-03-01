@@ -6,7 +6,7 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { ZORGTAKEN, ZORGTAAK_NAAR_CATEGORIE } from "@/config/options"
 import { marktplaatsContent } from "@/config/content"
-import { Button, Card, CardContent, PageIntro, Breadcrumbs } from "@/components/ui"
+import { Button, Card, CardContent, PageIntro, Breadcrumbs, GerPageIntro } from "@/components/ui"
 
 const c = marktplaatsContent
 
@@ -402,10 +402,7 @@ export default function MarktplaatsPage() {
           { label: c.breadcrumb.marktplaats },
         ]} />
 
-        <PageIntro
-          emoji="🤝"
-          tekst={`${c.title} — ${c.subtitle}`}
-        />
+        <GerPageIntro tekst="Hier kun je hulpvragen plaatsen en bekijken. Andere mantelzorgers en buddy's kunnen je helpen. Wat kan ik voor jou doen?" />
 
         {/* Gemeente badge */}
         {data?.gemeente && (

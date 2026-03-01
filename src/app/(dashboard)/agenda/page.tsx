@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Button, Card, CardContent } from "@/components/ui"
+import { Button, Card, CardContent, GerPageIntro } from "@/components/ui"
 import { cn } from "@/lib/utils"
 import { agendaContent } from "@/config/content"
 import { ZORGTAKEN } from "@/config/options"
@@ -158,6 +158,10 @@ export default function AgendaPage() {
 
   return (
     <div className="space-y-4 sm:space-y-6 pb-20">
+      <div className="px-4 sm:px-6 lg:px-8">
+        <GerPageIntro tekst="Hier kun je je afspraken en taken bijhouden. Zo vergeet je niks. Wat kan ik voor jou doen?" />
+      </div>
+
       {/* Header - B1 taalgebruik */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
         <div>

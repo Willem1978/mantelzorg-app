@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
 import { searchStreets } from "@/lib/pdok"
 import { TUTORIAL_STORAGE_KEY } from "@/components/Tutorial"
-import { PageIntro } from "@/components/ui/PageIntro"
+import { GerPageIntro } from "@/components/ui"
 import { AccessibilitySettings } from "@/components/AccessibilitySettings"
 import { profielContent } from "@/config/content"
 
@@ -804,21 +804,17 @@ export default function ProfielPage() {
 
   return (
     <div className="ker-page-content">
-      {/* Header */}
-      <div className="flex items-start gap-4 mb-6">
-        <GerAvatar size="lg" />
-        <div className="pt-2">
-          <h1 className="text-2xl font-bold text-foreground">
-            {c.header.greeting(profile.naam)}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {c.header.subtitle}
-          </p>
-        </div>
-      </div>
+      <GerPageIntro tekst="Dit is jouw profiel. Hier kun je je gegevens bekijken en aanpassen. Wat kan ik voor jou doen?" />
 
-      {/* C2.1: Introductietekst */}
-      <PageIntro tekst={c.header.intro} />
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-foreground">
+          {c.header.greeting(profile.naam)}
+        </h1>
+        <p className="text-muted-foreground mt-1">
+          {c.header.subtitle}
+        </p>
+      </div>
 
       {/* Save message */}
       {saveMessage && (
