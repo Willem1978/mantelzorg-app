@@ -1,10 +1,26 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { logAudit } from "@/lib/audit"
 
 export const dynamic = "force-dynamic"
 
-// POST - Cleanup afgewezen/verlopen buddy data
+// Retentieperiodes (in milliseconden)
+const DAG = 24 * 60 * 60 * 1000
+const RETENTIE = {
+  afgewezenReacties: 90 * DAG,       // 90 dagen
+  beeindigdeMatches: 180 * DAG,       // 6 maanden
+  geannuleerdeTaken: 180 * DAG,       // 6 maanden
+  onbevestigdeMatches: 14 * DAG,      // 14 dagen
+  gelezenNotificaties: 90 * DAG,      // 90 dagen
+  // AVG retentiebeleid
+  oudeBerichten: 730 * DAG,           // 2 jaar
+  oudeAuditLogs: 1095 * DAG,         // 3 jaar
+  inactieveAccounts: 730 * DAG,       // 2 jaar (notificatie)
+  verlopenPasswordTokens: 1 * DAG,    // 1 dag
+}
+
+// POST - Cleanup afgewezen/verlopen data + AVG retentiebeleid
 export async function POST() {
   try {
     const session = await auth()
@@ -23,7 +39,7 @@ export async function POST() {
     const deletedReacties = await prisma.buddyTaakReactie.deleteMany({
       where: {
         status: "AFGEWEZEN",
-        updatedAt: { lt: new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000) },
+        updatedAt: { lt: new Date(now.getTime() - RETENTIE.afgewezenReacties) },
       },
     })
     results.afgewezenReactiesVerwijderd = deletedReacties.count
@@ -32,7 +48,7 @@ export async function POST() {
     const deletedMatches = await prisma.buddyMatch.deleteMany({
       where: {
         status: "BEEINDIGD",
-        updatedAt: { lt: new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000) },
+        updatedAt: { lt: new Date(now.getTime() - RETENTIE.beeindigdeMatches) },
       },
     })
     results.beeindigdeMatchesVerwijderd = deletedMatches.count
@@ -41,7 +57,7 @@ export async function POST() {
     const deletedTaken = await prisma.buddyTaak.deleteMany({
       where: {
         status: "GEANNULEERD",
-        updatedAt: { lt: new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000) },
+        updatedAt: { lt: new Date(now.getTime() - RETENTIE.geannuleerdeTaken) },
       },
     })
     results.geannuleerdeTakenVerwijderd = deletedTaken.count
@@ -50,7 +66,7 @@ export async function POST() {
     const verlopenMatches = await prisma.buddyMatch.updateMany({
       where: {
         status: "CAREGIVER_AKKOORD",
-        updatedAt: { lt: new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000) },
+        updatedAt: { lt: new Date(now.getTime() - RETENTIE.onbevestigdeMatches) },
       },
       data: { status: "BEEINDIGD" },
     })
@@ -61,7 +77,7 @@ export async function POST() {
       const verlopenMatchIds = await prisma.buddyMatch.findMany({
         where: {
           status: "BEEINDIGD",
-          updatedAt: { lt: new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000) },
+          updatedAt: { lt: new Date(now.getTime() - RETENTIE.onbevestigdeMatches) },
         },
         select: { buddyId: true },
       })
@@ -88,14 +104,82 @@ export async function POST() {
     const deletedNotifications = await prisma.notification.deleteMany({
       where: {
         isRead: true,
-        createdAt: { lt: new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000) },
+        createdAt: { lt: new Date(now.getTime() - RETENTIE.gelezenNotificaties) },
       },
     })
     results.oudeNotificatiesVerwijderd = deletedNotifications.count
 
+    // === AVG RETENTIEBELEID ===
+
+    // 7. Verwijder berichten ouder dan 2 jaar
+    const deletedBerichten = await prisma.bericht.deleteMany({
+      where: {
+        createdAt: { lt: new Date(now.getTime() - RETENTIE.oudeBerichten) },
+      },
+    })
+    results.oudeBerichtenVerwijderd = deletedBerichten.count
+
+    // 8. Verwijder audit logs ouder dan 3 jaar
+    const deletedAuditLogs = await prisma.auditLog.deleteMany({
+      where: {
+        createdAt: { lt: new Date(now.getTime() - RETENTIE.oudeAuditLogs) },
+      },
+    })
+    results.oudeAuditLogsVerwijderd = deletedAuditLogs.count
+
+    // 9. Verwijder verlopen password reset tokens
+    const deletedTokens = await prisma.passwordResetToken.deleteMany({
+      where: {
+        expires: { lt: now },
+      },
+    })
+    results.verlopenTokensVerwijderd = deletedTokens.count
+
+    // 10. Detecteer inactieve accounts (>2 jaar niet ingelogd)
+    const inactieveAccounts = await prisma.user.findMany({
+      where: {
+        isActive: true,
+        updatedAt: { lt: new Date(now.getTime() - RETENTIE.inactieveAccounts) },
+        role: "CAREGIVER",
+      },
+      select: { id: true, email: true, name: true, updatedAt: true },
+    })
+    results.inactieveAccountsGevonden = inactieveAccounts.length
+
+    // Log cleanup in audit trail
+    await logAudit({
+      userId: session.user.id,
+      actie: "CLEANUP",
+      entiteit: "System",
+      details: {
+        ...results,
+        retentieConfig: {
+          afgewezenReacties: "90 dagen",
+          beeindigdeMatches: "180 dagen",
+          berichten: "2 jaar",
+          auditLogs: "3 jaar",
+          inactieveAccounts: "2 jaar (detectie)",
+        },
+      },
+    })
+
     return NextResponse.json({
       success: true,
       results,
+      inactieveAccounts: inactieveAccounts.map(a => ({
+        id: a.id,
+        email: a.email,
+        naam: a.name,
+        laatsteActiviteit: a.updatedAt,
+      })),
+      retentiebeleid: {
+        afgewezenReacties: "90 dagen",
+        beeindigdeMatches: "6 maanden",
+        geannuleerdeTaken: "6 maanden",
+        berichten: "2 jaar",
+        auditLogs: "3 jaar",
+        inactieveAccounts: "2 jaar (detectie, handmatig opvolgen)",
+      },
       uitgevoerdOp: now.toISOString(),
     })
   } catch (error) {
@@ -128,29 +212,33 @@ export async function GET() {
       verlopenMatches,
       afgewezenActieveBuddys,
       oudeNotificaties,
+      oudeBerichten,
+      oudeAuditLogs,
+      verlopenTokens,
+      inactieveAccounts,
     ] = await Promise.all([
       prisma.buddyTaakReactie.count({
         where: {
           status: "AFGEWEZEN",
-          updatedAt: { lt: new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000) },
+          updatedAt: { lt: new Date(now.getTime() - RETENTIE.afgewezenReacties) },
         },
       }),
       prisma.buddyMatch.count({
         where: {
           status: "BEEINDIGD",
-          updatedAt: { lt: new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000) },
+          updatedAt: { lt: new Date(now.getTime() - RETENTIE.beeindigdeMatches) },
         },
       }),
       prisma.buddyTaak.count({
         where: {
           status: "GEANNULEERD",
-          updatedAt: { lt: new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000) },
+          updatedAt: { lt: new Date(now.getTime() - RETENTIE.geannuleerdeTaken) },
         },
       }),
       prisma.buddyMatch.count({
         where: {
           status: "CAREGIVER_AKKOORD",
-          updatedAt: { lt: new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000) },
+          updatedAt: { lt: new Date(now.getTime() - RETENTIE.onbevestigdeMatches) },
         },
       }),
       prisma.mantelBuddy.count({
@@ -159,7 +247,27 @@ export async function GET() {
       prisma.notification.count({
         where: {
           isRead: true,
-          createdAt: { lt: new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000) },
+          createdAt: { lt: new Date(now.getTime() - RETENTIE.gelezenNotificaties) },
+        },
+      }),
+      prisma.bericht.count({
+        where: {
+          createdAt: { lt: new Date(now.getTime() - RETENTIE.oudeBerichten) },
+        },
+      }),
+      prisma.auditLog.count({
+        where: {
+          createdAt: { lt: new Date(now.getTime() - RETENTIE.oudeAuditLogs) },
+        },
+      }),
+      prisma.passwordResetToken.count({
+        where: { expires: { lt: now } },
+      }),
+      prisma.user.count({
+        where: {
+          isActive: true,
+          updatedAt: { lt: new Date(now.getTime() - RETENTIE.inactieveAccounts) },
+          role: "CAREGIVER",
         },
       }),
     ])
@@ -173,6 +281,20 @@ export async function GET() {
         verlopenMatches,
         afgewezenActieveBuddys,
         oudeNotificaties,
+        // AVG retentie
+        oudeBerichten,
+        oudeAuditLogs,
+        verlopenTokens,
+        inactieveAccounts,
+      },
+      retentiebeleid: {
+        afgewezenReacties: "90 dagen",
+        beeindigdeMatches: "6 maanden",
+        geannuleerdeTaken: "6 maanden",
+        berichten: "2 jaar",
+        auditLogs: "3 jaar",
+        inactieveAccounts: "2 jaar (detectie)",
+        passwordTokens: "na verloopdatum",
       },
     })
   } catch (error) {

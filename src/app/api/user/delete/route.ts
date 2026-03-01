@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import prisma from "@/lib/prisma"
+import { logAudit } from "@/lib/audit"
 
 export async function DELETE() {
   try {
@@ -11,6 +12,26 @@ export async function DELETE() {
     }
 
     const userId = session.user.id
+
+    // Bewaar minimale gegevens voor audit trail vóór verwijdering
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, role: true },
+    })
+
+    // Log de verwijdering in audit trail (vóór delete, zodat userId nog bestaat)
+    await logAudit({
+      userId,
+      actie: "DELETE",
+      entiteit: "User",
+      entiteitId: userId,
+      details: {
+        type: "account_verwijdering",
+        email: user?.email,
+        rol: user?.role,
+        reden: "gebruiker_verzoek",
+      },
+    })
 
     // Verwijder de gebruiker - cascade deletes in schema verwijderen:
     // - Account (auth)
