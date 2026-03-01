@@ -74,8 +74,8 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
   const caregiverLinks: { href: string; label: string; hasBadge: boolean; nieuwsBadge?: boolean; matchPaths?: string[] }[] = [
     { href: "/dashboard", label: "Home", hasBadge: false },
     { href: "/leren", label: "Info & Tips", hasBadge: false },
-    { href: "/hulpvragen", label: "Hulp", hasBadge: true, matchPaths: ["/hulpvragen", "/marktplaats"] },
-    { href: "/buddys", label: "Mantelbuddy's", hasBadge: false },
+    { href: "/hulpvragen", label: "Hulp", hasBadge: false },
+    { href: "/buddys", label: "Mantelbuddy's", hasBadge: true, matchPaths: ["/buddys", "/marktplaats"] },
     { href: "/check-in", label: "Balanstest & Check-In", hasBadge: false, matchPaths: ["/check-in", "/belastbaarheidstest"] },
   ]
 
