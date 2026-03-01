@@ -3,12 +3,13 @@
  */
 
 export const navigation = {
-  // Caregiver links — vereenvoudigd tot 4 items
+  // Caregiver links — 5 items
   caregiverLinks: [
     { href: "/dashboard", label: "Home" },
+    { href: "/leren", label: "Info & Tips" },
     { href: "/hulpvragen", label: "Hulp" },
-    { href: "/check-in", label: "Check-in" },
-    { href: "/leren", label: "Info & tips" },
+    { href: "/buddys", label: "Mantelbuddy's" },
+    { href: "/check-in", label: "Balanstest & Check-In" },
   ],
 
   // Organisatie links
