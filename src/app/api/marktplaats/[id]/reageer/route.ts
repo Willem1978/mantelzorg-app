@@ -103,7 +103,7 @@ export async function POST(
             type: "BUDDY_REACTIE",
             title: "Nieuwe reactie op je hulpvraag",
             message: `${buddy.voornaam} wil je helpen met "${taak.titel}"`,
-            link: "/marktplaats",
+            link: "/buddys",
           },
         })
       }

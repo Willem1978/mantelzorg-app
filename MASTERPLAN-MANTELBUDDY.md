@@ -43,7 +43,7 @@
 | 7 AI agents | 100% | Ger, Welkom, Balanscoach, Check-in, Analytics, Moderatie, Curator |
 | Belastbaarheidstest | 95% | 11 vragen, 10 zorgtaken, scoring, subdomeinen |
 | Dashboard | 85% | Thermometer, advies, trend, artikelen, mijlpalen |
-| Hulpvragen | 85% | Gemeente-filtering, kleur-indicatoren, tabs |
+| Hulpvragen | 90% | Gemeente-filtering, kleur-indicatoren, 2 tabs (voor jou + voor naaste), MantelBuddy actieknoppen |
 | Leren/Informatie | 90% | 47 artikelen, categorieën, gemeente-nieuws |
 | Check-in systeem | 80% | Slimme frequentie, contextuele suggesties, trend |
 | Beheerportaal | 90% | Artikelen, hulpbronnen, gebruikers, alarmen, audit |
@@ -51,7 +51,7 @@
 | Auth & rollen | 85% | Login, register, magic links, ADMIN/GEMEENTE rollen |
 | WhatsApp integratie | 75% | Webhook, test via WhatsApp, check-in |
 | Onboarding | 80% | 5-stappen flow, profiel, gemeente-zoek |
-| MantelBuddy marktplaats | 40% | Basis aanmelding, geen matching |
+| MantelBuddy's (/buddys) | 75% | Kaart + matching, hulpvraag plaatsen, mijn vragen beheren, buddy-reacties, chat. Vervangt /marktplaats |
 | PWA | 60% | Manifest, service worker, installeerbaar (placeholder iconen) |
 | UI/UX senioren | 65% | Grote fonts, hoog contrast, breadcrumbs, help-systeem |
 
@@ -363,32 +363,33 @@ Leaflet.js (al in dependencies) voor kaartweergave:
 - Nieuw: `src/components/BuddyMarker.tsx`
 - Nieuw: `src/components/BuddyProfielPopup.tsx`
 
-### 4.5 Buddy zoek- en matchpagina
-**Prioriteit: GEMIDDELD**
+### 4.5 Buddy zoek- en matchpagina ✅ GEBOUWD
+**Status: Grotendeels gereed**
 
-Nieuwe pagina `/buddys`:
-- Kaart met buddys in de buurt
-- Lijst gesorteerd op matchpercentage
-- Per buddy: voornaam, woonplaats, match%, hulpvormen, beoordeling
-- Filter op zorgtaak, afstand, beschikbaarheid
-- CTA: "Vraag hulp aan [naam]"
+Pagina `/buddys` met 3 tabs:
+- **Zoek buddy** — Kaart (Leaflet) met buddys in de buurt, matchpercentage, filters op afstand/zorgtaak
+- **Hulpvraag** — Hulpvraag plaatsen (vervangt oude /marktplaats functionaliteit)
+- **Mijn vragen** — Overzicht eigen hulpvragen, buddy-reacties accepteren/afwijzen, chat
 
-### 4.6 Hulpvragenflow herstructureren
-**Prioriteit: GEMIDDELD**
+### 4.6 Hulpvragenflow herstructureren ✅ GEBOUWD
+**Status: Gereed**
 
-Een geintegreerde flow: zorgtaak kiezen → twee tabs:
-- **Buddys in de buurt** — gematchte vrijwilligers met kaart
-- **Organisaties** — professionele hulpbronnen (bestaand)
+De hulpvragenpagina (`/hulpvragen`) heeft nu:
+- 2 tabs: **Voor jou** (hulpbronnen/organisaties) + **Voor naaste** (zorgtaak-specifieke hulp)
+- Actieknoppen onderaan: "Zoek een MantelBuddy" → `/buddys` + "Stel een hulpvraag" → `/buddys?tab=hulpvraag`
+- Geen buddyhulp-tab meer (zit nu in `/buddys`)
+- De standalone `/marktplaats` pagina is verwijderd; alle links wijzen naar `/buddys`
 
 **Bestanden:**
-- Wijzig: `src/app/(dashboard)/hulpvragen/page.tsx`
-- Nieuw: `src/app/(dashboard)/buddys/page.tsx`
+- `src/app/(dashboard)/hulpvragen/page.tsx` (geherstructureerd)
+- `src/app/(dashboard)/buddys/page.tsx` (nieuw, vervangt /marktplaats)
+- `src/app/(dashboard)/marktplaats/` (verwijderd)
 
 ### Deliverables Fase 4
-- [ ] Werkend match-algoritme met geocoding
-- [ ] Kaartweergave met Leaflet en buddy-markers
-- [ ] Buddy zoekpagina met match% en filters
-- [ ] Geintegreerde hulpvragenflow (buddys + organisaties)
+- [x] Werkend match-algoritme met geocoding
+- [x] Kaartweergave met Leaflet en buddy-markers
+- [x] Buddy zoekpagina met match% en filters
+- [x] Geintegreerde hulpvragenflow (buddys + organisaties)
 - [ ] Tests voor matching-algoritme en geocoding
 
 **Geschatte doorlooptijd:** 3 weken (~48 uur)
@@ -550,14 +551,14 @@ In-memory `Map` objecten vervangen door Prisma model `WhatsAppSession` met JSON 
 - Wijzig: `src/app/page.tsx` (homepage redesign)
 - Wijzig: `src/app/(dashboard)/dashboard/page.tsx`
 
-### 7.2 Navigatie verbeteren
+### 7.2 Navigatie verbeteren ✅ DEELS GEREED
 **Prioriteit: GEMIDDELD**
 
-- "Marktplaats" hernoemen naar "Buddyhulp"
-- Badge met buddy-matches op navigatie
-- "Opgeslagen" toevoegen aan navigatie
+- ~~"Marktplaats" hernoemen naar "Buddyhulp"~~ ✅ Heet nu "Mantelbuddy's" in navigatie
+- Badge met buddy-matches op navigatie ✅ Werkt
+- "Opgeslagen" toevoegen aan navigatie (nog te doen)
 
-**Bestanden:** `src/config/content/navigation.ts`, `src/components/navigation/MobileNav.tsx`
+**Bestanden:** `src/components/navigation/MobileNav.tsx`, `src/components/layout/Navbar.tsx`
 
 ### 7.3 Caching strategie implementeren
 **Prioriteit: GEMIDDELD**
@@ -658,7 +659,7 @@ Fase    Naam                              Week    Uren    Status
 1       Beveiliging & Kritieke Fixes      1       16u     ○ Open
 2       Technische Schuld & Stabiliteit   2-3     32u     ○ Open
 3       Persoonlijk Advies & Klantreis    4-6     48u     ○ Open
-4       Buddy-matching & Kaartweergave    7-9     48u     ○ Open
+4       Buddy-matching & Kaartweergave    7-9     48u     ◑ Grotendeels gereed
 5       Gemeente Onboarding & Auto.       10-12   48u     ○ Open
 6       Content Migratie & CMS            13-15   48u     ○ Open
 7       UX Polish & Performance           16-18   48u     ○ Open

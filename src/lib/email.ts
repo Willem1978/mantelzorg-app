@@ -276,7 +276,7 @@ export async function sendBuddyReactieEmail(
   buddyNaam: string,
   taakTitel: string,
 ): Promise<boolean> {
-  const marktplaatsUrl = `${BASE_URL}/marktplaats`
+  const buddysUrl = `${BASE_URL}/buddys`
 
   return sendEmail({
     to: email,
@@ -292,12 +292,12 @@ export async function sendBuddyReactieEmail(
         Bekijk het profiel en kies of je deze buddy wilt accepteren.
       </p>
       <div style="text-align:center; margin:24px 0;">
-        <a href="${marktplaatsUrl}" style="display:inline-block; padding:14px 32px; background:#2C7A7B; color:white; text-decoration:none; border-radius:12px; font-weight:600; font-size:16px;">
+        <a href="${buddysUrl}" style="display:inline-block; padding:14px 32px; background:#2C7A7B; color:white; text-decoration:none; border-radius:12px; font-weight:600; font-size:16px;">
           Bekijk reactie
         </a>
       </div>
     `),
-    text: `${buddyNaam} wil je helpen met "${taakTitel}". Bekijk de reactie: ${marktplaatsUrl}`,
+    text: `${buddyNaam} wil je helpen met "${taakTitel}". Bekijk de reactie: ${buddysUrl}`,
   })
 }
 
@@ -336,7 +336,7 @@ export async function sendMatchActiefEmail(
   mantelzorgerNaam: string,
   buddyNaam: string,
 ): Promise<boolean> {
-  const marktplaatsUrl = `${BASE_URL}/marktplaats`
+  const buddysUrl = `${BASE_URL}/buddys`
 
   return sendEmail({
     to: email,
@@ -349,12 +349,12 @@ export async function sendMatchActiefEmail(
         <strong>${buddyNaam}</strong> heeft de match bevestigd. Jullie kunnen nu chatten!
       </p>
       <div style="text-align:center; margin:24px 0;">
-        <a href="${marktplaatsUrl}" style="display:inline-block; padding:14px 32px; background:#2C7A7B; color:white; text-decoration:none; border-radius:12px; font-weight:600; font-size:16px;">
+        <a href="${buddysUrl}" style="display:inline-block; padding:14px 32px; background:#2C7A7B; color:white; text-decoration:none; border-radius:12px; font-weight:600; font-size:16px;">
           Open de chat
         </a>
       </div>
     `),
-    text: `${buddyNaam} heeft de match bevestigd! Open de chat: ${marktplaatsUrl}`,
+    text: `${buddyNaam} heeft de match bevestigd! Open de chat: ${buddysUrl}`,
   })
 }
 

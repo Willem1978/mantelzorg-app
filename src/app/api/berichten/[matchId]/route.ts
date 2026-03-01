@@ -172,7 +172,7 @@ export async function POST(
             type: "BUDDY_BERICHT",
             title: "Nieuw bericht",
             message: `${afzenderNaam}: ${body.inhoud.trim().substring(0, 80)}${body.inhoud.trim().length > 80 ? "..." : ""}`,
-            link: isBuddy ? `/marktplaats` : `/buddy/dashboard`,
+            link: isBuddy ? `/buddys` : `/buddy/dashboard`,
           },
         })
       }

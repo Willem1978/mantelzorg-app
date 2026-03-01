@@ -75,7 +75,7 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
     { href: "/dashboard", label: "Home", hasBadge: false },
     { href: "/leren", label: "Info & Tips", hasBadge: false },
     { href: "/hulpvragen", label: "Hulp", hasBadge: false },
-    { href: "/buddys", label: "Mantelbuddy's", hasBadge: true, matchPaths: ["/buddys", "/marktplaats"] },
+    { href: "/buddys", label: "Mantelbuddy's", hasBadge: true, matchPaths: ["/buddys"] },
     { href: "/check-in", label: "Balanstest & Check-In", hasBadge: false, matchPaths: ["/check-in", "/belastbaarheidstest"] },
   ]
 

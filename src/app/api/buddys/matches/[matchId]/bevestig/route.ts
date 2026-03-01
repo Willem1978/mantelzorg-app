@@ -78,7 +78,7 @@ export async function POST(
             type: "REACTIE_GEACCEPTEERD",
             title: "Match bevestigd!",
             message: `${buddy.voornaam} heeft de match bevestigd. Jullie kunnen nu chatten.`,
-            link: "/marktplaats",
+            link: "/buddys",
           },
         })
       }
@@ -170,7 +170,7 @@ export async function DELETE(
             type: "REACTIE_AFGEWEZEN",
             title: "Match niet bevestigd",
             message: `${buddy.voornaam} kan toch niet helpen. Je hulpvraag is weer open.`,
-            link: "/marktplaats",
+            link: "/buddys",
           },
         })
       }
