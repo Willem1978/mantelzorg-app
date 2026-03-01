@@ -1,0 +1,703 @@
+# MantelBuddy — Masterplan 2026
+
+**Datum:** 1 maart 2026
+**Versie:** 1.0
+**Baseline:** v2.5.0 + doorontwikkelingen februari 2026
+**Dit plan vervangt alle eerdere planbestanden.**
+
+---
+
+## Inhoudsopgave
+
+1. [Huidige Staat van het Platform](#1-huidige-staat-van-het-platform)
+2. [Fase 1: Beveiliging & Kritieke Fixes](#2-fase-1-beveiliging--kritieke-fixes-week-1)
+3. [Fase 2: Technische Schuld & Stabiliteit](#3-fase-2-technische-schuld--stabiliteit-week-2-3)
+4. [Fase 3: Persoonlijk Advies & Klantreis](#4-fase-3-persoonlijk-advies--klantreis-week-4-6)
+5. [Fase 4: Buddy-matching & Kaartweergave](#5-fase-4-buddy-matching--kaartweergave-week-7-9)
+6. [Fase 5: Gemeente Onboarding & Automatisering](#6-fase-5-gemeente-onboarding--automatisering-week-10-12)
+7. [Fase 6: Content Migratie & CMS](#7-fase-6-content-migratie--cms-week-13-15)
+8. [Fase 7: UX Polish, Toegankelijkheid & Performance](#8-fase-7-ux-polish-toegankelijkheid--performance-week-16-18)
+9. [Fase 8: Schaalbaarheid & Toekomst](#9-fase-8-schaalbaarheid--toekomst-week-19)
+10. [Overzichtstabel per Fase](#10-overzichtstabel-per-fase)
+
+---
+
+## 1. Huidige Staat van het Platform
+
+### Tech Stack
+| Component | Versie |
+|-----------|--------|
+| Frontend | Next.js 16.1.4, React 19.2.3, TailwindCSS 4 |
+| Backend | Next.js API Routes (96 endpoints), Prisma ORM |
+| Database | PostgreSQL (Supabase) + pgvector |
+| Auth | NextAuth.js v5 (JWT, credentials, magic links) |
+| AI | Anthropic Claude (7 agents) + OpenAI embeddings |
+| WhatsApp | Twilio |
+| Hosting | Vercel |
+| Tests | Vitest (29 tests) |
+
+### Wat werkt (functionaliteitsoverzicht)
+
+| Onderdeel | Status | Details |
+|-----------|--------|---------|
+| 7 AI agents | 100% | Ger, Welkom, Balanscoach, Check-in, Analytics, Moderatie, Curator |
+| Belastbaarheidstest | 95% | 11 vragen, 10 zorgtaken, scoring, subdomeinen |
+| Dashboard | 85% | Thermometer, advies, trend, artikelen, mijlpalen |
+| Hulpvragen | 85% | Gemeente-filtering, kleur-indicatoren, tabs |
+| Leren/Informatie | 90% | 47 artikelen, categorieën, gemeente-nieuws |
+| Check-in systeem | 80% | Slimme frequentie, contextuele suggesties, trend |
+| Beheerportaal | 90% | Artikelen, hulpbronnen, gebruikers, alarmen, audit |
+| Gemeenteportaal | 80% | Dashboard, trends, rapportages |
+| Auth & rollen | 85% | Login, register, magic links, ADMIN/GEMEENTE rollen |
+| WhatsApp integratie | 75% | Webhook, test via WhatsApp, check-in |
+| Onboarding | 80% | 5-stappen flow, profiel, gemeente-zoek |
+| MantelBuddy marktplaats | 40% | Basis aanmelding, geen matching |
+| PWA | 60% | Manifest, service worker, installeerbaar (placeholder iconen) |
+| UI/UX senioren | 65% | Grote fonts, hoog contrast, breadcrumbs, help-systeem |
+
+### Bekende Problemen (uit alle analyses)
+
+| # | Probleem | Ernst | Bron |
+|---|----------|-------|------|
+| 1 | `.env.production` met API-keys staat in git | KRITIEK | Security |
+| 2 | `TAAK_NAAR_ONDERDEEL` mapping is volledig fout (alle 9) | KRITIEK | Functionaliteit |
+| 3 | `niveauFilter` in hulpbronnen.ts wordt genegeerd | HOOG | Functionaliteit |
+| 4 | Input validatie ontbreekt bij 45+ API routes | HOOG | Security |
+| 5 | Build script gebruikt `--accept-data-loss` | HOOG | Security |
+| 6 | WhatsApp sessies in-memory (geen persistentie) | HOOG | Stabiliteit |
+| 7 | 26x `as any` in code (type safety) | GEMIDDELD | Code kwaliteit |
+| 8 | Inconsistente error responses (4 formaten) | GEMIDDELD | API kwaliteit |
+| 9 | Geen caching strategie (94/96 routes force-dynamic) | GEMIDDELD | Performance |
+| 10 | Ontbrekende database indexes | GEMIDDELD | Performance |
+| 11 | 170+ content-items hardcoded in broncode | GEMIDDELD | Beheerbaar |
+| 12 | `isActief` niet afgedwongen bij gemeente-login | GEMIDDELD | Security |
+| 13 | WhatsApp alarm-detectie ontbreekt | HOOG | Functionaliteit |
+| 14 | Ontbrekende cascade deletes in Prisma | LAAG | Data-integriteit |
+| 15 | Geen service layer (Prisma direct in routes) | LAAG | Architectuur |
+
+---
+
+## 2. Fase 1: Beveiliging & Kritieke Fixes (Week 1)
+
+> **Doel:** Alle kritieke beveiligingsproblemen oplossen en functie-brekende bugs fixen.
+> **Motto:** "Eerst het huis op orde."
+
+### 1.1 API-keys uit git verwijderen
+**Prioriteit: KRITIEK**
+
+| Actie | Bestand |
+|-------|---------|
+| `.env.production` toevoegen aan `.gitignore` | `.gitignore` |
+| Keys verwijderen uit git-historie (of roteren) | git history |
+| API-keys verplaatsen naar Vercel Environment Variables | Vercel dashboard |
+| `.env.local.example` aanmaken met placeholder-waarden | `.env.local.example` |
+
+### 1.2 Build script beveiligen
+**Prioriteit: KRITIEK**
+
+| Actie | Bestand |
+|-------|---------|
+| `--accept-data-loss` verwijderen uit build script | `scripts/build.js` |
+| Error handling toevoegen voor `prisma generate` | `scripts/build.js` |
+| Validatie toevoegen dat migraties up-to-date zijn | `scripts/build.js` |
+
+### 1.3 TAAK_NAAR_ONDERDEEL mapping fixen
+**Prioriteit: KRITIEK**
+
+Alle 9 mappings in `src/app/api/dashboard/route.ts` zijn verkeerd. Correcte mapping:
+
+| Taak ID | Naam | Correcte mapping |
+|---------|------|-----------------|
+| t1 | Administratie en geldzaken | Administratie en aanvragen |
+| t2 | Regelen en afspraken maken | Plannen en organiseren |
+| t3 | Boodschappen doen | Boodschappen |
+| t4 | Bezoek en gezelschap | Sociaal contact en activiteiten |
+| t5 | Vervoer naar afspraken | Vervoer |
+| t6 | Persoonlijke verzorging | Persoonlijke verzorging |
+| t7 | Eten en drinken | Bereiden en/of nuttigen van maaltijden |
+| t8 | Huishouden | Huishoudelijke taken |
+| t9 | Klusjes | Klusjes in en om het huis |
+
+**Bestanden:** `src/app/api/dashboard/route.ts`, `src/config/options.ts`
+
+### 1.4 niveauFilter activeren in hulpbronnen
+**Prioriteit: HOOG**
+
+De `belastingNiveau` parameter wordt ontvangen maar niet gebruikt. De `zichtbaarBijLaag/Gemiddeld/Hoog` velden op `Zorgorganisatie` moeten geactiveerd worden in de query.
+
+**Bestand:** `src/lib/dashboard/hulpbronnen.ts`
+
+### 1.5 isActief afdwingen bij gemeente-login
+**Prioriteit: HOOG**
+
+Inactieve gemeenten kunnen nu nog inloggen in het gemeente-portaal.
+
+**Bestand:** `src/lib/gemeente-auth.ts`
+
+### 1.6 WhatsApp alarm-detectie toevoegen
+**Prioriteit: HOOG**
+
+De WhatsApp-handler slaat alarm-detectie (`checkAlarmindicatoren()`) over.
+
+**Bestand:** `src/lib/whatsapp/belastbaarheidstest.ts`
+
+### 1.7 Health-check endpoint
+**Prioriteit: GEMIDDELD**
+
+Nieuw endpoint `/api/health` voor uptime monitoring met database connectie-check.
+
+### Deliverables Fase 1
+- [ ] Geen API-keys meer in git
+- [ ] Build script zonder `--accept-data-loss`
+- [ ] Correcte taak-naar-hulpcategorie mapping
+- [ ] Score-gebaseerde hulpbron-filtering werkt
+- [ ] Gemeente-login respecteert isActief
+- [ ] WhatsApp alarm-detectie actief
+- [ ] Health-check endpoint operationeel
+
+**Geschatte doorlooptijd:** 1 week (~16 uur)
+
+---
+
+## 3. Fase 2: Technische Schuld & Stabiliteit (Week 2-3)
+
+> **Doel:** API-kwaliteit, type safety en testdekking verhogen.
+> **Motto:** "Stevig fundament onder nieuwe features."
+
+### 2.1 Input validatie toevoegen (Zod schemas)
+**Prioriteit: HOOG**
+
+Zod schemas toevoegen voor alle 45+ routes zonder validatie. Top prioriteit:
+
+| Route | Reden |
+|-------|-------|
+| `api/belastbaarheidstest/route.ts` | Grote form, 12 vragen + taken |
+| `api/intake/route.ts` | Gebruikersinvoer zonder schema |
+| `api/beheer/gebruikers/[id]/route.ts` | Admin operaties |
+| `api/gemeente/*/route.ts` | Filterparameters |
+
+**Bestand:** Uitbreiden `src/lib/validations.ts` + toepassen in routes.
+
+### 2.2 Consistente error responses
+**Prioriteit: GEMIDDELD**
+
+Centrale helper `src/lib/api-response.ts`:
+- Standaard formaat: `{ error: string, code?: string }`
+- Helpers: `unauthorized()`, `forbidden()`, `notFound()`, `badRequest()`, `internal()`
+- Geen interne errors lekken naar client
+
+### 2.3 Type safety verbeteren
+**Prioriteit: GEMIDDELD**
+
+- NextAuth types uitbreiden in `src/types/next-auth.d.ts`
+- 26x `as any` verwijderen uit 11 bestanden
+- Focus: `src/middleware.ts` (4x), `src/lib/auth.ts` (6x)
+
+### 2.4 Database optimalisatie
+**Prioriteit: GEMIDDELD**
+
+Ontbrekende indexes toevoegen:
+```
+BelastbaarheidTest: @@index([gemeente]), @@index([isCompleted, gemeente]), @@index([completedAt])
+Caregiver: @@index([municipality])
+```
+
+Cascade deletes configureren:
+```
+BelastbaarheidTest.caregiver: onDelete: SetNull
+```
+
+### 2.5 Testdekking verhogen (29 → 50+)
+**Prioriteit: GEMIDDELD**
+
+Nieuwe tests voor:
+- Belastbaarheidstest scoreberekening (edge cases)
+- Deelgebieden berekening
+- Dashboard API response structuur
+- Auth flow (login, register, magic link)
+- Gemeente resolver
+- Rate limiting
+
+**Bestand:** `__tests__/` directory uitbreiden.
+
+### 2.6 Structured logging doorvoeren
+**Prioriteit: LAAG**
+
+Pino is al geinstalleerd. Consistent JSON-formaat doorvoeren in alle API routes.
+Error boundary component met fallback UI toevoegen.
+
+### Deliverables Fase 2
+- [ ] Zod validatie op alle publieke API routes
+- [ ] Consistente error response helper in gebruik
+- [ ] 0x `as any` in codebase
+- [ ] Database indexes toegevoegd
+- [ ] 50+ werkende tests
+- [ ] Structured logging actief
+
+**Geschatte doorlooptijd:** 2 weken (~32 uur)
+
+---
+
+## 4. Fase 3: Persoonlijk Advies & Klantreis (Week 4-6)
+
+> **Doel:** Direct persoonlijke, herkenbare feedback na de balanstest.
+> **Motto:** "Van test naar actie — directe, persoonlijke feedback."
+
+### 3.1 Persoonlijk advies pagina na test
+**Prioriteit: HOOG**
+
+Nieuwe pagina `/rapport/persoonlijk` die direct na de test getoond wordt:
+
+1. **Scoreweergave met context** — Totaalscore + persoonlijke tekst
+2. **Deelgebieden samenvatting** — Energie/Gevoel/Tijd met percentages en toelichting
+3. **Top 3 vervolgstappen** — Op basis van zwaarste deelgebied + geselecteerde taken
+4. **Gemeente-specifiek advies** — Lokale hulpbronnen en contactgegevens
+
+**Bestanden:**
+- Nieuw: `src/app/(dashboard)/rapport/persoonlijk/page.tsx`
+- Nieuw: `src/lib/rapport/persoonlijk-advies.ts`
+- Wijzig: `src/app/(dashboard)/belastbaarheidstest/page.tsx` (redirect na test)
+
+### 3.2 Ger pro-actief na test
+**Prioriteit: HOOG**
+
+Na score-berekening automatisch een kort, warm, persoonlijk bericht van Ger genereren (max 150 woorden). Opslaan bij `BelastbaarheidRapport` en tonen op de persoonlijk-advies pagina.
+
+**Database wijziging:**
+```
+BelastbaarheidRapport: + gerBericht (String?)
+```
+
+**Bestanden:**
+- Wijzig: `src/app/api/belastbaarheidstest/route.ts`
+- Wijzig: `src/app/api/ai/balanscoach/route.ts`
+
+### 3.3 Gastgebruiker flow verbeteren
+**Prioriteit: HOOG**
+
+- Persoonlijk advies pagina ook voor gasten (localStorage data)
+- Duidelijke CTA: "Maak een account aan om je resultaten te bewaren"
+- Na account aanmaken: automatisch testresultaten koppelen
+
+### 3.4 Dashboard herstructureren
+**Prioriteit: GEMIDDELD**
+
+- "Volgende stap" sectie prominent maken (1 focus + max 3 CTA's)
+- Zorgtaken sorteren op impact-score (`uren x zwaarte`)
+- Ger-widget onderin: "Heb je een vraag? Praat met Ger"
+- Trend-indicator bij meerdere tests
+- Check-in knop prominent
+
+### 3.5 Noodknop / SOS functie
+**Prioriteit: GEMIDDELD**
+
+Prominente "Ik heb NU hulp nodig" knop op het dashboard:
+- Mantelzorglijn: 030-164 0 164
+- Huisarts (als ingevuld)
+- 112 bij nood
+- Crisislijn
+
+Geen inlog vereist voor de homepage-variant.
+
+### Deliverables Fase 3
+- [ ] Persoonlijk advies pagina na balanstest
+- [ ] Ger genereert automatisch bericht na test
+- [ ] Gastgebruikers zien ook persoonlijk advies
+- [ ] Dashboard geherstructureerd met focuskaart
+- [ ] SOS-knop op dashboard en homepage
+
+**Geschatte doorlooptijd:** 3 weken (~48 uur)
+
+---
+
+## 5. Fase 4: Buddy-matching & Kaartweergave (Week 7-9)
+
+> **Doel:** Mantelzorgers koppelen aan passende vrijwilligers in de buurt.
+> **Motto:** "De juiste hulp, dichtbij."
+
+### 4.1 Database uitbreiden voor matching
+**Prioriteit: HOOG**
+
+```
+MantelBuddy: + latitude (Float?), + longitude (Float?), + maxReisafstand (Int?), + biografie (String?), + profielfoto (String?)
+Caregiver: + latitude (Float?), + longitude (Float?)
+```
+
+### 4.2 PDOK geocoding
+**Prioriteit: HOOG**
+
+Postcode naar coordinaten via PDOK Locatieserver (gratis, overheids-API).
+Haversine formule voor afstandsberekening.
+
+**Bestanden:**
+- Nieuw: `src/lib/geocode.ts`
+- Wijzig: `src/app/api/mantelbuddy/aanmelden/route.ts`
+
+### 4.3 Match-algoritme bouwen
+**Prioriteit: HOOG**
+
+Score op basis van drie factoren:
+
+| Factor | Gewicht | Berekening |
+|--------|---------|------------|
+| Taak-overlap | 50% | Hoeveel zorgtaken matchen de hulpvormen van de buddy? |
+| Afstand | 30% | <5km=100%, 5-10km=70%, 10-20km=40%, >20km=10% |
+| Beschikbaarheid | 20% | Past beschikbaarheid bij de vraag? + VOG + training |
+
+**Bestanden:**
+- Nieuw: `src/lib/matching.ts`
+- Nieuw: `src/app/api/buddys/match/route.ts`
+
+### 4.4 Kaartweergave met Leaflet
+**Prioriteit: GEMIDDELD**
+
+Leaflet.js (al in dependencies) voor kaartweergave:
+- Locatie naaste centraal + beschikbare buddys als markers
+- Matchpercentage badge op elke marker
+- Profiel-popup bij klik
+- Radiusfilter: 5km / 10km / 20km
+- Privacy: buddy-locatie afgerond op 500m
+
+**Bestanden:**
+- Nieuw: `src/components/BuddyKaart.tsx`
+- Nieuw: `src/components/BuddyMarker.tsx`
+- Nieuw: `src/components/BuddyProfielPopup.tsx`
+
+### 4.5 Buddy zoek- en matchpagina
+**Prioriteit: GEMIDDELD**
+
+Nieuwe pagina `/buddys`:
+- Kaart met buddys in de buurt
+- Lijst gesorteerd op matchpercentage
+- Per buddy: voornaam, woonplaats, match%, hulpvormen, beoordeling
+- Filter op zorgtaak, afstand, beschikbaarheid
+- CTA: "Vraag hulp aan [naam]"
+
+### 4.6 Hulpvragenflow herstructureren
+**Prioriteit: GEMIDDELD**
+
+Een geintegreerde flow: zorgtaak kiezen → twee tabs:
+- **Buddys in de buurt** — gematchte vrijwilligers met kaart
+- **Organisaties** — professionele hulpbronnen (bestaand)
+
+**Bestanden:**
+- Wijzig: `src/app/(dashboard)/hulpvragen/page.tsx`
+- Nieuw: `src/app/(dashboard)/buddys/page.tsx`
+
+### Deliverables Fase 4
+- [ ] Werkend match-algoritme met geocoding
+- [ ] Kaartweergave met Leaflet en buddy-markers
+- [ ] Buddy zoekpagina met match% en filters
+- [ ] Geintegreerde hulpvragenflow (buddys + organisaties)
+- [ ] Tests voor matching-algoritme en geocoding
+
+**Geschatte doorlooptijd:** 3 weken (~48 uur)
+
+---
+
+## 6. Fase 5: Gemeente Onboarding & Automatisering (Week 10-12)
+
+> **Doel:** Gemeenten snel en compleet onboarden + automatische opvolging na balanstest.
+> **Motto:** "Gemeenten in 15 minuten live."
+
+### 5.1 Gemeente onboarding wizard
+**Prioriteit: HOOG**
+
+Nieuwe pagina `/beheer/gemeenten/nieuw` met 5-stappen stepper:
+
+1. **Gemeente kiezen** — PDOK autocomplete, CBS-code, check of gemeente al bestaat
+2. **Contactgegevens** — Email, telefoon, website, WMO loket URL
+3. **Lokale hulpbronnen koppelen** — Automatisch zoeken in bestaande hulpbronnen
+4. **Advies per belastingniveau** — Tekstvelden LAAG/GEMIDDELD/HOOG + organisatie koppelen
+5. **Eerste beheerder aanmaken** — Email, naam, rol, account of uitnodigingslink
+
+**Bestanden:**
+- Nieuw: `src/app/beheer/gemeenten/nieuw/page.tsx`
+- Nieuw: `src/app/api/beheer/gemeenten/onboarding/route.ts`
+- Nieuw: `src/app/api/beheer/gemeenten/hulpbronnen-zoek/route.ts`
+
+### 5.2 Balanstest opvolging automatiseren
+**Prioriteit: HOOG**
+
+Na test-voltooiing automatisch:
+
+| Actie | Trigger | Detail |
+|-------|---------|--------|
+| E-mail met resultaten | Direct na test | Score-samenvatting, top 3 tips, gemeente-contacten |
+| Check-in reminder plannen | Direct na test | HOOG=1 week, GEMIDDELD=2 weken, LAAG=4 weken |
+| Gemeente-notificatie | Bij CRITICAL/HIGH alarm | Geanonimiseerd naar gemeente contactemail |
+| Fix: gemeente op test | Bij ingelogde user | Municipality uit Caregiver profiel |
+
+**Bestanden:**
+- Nieuw: `src/lib/email/balanstest-resultaat.ts`
+- Nieuw: `src/lib/email/gemeente-alarm-notificatie.ts`
+- Nieuw: `src/lib/check-in/plan-check-in.ts`
+- Wijzig: `src/app/api/belastbaarheidstest/route.ts`
+
+### 5.3 Smart check-in herinneringen
+**Prioriteit: GEMIDDELD**
+
+Proactieve herinneringen via WhatsApp of in-app:
+- HOOG: wekelijks
+- GEMIDDELD: tweewekelijks
+- LAAG: maandelijks
+
+Via Vercel Cron + WhatsApp (Twilio) + in-app notificatie fallback.
+
+### 5.4 Gemeente dashboard opvolging
+**Prioriteit: GEMIDDELD**
+
+Nieuw component op gemeente-dashboard:
+- Nieuwe tests deze week (waarvan HOOG)
+- Open alarmen
+- Geplande check-ins + niet-uitgevoerde check-ins
+
+**Bestanden:**
+- Nieuw: `src/components/gemeente/OpvolgingKaart.tsx`
+- Nieuw: `src/app/api/gemeente/opvolging/route.ts`
+
+### Deliverables Fase 5
+- [ ] Werkende gemeente onboarding wizard (5 stappen)
+- [ ] Automatische e-mail na balanstest
+- [ ] Automatische check-in planning
+- [ ] Gemeente-alarmnotificatie bij hoge belasting
+- [ ] Smart check-in herinneringen
+- [ ] Gemeente opvolgingsdashboard
+
+**Geschatte doorlooptijd:** 3 weken (~48 uur)
+
+---
+
+## 7. Fase 6: Content Migratie & CMS (Week 13-15)
+
+> **Doel:** Alle hardcoded content naar database verplaatsen en beheerbaar maken.
+> **Motto:** "Geen tekst meer in de code."
+
+### 6.1 Nieuwe database modellen
+
+6 nieuwe modellen:
+
+| Model | Doel | Items |
+|-------|------|-------|
+| `BalanstestVraag` | Balanstest + check-in vragen | ~16 |
+| `Zorgtaak` | Zorgtaak definities | ~10 |
+| `TaakCategorieMapping` | Taak-naar-categorie koppelingen | ~25 |
+| `ContentCategorie` | Leren/hulpvraag/WhatsApp categorieën | ~60 |
+| `FormulierOptie` | Alle dropdown/selectie opties | ~30 |
+| `AppContent` | Onboarding, tutorial, pagina-intro's | ~30 |
+
+### 6.2 Seed scripts & migratie
+
+Script `scripts/seed-content.ts` dat alle huidige hardcoded content naar database migreert.
+
+### 6.3 API endpoints (beheer + publiek)
+
+~10 nieuwe API routes voor CRUD + read-only endpoints.
+
+### 6.4 Beheer pagina's (5 nieuwe secties)
+
+| Pagina | Functie |
+|--------|---------|
+| `/beheer/balanstest-vragen` | Beheer balanstest en check-in vragen |
+| `/beheer/zorgtaken` | Beheer zorgtaken en mappings |
+| `/beheer/categorieen` | Beheer alle categorieën |
+| `/beheer/formulier-opties` | Beheer formulier opties |
+| `/beheer/app-content` | Beheer app content (onboarding, tutorial) |
+
+### 6.5 Frontend refactoring
+
+8+ bestanden omzetten van hardcoded imports naar API calls:
+- `belastbaarheidstest/page.tsx`
+- `check-in/page.tsx`
+- `hulpvragen/page.tsx`
+- `leren/page.tsx` + `[categorie]/page.tsx`
+- `Onboarding.tsx`
+- `Tutorial.tsx`
+- `word-mantelbuddy/page.tsx`
+- `whatsapp-session.ts`
+
+### 6.6 WhatsApp sessies naar database
+**Prioriteit: HOOG**
+
+In-memory `Map` objecten vervangen door Prisma model `WhatsAppSession` met JSON data-veld en TTL van 30 minuten.
+
+### Deliverables Fase 6
+- [ ] 6 nieuwe database modellen + migraties
+- [ ] Alle content in database (170+ items)
+- [ ] 5 nieuwe beheer pagina's
+- [ ] Frontend leest uit database i.p.v. code
+- [ ] WhatsApp sessies persistent in database
+
+**Geschatte doorlooptijd:** 3 weken (~48 uur)
+
+---
+
+## 8. Fase 7: UX Polish, Toegankelijkheid & Performance (Week 16-18)
+
+> **Doel:** De app optimaliseren voor de doelgroep (oudere gebruikers) en sneller maken.
+> **Motto:** "Snel, helder, toegankelijk."
+
+### 7.1 Ger prominent maken
+**Prioriteit: HOOG**
+
+- Homepage redesign: Ger centraal met ingebed chatvenster (niet meer alleen floating button)
+- Dashboard: Ger-kaart bovenaan met proactieve berichten
+- Visuele upgrade: animaties, typindicator, consistent kleurschema
+
+**Bestanden:**
+- Nieuw: `src/components/ai/GerHeroChat.tsx`
+- Nieuw: `src/components/ai/GerDashboardCard.tsx`
+- Wijzig: `src/app/page.tsx` (homepage redesign)
+- Wijzig: `src/app/(dashboard)/dashboard/page.tsx`
+
+### 7.2 Navigatie verbeteren
+**Prioriteit: GEMIDDELD**
+
+- "Marktplaats" hernoemen naar "Buddyhulp"
+- Badge met buddy-matches op navigatie
+- "Opgeslagen" toevoegen aan navigatie
+
+**Bestanden:** `src/config/content/navigation.ts`, `src/components/navigation/MobileNav.tsx`
+
+### 7.3 Caching strategie implementeren
+**Prioriteit: GEMIDDELD**
+
+| Type | Cache |
+|------|-------|
+| Statische content (artikelen, hulpbronnen) | `s-maxage=3600, stale-while-revalidate=86400` |
+| Per-gebruiker data (dashboard, profiel) | `private, s-maxage=60, stale-while-revalidate=300` |
+| Gemeente statistieken | `private, s-maxage=300, stale-while-revalidate=3600` |
+| Mutaties & auth | `force-dynamic` (huidig behouden) |
+
+### 7.4 N+1 queries oplossen
+**Prioriteit: GEMIDDELD**
+
+- Diepe queries opsplitsen in gerichte queries
+- Database-aggregatie voor statistieken
+- Paginatie toevoegen aan alle list-endpoints
+
+### 7.5 Toegankelijkheid (WCAG 2.1 AA)
+**Prioriteit: GEMIDDELD**
+
+- Screen reader support met aria-labels
+- Keyboard navigatie op alle functies
+- WCAG AAA contrast audit (7:1 ratio)
+- B1-taalaudit op alle teksten
+- Echte PWA iconen (nu placeholders)
+
+### 7.6 Service layer introduceren
+**Prioriteit: LAAG**
+
+Service modules per domein:
+```
+src/lib/services/
+  caregiver.service.ts
+  belastbaarheid.service.ts
+  gemeente.service.ts
+  beheer.service.ts
+  notificatie.service.ts
+```
+
+### 7.7 Testdekking afronden (50 → 60+)
+**Prioriteit: GEMIDDELD**
+
+Aanvullende tests voor: matching-algoritme, geocoding, gemeente wizard, buddy-flow, content API.
+
+### Deliverables Fase 7
+- [ ] Ger prominent op homepage en dashboard
+- [ ] Verbeterde navigatie met buddy-badges
+- [ ] Caching op alle relevante routes
+- [ ] N+1 queries opgelost
+- [ ] WCAG 2.1 AA compliant
+- [ ] 60+ tests
+- [ ] Service layer voor kernfuncties
+
+**Geschatte doorlooptijd:** 3 weken (~48 uur)
+
+---
+
+## 9. Fase 8: Schaalbaarheid & Toekomst (Week 19+)
+
+> **Doel:** Platform klaar maken voor groei en toekomstige features.
+> **Motto:** "Klaar voor de toekomst."
+
+### 8.1 Geavanceerde features (backlog)
+
+Deze items zijn bewust geparkeerd omdat ze pas waardevol zijn nadat de basis stevig staat:
+
+| Feature | Reden voor later |
+|---------|-----------------|
+| Progressieve onboarding (week 1-4) | Complex, eerst basis goed maken |
+| Actiekaarten (vandaag/week/ontlasten) | Pas na dashboard herstructurering |
+| Weekplan met favorieten | Complexe feature, bewezen vraag eerst valideren |
+| Contactstatus bij hulporganisaties | HulpbronContact model, pas na hulpvragenflow |
+| Zorgtaken pagina (`/zorgtaken`) | Pas na content migratie |
+| 2FA voor admin | Optioneel, vereist TOTP library |
+| Rich text editor uitbreiden | TipTap is al geinstalleerd |
+| Media-upload (S3/Cloudinary) | Externe afhankelijkheid |
+| Push notificaties | Vereist VAPID keys + backend |
+| Seizoensgebonden content | Aanbevelingsengine, pas na CMS migratie |
+| Email-templates beheer | Vereist email service uitbreiding |
+| Gemeente-admin content per niveau | Pas na content migratie |
+| Slimme aanbevelingsengine | Machine learning, pas na voldoende data |
+
+### 8.2 Monitoring & observability
+
+- APM integratie (Vercel Analytics of Sentry)
+- Uptime monitoring via health-check
+- Database performance monitoring
+- Error tracking met context (userId, route, params)
+
+---
+
+## 10. Overzichtstabel per Fase
+
+```
+Fase    Naam                              Week    Uren    Status
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1       Beveiliging & Kritieke Fixes      1       16u     ○ Open
+2       Technische Schuld & Stabiliteit   2-3     32u     ○ Open
+3       Persoonlijk Advies & Klantreis    4-6     48u     ○ Open
+4       Buddy-matching & Kaartweergave    7-9     48u     ○ Open
+5       Gemeente Onboarding & Auto.       10-12   48u     ○ Open
+6       Content Migratie & CMS            13-15   48u     ○ Open
+7       UX Polish & Performance           16-18   48u     ○ Open
+8       Schaalbaarheid & Toekomst         19+     -       ○ Backlog
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Totaal (Fase 1-7)                                 288u
+```
+
+### Afhankelijkheden tussen fases
+
+```
+Fase 1 ──→ Fase 2 ──→ Fase 3
+                  └──→ Fase 4
+                  └──→ Fase 5
+                           └──→ Fase 6 ──→ Fase 7 ──→ Fase 8
+```
+
+- **Fase 1** is voorwaarde voor alles (beveiliging eerst)
+- **Fase 2** is voorwaarde voor nieuwe features (stabiele basis)
+- **Fase 3, 4, 5** kunnen deels parallel na Fase 2
+- **Fase 6** bouwt voort op de features uit Fase 3-5
+- **Fase 7** is de afronding met polish en performance
+- **Fase 8** is een doorlopende backlog
+
+---
+
+## Items die NIET meer relevant zijn
+
+De volgende items uit eerdere plannen zijn bewust geschrapt:
+
+| Item | Reden |
+|------|-------|
+| PWA uitgebreide offline-modus | Basis PWA werkt, native app niet nodig |
+| Contextuele hulptips bij elk formulierveld | Te gedetailleerd, geringe impact |
+| Video-uitleg bij functies | Nice-to-have, geen prioriteit |
+| Swipe-navigatie voor artikelen | Nice-to-have, geringe impact |
+| Check-in streaks / beloningen | Gamification is onbewezen voor doelgroep |
+| "Vergelijkbare mantelzorgers lezen ook..." | Vereist veel data, pas later relevant |
+
+---
+
+*Dit masterplan is opgesteld op 1 maart 2026 op basis van grondige analyse van alle bestaande plannen, module-statusdocumenten en de volledige MantelBuddy codebase. Het consolideert en vervangt alle eerdere planbestanden.*
