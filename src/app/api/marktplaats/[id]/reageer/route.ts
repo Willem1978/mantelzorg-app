@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { sendBuddyReactieEmail } from "@/lib/email"
 
 // POST - Buddy reageert op een hulpvraag
 export async function POST(
@@ -43,7 +44,7 @@ export async function POST(
       where: { id: taakId },
       include: {
         caregiver: {
-          select: { userId: true },
+          select: { userId: true, user: { select: { email: true, name: true } } },
         },
       },
     })
@@ -109,6 +110,12 @@ export async function POST(
 
       return r
     })
+
+    // Email notificatie (fire-and-forget)
+    if (taak.caregiver.user?.email) {
+      const voornaam = taak.caregiver.user.name?.split(" ")[0] || "Mantelzorger"
+      sendBuddyReactieEmail(taak.caregiver.user.email, voornaam, buddy.voornaam, taak.titel).catch(() => {})
+    }
 
     return NextResponse.json({ reactie })
   } catch (error) {

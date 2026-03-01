@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { sendMatchBevestigEmail } from "@/lib/email"
 
 // PATCH - Mantelzorger accepteert of wijst buddy reactie af
 export async function PATCH(
@@ -56,7 +57,7 @@ export async function PATCH(
       where: { id: reactieId, taakId },
       include: {
         buddy: {
-          select: { id: true, voornaam: true, userId: true },
+          select: { id: true, voornaam: true, userId: true, email: true },
         },
       },
     })
@@ -96,7 +97,7 @@ export async function PATCH(
           },
         })
 
-        // 4. Maak of update BuddyMatch
+        // 4. Maak of update BuddyMatch (CAREGIVER_AKKOORD - buddy moet nog bevestigen)
         await tx.buddyMatch.upsert({
           where: {
             buddyId_caregiverId: {
@@ -107,21 +108,21 @@ export async function PATCH(
           create: {
             buddyId: reactie.buddy.id,
             caregiverId: caregiver.id,
-            status: "ACTIEF",
+            status: "CAREGIVER_AKKOORD",
           },
           update: {
-            status: "ACTIEF",
+            status: "CAREGIVER_AKKOORD",
           },
         })
 
-        // 5. Notificatie voor geaccepteerde buddy
+        // 5. Notificatie voor buddy: bevestig de match
         if (reactie.buddy.userId) {
           await tx.notification.create({
             data: {
               userId: reactie.buddy.userId,
               type: "REACTIE_GEACCEPTEERD",
-              title: "Je reactie is geaccepteerd!",
-              message: `Je mag helpen met "${taak.titel}". Open de app om te chatten.`,
+              title: "Je bent gekozen!",
+              message: `Je bent gekozen voor "${taak.titel}". Bevestig de match om te starten.`,
               link: "/buddy/dashboard",
             },
           })
@@ -147,6 +148,11 @@ export async function PATCH(
           }
         }
       })
+
+      // Email notificatie naar buddy (fire-and-forget)
+      if (reactie.buddy.email) {
+        sendMatchBevestigEmail(reactie.buddy.email, reactie.buddy.voornaam, taak.titel).catch(() => {})
+      }
 
       return NextResponse.json({ status: "geaccepteerd" })
     } else {

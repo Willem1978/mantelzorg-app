@@ -88,8 +88,8 @@ export default function RapportPage() {
       return
     }
 
-    // Voor niet-ingelogde gebruikers (status === "unauthenticated"): probeer localStorage
-    const localResult = localStorage.getItem("belastbaarheidstest_result")
+    // Voor niet-ingelogde gebruikers (status === "unauthenticated"): probeer sessionStorage
+    const localResult = sessionStorage.getItem("belastbaarheidstest_result")
     if (localResult) {
       try {
         const parsed = JSON.parse(localResult)

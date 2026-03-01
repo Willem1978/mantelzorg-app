@@ -53,7 +53,7 @@ export default function RapportGastPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const stored = localStorage.getItem("belastbaarheidstest_result")
+    const stored = sessionStorage.getItem("belastbaarheidstest_result")
     if (stored) {
       try {
         setTestData(JSON.parse(stored))

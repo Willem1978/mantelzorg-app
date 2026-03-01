@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { ZorgorganisatieType } from "@prisma/client"
+import { auth } from "@/lib/auth"
 
 export const maxDuration = 120
 
@@ -179,6 +180,14 @@ const alleZutphenOrganisaties: OrgData[] = [
 ]
 
 export async function POST() {
+  const session = await auth()
+  if (!session?.user?.id || session.user.role !== "ADMIN") {
+    return NextResponse.json(
+      { error: "Alleen beheerders kunnen seeden" },
+      { status: 403 }
+    )
+  }
+
   let created = 0, errors = 0
 
   try {

@@ -157,9 +157,9 @@ export default function IntakePage() {
 
     try {
       // Sla lokaal op
-      localStorage.setItem("intake_answers", JSON.stringify(answers))
-      localStorage.setItem("intake_scores", JSON.stringify(scores))
-      localStorage.setItem("intake_completed", "true")
+      sessionStorage.setItem("intake_answers", JSON.stringify(answers))
+      sessionStorage.setItem("intake_scores", JSON.stringify(scores))
+      sessionStorage.setItem("intake_completed", "true")
 
       // Probeer op te slaan naar server
       await fetch("/api/intake", {

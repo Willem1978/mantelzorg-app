@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
+import DOMPurify from 'isomorphic-dompurify'
 
 export const dynamic = 'force-dynamic'
 
@@ -273,7 +274,9 @@ async function scrapeSocialeKaart(gemeente: string, zoekterm: string): Promise<S
 }
 
 function decodeHTMLEntities(text: string): string {
-  return text
+  // Strip alle HTML tags en sanitize met DOMPurify
+  const stripped = DOMPurify.sanitize(text, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
+  return stripped
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')

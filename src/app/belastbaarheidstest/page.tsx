@@ -403,7 +403,8 @@ export default function BelastbaarheidstestPage() {
       totaleUren,
       completedAt: new Date().toISOString(),
     }
-    localStorage.setItem("belastbaarheidstest_result", JSON.stringify(testData))
+    // Gebruik sessionStorage (wist bij tab sluiten) ipv localStorage voor gezondheidsdata
+    sessionStorage.setItem("belastbaarheidstest_result", JSON.stringify(testData))
 
     try {
       await fetch("/api/belastbaarheidstest", {
