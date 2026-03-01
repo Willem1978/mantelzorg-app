@@ -20,7 +20,15 @@ export async function GET() {
 
   const totalMs = Date.now() - start
 
-  const healthy = dbStatus === "ok"
+  // Check kritieke environment variabelen (alleen of ze bestaan, niet de waarden)
+  const envChecks = {
+    DATABASE_URL: !!process.env.DATABASE_URL,
+    AUTH_SECRET: !!(process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET),
+    NEXTAUTH_URL: !!(process.env.NEXTAUTH_URL || process.env.VERCEL_URL),
+  }
+
+  const allEnvOk = Object.values(envChecks).every(Boolean)
+  const healthy = dbStatus === "ok" && allEnvOk
 
   return NextResponse.json(
     {
@@ -31,6 +39,7 @@ export async function GET() {
         status: dbStatus,
         latencyMs: dbLatencyMs,
       },
+      environment: envChecks,
       responseTimeMs: totalMs,
     },
     { status: healthy ? 200 : 503 }

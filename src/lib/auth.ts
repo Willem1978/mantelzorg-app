@@ -24,76 +24,84 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           console.error("[AUTH] Geen email of wachtwoord meegegeven")
-          return null
+          throw new Error("Email en wachtwoord zijn verplicht")
         }
 
         try {
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email as string,
-          },
-          include: {
-            caregiver: true,
-            mantelBuddy: true,
-          },
-        })
+          const user = await prisma.user.findUnique({
+            where: {
+              email: credentials.email as string,
+            },
+            include: {
+              caregiver: true,
+              mantelBuddy: true,
+            },
+          })
 
-        if (!user || !user.password) {
-          console.error("[AUTH] Gebruiker niet gevonden of geen wachtwoord:", credentials.email)
-          return null
-        }
-
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password as string,
-          user.password
-        )
-
-        if (!isPasswordValid) {
-          console.error("[AUTH] Wachtwoord onjuist voor:", credentials.email)
-          return null
-        }
-
-        // Koppel WhatsApp telefoonnummer aan Caregiver profiel als meegegeven
-        // Let op: phoneNumber kan "undefined" string zijn door NextAuth serialisatie
-        const phoneNumber = credentials.phoneNumber as string | undefined
-        const hasValidPhone = phoneNumber &&
-          phoneNumber !== "undefined" &&
-          phoneNumber !== "null" &&
-          phoneNumber.trim() !== "" &&
-          phoneNumber.startsWith("+31")
-
-        if (hasValidPhone && user.caregiver) {
-          try {
-            await prisma.caregiver.update({
-              where: { id: user.caregiver.id },
-              data: { phoneNumber: phoneNumber },
-            })
-          } catch (error) {
-            console.error("Failed to link phone number:", error)
+          if (!user || !user.password) {
+            console.error("[AUTH] Gebruiker niet gevonden of geen wachtwoord:", credentials.email)
+            throw new Error("Onjuist e-mailadres of wachtwoord")
           }
-        }
 
-        // Incrementeer sessionVersion om oude sessies te invalideren (single-session login)
-        // Dit zorgt ervoor dat bij een nieuwe login, alle andere browser sessies uitgelogd worden
-        const updatedUser = await prisma.user.update({
-          where: { id: user.id },
-          data: { sessionVersion: { increment: 1 } },
-        })
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password as string,
+            user.password
+          )
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          caregiverId: user.caregiver?.id || null,
-          buddyId: user.mantelBuddy?.id || null,
-          gemeenteNaam: user.gemeenteNaam || null,
-          gemeenteRollen: user.gemeenteRollen || [],
-          sessionVersion: updatedUser.sessionVersion,
-        }
+          if (!isPasswordValid) {
+            console.error("[AUTH] Wachtwoord onjuist voor:", credentials.email)
+            throw new Error("Onjuist e-mailadres of wachtwoord")
+          }
+
+          // Koppel WhatsApp telefoonnummer aan Caregiver profiel als meegegeven
+          // Let op: phoneNumber kan "undefined" string zijn door NextAuth serialisatie
+          const phoneNumber = credentials.phoneNumber as string | undefined
+          const hasValidPhone = phoneNumber &&
+            phoneNumber !== "undefined" &&
+            phoneNumber !== "null" &&
+            phoneNumber.trim() !== "" &&
+            phoneNumber.startsWith("+31")
+
+          if (hasValidPhone && user.caregiver) {
+            try {
+              await prisma.caregiver.update({
+                where: { id: user.caregiver.id },
+                data: { phoneNumber: phoneNumber },
+              })
+            } catch (error) {
+              console.error("Failed to link phone number:", error)
+            }
+          }
+
+          // Incrementeer sessionVersion om oude sessies te invalideren (single-session login)
+          // Dit zorgt ervoor dat bij een nieuwe login, alle andere browser sessies uitgelogd worden
+          const updatedUser = await prisma.user.update({
+            where: { id: user.id },
+            data: { sessionVersion: { increment: 1 } },
+          })
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            caregiverId: user.caregiver?.id || null,
+            buddyId: user.mantelBuddy?.id || null,
+            gemeenteNaam: user.gemeenteNaam || null,
+            gemeenteRollen: user.gemeenteRollen || [],
+            sessionVersion: updatedUser.sessionVersion,
+          }
         } catch (error) {
-          console.error("[AUTH] Database/login fout:", error)
-          return null
+          // Gooi auth-fouten direct door (onjuiste credentials)
+          if (error instanceof Error && (
+            error.message.includes("Onjuist") ||
+            error.message.includes("verplicht")
+          )) {
+            throw error
+          }
+          // Database/connectie fouten: log en geef duidelijke melding
+          console.error("[AUTH] Database/connectie fout:", error)
+          throw new Error("Kan niet inloggen door een serverfout. Probeer het later opnieuw.")
         }
       },
     }),
