@@ -8,7 +8,6 @@ import { MobileNav } from "@/components/navigation/MobileNav"
 import { SessionValidator } from "@/components/SessionValidator"
 import { Tutorial, TUTORIAL_STORAGE_KEY } from "@/components/Tutorial"
 import { Onboarding } from "@/components/Onboarding"
-import { HelpButton } from "@/components/ui/HelpButton"
 import { GerAvatar } from "@/components/GerAvatar"
 
 interface DashboardShellProps {
@@ -102,9 +101,6 @@ export function DashboardShell({ children }: DashboardShellProps) {
         {children}
       </main>
       <MobileNav />
-
-      {/* C2.3: Floating hulpknop */}
-      <HelpButton />
 
       {/* Floating "Vraag Ger" knop — altijd bereikbaar behalve op dashboard en ai-assistent */}
       {!hideGerButton && (
