@@ -267,8 +267,8 @@ model CaregiverOrganisation {
   id             String       @id @default(cuid())
   caregiverId    String
   organisationId String
-  shareWellbeing Boolean      @default(true)
-  shareNeeds     Boolean      @default(true)
+  shareWellbeing Boolean      @default(false)
+  shareNeeds     Boolean      @default(false)
   shareProgress  Boolean      @default(false)
   joinedAt       DateTime     @default(now())
   caregiver      Caregiver    @relation(fields: [caregiverId], references: [id], onDelete: Cascade)

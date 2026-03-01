@@ -1203,6 +1203,25 @@ export default function ProfielPage() {
               </svg>
             </Link>
 
+            <a
+              href="/api/user/export"
+              download
+              className="w-full flex items-center gap-3 p-3 rounded-xl border-2 border-[var(--border)] hover:border-[var(--primary)] transition-colors text-left"
+            >
+              <div className="w-10 h-10 bg-[var(--primary-bg)] rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 text-[var(--primary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="font-medium text-foreground">Mijn gegevens downloaden</p>
+                <p className="text-xs text-muted-foreground">Download al je gegevens als JSON (AVG Art. 20)</p>
+              </div>
+              <svg className="w-5 h-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
+
             <button
               onClick={() => setShowDeleteConfirm(true)}
               className="w-full flex items-center gap-3 p-3 rounded-xl border-2 border-red-200 hover:border-red-400 transition-colors text-left"

@@ -317,8 +317,8 @@ model AnonCaregiverOrganisation {
   organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 
   // Toestemming voor data delen
-  shareWellbeing Boolean @default(true)
-  shareNeeds     Boolean @default(true)
+  shareWellbeing Boolean @default(false)
+  shareNeeds     Boolean @default(false)
   shareProgress  Boolean @default(false)
 
   joinedAt       DateTime @default(now())
