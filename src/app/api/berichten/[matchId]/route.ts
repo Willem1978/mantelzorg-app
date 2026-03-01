@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { sendNieuwBerichtEmail } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
 
@@ -122,7 +123,7 @@ export async function POST(
       where: { id: matchId },
       include: {
         buddy: { select: { userId: true, voornaam: true } },
-        caregiver: { select: { userId: true, user: { select: { name: true } } } },
+        caregiver: { select: { userId: true, user: { select: { name: true, email: true } } } },
       },
     })
 
@@ -178,6 +179,33 @@ export async function POST(
 
       return b
     })
+
+    // Email notificatie (alleen als ontvanger geen recente ongelezen berichten heeft)
+    const ontvangerId = isBuddy ? match.caregiver.userId : match.buddy.userId
+    if (ontvangerId) {
+      const ongelezen = await prisma.bericht.count({
+        where: {
+          matchId,
+          afzenderId: session.user.id,
+          isGelezen: false,
+        },
+      })
+      // Stuur alleen email bij het eerste ongelezen bericht (niet bij elk volgend)
+      if (ongelezen <= 1) {
+        const afzenderNaam = isBuddy ? match.buddy.voornaam : (match.caregiver.user?.name?.split(" ")[0] || "Mantelzorger")
+        const ontvangerEmail = isBuddy ? match.caregiver.user?.email : match.buddy.userId
+          ? await prisma.user.findUnique({ where: { id: match.buddy.userId }, select: { email: true } }).then(u => u?.email)
+          : null
+        const ontvangerNaam = isBuddy
+          ? (match.caregiver.user?.name?.split(" ")[0] || "Mantelzorger")
+          : match.buddy.voornaam
+        const preview = body.inhoud.trim().substring(0, 100)
+
+        if (ontvangerEmail) {
+          sendNieuwBerichtEmail(ontvangerEmail, ontvangerNaam, afzenderNaam, preview).catch(() => {})
+        }
+      }
+    }
 
     return NextResponse.json({ bericht })
   } catch (error) {

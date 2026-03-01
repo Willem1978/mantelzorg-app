@@ -625,14 +625,12 @@ function MijnHulpvragen({ taken, onRefresh }: { taken: BuddyTaak[]; onRefresh?: 
                               </div>
                             )}
 
-                            {/* Chat link na acceptatie */}
-                            {reactie.status === "GEACCEPTEERD" && (
+                            {/* Wacht op bevestiging buddy */}
+                            {reactie.status === "GEACCEPTEERD" && taak.status === "TOEGEWEZEN" && (
                               <div className="pl-9">
-                                <Link href={`/chat?buddy=${reactie.buddy.voornaam}`}>
-                                  <Button size="sm" variant="outline">
-                                    💬 {c.mijnVragen.chatOpenen}
-                                  </Button>
-                                </Link>
+                                <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                                  Wacht op bevestiging van {reactie.buddy.voornaam}...
+                                </span>
                               </div>
                             )}
                           </div>

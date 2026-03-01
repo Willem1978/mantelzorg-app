@@ -72,6 +72,7 @@ export default function BuddyDashboardPage() {
   const [error, setError] = useState<string | null>(null)
   const [reageerBezig, setReageerBezig] = useState<string | null>(null)
   const [reageerBericht, setReageerBericht] = useState<Record<string, string>>({})
+  const [bevestigBezig, setBevestigBezig] = useState<string | null>(null)
 
   const hasFetched = useRef(false)
 
@@ -147,6 +148,33 @@ export default function BuddyDashboardPage() {
       setError(err instanceof Error ? err.message : "Er ging iets mis")
     } finally {
       setReageerBezig(null)
+    }
+  }
+
+  // Bevestig of wijs match af (double opt-in stap 2)
+  const handleBevestig = async (matchId: string, actie: "bevestig" | "afwijzen") => {
+    setBevestigBezig(matchId)
+    try {
+      const res = await fetch(`/api/buddys/matches/${matchId}/bevestig`, {
+        method: actie === "bevestig" ? "POST" : "DELETE",
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Actie mislukt")
+      }
+
+      // Update lokale state
+      if (actie === "bevestig") {
+        setMatches((prev) =>
+          prev.map((m) => (m.id === matchId ? { ...m, status: "ACTIEF" } : m))
+        )
+      } else {
+        setMatches((prev) => prev.filter((m) => m.id !== matchId))
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Er ging iets mis")
+    } finally {
+      setBevestigBezig(null)
     }
   }
 
@@ -366,9 +394,11 @@ export default function BuddyDashboardPage() {
                           "text-xs font-medium px-2 py-0.5 rounded-full",
                           match.status === "ACTIEF"
                             ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                            : match.status === "CAREGIVER_AKKOORD"
+                            ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
                             : "bg-gray-100 text-gray-600 dark:bg-gray-800/30 dark:text-gray-400"
                         )}>
-                          {match.status === "ACTIEF" ? "Actief" : match.status}
+                          {match.status === "ACTIEF" ? "Actief" : match.status === "CAREGIVER_AKKOORD" ? "Bevestig match" : match.status}
                         </span>
                       </div>
                     </div>
@@ -399,12 +429,31 @@ export default function BuddyDashboardPage() {
                     </div>
                   )}
 
-                  <Link
-                    href={`/chat/${match.id}`}
-                    className="block w-full py-2.5 text-center rounded-lg text-sm font-medium bg-secondary text-foreground hover:bg-secondary/80 transition-colors"
-                  >
-                    💬 Chat openen
-                  </Link>
+                  {match.status === "CAREGIVER_AKKOORD" ? (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleBevestig(match.id, "bevestig")}
+                        disabled={bevestigBezig === match.id}
+                        className="flex-1 py-2.5 text-center rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                      >
+                        {bevestigBezig === match.id ? "Bezig..." : "Bevestig match"}
+                      </button>
+                      <button
+                        onClick={() => handleBevestig(match.id, "afwijzen")}
+                        disabled={bevestigBezig === match.id}
+                        className="py-2.5 px-4 text-center rounded-lg text-sm font-medium bg-secondary text-muted-foreground hover:bg-secondary/80 transition-colors disabled:opacity-50"
+                      >
+                        Afwijzen
+                      </button>
+                    </div>
+                  ) : (
+                    <Link
+                      href={`/chat/${match.id}`}
+                      className="block w-full py-2.5 text-center rounded-lg text-sm font-medium bg-secondary text-foreground hover:bg-secondary/80 transition-colors"
+                    >
+                      💬 Chat openen
+                    </Link>
+                  )}
                 </div>
               ))
             )}

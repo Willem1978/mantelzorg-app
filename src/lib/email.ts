@@ -268,6 +268,129 @@ export async function sendCheckInReminderEmail(
   })
 }
 
+// --- Buddy matching emails ---
+
+export async function sendBuddyReactieEmail(
+  email: string,
+  mantelzorgerNaam: string,
+  buddyNaam: string,
+  taakTitel: string,
+): Promise<boolean> {
+  const marktplaatsUrl = `${BASE_URL}/marktplaats`
+
+  return sendEmail({
+    to: email,
+    subject: `Nieuwe reactie op je hulpvraag - ${APP_NAME}`,
+    html: emailWrapper(`
+      <h1 style="font-size:20px; color:#111827; margin:0 0 8px;">
+        Hoi ${mantelzorgerNaam}!
+      </h1>
+      <p style="font-size:15px; color:#4b5563; line-height:1.6; margin:0 0 16px;">
+        <strong>${buddyNaam}</strong> wil je helpen met <strong>&ldquo;${taakTitel}&rdquo;</strong>.
+      </p>
+      <p style="font-size:15px; color:#4b5563; line-height:1.6; margin:0 0 24px;">
+        Bekijk het profiel en kies of je deze buddy wilt accepteren.
+      </p>
+      <div style="text-align:center; margin:24px 0;">
+        <a href="${marktplaatsUrl}" style="display:inline-block; padding:14px 32px; background:#2C7A7B; color:white; text-decoration:none; border-radius:12px; font-weight:600; font-size:16px;">
+          Bekijk reactie
+        </a>
+      </div>
+    `),
+    text: `${buddyNaam} wil je helpen met "${taakTitel}". Bekijk de reactie: ${marktplaatsUrl}`,
+  })
+}
+
+export async function sendMatchBevestigEmail(
+  email: string,
+  buddyNaam: string,
+  taakTitel: string,
+): Promise<boolean> {
+  const dashboardUrl = `${BASE_URL}/buddy/dashboard`
+
+  return sendEmail({
+    to: email,
+    subject: `Je bent gekozen als buddy! - ${APP_NAME}`,
+    html: emailWrapper(`
+      <h1 style="font-size:20px; color:#111827; margin:0 0 8px;">
+        Goed nieuws, ${buddyNaam}!
+      </h1>
+      <p style="font-size:15px; color:#4b5563; line-height:1.6; margin:0 0 16px;">
+        Je bent gekozen voor de hulpvraag <strong>&ldquo;${taakTitel}&rdquo;</strong>.
+      </p>
+      <p style="font-size:15px; color:#4b5563; line-height:1.6; margin:0 0 24px;">
+        Bevestig de match om te beginnen met helpen. Na bevestiging kun je chatten met de mantelzorger.
+      </p>
+      <div style="text-align:center; margin:24px 0;">
+        <a href="${dashboardUrl}" style="display:inline-block; padding:14px 32px; background:#2C7A7B; color:white; text-decoration:none; border-radius:12px; font-weight:600; font-size:16px;">
+          Bevestig de match
+        </a>
+      </div>
+    `),
+    text: `Je bent gekozen voor "${taakTitel}". Bevestig de match: ${dashboardUrl}`,
+  })
+}
+
+export async function sendMatchActiefEmail(
+  email: string,
+  mantelzorgerNaam: string,
+  buddyNaam: string,
+): Promise<boolean> {
+  const marktplaatsUrl = `${BASE_URL}/marktplaats`
+
+  return sendEmail({
+    to: email,
+    subject: `Match bevestigd! - ${APP_NAME}`,
+    html: emailWrapper(`
+      <h1 style="font-size:20px; color:#111827; margin:0 0 8px;">
+        Hoi ${mantelzorgerNaam}!
+      </h1>
+      <p style="font-size:15px; color:#4b5563; line-height:1.6; margin:0 0 16px;">
+        <strong>${buddyNaam}</strong> heeft de match bevestigd. Jullie kunnen nu chatten!
+      </p>
+      <div style="text-align:center; margin:24px 0;">
+        <a href="${marktplaatsUrl}" style="display:inline-block; padding:14px 32px; background:#2C7A7B; color:white; text-decoration:none; border-radius:12px; font-weight:600; font-size:16px;">
+          Open de chat
+        </a>
+      </div>
+    `),
+    text: `${buddyNaam} heeft de match bevestigd! Open de chat: ${marktplaatsUrl}`,
+  })
+}
+
+export async function sendNieuwBerichtEmail(
+  email: string,
+  ontvangerNaam: string,
+  afzenderNaam: string,
+  berichtPreview: string,
+): Promise<boolean> {
+  const dashboardUrl = `${BASE_URL}/dashboard`
+
+  return sendEmail({
+    to: email,
+    subject: `Nieuw bericht van ${afzenderNaam} - ${APP_NAME}`,
+    html: emailWrapper(`
+      <h1 style="font-size:20px; color:#111827; margin:0 0 8px;">
+        Hoi ${ontvangerNaam}!
+      </h1>
+      <p style="font-size:15px; color:#4b5563; line-height:1.6; margin:0 0 16px;">
+        <strong>${afzenderNaam}</strong> heeft je een bericht gestuurd:
+      </p>
+      <div style="background:#f9fafb; border-left:4px solid #2C7A7B; padding:12px 16px; border-radius:0 8px 8px 0; margin:0 0 20px;">
+        <p style="font-size:14px; color:#374151; margin:0; line-height:1.5; font-style:italic;">
+          &ldquo;${berichtPreview}&rdquo;
+        </p>
+      </div>
+      <div style="text-align:center; margin:24px 0;">
+        <a href="${dashboardUrl}" style="display:inline-block; padding:14px 32px; background:#2C7A7B; color:white; text-decoration:none; border-radius:12px; font-weight:600; font-size:16px;">
+          Bekijk bericht
+        </a>
+      </div>
+    `),
+    text: `${afzenderNaam}: "${berichtPreview}". Bekijk het bericht: ${dashboardUrl}`,
+  })
+}
+
 export async function sendAlarmNotificationEmail(
   email: string,
   gemeenteNaam: string,
