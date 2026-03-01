@@ -60,7 +60,8 @@ export async function POST(request: NextRequest) {
         }
       })
 
-      // Create caregiver profile with all info
+      // Create caregiver profile with all info + consent timestamps
+      const now = new Date()
       const caregiver = await tx.caregiver.create({
         data: {
           userId: user.id,
@@ -76,6 +77,10 @@ export async function POST(request: NextRequest) {
           careRecipientMunicipality: data.careRecipientMunicipality || null,
           intakeCompleted: false,
           profileCompleted: !!(data.postalCode && data.careRecipientName),
+          // AVG consent timestamps
+          privacyConsentAt: body.privacyConsent ? now : null,
+          dataProcessingConsentAt: body.dataProcessingConsent ? now : null,
+          healthDataConsentAt: body.healthDataConsent ? now : null,
         }
       })
 

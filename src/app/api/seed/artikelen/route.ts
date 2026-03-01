@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 import { artikelInhoud } from "@/data/artikel-inhoud"
 import { artikelInhoud2 } from "@/data/artikel-inhoud-2"
 
@@ -9,19 +9,19 @@ const alleInhoud: Record<string, string> = { ...artikelInhoud, ...artikelInhoud2
 export const maxDuration = 60
 
 export async function POST(request: Request) {
+  // Alleen admins mogen seeden
+  const session = await auth()
+  if (!session?.user?.id || session.user.role !== "ADMIN") {
+    return NextResponse.json(
+      { error: "Alleen beheerders kunnen seeden" },
+      { status: 403 }
+    )
+  }
+
   const results: string[] = []
 
   try {
-    // 1. Admin user
-    const adminPassword = await bcrypt.hash("Wessel03!", 12)
-    await prisma.user.upsert({
-      where: { email: "w.veenendaal@livelife.nl" },
-      create: { email: "w.veenendaal@livelife.nl", name: "Willem Veenendaal", password: adminPassword, role: "ADMIN" },
-      update: { password: adminPassword, role: "ADMIN" },
-    })
-    results.push("Admin user created")
-
-    // 2. Intake categories + questions
+    // 1. Intake categories + questions (admin user wordt NIET meer aangemaakt)
     const categories = [
       { name: "Zorgsituatie", description: "Vragen over je huidige zorgsituatie", order: 1, questions: [
         { id: "q1", question: "Ik heb een goed overzicht van alle zorgtaken die ik uitvoer", order: 1 },

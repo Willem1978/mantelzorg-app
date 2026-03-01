@@ -33,6 +33,7 @@ export default function RegisterPage() {
     // Privacy
     privacyConsent: false,
     dataProcessingConsent: false,
+    healthDataConsent: false,
   })
 
   // Valideer telefoonnummer: moet beginnen met 06 en 10 cijfers hebben
@@ -113,7 +114,7 @@ export default function RegisterPage() {
       return
     }
 
-    if (!formData.privacyConsent || !formData.dataProcessingConsent) {
+    if (!formData.privacyConsent || !formData.dataProcessingConsent || !formData.healthDataConsent) {
       setError(c.errors.voorwaardenVerplicht)
       return
     }
@@ -149,6 +150,7 @@ export default function RegisterPage() {
           // Privacy
           privacyConsent: formData.privacyConsent,
           dataProcessingConsent: formData.dataProcessingConsent,
+          healthDataConsent: formData.healthDataConsent,
         }),
       })
 
@@ -441,6 +443,22 @@ export default function RegisterPage() {
                     />
                     <span className="text-sm text-foreground">
                       {c.privacy.gegevensGebruik}
+                    </span>
+                  </label>
+
+                  <label className="flex items-start gap-3 cursor-pointer p-4 rounded-xl border-2 border-primary/20 bg-primary/5 hover:border-primary/40 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={formData.healthDataConsent}
+                      onChange={(e) => setFormData({ ...formData, healthDataConsent: e.target.checked })}
+                      className="mt-0.5 h-5 w-5 text-primary rounded border-border focus:ring-primary"
+                    />
+                    <span className="text-sm text-foreground">
+                      Ik geef toestemming voor het verwerken van mijn{" "}
+                      <strong>gezondheidsgegevens</strong> (welzijnsscores, balanstest resultaten en zorgtaken).
+                      <span className="text-muted-foreground block mt-1 text-xs">
+                        Dit zijn bijzondere persoonsgegevens (Art. 9 AVG). Je kunt deze toestemming altijd intrekken via je profiel.
+                      </span>
                     </span>
                   </label>
                 </div>

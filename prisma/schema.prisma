@@ -122,6 +122,10 @@ model Caregiver {
   profileCompleted          Boolean                 @default(false)
   street                    String?
   gelezenNieuws             Json?                   // Array van gelezen gemeente-nieuws IDs
+  // AVG consent tracking
+  privacyConsentAt          DateTime?               // Tijdstip privacy toestemming
+  dataProcessingConsentAt   DateTime?               // Tijdstip gegevensverwerking toestemming
+  healthDataConsentAt       DateTime?               // Tijdstip gezondheidsdata toestemming (Art. 9 AVG)
   belastbaarheidTests       BelastbaarheidTest[]
   calendarEvents            CalendarEvent[]
   user                      User                    @relation(fields: [userId], references: [id], onDelete: Cascade)

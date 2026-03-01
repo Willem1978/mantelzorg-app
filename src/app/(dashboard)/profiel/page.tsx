@@ -253,13 +253,13 @@ export default function ProfielPage() {
           }))
         }
       } catch {
-        // Fall back to localStorage
+        // Fall back to sessionStorage
       }
     }
     loadProfile()
 
-    // Laad test resultaten uit localStorage (voor weergave)
-    const testResult = localStorage.getItem("belastbaarheidstest_result")
+    // Laad test resultaten uit sessionStorage (voor weergave, wist bij tab sluiten)
+    const testResult = sessionStorage.getItem("belastbaarheidstest_result")
     if (testResult) {
       try {
         const parsed = JSON.parse(testResult)
@@ -320,8 +320,8 @@ export default function ProfielPage() {
 
       if (!res.ok) throw new Error("API error")
 
-      // Update ook localStorage voor offline toegang
-      const testResult = localStorage.getItem("belastbaarheidstest_result")
+      // Update ook sessionStorage voor gezondheidsdata (wist bij tab sluiten)
+      const testResult = sessionStorage.getItem("belastbaarheidstest_result")
       if (testResult) {
         const parsed = JSON.parse(testResult)
         parsed.gegevens = {
@@ -331,10 +331,10 @@ export default function ProfielPage() {
           mantelzorgerStraat: profile.adres,
           zorgvragerStraat: profile.naasteAdres,
         }
-        localStorage.setItem("belastbaarheidstest_result", JSON.stringify(parsed))
+        sessionStorage.setItem("belastbaarheidstest_result", JSON.stringify(parsed))
       }
 
-      localStorage.setItem("naaste_gegevens", JSON.stringify({
+      sessionStorage.setItem("naaste_gegevens", JSON.stringify({
         naam: profile.naasteNaam,
         relatie: profile.naasteRelatie,
       }))
@@ -387,11 +387,11 @@ export default function ProfielPage() {
   const handleLogout = async () => {
     setIsLoggingOut(true)
     try {
-      localStorage.removeItem("belastbaarheidstest_result")
-      localStorage.removeItem("intake_answers")
-      localStorage.removeItem("intake_scores")
-      localStorage.removeItem("intake_completed")
-      localStorage.removeItem("naaste_gegevens")
+      sessionStorage.removeItem("belastbaarheidstest_result")
+      sessionStorage.removeItem("intake_answers")
+      sessionStorage.removeItem("intake_scores")
+      sessionStorage.removeItem("intake_completed")
+      sessionStorage.removeItem("naaste_gegevens")
 
       await signOut({ redirect: false })
       router.push("/")
@@ -406,6 +406,7 @@ export default function ProfielPage() {
       const res = await fetch("/api/user/delete", { method: "DELETE" })
       if (res.ok) {
         // Wis lokale data
+        sessionStorage.clear()
         localStorage.clear()
         await signOut({ redirect: false })
         router.push("/")

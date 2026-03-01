@@ -1,9 +1,18 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 
 export const maxDuration = 60
 
 export async function POST(request: Request) {
+  const session = await auth()
+  if (!session?.user?.id || session.user.role !== "ADMIN") {
+    return NextResponse.json(
+      { error: "Alleen beheerders kunnen seeden" },
+      { status: 403 }
+    )
+  }
+
   const results: string[] = []
 
   try {
