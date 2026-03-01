@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
-import { ResultSmiley } from "@/components/ui"
+import { ResultSmiley, GerPageIntro } from "@/components/ui"
 import { PdfDownloadButton } from "@/components/PdfDownloadButton"
 import { useRapportContent } from "@/hooks/useRapportContent"
 import { berekenDeelgebieden } from "@/lib/dashboard/deelgebieden"
@@ -222,17 +222,16 @@ export default function RapportPage() {
 
   return (
     <div className="ker-page-content">
+      <GerPageIntro tekst="Hier zie je jouw testresultaten en voortgang. Ik help je begrijpen wat het betekent. Wat kan ik voor jou doen?" />
+
       {/* Header */}
-      <div className="flex items-start gap-4 mb-6">
-        <GerAvatar size="md" animate />
-        <div className="pt-1">
-          <h1 className="text-xl font-bold text-foreground">
-            {c.header.greeting(result.voornaam)}
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            {c.header.resultatenVan(new Date(result.completedAt).toLocaleDateString("nl-NL", { day: "numeric", month: "long" }))}
-          </p>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-xl font-bold text-foreground">
+          {c.header.greeting(result.voornaam)}
+        </h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          {c.header.resultatenVan(new Date(result.completedAt).toLocaleDateString("nl-NL", { day: "numeric", month: "long" }))}
+        </p>
       </div>
 
       {/* ============================================ */}

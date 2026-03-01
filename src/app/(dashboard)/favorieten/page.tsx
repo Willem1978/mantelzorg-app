@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { cn, ensureAbsoluteUrl } from "@/lib/utils"
 import Link from "next/link"
 import { favorietenContent } from "@/config/content"
+import { GerPageIntro } from "@/components/ui"
 import { ContentModal } from "@/components/ui/ContentModal"
 
 const c = favorietenContent
@@ -158,6 +159,8 @@ export default function FavorietenPage() {
 
   return (
     <div className="ker-page-content pb-24">
+      <GerPageIntro tekst="Hier vind je alles wat je hebt opgeslagen. Zo kun je het makkelijk terugvinden. Wat kan ik voor jou doen?" />
+
       {/* Header - compact */}
       <div className="mb-4">
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">

@@ -8,6 +8,7 @@ import { FavorietButton } from "@/components/FavorietButton"
 import { ContentModal } from "@/components/ui/ContentModal"
 import { hulpvragenContent } from "@/config/content"
 import { ZORGTAKEN } from "@/config/options"
+import { GerPageIntro } from "@/components/ui"
 
 const c = hulpvragenContent
 
@@ -725,6 +726,8 @@ function HulpPageContent() {
 
   return (
     <div className="ker-page-content">
+      <GerPageIntro tekst="Hier vind je hulp bij jouw zorgtaken. Ik laat je zien welke organisaties en diensten er voor jou zijn. Wat kan ik voor jou doen?" />
+
       {/* Header - compact */}
       <div className="mb-4">
         <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">

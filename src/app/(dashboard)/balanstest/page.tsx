@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
+import { GerPageIntro } from "@/components/ui"
 import { PdfDownloadButton } from "@/components/PdfDownloadButton"
 import { balanstestContent } from "@/config/content"
 
@@ -100,15 +101,14 @@ export default function BalanstestOverzichtPage() {
 
   return (
     <div className="ker-page-content">
+      <GerPageIntro tekst="Hier vind je jouw balanstesten. Je kunt een nieuwe test doen of je eerdere resultaten bekijken. Wat kan ik voor jou doen?" />
+
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <GerAvatar size="lg" />
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{c.title}</h1>
-          <p className="text-muted-foreground mt-1">
-            {hasTests ? c.subtitle : c.intro}
-          </p>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-foreground">{c.title}</h1>
+        <p className="text-muted-foreground mt-1">
+          {hasTests ? c.subtitle : c.intro}
+        </p>
       </div>
 
       {/* Nieuwe test knop */}

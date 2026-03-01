@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
-import { SmileyGroup, ResultSmiley } from "@/components/ui"
+import { SmileyGroup, ResultSmiley, GerPageIntro } from "@/components/ui"
 import { useToast } from "@/components/ui/Toast"
 import { AgentChat } from "@/components/ai/AgentChat"
 import { PdfDownloadButton } from "@/components/PdfDownloadButton"
@@ -663,13 +663,12 @@ export default function CheckInPage() {
 
   return (
     <div className="ker-page-content">
+      <GerPageIntro tekst="Hier houd je bij hoe het met je gaat. Je kunt een check-in doen en je balanstest bekijken. Wat kan ik voor jou doen?" />
+
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <GerAvatar size="lg" />
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Mijn welzijn</h1>
-          <p className="text-muted-foreground mt-1">Houd bij hoe het met je gaat</p>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-foreground">Mijn welzijn</h1>
+        <p className="text-muted-foreground mt-1">Houd bij hoe het met je gaat</p>
       </div>
 
       {/* Tab navigatie */}

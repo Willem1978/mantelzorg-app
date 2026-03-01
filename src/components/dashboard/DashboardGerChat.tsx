@@ -64,7 +64,6 @@ function buildProactiveActions(ctx: GerChatContext): { label: string; emoji: str
   const actions: { label: string; emoji: string; action: string }[] = []
 
   if (ctx.isFirstVisit || !ctx.hasProfile) {
-    // Eerste bezoek / geen profiel
     actions.push({ label: "Wat kan ik hier doen?", emoji: "💡", action: "vraag" })
     actions.push({ label: "Maak mijn profiel aan", emoji: "👤", action: "/profiel" })
     actions.push({ label: "Start de balanstest", emoji: "📊", action: "/belastbaarheidstest" })
@@ -74,10 +73,10 @@ function buildProactiveActions(ctx: GerChatContext): { label: string; emoji: str
   if (!ctx.hasTest) {
     actions.push({ label: "Start de balanstest", emoji: "📊", action: "/belastbaarheidstest" })
     actions.push({ label: "Wat is de balanstest?", emoji: "❓", action: "vraag" })
+    actions.push({ label: "Geef me een tip", emoji: "💡", action: "vraag" })
     return actions
   }
 
-  // Heeft test - context-afhankelijke acties
   if (ctx.zwareTaken && ctx.zwareTaken > 0) {
     actions.push({ label: "Help me met mijn zware taken", emoji: "🤝", action: "vraag" })
   }
@@ -105,21 +104,20 @@ function buildGreetingMessage(ctx: GerChatContext): string {
   const naam = ctx.userName || "daar"
 
   if (ctx.isFirstVisit || !ctx.hasProfile) {
-    return `${greeting} ${naam}! 👋\n\nWelkom bij MantelBuddy. Ik ben Ger, je persoonlijke mantelzorgcoach. Ik help je om beter voor jezelf te zorgen terwijl je voor een ander zorgt.\n\nJe kunt me alles vragen over mantelzorg, hulp in je buurt, of hoe je beter voor jezelf kunt zorgen.`
+    return `${greeting} ${naam}! Welkom bij MantelBuddy. Ik ben Ger, je persoonlijke mantelzorgcoach. Wat kan ik voor jou doen?\n\nIk help je om beter voor jezelf te zorgen terwijl je voor een ander zorgt. Je kunt me alles vragen over mantelzorg, hulp in je buurt, of hoe je beter voor jezelf kunt zorgen.`
   }
 
   if (!ctx.hasTest) {
-    return `${greeting} ${naam}! 👋\n\nFijn dat je er bent. Je hebt nog geen balanstest gedaan. Met de test ontdek je hoe het met je gaat en waar je hulp bij kunt krijgen. Het duurt maar 5 minuten.`
+    return `${greeting} ${naam}! Fijn dat je er bent. Wat kan ik voor jou doen?\n\nJe hebt nog geen balanstest gedaan. Met de test ontdek je hoe het met je gaat en waar je hulp bij kunt krijgen. Het duurt maar 5 minuten.`
   }
 
-  // Heeft test resultaten
   if (ctx.niveau === "HOOG") {
-    return `${greeting} ${naam}. ❤️\n\nIk zie dat je veel op je bordje hebt. Dat is zwaar. Weet dat je er niet alleen voor staat — ik help je graag om hulp te vinden.`
+    return `${greeting} ${naam}. Ik zie dat je veel op je bordje hebt. Wat kan ik voor jou doen?\n\nDat is zwaar. Weet dat je er niet alleen voor staat — ik help je graag om hulp te vinden.`
   }
   if (ctx.niveau === "GEMIDDELD") {
-    return `${greeting} ${naam}! 🧡\n\nJe doet heel veel. Vergeet niet ook goed voor jezelf te zorgen. Kan ik je ergens mee helpen?`
+    return `${greeting} ${naam}! Je doet heel veel. Wat kan ik voor jou doen?\n\nVergeet niet ook goed voor jezelf te zorgen.`
   }
-  return `${greeting} ${naam}! 💚\n\nGoed bezig! Je houdt het goed vol. Heb je vragen of kan ik ergens mee helpen?`
+  return `${greeting} ${naam}! Goed bezig, je houdt het goed vol. Wat kan ik voor jou doen?`
 }
 
 export function DashboardGerChat({ context }: { context?: GerChatContext }) {
@@ -157,7 +155,6 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
   const isLoading = status === "submitted" || status === "streaming"
   const hasMessages = messages.length > 0
 
-  // Scroll naar beneden bij nieuwe berichten — maar alleen binnen de chatcontainer
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
@@ -174,15 +171,6 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
     e.preventDefault()
     handleSend(input)
   }
-
-  const handleActionClick = useCallback((action: string) => {
-    if (action.startsWith("/")) {
-      router.push(action)
-    } else {
-      // "vraag" type — stuur als chat bericht
-      handleSend(action === "vraag" ? "Wat kan ik hier doen?" : action)
-    }
-  }, [router, handleSend])
 
   const handleButtonClick = useCallback((button: ParsedButton) => {
     if (button.type === "knop") {
@@ -202,211 +190,191 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
   }
 
   return (
-    <div className="flex flex-col bg-card border border-border rounded-2xl shadow-sm overflow-hidden" style={{ height: "calc(100vh - 10rem)" }}>
-      {/* Header met Ger — compact */}
-      <div className="flex items-center gap-3 px-4 py-2.5 bg-gradient-to-r from-primary/5 to-transparent border-b border-border flex-shrink-0">
-        <GerAvatar size="sm" className="!w-9 !h-9" animate />
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-foreground text-sm">Ger</p>
-          <p className="text-xs text-muted-foreground">Je mantelzorgcoach</p>
+    <div className="flex flex-col">
+      {/* Ger intro — prominent, onderdeel van de pagina */}
+      <div className="flex items-start gap-3 mb-2">
+        <GerAvatar size="sm" className="!w-12 !h-12 mt-1" animate />
+        <div className="flex-1">
+          <div className="flex items-baseline gap-2 mb-1">
+            <p className="font-semibold text-foreground">Ger</p>
+            <span className="text-xs text-muted-foreground">je mantelzorgcoach</span>
+          </div>
+          <div className="bg-primary/5 border border-primary/10 rounded-2xl rounded-tl-md px-4 py-3">
+            <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
+              {formatMessage(greetingMessage)}
+            </div>
+          </div>
         </div>
-        <Link
-          href="/ai-assistent"
-          className="text-xs text-primary hover:underline flex-shrink-0"
-        >
-          Volledig gesprek
-        </Link>
       </div>
 
-      {/* Chat berichten — scrollbaar */}
-      <div
-        ref={chatContainerRef}
-        className="flex-1 overflow-y-auto px-4 py-4 space-y-3"
-      >
-        {/* Ger begroeting — altijd als eerste bericht */}
-        <div className="flex gap-2 items-start">
-          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <span className="text-xs">💚</span>
-          </div>
-          <div className="max-w-[85%] flex flex-col gap-1.5">
-            <div className="rounded-2xl p-3 shadow-sm bg-primary/5 border border-primary/10 rounded-tl-md">
-              <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
-                {formatMessage(greetingMessage)}
-              </div>
-            </div>
-
-            {/* Proactieve acties — alleen tonen als er nog geen chat berichten zijn */}
-            {!hasMessages && proactiveActions.length > 0 && (
-              <div className="flex flex-col gap-1.5 w-full">
-                {proactiveActions.map((action, i) => (
-                  <button
-                    key={i}
-                    onClick={() => {
-                      if (action.action.startsWith("/")) {
-                        router.push(action.action)
-                      } else {
-                        handleSend(action.label)
-                      }
-                    }}
-                    className="flex items-center gap-2.5 w-full p-2.5 rounded-xl border border-border bg-background hover:bg-secondary/50 hover:border-primary/30 transition-all text-left text-sm"
-                  >
-                    <span className="text-lg flex-shrink-0">{action.emoji}</span>
-                    <span className="text-foreground flex-1">{action.label}</span>
-                    {action.action.startsWith("/") ? (
-                      <svg className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                      </svg>
-                    ) : (
-                      <svg className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
+      {/* Snelkeuze opties — duidelijk en groot */}
+      {!hasMessages && proactiveActions.length > 0 && (
+        <div className="ml-15 pl-[3.75rem] mb-4">
+          <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Kies een optie of typ je vraag</p>
+          <div className="grid gap-2">
+            {proactiveActions.map((action, i) => (
+              <button
+                key={i}
+                onClick={() => {
+                  if (action.action.startsWith("/")) {
+                    router.push(action.action)
+                  } else {
+                    handleSend(action.label)
+                  }
+                }}
+                className="flex items-center gap-3 w-full p-3 rounded-xl border-2 border-border bg-card hover:bg-primary/5 hover:border-primary/30 transition-all text-left group"
+              >
+                <span className="text-xl flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">{action.emoji}</span>
+                <span className="text-sm font-medium text-foreground flex-1">{action.label}</span>
+                <svg className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            ))}
           </div>
         </div>
+      )}
 
-        {/* Echte chat berichten */}
-        {messages.map((message) => {
-          const rawText = getMessageText(message)
-          if (!rawText) return null
+      {/* Chat berichten — alleen als er berichten zijn */}
+      {hasMessages && (
+        <div
+          ref={chatContainerRef}
+          className="overflow-y-auto space-y-3 mb-4 max-h-[50vh]"
+        >
+          {messages.map((message) => {
+            const rawText = getMessageText(message)
+            if (!rawText) return null
 
-          const isAssistant = message.role === "assistant"
-          const { cleanText: textWithoutCards, kaarten } = isAssistant
-            ? parseHulpkaarten(rawText)
-            : { cleanText: rawText, kaarten: [] }
-          const { cleanText, buttons } = isAssistant
-            ? parseButtons(textWithoutCards)
-            : { cleanText: textWithoutCards, buttons: [] }
+            const isAssistant = message.role === "assistant"
+            const { cleanText: textWithoutCards, kaarten } = isAssistant
+              ? parseHulpkaarten(rawText)
+              : { cleanText: rawText, kaarten: [] }
+            const { cleanText, buttons } = isAssistant
+              ? parseButtons(textWithoutCards)
+              : { cleanText: textWithoutCards, buttons: [] }
 
-          return (
-            <div
-              key={message.id}
-              className={cn(
-                "flex gap-2 items-start",
-                message.role === "user" && "flex-row-reverse"
-              )}
-            >
+            return (
               <div
+                key={message.id}
                 className={cn(
-                  "w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0",
-                  message.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-primary/10"
+                  "flex gap-2 items-start",
+                  message.role === "user" && "flex-row-reverse"
                 )}
               >
-                {message.role === "user" ? (
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                ) : (
-                  <span className="text-xs">💚</span>
-                )}
-              </div>
+                <div
+                  className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+                    message.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-primary/10"
+                  )}
+                >
+                  {message.role === "user" ? (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  ) : (
+                    <GerAvatar size="xs" className="!w-8 !h-8" />
+                  )}
+                </div>
 
-              <div className={cn(
-                "max-w-[85%] flex flex-col gap-1.5",
-                message.role === "user" && "items-end"
-              )}>
-                {cleanText && (
-                  <div
-                    className={cn(
-                      "rounded-2xl p-3 shadow-sm",
-                      message.role === "user"
-                        ? "bg-primary text-primary-foreground rounded-tr-md"
-                        : "bg-primary/5 border border-primary/10 rounded-tl-md"
-                    )}
-                  >
-                    <div className={cn(
-                      "text-sm leading-relaxed whitespace-pre-wrap",
-                      message.role === "user" ? "text-primary-foreground" : "text-foreground"
-                    )}>
-                      {formatMessage(cleanText)}
+                <div className={cn(
+                  "max-w-[85%] flex flex-col gap-1.5",
+                  message.role === "user" && "items-end"
+                )}>
+                  {cleanText && (
+                    <div
+                      className={cn(
+                        "rounded-2xl px-4 py-3",
+                        message.role === "user"
+                          ? "bg-primary text-primary-foreground rounded-tr-md"
+                          : "bg-primary/5 border border-primary/10 rounded-tl-md"
+                      )}
+                    >
+                      <div className={cn(
+                        "text-sm leading-relaxed whitespace-pre-wrap",
+                        message.role === "user" ? "text-primary-foreground" : "text-foreground"
+                      )}>
+                        {formatMessage(cleanText)}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {kaarten.length > 0 && (
-                  <div className="flex flex-col gap-1 w-full">
-                    {kaarten.slice(0, 3).map((kaart, i) => (
-                      <HulpKaart key={i} kaart={kaart} />
-                    ))}
-                  </div>
-                )}
+                  {kaarten.length > 0 && (
+                    <div className="flex flex-col gap-1 w-full">
+                      {kaarten.slice(0, 3).map((kaart, i) => (
+                        <HulpKaart key={i} kaart={kaart} />
+                      ))}
+                    </div>
+                  )}
 
-                {buttons.length > 0 && (
-                  <div className="flex flex-col gap-1 w-full">
-                    {buttons.slice(0, 3).map((btn, i) => (
-                      <button
-                        key={i}
-                        onClick={() => handleButtonClick(btn)}
-                        disabled={isLoading}
-                        className={cn(
-                          "flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs transition-all text-left",
-                          "bg-[var(--accent-green-bg)]/60 border border-[var(--accent-green)]/15 text-foreground hover:border-[var(--accent-green)]/30 hover:bg-[var(--accent-green-bg)]",
-                          isLoading && "opacity-50 cursor-not-allowed"
-                        )}
-                      >
-                        <span className="w-5 h-5 rounded-full bg-[var(--accent-green)]/15 text-[var(--accent-green)] flex items-center justify-center text-[10px] font-bold flex-shrink-0">
-                          {i + 1}
-                        </span>
-                        <span className="flex-1 truncate">{btn.label}</span>
-                        {btn.type === "knop" ? (
-                          <svg className="w-3.5 h-3.5 text-[var(--accent-green)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  {buttons.length > 0 && (
+                    <div className="flex flex-col gap-1.5 w-full">
+                      {buttons.slice(0, 3).map((btn, i) => (
+                        <button
+                          key={i}
+                          onClick={() => handleButtonClick(btn)}
+                          disabled={isLoading}
+                          className={cn(
+                            "flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-sm transition-all text-left",
+                            "border-2 border-border bg-card hover:bg-primary/5 hover:border-primary/30",
+                            isLoading && "opacity-50 cursor-not-allowed"
+                          )}
+                        >
+                          <span className="w-6 h-6 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">
+                            {i + 1}
+                          </span>
+                          <span className="flex-1">{btn.label}</span>
+                          <svg className="w-4 h-4 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                           </svg>
-                        ) : (
-                          <svg className="w-3.5 h-3.5 text-[var(--accent-green)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                          </svg>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+
+          {isLoading && (
+            <div className="flex gap-2 items-start">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <GerAvatar size="xs" className="!w-8 !h-8" />
+              </div>
+              <div className="bg-primary/5 border border-primary/10 rounded-2xl rounded-tl-md px-4 py-3">
+                <div className="flex gap-1.5">
+                  <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce [animation-delay:0ms]" />
+                  <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce [animation-delay:150ms]" />
+                  <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce [animation-delay:300ms]" />
+                </div>
               </div>
             </div>
-          )
-        })}
+          )}
 
-        {isLoading && (
-          <div className="flex gap-2 items-start">
-            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <span className="text-xs">💚</span>
+          {error && (
+            <div className="bg-[var(--accent-red-bg)] border border-[var(--accent-red)]/20 rounded-xl p-3">
+              <p className="text-sm text-foreground">
+                Oeps, dat lukte niet. Probeer het nog eens.
+              </p>
             </div>
-            <div className="bg-primary/5 border border-primary/10 rounded-2xl rounded-tl-md p-3">
-              <div className="flex gap-1.5">
-                <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce [animation-delay:0ms]" />
-                <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce [animation-delay:150ms]" />
-                <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce [animation-delay:300ms]" />
-              </div>
-            </div>
-          </div>
-        )}
+          )}
 
-        {error && (
-          <div className="bg-[var(--accent-red-bg)] border border-[var(--accent-red)]/20 rounded-xl p-3">
-            <p className="text-sm text-foreground">
-              Oeps, dat lukte niet. Probeer het nog eens.
-            </p>
-          </div>
-        )}
+          <div ref={messagesEndRef} />
+        </div>
+      )}
 
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Input — altijd onderaan */}
-      <div className="border-t border-border px-4 py-3 flex-shrink-0">
-        <form onSubmit={handleSubmit} className="flex items-center gap-2">
+      {/* Vraag invoer — duidelijk en onderdeel van de pagina */}
+      <div className="bg-card border-2 border-border rounded-2xl px-4 py-3">
+        <form onSubmit={handleSubmit} className="flex items-center gap-3">
+          <GerAvatar size="xs" className="!w-7 !h-7 flex-shrink-0" />
           <input
             ref={inputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Stel Ger een vraag..."
-            className="flex-1 px-3 py-2.5 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+            placeholder="Typ je vraag aan Ger..."
+            className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none text-sm py-1"
             disabled={isLoading}
             autoComplete="off"
           />
@@ -414,19 +382,31 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
             type="submit"
             disabled={isLoading || !input.trim()}
             className={cn(
-              "p-2.5 rounded-xl transition-all flex-shrink-0",
+              "flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all flex-shrink-0",
               input.trim() && !isLoading
                 ? "bg-primary text-primary-foreground hover:opacity-90"
                 : "bg-muted text-muted-foreground"
             )}
-            aria-label="Verstuur"
           >
+            Verstuur
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
           </button>
         </form>
       </div>
+
+      {/* Link naar volledig gesprek */}
+      {hasMessages && (
+        <div className="text-center mt-2">
+          <Link
+            href="/ai-assistent"
+            className="text-xs text-primary hover:underline"
+          >
+            Ga naar volledig gesprek met Ger
+          </Link>
+        </div>
+      )}
     </div>
   )
 }
@@ -438,7 +418,7 @@ function formatMessage(content: string): React.ReactNode {
     if (line.startsWith("- ") || line.startsWith("• ")) {
       return (
         <div key={i} className="flex gap-2 ml-1">
-          <span className="text-primary">•</span>
+          <span className="text-primary">&bull;</span>
           <span dangerouslySetInnerHTML={{ __html: formatted.slice(2) }} />
         </div>
       )

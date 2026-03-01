@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { cn } from "@/lib/utils"
 import { ZORGTAKEN, HULPVORM_LABELS, HULPVORM_LABELS_LEGACY } from "@/config/options"
 import { BuddyKaart, type BuddyOpKaart } from "@/components/BuddyKaart"
+import { GerPageIntro } from "@/components/ui"
 import Link from "next/link"
 
 // ============================================
@@ -175,6 +176,8 @@ export default function BuddysPage() {
 
   return (
     <div className="ker-page-content">
+      <GerPageIntro tekst="Hier vind je vrijwilligers (buddy's) die jou willen helpen bij je zorgtaken. Je kunt filteren op wat je nodig hebt. Wat kan ik voor jou doen?" />
+
       {/* Header */}
       <div className="mb-4">
         <h1 className="text-xl font-bold text-foreground">Buddy&apos;s in de buurt</h1>
