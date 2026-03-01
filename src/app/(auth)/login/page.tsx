@@ -40,6 +40,11 @@ function LoginForm() {
       })
 
       if (result?.error) {
+        // NextAuth v5 geeft de error message door vanuit authorize()
+        const errorCode = result.code || result.error
+        if (errorCode?.includes("serverfout") || errorCode?.includes("Kan niet")) {
+          throw new Error("Kan niet verbinden met de server. Controleer of de app goed is geconfigureerd op Vercel.")
+        }
         throw new Error(c.error.invalidCredentials)
       }
 
