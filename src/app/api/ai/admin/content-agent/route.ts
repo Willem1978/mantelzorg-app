@@ -216,7 +216,7 @@ Geef:
 
 // ── Artikel genereren ──────────────────────────────────────────────
 
-async function genereerArtikel(onderwerp: string, categorie?: string, tags?: string[], opslaan = false) {
+async function genereerArtikel(onderwerp: string, categorie?: string, tags?: string[], opslaan = false, status: "VOORSTEL" | "CONCEPT" = "CONCEPT") {
   const anthropic = getAnthropic()
   const [beschikbareCategorieen, subHoofdstukken, beschikbareTags] = await Promise.all([
     haalCategorieen(),
@@ -298,7 +298,7 @@ Het artikel moet:
           categorie: artikel.categorie || "dagelijks-zorgen",
           subHoofdstuk: artikel.subHoofdstuk || null,
           type: "ARTIKEL",
-          status: "CONCEPT",
+          status,
           bron: "AI Content Agent",
           isActief: true,
         },
@@ -744,6 +744,8 @@ async function pasHerschrijvingToe(artikelId: string, data: {
     if (data.titel) updateData.titel = data.titel
     if (data.beschrijving) updateData.beschrijving = data.beschrijving
     if (data.inhoud) updateData.inhoud = data.inhoud
+    // Pipeline: zet status naar HERSCHREVEN
+    updateData.status = "HERSCHREVEN"
 
     if (Object.keys(updateData).length === 0) {
       return { type: "toepassen-herschrijving", status: "geen-wijzigingen" }
@@ -802,22 +804,22 @@ async function hiatenAnalyse() {
 
   // Bouw matrix: categorie × tag → aantal artikelen
   const alleTags = [...beschikbareTags.aandoeningen, ...beschikbareTags.situaties]
-  const matrix: Record<string, Record<string, number>> = {}
+  const rawMatrix: Record<string, Record<string, number>> = {}
 
   for (const cat of categorieen) {
-    matrix[cat] = {}
+    rawMatrix[cat] = {}
     for (const tag of alleTags) {
-      matrix[cat][tag.slug] = 0
+      rawMatrix[cat][tag.slug] = 0
     }
   }
 
   for (const artikel of artikelen) {
     const cat = artikel.categorie
-    if (!matrix[cat]) continue
+    if (!rawMatrix[cat]) continue
     const artikelTagSlugs = artikel.tags.map((at) => at.tag.slug)
     for (const slug of artikelTagSlugs) {
-      if (matrix[cat][slug] !== undefined) {
-        matrix[cat][slug]++
+      if (rawMatrix[cat][slug] !== undefined) {
+        rawMatrix[cat][slug]++
       }
     }
   }
@@ -835,6 +837,23 @@ async function hiatenAnalyse() {
     ).length
   }
 
+  // Tel hiaten (combinaties met 0 artikelen)
+  let aantalHiaten = 0
+  for (const cat of categorieen) {
+    for (const tag of alleTags) {
+      if (rawMatrix[cat][tag.slug] === 0) aantalHiaten++
+    }
+  }
+
+  // Bouw gestructureerde matrix voor frontend
+  const tagSlugs = alleTags.map((t) => t.slug)
+  const tagNamen = alleTags.map((t) => t.naam)
+  const matrixRijen = categorieen.map((cat) => ({
+    categorie: cat,
+    totaal: categorieAantallen[cat],
+    cellen: tagSlugs.map((slug) => rawMatrix[cat][slug] || 0),
+  }))
+
   // Gebruik AI om hiaten te analyseren en prioriteiten voor te stellen
   const { text } = await generateText({
     model: anthropic("claude-sonnet-4-20250514"),
@@ -845,26 +864,36 @@ Je analyseert de dekking van content per categorie en per aandoening/situatie-ta
 ${MANTELZORG_CONTEXT}
 
 Je krijgt een matrix van categorie × tag met aantallen artikelen.
-Analyseer de hiaten en stel prioriteiten voor welke combinaties artikelen nodig hebben.`,
+Analyseer de hiaten en stel prioriteiten voor welke combinaties artikelen nodig hebben.
+
+BELANGRIJK: Geef bij elke prioriteit een concreet artikel-onderwerp, de categorie-slug, en de tag-slug(s).`,
     prompt: `Analyseer de volgende content-dekkingsmatrix:
 
 MATRIX (categorie × tag → aantal artikelen):
-${JSON.stringify(matrix, null, 2)}
+${JSON.stringify(rawMatrix, null, 2)}
 
 TOTALEN PER CATEGORIE: ${JSON.stringify(categorieAantallen)}
 TOTALEN PER TAG: ${JSON.stringify(tagAantallen)}
 TOTAAL ARTIKELEN: ${artikelen.length}
+AANTAL HIATEN (0 artikelen): ${aantalHiaten}
+
+BESCHIKBARE TAG-SLUGS: ${tagSlugs.join(", ")}
 
 Geef:
 1. **Hiaten**: welke categorie × tag combinaties hebben 0 of weinig artikelen?
-2. **Prioriteiten**: top 10 artikelen die geschreven moeten worden (categorie + tag + onderwerp)
-3. **Samenvatting**: hoe evenwichtig is de content-dekking?
+2. **Voorstellen**: top 10 concrete artikelen die geschreven moeten worden. Gebruik dit format:
 
-Antwoord in JSON:
 \`\`\`json
 {
   "hiaten": [{"categorie": "...", "tag": "...", "aantal": 0}],
-  "prioriteiten": [{"categorie": "...", "tag": "...", "onderwerp": "Titel voorstel"}],
+  "voorstellen": [
+    {
+      "onderwerp": "Concreet artikel titel voorstel",
+      "beschrijving": "Korte beschrijving van wat het artikel moet bevatten",
+      "categorie": "categorie-slug",
+      "tags": ["tag-slug-1", "tag-slug-2"]
+    }
+  ],
   "samenvatting": "..."
 }
 \`\`\``,
@@ -878,10 +907,16 @@ Antwoord in JSON:
 
   return {
     type: "hiaten-analyse",
-    matrix,
+    matrix: {
+      tags: tagSlugs,
+      tagNamen,
+      rijen: matrixRijen,
+    },
     categorieAantallen,
     tagAantallen,
     totaalArtikelen: artikelen.length,
+    aantalHiaten,
+    voorstellen: analyse?.voorstellen || [],
     analyse,
     volledigeTekst: text,
   }
@@ -926,6 +961,166 @@ async function batchGenereer(
   }
 }
 
+// ── Voorstellen opslaan als VOORSTEL-artikelen ─────────────────────
+
+async function slaVoorstellenOp(voorstellen: Array<{
+  onderwerp: string
+  beschrijving?: string
+  categorie?: string
+  tags?: string[]
+}>) {
+  const resultaten = []
+  for (const v of voorstellen) {
+    try {
+      const created = await prisma.artikel.create({
+        data: {
+          titel: v.onderwerp,
+          beschrijving: v.beschrijving || v.onderwerp,
+          categorie: v.categorie || "dagelijks-zorgen",
+          type: "ARTIKEL",
+          status: "VOORSTEL",
+          bron: "AI Hiaten-analyse",
+          isActief: true,
+        },
+      })
+
+      // Tags koppelen
+      if (v.tags && v.tags.length > 0) {
+        const bestaandeTags = await prisma.contentTag.findMany({
+          where: { slug: { in: v.tags }, isActief: true },
+          select: { id: true },
+        })
+        if (bestaandeTags.length > 0) {
+          await prisma.artikelTag.createMany({
+            data: bestaandeTags.map((t) => ({ artikelId: created.id, tagId: t.id })),
+            skipDuplicates: true,
+          })
+        }
+      }
+
+      resultaten.push({ id: created.id, titel: v.onderwerp, status: "opgeslagen" })
+    } catch (err) {
+      resultaten.push({ titel: v.onderwerp, status: "fout", error: String(err) })
+    }
+  }
+
+  return {
+    type: "voorstellen-opslaan",
+    aantalOpgeslagen: resultaten.filter((r) => r.status === "opgeslagen").length,
+    aantalFouten: resultaten.filter((r) => r.status === "fout").length,
+    resultaten,
+  }
+}
+
+// ── Verrijking toepassen ─────────────────────────────────────────────
+
+async function pasVerrijkingToe(artikelId: string, data: { inhoud?: string }) {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateData: Record<string, any> = { status: "VERRIJKT" }
+    if (data.inhoud) updateData.inhoud = data.inhoud
+
+    await prisma.artikel.update({
+      where: { id: artikelId },
+      data: updateData,
+    })
+
+    // Regenereer embedding
+    if (process.env.OPENAI_API_KEY) {
+      try {
+        const artikel = await prisma.artikel.findUnique({
+          where: { id: artikelId },
+          select: { titel: true, beschrijving: true, inhoud: true, categorie: true },
+        })
+        if (artikel) {
+          const embeddingText = artikelToEmbeddingText(artikel)
+          const embedding = await generateEmbedding(embeddingText)
+          await prisma.$executeRawUnsafe(
+            `UPDATE "Artikel" SET embedding = '${toVectorSql(embedding)}'::vector WHERE id = $1`,
+            artikelId
+          )
+        }
+      } catch (embErr) {
+        console.warn("[Content Agent] Embedding regeneratie mislukt:", embErr)
+      }
+    }
+
+    return { type: "toepassen-verrijking", status: "bijgewerkt", artikelId }
+  } catch (err) {
+    return { type: "toepassen-verrijking", status: "fout", error: String(err) }
+  }
+}
+
+// ── Status wijzigen (publiceren, archiveren, etc.) ───────────────────
+
+async function wijzigStatus(artikelIds: string[], nieuweStatus: string) {
+  const resultaten = []
+  for (const id of artikelIds) {
+    try {
+      await prisma.artikel.update({
+        where: { id },
+        data: { status: nieuweStatus as "VOORSTEL" | "CONCEPT" | "HERSCHREVEN" | "VERRIJKT" | "GEPUBLICEERD" | "GEARCHIVEERD" },
+      })
+      resultaten.push({ id, status: "bijgewerkt" })
+    } catch (err) {
+      resultaten.push({ id, status: "fout", error: String(err) })
+    }
+  }
+  return {
+    type: "wijzig-status",
+    nieuweStatus,
+    aantalBijgewerkt: resultaten.filter((r) => r.status === "bijgewerkt").length,
+    resultaten,
+  }
+}
+
+// ── Pipeline overzicht ───────────────────────────────────────────────
+
+async function pipelineOverzicht() {
+  const statusCounts = await prisma.artikel.groupBy({
+    by: ["status"],
+    where: { isActief: true, type: "ARTIKEL" },
+    _count: true,
+  })
+
+  const artikelenPerStatus: Record<string, Array<{
+    id: string; titel: string; beschrijving: string; categorie: string;
+    tags: string[]; updatedAt: Date
+  }>> = {}
+
+  // Haal artikelen per pipeline-status op (niet GEPUBLICEERD/GEARCHIVEERD - die zijn te veel)
+  const pipelineStatussen = ["VOORSTEL", "CONCEPT", "HERSCHREVEN", "VERRIJKT"]
+  for (const status of pipelineStatussen) {
+    const items = await prisma.artikel.findMany({
+      where: { isActief: true, type: "ARTIKEL", status: status as "VOORSTEL" | "CONCEPT" | "HERSCHREVEN" | "VERRIJKT" },
+      orderBy: { updatedAt: "desc" },
+      take: 50,
+      select: {
+        id: true,
+        titel: true,
+        beschrijving: true,
+        categorie: true,
+        updatedAt: true,
+        tags: { select: { tag: { select: { slug: true, naam: true } } } },
+      },
+    })
+    artikelenPerStatus[status] = items.map((a) => ({
+      id: a.id,
+      titel: a.titel,
+      beschrijving: a.beschrijving,
+      categorie: a.categorie,
+      tags: a.tags.map((t) => t.tag.naam),
+      updatedAt: a.updatedAt,
+    }))
+  }
+
+  return {
+    type: "pipeline-overzicht",
+    aantallen: Object.fromEntries(statusCounts.map((s) => [s.status, s._count])),
+    artikelenPerStatus,
+  }
+}
+
 // ── Route handler ──────────────────────────────────────────────────
 
 export async function POST(req: Request) {
@@ -940,24 +1135,30 @@ export async function POST(req: Request) {
       type,
       onderwerp,
       artikelId,
+      artikelIds,
       categorie,
       tags: requestTags,
       limiet = 20,
       opslaan = false,
       wijzigingen: wijzigingenData,
       herschrijving,
+      verrijking,
       voorstellen,
+      nieuweStatus,
     } = body as {
-      type: "zoek-online" | "genereer" | "herschrijf" | "verrijk" | "categoriseer-bulk" | "toepassen" | "toepassen-herschrijving" | "hiaten-analyse" | "batch-genereer"
+      type: string
       onderwerp?: string
       artikelId?: string
+      artikelIds?: string[]
       categorie?: string
       tags?: string[]
       limiet?: number
       opslaan?: boolean
       wijzigingen?: Array<{ id: string; nieuweCategorie?: string; nieuwSubHoofdstuk?: string | null; nieuweTags?: string[] }>
       herschrijving?: { titel?: string; beschrijving?: string; inhoud?: string }
-      voorstellen?: Array<{ onderwerp: string; categorie?: string; tags?: string[] }>
+      verrijking?: { inhoud?: string }
+      voorstellen?: Array<{ onderwerp: string; beschrijving?: string; categorie?: string; tags?: string[] }>
+      nieuweStatus?: string
     }
 
     const effectiefLimiet = Math.min(Math.max(limiet, 1), 50)
@@ -966,6 +1167,10 @@ export async function POST(req: Request) {
     let resultaat: Record<string, any>
 
     switch (type) {
+      case "pipeline-overzicht":
+        resultaat = await pipelineOverzicht()
+        break
+
       case "zoek-online":
         resultaat = await zoekOnline(onderwerp)
         break
@@ -1009,8 +1214,22 @@ export async function POST(req: Request) {
         resultaat = await pasHerschrijvingToe(artikelId, herschrijving)
         break
 
+      case "toepassen-verrijking":
+        if (!artikelId || !verrijking) {
+          return NextResponse.json({ error: "artikelId en verrijking zijn verplicht" }, { status: 400 })
+        }
+        resultaat = await pasVerrijkingToe(artikelId, verrijking)
+        break
+
       case "hiaten-analyse":
         resultaat = await hiatenAnalyse()
+        break
+
+      case "voorstellen-opslaan":
+        if (!voorstellen || voorstellen.length === 0) {
+          return NextResponse.json({ error: "Voorstellen zijn verplicht" }, { status: 400 })
+        }
+        resultaat = await slaVoorstellenOp(voorstellen)
         break
 
       case "batch-genereer":
@@ -1018,6 +1237,13 @@ export async function POST(req: Request) {
           return NextResponse.json({ error: "Voorstellen zijn verplicht voor batch-genereer" }, { status: 400 })
         }
         resultaat = await batchGenereer(voorstellen, opslaan)
+        break
+
+      case "wijzig-status":
+        if (!artikelIds || artikelIds.length === 0 || !nieuweStatus) {
+          return NextResponse.json({ error: "artikelIds en nieuweStatus zijn verplicht" }, { status: 400 })
+        }
+        resultaat = await wijzigStatus(artikelIds, nieuweStatus)
         break
 
       default:
