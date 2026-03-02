@@ -480,7 +480,7 @@ async function verrijkArtikel(artikelId: string) {
       inhoud: true,
       categorie: true,
       subHoofdstuk: true,
-      belastingNiveau: true,
+      tags: { select: { tag: { select: { slug: true, naam: true } } } },
     },
   })
 

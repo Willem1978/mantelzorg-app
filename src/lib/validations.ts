@@ -74,7 +74,6 @@ export const artikelSchema = z.object({
   bronLabel: z.string().optional().default(""),
   type: z.enum(["ARTIKEL", "GEMEENTE_NIEUWS", "TIP"]).default("ARTIKEL"),
   status: z.enum(["CONCEPT", "GEPUBLICEERD", "GEARCHIVEERD"]).default("CONCEPT"),
-  belastingNiveau: z.enum(["ALLE", "LAAG", "GEMIDDELD", "HOOG"]).default("ALLE"),
   gemeente: z.string().optional().default(""),
   publicatieDatum: z.string().optional().default(""),
   sorteerVolgorde: z.number().int().default(0),
