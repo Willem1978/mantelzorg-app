@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useCallback } from "react"
+import DOMPurify from "isomorphic-dompurify"
 import { ensureAbsoluteUrl } from "@/lib/utils"
 
 interface ContentModalProps {
@@ -106,8 +107,26 @@ export function ContentModal({
 
   if (!isOpen) return null
 
-  // Render inhoud met alinea's (dubbele newline = nieuwe alinea, enkele = <br>)
+  // Detecteer of content HTML bevat
+  const isHtml = (text: string) => /<\/?[a-z][\s\S]*?>/i.test(text)
+
+  // Render inhoud: HTML (van AI/Tiptap) of markdown-achtige tekst (legacy)
   const renderInhoud = (text: string) => {
+    // HTML content: sanitize en render
+    if (isHtml(text)) {
+      const clean = DOMPurify.sanitize(text, {
+        ALLOWED_TAGS: ["h2", "h3", "h4", "p", "ul", "ol", "li", "strong", "em", "a", "br", "blockquote", "hr"],
+        ALLOWED_ATTR: ["href", "target", "rel"],
+      })
+      return (
+        <div
+          className="artikel-inhoud text-sm text-foreground leading-relaxed [&_h2]:font-bold [&_h2]:text-base [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:font-bold [&_h3]:text-base [&_h3]:mt-4 [&_h3]:mb-2 [&_h4]:font-semibold [&_h4]:text-sm [&_h4]:mt-3 [&_h4]:mb-1 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:list-inside [&_ul]:space-y-1 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:list-inside [&_ol]:space-y-1 [&_ol]:mb-3 [&_li]:leading-relaxed [&_strong]:font-semibold [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-primary/30 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:my-3 [&_hr]:my-4 [&_hr]:border-border"
+          dangerouslySetInnerHTML={{ __html: clean }}
+        />
+      )
+    }
+
+    // Legacy: markdown-achtige tekst (dubbele newline = nieuwe alinea, enkele = <br>)
     const alineas = text.split(/\n\n+/)
     return alineas.map((alinea, i) => {
       // Check of het een kopje is (begint met ##)
