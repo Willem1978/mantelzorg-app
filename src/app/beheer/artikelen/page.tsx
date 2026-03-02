@@ -12,6 +12,10 @@ const RichTextEditor = dynamic(
   { ssr: false, loading: () => <div className="h-[200px] bg-gray-50 rounded-lg animate-pulse" /> }
 )
 
+interface ArtikelTag {
+  tag: { slug: string; naam: string; emoji: string | null; type: string }
+}
+
 interface Artikel {
   id: string
   titel: string
@@ -25,12 +29,12 @@ interface Artikel {
   bronLabel: string | null
   type: string
   status: string
-  belastingNiveau: string
   gemeente: string | null
   publicatieDatum: string | null
   sorteerVolgorde: number
   isActief: boolean
   createdAt: string
+  tags?: ArtikelTag[]
 }
 
 const categorieOpties = [
@@ -53,6 +57,13 @@ const statusOpties = [
   ...ARTIKEL_STATUSSEN,
 ]
 
+interface ContentTagOptie {
+  slug: string
+  naam: string
+  emoji: string | null
+  type: string
+}
+
 const LEEG_FORMULIER = {
   titel: "",
   beschrijving: "",
@@ -65,10 +76,10 @@ const LEEG_FORMULIER = {
   bronLabel: "",
   type: "ARTIKEL",
   status: "CONCEPT",
-  belastingNiveau: "ALLE",
   gemeente: "",
   publicatieDatum: "",
   sorteerVolgorde: 0,
+  tags: [] as string[],
 }
 
 export default function ArtikelenPage() {
@@ -85,7 +96,22 @@ export default function ArtikelenPage() {
   const [gemeenteZoek, setGemeenteZoek] = useState("")
   const [gemeenteOpties, setGemeenteOpties] = useState<string[]>([])
   const [showGemeenteDropdown, setShowGemeenteDropdown] = useState(false)
+  const [beschikbareTags, setBeschikbareTags] = useState<ContentTagOptie[]>([])
   const { showSuccess, showError } = useToast()
+
+  // Laad beschikbare tags
+  useEffect(() => {
+    fetch("/api/content/tags")
+      .then(res => res.json())
+      .then(data => {
+        const alleTags: ContentTagOptie[] = [
+          ...(data.aandoeningen || []),
+          ...(data.situaties || []),
+        ]
+        setBeschikbareTags(alleTags)
+      })
+      .catch(() => { /* stil */ })
+  }, [])
 
   const laadArtikelen = async () => {
     setLoading(true)
@@ -154,10 +180,10 @@ export default function ArtikelenPage() {
       bronLabel: artikel.bronLabel || "",
       type: artikel.type,
       status: artikel.status,
-      belastingNiveau: artikel.belastingNiveau,
       gemeente: artikel.gemeente || "",
       publicatieDatum: artikel.publicatieDatum ? artikel.publicatieDatum.split("T")[0] : "",
       sorteerVolgorde: artikel.sorteerVolgorde,
+      tags: artikel.tags?.map(t => t.tag.slug) || [],
     })
     setGemeenteZoek(artikel.gemeente || "")
     setShowForm(true)
@@ -385,18 +411,44 @@ export default function ArtikelenPage() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Belastingniveau</label>
-                <select
-                  value={formulier.belastingNiveau}
-                  onChange={(e) => setFormulier({ ...formulier, belastingNiveau: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                >
-                  <option value="ALLE">Alle niveaus</option>
-                  <option value="LAAG">Laag</option>
-                  <option value="GEMIDDELD">Gemiddeld</option>
-                  <option value="HOOG">Hoog</option>
-                </select>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tags (aandoeningen & situaties)</label>
+                <div className="flex flex-wrap gap-2 p-2 border border-gray-300 rounded-lg min-h-[42px]">
+                  {formulier.tags.map(slug => {
+                    const tag = beschikbareTags.find(t => t.slug === slug)
+                    return (
+                      <span key={slug} className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs">
+                        {tag?.emoji} {tag?.naam || slug}
+                        <button
+                          type="button"
+                          onClick={() => setFormulier({ ...formulier, tags: formulier.tags.filter(t => t !== slug) })}
+                          className="text-blue-400 hover:text-red-500 ml-0.5"
+                        >
+                          x
+                        </button>
+                      </span>
+                    )
+                  })}
+                  <select
+                    value=""
+                    onChange={(e) => {
+                      if (e.target.value && !formulier.tags.includes(e.target.value)) {
+                        setFormulier({ ...formulier, tags: [...formulier.tags, e.target.value] })
+                      }
+                    }}
+                    className="text-xs text-gray-500 border-0 outline-none bg-transparent"
+                  >
+                    <option value="">+ Tag toevoegen...</option>
+                    {beschikbareTags
+                      .filter(t => !formulier.tags.includes(t.slug))
+                      .map(t => (
+                        <option key={t.slug} value={t.slug}>
+                          {t.emoji} {t.naam} ({t.type === "AANDOENING" ? "Aandoening" : "Situatie"})
+                        </option>
+                      ))
+                    }
+                  </select>
+                </div>
               </div>
 
               <div>
@@ -541,6 +593,11 @@ export default function ArtikelenPage() {
                         {artikel.type === "GEMEENTE_NIEUWS" ? `Gemeente${artikel.gemeente ? `: ${artikel.gemeente}` : ""}` : artikel.type}
                       </span>
                     )}
+                    {artikel.tags?.map(t => (
+                      <span key={t.tag.slug} className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
+                        {t.tag.emoji} {t.tag.naam}
+                      </span>
+                    ))}
                   </div>
                   <p className="text-sm text-gray-500 mt-1 line-clamp-2">{artikel.beschrijving}</p>
                   {artikel.publicatieDatum && (

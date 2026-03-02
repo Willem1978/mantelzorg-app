@@ -1125,6 +1125,9 @@ export default function ProfielPage() {
           )}
         </div>
 
+        {/* Jouw situatie - Aandoening & voorkeuren */}
+        <JouwSituatieBlok />
+
         {/* Weergave-instellingen */}
         <div className="ker-card">
           <AccessibilitySettings />
@@ -1341,6 +1344,159 @@ export default function ProfielPage() {
           </p>
         </div>
       </div>
+    </div>
+  )
+}
+
+// ============================================
+// JOUW SITUATIE BLOK
+// ============================================
+
+function JouwSituatieBlok() {
+  const [aandoeningen, setAandoeningen] = useState<Array<{ slug: string; naam: string; emoji: string | null }>>([])
+  const [situaties, setSituaties] = useState<Array<{ slug: string; naam: string; emoji: string | null }>>([])
+  const [voorkeuren, setVoorkeuren] = useState<Array<{ type: string; slug: string }>>([])
+  const [aandoening, setAandoening] = useState("")
+  const [saving, setSaving] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    // Laad tags en voorkeuren parallel
+    Promise.all([
+      fetch("/api/content/tags").then(r => r.json()).catch(() => ({ aandoeningen: [], situaties: [] })),
+      fetch("/api/user/voorkeuren").then(r => r.json()).catch(() => ({ voorkeuren: [] })),
+      fetch("/api/profile").then(r => r.json()).catch(() => ({})),
+    ]).then(([tagData, voorkeurData, profileData]) => {
+      setAandoeningen(tagData.aandoeningen || [])
+      setSituaties(tagData.situaties || [])
+      setVoorkeuren(voorkeurData.voorkeuren || [])
+      setAandoening(profileData.aandoening || "")
+      setLoaded(true)
+    })
+  }, [])
+
+  const toggleVoorkeur = (type: string, slug: string) => {
+    const exists = voorkeuren.some(v => v.type === type && v.slug === slug)
+    if (exists) {
+      setVoorkeuren(voorkeuren.filter(v => !(v.type === type && v.slug === slug)))
+    } else {
+      setVoorkeuren([...voorkeuren, { type, slug }])
+    }
+  }
+
+  const isSelected = (type: string, slug: string) =>
+    voorkeuren.some(v => v.type === type && v.slug === slug)
+
+  const handleOpslaan = async () => {
+    setSaving(true)
+    try {
+      // Sla voorkeuren op
+      await fetch("/api/user/voorkeuren", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ voorkeuren }),
+      })
+      // Sla aandoening op in profiel
+      await fetch("/api/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ aandoening: aandoening || null }),
+      })
+    } catch {
+      // stil
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (!loaded) return null
+
+  return (
+    <div className="ker-card">
+      <h2 className="font-bold text-foreground mb-4 flex items-center gap-2">
+        <span className="text-xl">🎯</span>
+        Jouw situatie
+      </h2>
+      <p className="text-sm text-muted-foreground mb-4">
+        Selecteer wat op jou van toepassing is. Zo kunnen we content beter op jou afstemmen.
+      </p>
+
+      {/* Aandoening zorgvrager */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-foreground mb-2">
+          Aandoening/beperking van je naaste
+        </label>
+        <select
+          value={aandoening}
+          onChange={(e) => setAandoening(e.target.value)}
+          className="w-full px-3 py-2 border border-border rounded-xl text-sm bg-background"
+        >
+          <option value="">-- Selecteer --</option>
+          {aandoeningen.map(a => (
+            <option key={a.slug} value={a.slug}>{a.emoji} {a.naam}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Situatie tags */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-foreground mb-2">
+          Jouw situatie
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {situaties.map(s => (
+            <button
+              key={s.slug}
+              onClick={() => toggleVoorkeur("TAG", s.slug)}
+              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                isSelected("TAG", s.slug)
+                  ? "bg-primary text-white border-primary"
+                  : "bg-background text-muted-foreground border-border hover:border-primary"
+              }`}
+            >
+              {s.emoji} {s.naam}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Interesse categorieën */}
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-foreground mb-2">
+          Categorieën die je interesseren
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {[
+            { slug: "praktische-tips", naam: "Praktische tips", emoji: "📋" },
+            { slug: "zelfzorg-balans", naam: "Zelfzorg & balans", emoji: "🧘" },
+            { slug: "rechten-regelingen", naam: "Rechten & regelingen", emoji: "⚖️" },
+            { slug: "geld-financien", naam: "Geld & financiën", emoji: "💰" },
+            { slug: "hulpmiddelen-technologie", naam: "Hulpmiddelen & technologie", emoji: "🔧" },
+            { slug: "werk-mantelzorg", naam: "Werk & mantelzorg", emoji: "💼" },
+            { slug: "samenwerken-netwerk", naam: "Samenwerken & netwerk", emoji: "🤝" },
+          ].map(cat => (
+            <button
+              key={cat.slug}
+              onClick={() => toggleVoorkeur("CATEGORIE", cat.slug)}
+              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                isSelected("CATEGORIE", cat.slug)
+                  ? "bg-primary text-white border-primary"
+                  : "bg-background text-muted-foreground border-border hover:border-primary"
+              }`}
+            >
+              {cat.emoji} {cat.naam}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <button
+        onClick={handleOpslaan}
+        disabled={saving}
+        className="w-full py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
+      >
+        {saving ? "Opslaan..." : "Voorkeuren opslaan"}
+      </button>
     </div>
   )
 }

@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
   const categorie = searchParams.get("categorie") || ""
   const type = searchParams.get("type") || ""
   const gemeente = searchParams.get("gemeente") || ""
+  const tags = searchParams.get("tags") || ""
 
   try {
     const where: Prisma.ArtikelWhereInput = {
@@ -18,6 +19,12 @@ export async function GET(request: NextRequest) {
     if (type) where.type = type as "ARTIKEL" | "GEMEENTE_NIEUWS" | "TIP"
     if (gemeente) {
       where.gemeente = { equals: gemeente, mode: "insensitive" }
+    }
+    if (tags) {
+      const tagsArray = tags.split(",").map((t) => t.trim()).filter(Boolean)
+      if (tagsArray.length > 0) {
+        where.tags = { some: { tag: { slug: { in: tagsArray } } } }
+      }
     }
 
     // Filter op publicatieDatum: alleen tonen als datum leeg is of in het verleden
@@ -41,7 +48,7 @@ export async function GET(request: NextRequest) {
         subHoofdstuk: true,
         bronLabel: true,
         type: true,
-        belastingNiveau: true,
+        tags: { select: { tag: { select: { slug: true, naam: true, emoji: true, type: true } } } },
         gemeente: true,
         publicatieDatum: true,
       },

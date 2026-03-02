@@ -5,15 +5,18 @@
  * Zoekt, genereert, herschrijft en verrijkt content automatisch.
  *
  * Functies:
- *   - zoek-online:       Zoek online bronnen en stel nieuwe artikelen voor
- *   - genereer:          Genereer een compleet nieuw artikel op basis van onderwerp
- *   - herschrijf:        Herschrijf een bestaand artikel (B1, kwaliteit, SEO)
- *   - verrijk:           Verrijk een bestaand artikel met meer diepgang
- *   - categoriseer-bulk: Hercategoriseer meerdere artikelen en pas direct aan in DB
+ *   - zoek-online:            Zoek online bronnen en stel nieuwe artikelen voor
+ *   - genereer:               Genereer een compleet nieuw artikel op basis van onderwerp
+ *   - herschrijf:             Herschrijf een bestaand artikel (B1, kwaliteit, SEO)
+ *   - verrijk:                Verrijk een bestaand artikel met meer diepgang
+ *   - categoriseer-bulk:      Hercategoriseer meerdere artikelen en pas direct aan in DB
+ *   - hiaten-analyse:         Analyseer hiaten in de kennisbank (categorie × tag matrix)
+ *   - batch-genereer:         Genereer meerdere artikelen in batch
  *
  * POST body:
- *   { type: "zoek-online" | "genereer" | "herschrijf" | "verrijk" | "categoriseer-bulk",
- *     onderwerp?: string, artikelId?: string, limiet?: number }
+ *   { type: "zoek-online" | "genereer" | "herschrijf" | "verrijk" | "categoriseer-bulk" | "hiaten-analyse" | "batch-genereer",
+ *     onderwerp?: string, artikelId?: string, categorie?: string, tags?: string[],
+ *     limiet?: number, opslaan?: boolean, voorstellen?: Array<{onderwerp, categorie, tags}> }
  */
 import { NextResponse } from "next/server"
 import { createAnthropic } from "@ai-sdk/anthropic"
@@ -59,6 +62,21 @@ async function haalSubHoofdstukken() {
   }))
 }
 
+// Beschikbare tags ophalen, gegroepeerd op type
+async function haalTags() {
+  const tags = await prisma.contentTag.findMany({
+    where: { isActief: true },
+    orderBy: [{ type: "asc" }, { volgorde: "asc" }],
+    select: { id: true, slug: true, naam: true, type: true },
+  })
+  const grouped: Record<string, Array<{ id: string; slug: string; naam: string }>> = {}
+  for (const tag of tags) {
+    if (!grouped[tag.type]) grouped[tag.type] = []
+    grouped[tag.type].push({ id: tag.id, slug: tag.slug, naam: tag.naam })
+  }
+  return grouped
+}
+
 function getAnthropic() {
   if (!process.env.ANTHROPIC_API_KEY) {
     throw new Error("ANTHROPIC_API_KEY niet geconfigureerd")
@@ -81,12 +99,15 @@ Administratie, Plannen, Boodschappen, Sociaal contact, Vervoer, Verzorging, Maal
 
 CONTENT-CATEGORIEËN:
 - praktische-tips: Tips voor dagelijks organiseren, tijdmanagement, zorgtaken
-- zelfzorg: Overbelasting herkennen, grenzen stellen, ontspanning
-- rechten: Wettelijke rechten, Wmo, Wlz, Zvw, pgb, mantelzorgwaardering
-- financieel: Toeslagen, vergoedingen, belastingvoordelen
-- hulpmiddelen-producten: Hulpmiddelen, aanpassingen, technologie
+- zelfzorg-balans: Overbelasting herkennen, grenzen stellen, ontspanning
+- rechten-regelingen: Wettelijke rechten, Wmo, Wlz, Zvw, pgb, mantelzorgwaardering
+- geld-financien: Toeslagen, vergoedingen, belastingvoordelen
+- hulpmiddelen-technologie: Hulpmiddelen, aanpassingen, slimme technologie
+- werk-mantelzorg: Mantelzorg combineren met werk, rechten op de werkvloer
+- samenwerken-netwerk: Hulp vragen, netwerk opbouwen, samenwerken met professionals
 
-BELASTINGNIVEAUS: ALLE, LAAG, GEMIDDELD, HOOG
+TAGS (aandoeningen): dementie, kanker, cva-beroerte, psychisch, verstandelijk, lichamelijk, ouderdom, chronisch-ziek, niet-aangeboren-hersenletsel, parkinson, als, terminaal
+TAGS (situaties): werkend, jong, op-afstand, alleenstaand, meervoudig, partner, ouder-kind, kind-ouder, rouwend
 
 TAAL: Nederlands, B1-niveau (eenvoudig, korte zinnen, geen jargon)
 `
@@ -110,7 +131,7 @@ async function zoekOnline(onderwerp?: string) {
   const anthropic = getAnthropic()
 
   // Haal huidige content op voor gap-analyse
-  const [categorieStats, bestaandeArtikelen, subHoofdstukken] = await Promise.all([
+  const [categorieStats, bestaandeArtikelen, subHoofdstukken, beschikbareTags] = await Promise.all([
     prisma.artikel.groupBy({
       by: ["categorie"],
       where: { isActief: true },
@@ -123,6 +144,7 @@ async function zoekOnline(onderwerp?: string) {
       take: 100,
     }),
     haalSubHoofdstukken(),
+    haalTags(),
   ])
 
   const bestaandeTitels = bestaandeArtikelen.map((a) => a.titel).join("\n- ")
@@ -138,14 +160,17 @@ ${MANTELZORG_CONTEXT}
 BETROUWBARE BRONNEN (gebruik deze als referentie):
 ${TRUSTED_SOURCES.map((s) => `- ${s.naam} (${s.url}): ${s.beschrijving}`).join("\n")}
 
+BESCHIKBARE TAGS: ${JSON.stringify(beschikbareTags)}
+
 REGELS:
 - Schrijf in het Nederlands
 - Zoek naar actuele, relevante onderwerpen voor mantelzorgers
 - Verwijs naar specifieke pagina's en bronnen
-- Stel concrete artikelen voor met titel, categorie, subhoofdstuk en korte inhoud
+- Stel concrete artikelen voor met titel, categorie, subhoofdstuk, tags en korte inhoud
 - Vermijd onderwerpen die al gedekt zijn (zie bestaande titels)
 - Focus op praktisch bruikbare informatie
 - Geef per voorstel aan: bron-URL, waarom het relevant is, doelgroep
+- Kies relevante tags (aandoeningen en/of situaties) die bij elk voorstel passen
 - Gebruik JSON-format voor de voorstellen zodat ze makkelijk verwerkt kunnen worden`,
     prompt: `${onderwerp ? `SPECIFIEK ONDERWERP: "${onderwerp}"\n\nZoek relevante online bronnen over dit onderwerp voor mantelzorgers.` : "Zoek naar relevante, nieuwe content voor mantelzorgers op basis van actuele trends en hiaten in de kennisbank."}
 
@@ -165,9 +190,9 @@ Geef:
 {
   "titel": "Titel van het artikel",
   "beschrijving": "Korte beschrijving (1-2 zinnen)",
-  "categorie": "praktische-tips|zelfzorg|rechten|financieel|hulpmiddelen-producten",
+  "categorie": "praktische-tips|zelfzorg-balans|rechten-regelingen|geld-financien|hulpmiddelen-technologie|werk-mantelzorg|samenwerken-netwerk",
   "subHoofdstuk": "relevant sub-hoofdstuk of null",
-  "belastingNiveau": "ALLE|LAAG|GEMIDDELD|HOOG",
+  "tags": ["tag-slug1", "tag-slug2"],
   "bronUrl": "https://...",
   "bronNaam": "Naam van de bron",
   "relevantie": "Waarom is dit relevant",
@@ -203,10 +228,13 @@ Geef:
 
 // ── Artikel genereren ──────────────────────────────────────────────
 
-async function genereerArtikel(onderwerp: string, categorie?: string, opslaan = false) {
+async function genereerArtikel(onderwerp: string, categorie?: string, tags?: string[], opslaan = false) {
   const anthropic = getAnthropic()
-  const beschikbareCategorieen = await haalCategorieen()
-  const subHoofdstukken = await haalSubHoofdstukken()
+  const [beschikbareCategorieen, subHoofdstukken, beschikbareTags] = await Promise.all([
+    haalCategorieen(),
+    haalSubHoofdstukken(),
+    haalTags(),
+  ])
 
   const { text } = await generateText({
     model: anthropic("claude-sonnet-4-20250514"),
@@ -218,6 +246,7 @@ ${MANTELZORG_CONTEXT}
 
 BESCHIKBARE CATEGORIEËN: ${beschikbareCategorieen.join(", ")}
 SUBHOOFDSTUKKEN: ${JSON.stringify(subHoofdstukken)}
+BESCHIKBARE TAGS: ${JSON.stringify(beschikbareTags)}
 
 SCHRIJFREGELS:
 - Schrijf op B1-taalniveau: korte zinnen (max 15-20 woorden), eenvoudige woorden
@@ -229,6 +258,7 @@ SCHRIJFREGELS:
 - Geef het artikel als HTML (gebruik <h2>, <h3>, <p>, <ul>, <li>, <strong>)
 - GEEN <h1> gebruiken (die wordt apart getoond)
 - Verwijs waar mogelijk naar betrouwbare bronnen
+- Kies relevante tags (aandoeningen en/of situaties) die bij het artikel passen
 
 ANTWOORD IN JSON-FORMAT:
 \`\`\`json
@@ -238,14 +268,14 @@ ANTWOORD IN JSON-FORMAT:
   "inhoud": "<h2>...</h2><p>...</p>...",
   "categorie": "een van de beschikbare categorieën",
   "subHoofdstuk": "passend subhoofdstuk of null",
-  "belastingNiveau": "ALLE|LAAG|GEMIDDELD|HOOG",
-  "tags": ["tag1", "tag2"]
+  "tags": ["tag-slug1", "tag-slug2"]
 }
 \`\`\``,
     prompt: `Schrijf een volledig artikel over het volgende onderwerp:
 
 ONDERWERP: "${onderwerp}"
 ${categorie ? `GEWENSTE CATEGORIE: ${categorie}` : "Kies zelf de meest passende categorie."}
+${tags && tags.length > 0 ? `GEWENSTE TAGS: ${tags.join(", ")}` : "Kies zelf de meest passende tags."}
 
 Het artikel moet:
 - Minimaal 400 woorden bevatten
@@ -279,7 +309,6 @@ Het artikel moet:
           inhoud: artikel.inhoud,
           categorie: artikel.categorie || "praktische-tips",
           subHoofdstuk: artikel.subHoofdstuk || null,
-          belastingNiveau: artikel.belastingNiveau || "ALLE",
           type: "ARTIKEL",
           status: "CONCEPT",
           bron: "AI Content Agent",
@@ -288,6 +317,21 @@ Het artikel moet:
       })
       artikelId = created.id
       opgeslagen = true
+
+      // Koppel tags aan het artikel
+      const artikelTags: string[] = artikel.tags || tags || []
+      if (artikelTags.length > 0) {
+        const tagRecords = await prisma.contentTag.findMany({
+          where: { slug: { in: artikelTags }, isActief: true },
+          select: { id: true, slug: true },
+        })
+        if (tagRecords.length > 0) {
+          await prisma.artikelTag.createMany({
+            data: tagRecords.map((t) => ({ artikelId: created.id, tagId: t.id })),
+            skipDuplicates: true,
+          })
+        }
+      }
 
       // Genereer embedding
       if (process.env.OPENAI_API_KEY) {
@@ -336,15 +380,21 @@ async function herschrijfArtikel(artikelId: string, instructies?: string) {
       inhoud: true,
       categorie: true,
       subHoofdstuk: true,
-      belastingNiveau: true,
       type: true,
       bron: true,
+      artikelTags: {
+        select: {
+          tag: { select: { slug: true, naam: true, type: true } },
+        },
+      },
     },
   })
 
   if (!artikel) {
     return { type: "herschrijf", error: "Artikel niet gevonden" }
   }
+
+  const huidigeTags = artikel.artikelTags.map((at) => `${at.tag.naam} (${at.tag.slug}, ${at.tag.type})`)
 
   const plainInhoud = artikel.inhoud
     ? artikel.inhoud.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim()
@@ -385,7 +435,7 @@ HUIDIGE VERSIE:
 - Titel: ${artikel.titel}
 - Beschrijving: ${artikel.beschrijving}
 - Categorie: ${artikel.categorie}
-- Belastingniveau: ${artikel.belastingNiveau}
+- Tags: ${huidigeTags.length > 0 ? huidigeTags.join(", ") : "Geen tags"}
 - Inhoud: ${plainInhoud}
 
 ${instructies ? `SPECIFIEKE INSTRUCTIES: ${instructies}` : "Verbeter het artikel op alle fronten: B1-taalniveau, structuur, volledigheid en praktische bruikbaarheid."}
@@ -550,8 +600,11 @@ Voeg waardevolle secties toe aan dit artikel. Denk aan: praktische tips, FAQ, vo
 
 async function categoriseerBulk(limiet: number) {
   const anthropic = getAnthropic()
-  const beschikbareCategorieen = await haalCategorieen()
-  const subHoofdstukken = await haalSubHoofdstukken()
+  const [beschikbareCategorieen, subHoofdstukken, beschikbareTags] = await Promise.all([
+    haalCategorieen(),
+    haalSubHoofdstukken(),
+    haalTags(),
+  ])
 
   // Haal artikelen op die mogelijk verkeerd gecategoriseerd zijn
   const artikelen = await prisma.artikel.findMany({
@@ -565,7 +618,9 @@ async function categoriseerBulk(limiet: number) {
       inhoud: true,
       categorie: true,
       subHoofdstuk: true,
-      belastingNiveau: true,
+      artikelTags: {
+        select: { tag: { select: { slug: true, naam: true } } },
+      },
     },
   })
 
@@ -580,24 +635,26 @@ async function categoriseerBulk(limiet: number) {
     inhoud: a.inhoud ? a.inhoud.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 300) : null,
     categorie: a.categorie,
     subHoofdstuk: a.subHoofdstuk,
-    belastingNiveau: a.belastingNiveau,
+    tags: a.artikelTags.map((at) => at.tag.slug),
   }))
 
   const { text } = await generateText({
     model: anthropic("claude-sonnet-4-20250514"),
     maxOutputTokens: 3000,
     system: `Je bent een categorisatie-specialist voor MantelBuddy.
-Je analyseert artikelen en stelt correcte categorieën voor.
+Je analyseert artikelen en stelt correcte categorieën en tags voor.
 
 ${MANTELZORG_CONTEXT}
 
 BESCHIKBARE CATEGORIEËN: ${beschikbareCategorieen.join(", ")}
 SUBHOOFDSTUKKEN: ${JSON.stringify(subHoofdstukken)}
+BESCHIKBARE TAGS: ${JSON.stringify(beschikbareTags)}
 
 REGELS:
 - Analyseer elk artikel op basis van titel, beschrijving en inhoud
-- Stel de juiste categorie, subhoofdstuk en belastingniveau voor
+- Stel de juiste categorie, subhoofdstuk en tags voor
 - Geef ALLEEN wijzigingen als de huidige categorisering NIET klopt
+- Kies relevante tags (aandoeningen en/of situaties) die bij het artikel passen
 - Antwoord in JSON-format zodat wijzigingen automatisch doorgevoerd kunnen worden
 
 ANTWOORD FORMAT:
@@ -611,8 +668,8 @@ ANTWOORD FORMAT:
       "nieuweCategorie": "...",
       "huidigSubHoofdstuk": "... of null",
       "nieuwSubHoofdstuk": "... of null",
-      "huidigNiveau": "...",
-      "nieuwNiveau": "...",
+      "huidigeTags": ["tag1", "tag2"],
+      "nieuweTags": ["tag1", "tag2", "tag3"],
       "reden": "Korte uitleg waarom"
     }
   ],
@@ -625,7 +682,7 @@ ANTWOORD FORMAT:
 ARTIKELEN:
 ${JSON.stringify(artikelData, null, 2)}
 
-Geef voor elk artikel aan of de categorisering correct is. Als die niet klopt, geef de juiste waarden.`,
+Geef voor elk artikel aan of de categorisering en tags correct zijn. Als die niet kloppen, geef de juiste waarden.`,
   })
 
   // Parse wijzigingen
@@ -634,7 +691,7 @@ Geef voor elk artikel aan of de categorisering correct is. Als die niet klopt, g
     titel: string
     nieuweCategorie?: string
     nieuwSubHoofdstuk?: string | null
-    nieuwNiveau?: string
+    nieuweTags?: string[]
     reden: string
   }> = []
   let parseResult = null
@@ -664,7 +721,7 @@ async function pasWijzigingenToe(wijzigingen: Array<{
   id: string
   nieuweCategorie?: string
   nieuwSubHoofdstuk?: string | null
-  nieuwNiveau?: string
+  nieuweTags?: string[]
 }>) {
   const resultaten = []
 
@@ -674,17 +731,33 @@ async function pasWijzigingenToe(wijzigingen: Array<{
       const updateData: Record<string, any> = {}
       if (w.nieuweCategorie) updateData.categorie = w.nieuweCategorie
       if (w.nieuwSubHoofdstuk !== undefined) updateData.subHoofdstuk = w.nieuwSubHoofdstuk
-      if (w.nieuwNiveau) updateData.belastingNiveau = w.nieuwNiveau
 
       if (Object.keys(updateData).length > 0) {
         await prisma.artikel.update({
           where: { id: w.id },
           data: updateData,
         })
-        resultaten.push({ id: w.id, status: "bijgewerkt" })
-      } else {
-        resultaten.push({ id: w.id, status: "geen-wijzigingen" })
       }
+
+      // Update tags als nieuweTags is meegegeven
+      if (w.nieuweTags && w.nieuweTags.length > 0) {
+        // Verwijder bestaande tags
+        await prisma.artikelTag.deleteMany({ where: { artikelId: w.id } })
+        // Zoek tag records op basis van slug
+        const tagRecords = await prisma.contentTag.findMany({
+          where: { slug: { in: w.nieuweTags }, isActief: true },
+          select: { id: true },
+        })
+        if (tagRecords.length > 0) {
+          await prisma.artikelTag.createMany({
+            data: tagRecords.map((t) => ({ artikelId: w.id, tagId: t.id })),
+            skipDuplicates: true,
+          })
+        }
+      }
+
+      const heeftWijzigingen = Object.keys(updateData).length > 0 || (w.nieuweTags && w.nieuweTags.length > 0)
+      resultaten.push({ id: w.id, status: heeftWijzigingen ? "bijgewerkt" : "geen-wijzigingen" })
     } catch (err) {
       resultaten.push({ id: w.id, status: "fout", error: String(err) })
     }
@@ -747,6 +820,178 @@ async function pasHerschrijvingToe(artikelId: string, data: {
   }
 }
 
+// ── Hiaten-analyse ───────────────────────────────────────────────
+
+async function hiatenAnalyse() {
+  const anthropic = getAnthropic()
+
+  const [categorieen, beschikbareTags, artikelen] = await Promise.all([
+    haalCategorieen(),
+    haalTags(),
+    prisma.artikel.findMany({
+      where: { isActief: true },
+      select: {
+        id: true,
+        categorie: true,
+        artikelTags: {
+          select: { tag: { select: { slug: true, type: true } } },
+        },
+      },
+    }),
+  ])
+
+  // Bouw matrix: categorie × tag → aantal artikelen
+  const alleTags = Object.values(beschikbareTags).flat()
+  const matrix: Record<string, Record<string, number>> = {}
+
+  for (const cat of categorieen) {
+    matrix[cat] = {}
+    for (const tag of alleTags) {
+      matrix[cat][tag.slug] = 0
+    }
+  }
+
+  for (const artikel of artikelen) {
+    const cat = artikel.categorie
+    if (!matrix[cat]) continue
+    const artikelTagSlugs = artikel.artikelTags.map((at) => at.tag.slug)
+    for (const slug of artikelTagSlugs) {
+      if (matrix[cat][slug] !== undefined) {
+        matrix[cat][slug]++
+      }
+    }
+  }
+
+  // Bereken totalen per categorie en per tag
+  const categorieAantallen: Record<string, number> = {}
+  for (const cat of categorieen) {
+    categorieAantallen[cat] = artikelen.filter((a) => a.categorie === cat).length
+  }
+
+  const tagAantallen: Record<string, number> = {}
+  for (const tag of alleTags) {
+    tagAantallen[tag.slug] = artikelen.filter((a) =>
+      a.artikelTags.some((at) => at.tag.slug === tag.slug)
+    ).length
+  }
+
+  // Gebruik AI om hiaten te analyseren en prioriteiten voor te stellen
+  const { text } = await generateText({
+    model: anthropic("claude-sonnet-4-20250514"),
+    maxOutputTokens: 3000,
+    system: `Je bent een content-strateeg voor MantelBuddy.
+Je analyseert de dekking van de kennisbank en identificeert hiaten.
+
+${MANTELZORG_CONTEXT}
+
+REGELS:
+- Analyseer de matrix van categorie × tag combinaties
+- Identificeer combinaties met 0 of zeer weinig artikelen
+- Prioriteer op basis van relevantie voor mantelzorgers
+- Stel concrete artikelen voor om de hiaten te vullen
+- Geef per voorstel: onderwerp, categorie en tags
+
+ANTWOORD IN JSON-FORMAT:
+\`\`\`json
+{
+  "hiaten": [
+    {
+      "categorie": "...",
+      "tag": "...",
+      "aantalArtikelen": 0,
+      "prioriteit": "hoog|middel|laag",
+      "reden": "Waarom dit een hiaat is"
+    }
+  ],
+  "voorstellen": [
+    {
+      "onderwerp": "Concreet artikel-onderwerp",
+      "categorie": "...",
+      "tags": ["tag1", "tag2"],
+      "prioriteit": "hoog|middel|laag"
+    }
+  ],
+  "samenvatting": "Korte samenvatting van de bevindingen"
+}
+\`\`\``,
+    prompt: `Analyseer de volgende dekking van de MantelBuddy-kennisbank:
+
+ARTIKELEN PER CATEGORIE:
+${JSON.stringify(categorieAantallen, null, 2)}
+
+ARTIKELEN PER TAG:
+${JSON.stringify(tagAantallen, null, 2)}
+
+MATRIX (categorie × tag = aantal artikelen):
+${JSON.stringify(matrix, null, 2)}
+
+TOTAAL ARTIKELEN: ${artikelen.length}
+
+Identificeer de grootste hiaten en stel prioriteitsartikelen voor om deze te vullen.`,
+  })
+
+  // Parse resultaat
+  let analyse = null
+  const jsonMatch = text.match(/```json\s*([\s\S]*?)```/)
+  if (jsonMatch) {
+    try {
+      analyse = JSON.parse(jsonMatch[1].trim())
+    } catch {
+      // JSON parsing mislukt
+    }
+  }
+
+  return {
+    type: "hiaten-analyse",
+    matrix,
+    categorieAantallen,
+    tagAantallen,
+    totaalArtikelen: artikelen.length,
+    analyse,
+    volledigeTekst: text,
+  }
+}
+
+// ── Batch genereren ─────────────────────────────────────────────────
+
+async function batchGenereer(
+  voorstellen: Array<{ onderwerp: string; categorie: string; tags: string[] }>,
+  opslaan: boolean
+) {
+  const resultaten = []
+
+  for (const voorstel of voorstellen) {
+    try {
+      const resultaat = await genereerArtikel(
+        voorstel.onderwerp,
+        voorstel.categorie,
+        voorstel.tags,
+        opslaan
+      )
+      resultaten.push({
+        onderwerp: voorstel.onderwerp,
+        status: "succes",
+        ...resultaat,
+      })
+    } catch (err) {
+      resultaten.push({
+        onderwerp: voorstel.onderwerp,
+        status: "fout",
+        error: String(err),
+      })
+    }
+  }
+
+  return {
+    type: "batch-genereer",
+    totaal: voorstellen.length,
+    geslaagd: resultaten.filter((r) => r.status === "succes").length,
+    mislukt: resultaten.filter((r) => r.status === "fout").length,
+    opgeslagen: opslaan,
+    resultaten,
+  }
+}
+
 // ── Route handler ──────────────────────────────────────────────────
 
 export async function POST(req: Request) {
@@ -762,19 +1007,23 @@ export async function POST(req: Request) {
       onderwerp,
       artikelId,
       categorie,
+      tags,
       limiet = 20,
       opslaan = false,
       wijzigingen: wijzigingenData,
       herschrijving,
+      voorstellen: voorstellenData,
     } = body as {
-      type: "zoek-online" | "genereer" | "herschrijf" | "verrijk" | "categoriseer-bulk" | "toepassen" | "toepassen-herschrijving"
+      type: "zoek-online" | "genereer" | "herschrijf" | "verrijk" | "categoriseer-bulk" | "toepassen" | "toepassen-herschrijving" | "hiaten-analyse" | "batch-genereer"
       onderwerp?: string
       artikelId?: string
       categorie?: string
+      tags?: string[]
       limiet?: number
       opslaan?: boolean
-      wijzigingen?: Array<{ id: string; nieuweCategorie?: string; nieuwSubHoofdstuk?: string | null; nieuwNiveau?: string }>
+      wijzigingen?: Array<{ id: string; nieuweCategorie?: string; nieuwSubHoofdstuk?: string | null; nieuweTags?: string[] }>
       herschrijving?: { titel?: string; beschrijving?: string; inhoud?: string }
+      voorstellen?: Array<{ onderwerp: string; categorie: string; tags: string[] }>
     }
 
     const effectiefLimiet = Math.min(Math.max(limiet, 1), 50)
@@ -791,7 +1040,7 @@ export async function POST(req: Request) {
         if (!onderwerp) {
           return NextResponse.json({ error: "Onderwerp is verplicht voor genereren" }, { status: 400 })
         }
-        resultaat = await genereerArtikel(onderwerp, categorie, opslaan)
+        resultaat = await genereerArtikel(onderwerp, categorie, tags, opslaan)
         break
 
       case "herschrijf":
@@ -824,6 +1073,17 @@ export async function POST(req: Request) {
           return NextResponse.json({ error: "artikelId en herschrijving zijn verplicht" }, { status: 400 })
         }
         resultaat = await pasHerschrijvingToe(artikelId, herschrijving)
+        break
+
+      case "hiaten-analyse":
+        resultaat = await hiatenAnalyse()
+        break
+
+      case "batch-genereer":
+        if (!voorstellenData || voorstellenData.length === 0) {
+          return NextResponse.json({ error: "Voorstellen zijn verplicht voor batch genereren" }, { status: 400 })
+        }
+        resultaat = await batchGenereer(voorstellenData, opslaan)
         break
 
       default:

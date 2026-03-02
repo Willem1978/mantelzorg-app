@@ -31,7 +31,6 @@ export async function PUT(
         bronLabel: body.bronLabel || null,
         type: body.type || "ARTIKEL",
         status: body.status || "CONCEPT",
-        belastingNiveau: body.belastingNiveau || "ALLE",
         gemeente: body.gemeente || null,
         publicatieDatum: body.publicatieDatum ? new Date(body.publicatieDatum) : null,
         sorteerVolgorde: body.sorteerVolgorde || 0,

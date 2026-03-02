@@ -115,7 +115,6 @@ export async function POST(request: NextRequest) {
           categorie: "gemeente-nieuws",
           type: "GEMEENTE_NIEUWS",
           status: "GEPUBLICEERD",
-          belastingNiveau: "ALLE",
           publicatieDatum: publicatieDatum ? new Date(publicatieDatum) : new Date(),
           gemeente: gemeenteNaam,
           isActief: true,
