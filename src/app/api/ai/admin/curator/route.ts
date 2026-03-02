@@ -8,9 +8,10 @@
  *   - Auto-categorisering van artikelen
  *   - B1-taalniveau check en herschrijfsugesties
  *   - Duplicaten-detectie met vector similarity
+ *   - Hiaten-detectie: ontbrekende content en gaps in de kennisbank
  *
  * POST body:
- *   { type: "review" | "categoriseer" | "b1check" | "duplicaten" | "alles", limiet?: number }
+ *   { type: "review" | "categoriseer" | "b1check" | "duplicaten" | "hiaten" | "alles", limiet?: number }
  */
 import { NextResponse } from "next/server"
 import { createAnthropic } from "@ai-sdk/anthropic"
@@ -433,6 +434,128 @@ Geef:
   }
 }
 
+// ── Hiaten-detectie: ontbrekende content ───────────────────────────
+
+async function detecteerHiaten() {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return { type: "hiaten", analyse: "AI-analyse niet beschikbaar: ANTHROPIC_API_KEY niet geconfigureerd." }
+  }
+
+  // Haal bestaande content op: categorieën, aantallen, gemeentes
+  const [categorieStats, gemeenteStats, totaalArtikelen, subHoofdstukken] = await Promise.all([
+    prisma.artikel.groupBy({
+      by: ["categorie"],
+      where: { isActief: true },
+      _count: true,
+    }),
+    prisma.artikel.groupBy({
+      by: ["gemeente"],
+      where: { isActief: true, gemeente: { not: null } },
+      _count: true,
+    }),
+    prisma.artikel.count({ where: { isActief: true } }),
+    prisma.artikel.groupBy({
+      by: ["categorie", "subHoofdstuk"],
+      where: { isActief: true, subHoofdstuk: { not: null } },
+      _count: true,
+    }),
+  ])
+
+  // Haal ook belastingniveau verdeling op
+  const niveauStats = await prisma.artikel.groupBy({
+    by: ["belastingNiveau"],
+    where: { isActief: true },
+    _count: true,
+  })
+
+  const overzicht = {
+    totaalArtikelen,
+    categorieVerdeling: categorieStats.map((c) => ({
+      categorie: c.categorie,
+      aantal: c._count,
+    })),
+    gemeenteVerdeling: gemeenteStats.map((g) => ({
+      gemeente: g.gemeente,
+      aantal: g._count,
+    })),
+    subHoofdstukken: subHoofdstukken.map((s) => ({
+      categorie: s.categorie,
+      subHoofdstuk: s.subHoofdstuk,
+      aantal: s._count,
+    })),
+    belastingNiveauVerdeling: niveauStats.map((n) => ({
+      niveau: n.belastingNiveau,
+      aantal: n._count,
+    })),
+  }
+
+  const anthropic = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+  const { text } = await generateText({
+    model: anthropic("claude-sonnet-4-20250514"),
+    maxOutputTokens: 3000,
+    system: `Je bent een content-strateeg voor MantelBuddy, een platform voor mantelzorgers in Nederland.
+Je analyseert de kennisbank op ontbrekende content (hiaten/gaps).
+
+DOELGROEPEN VAN HET PLATFORM:
+- Mantelzorgers (primair): zorgen voor een naaste met een beperking, chronische ziekte of ouderdom
+- MantelBuddy's (vrijwilligers): helpen mantelzorgers met taken
+
+ZORGTAKEN DIE MANTELZORGERS UITVOEREN:
+- Administratie en aanvragen
+- Plannen en organiseren
+- Boodschappen
+- Sociaal contact en activiteiten
+- Vervoer
+- Persoonlijke verzorging
+- Maaltijden bereiden
+- Huishoudelijke taken
+- Klusjes in en om het huis
+- Huisdieren
+
+HULPCATEGORIEËN VOOR MANTELZORGERS ZELF:
+- Informatie en advies
+- Educatie & cursussen
+- Emotionele steun
+- Persoonlijke begeleiding
+- Praktische hulp
+- Vervangende zorg (respijt)
+
+REGELS:
+- Schrijf in het Nederlands, zakelijk en objectief
+- Identificeer concrete hiaten: welke onderwerpen missen volledig of zijn onderbelicht
+- Kijk naar: zorgtaken zonder content, gemeentes zonder lokale hulp, ontbrekende belastingniveaus
+- Kijk ook naar: veelvoorkomende scenario's die niet gedekt zijn (bijv. dementie, terminale zorg, jonge mantelzorgers, werkende mantelzorgers)
+- Prioriteer hiaten op impact: wat raakt de meeste mantelzorgers
+- Geef concrete suggesties voor nieuwe artikelen
+- Gebruik markdown tabellen voor overzichten`,
+    prompt: `Analyseer de volgende kennisbank op ontbrekende content en hiaten.
+
+HUIDIGE KENNISBANK OVERZICHT:
+${JSON.stringify(overzicht, null, 2)}
+
+Geef:
+1. Een overzicht van de huidige dekking per categorie (tabel)
+2. Zorgtaken die GEEN of te weinig content hebben
+3. Belangrijke mantelzorg-onderwerpen die volledig ontbreken (bijv. specifieke doelgroepen, scenario's)
+4. Gemeentes/regio's met weinig lokale content
+5. Belastingniveaus die ondervertegenwoordigd zijn
+6. Top 10 concrete artikelen die geschreven moeten worden (met titel, categorie, en korte beschrijving)
+7. Prioritering: welke hiaten zijn het meest urgent`,
+  })
+
+  const aantalHiaten = (text.match(/ontbreekt|mist|geen content|onderbelicht|te weinig/gi) || []).length
+
+  return {
+    type: "hiaten",
+    totaalArtikelen,
+    aantalCategorieen: categorieStats.length,
+    aantalGemeentes: gemeenteStats.length,
+    aantalHiaten,
+    analyse: text,
+  }
+}
+
 // ── Route handler ──────────────────────────────────────────────────
 
 export async function POST(req: Request) {
@@ -444,7 +567,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
     const { type = "alles", limiet = 20 } = body as {
-      type?: "review" | "categoriseer" | "b1check" | "duplicaten" | "alles"
+      type?: "review" | "categoriseer" | "b1check" | "duplicaten" | "hiaten" | "alles"
       limiet?: number
     }
 
@@ -467,6 +590,10 @@ export async function POST(req: Request) {
 
     if (type === "duplicaten" || type === "alles") {
       resultaten.duplicaten = await detecteerDuplicaten(effectiefLimiet)
+    }
+
+    if (type === "hiaten" || type === "alles") {
+      resultaten.hiaten = await detecteerHiaten()
     }
 
     await logAudit({
