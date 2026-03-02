@@ -129,8 +129,8 @@ export async function POST(request: NextRequest) {
         userId: session.user.id,
         type: "HELP_REQUEST_UPDATE",
         title: "Hulpvraag geplaatst",
-        message: `Je hulpvraag "${body.titel}" is geplaatst op de marktplaats.`,
-        link: "/marktplaats",
+        message: `Je hulpvraag "${body.titel}" is geplaatst.`,
+        link: "/buddys",
       },
     })
 

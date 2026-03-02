@@ -45,7 +45,7 @@ const navItems: { href: string; label: string; icon: React.ReactNode; hasBadge?:
       </svg>
     ),
     hasBadge: true,
-    matchPaths: ["/buddys", "/marktplaats"],
+    matchPaths: ["/buddys"],
   },
 ]
 

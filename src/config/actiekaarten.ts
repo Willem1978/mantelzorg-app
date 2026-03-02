@@ -25,7 +25,7 @@ export type ActieType =
   | "check-in"          // Doe een check-in
   | "verdeel"           // Verdeel de taak
   | "informatie"        // Lees meer informatie
-  | "marktplaats"       // Ga naar de marktplaats
+  | "buddy-hulp"        // Zoek een MantelBuddy
 
 export type Urgentie = "direct" | "binnenkort" | "op-termijn"
 
@@ -117,13 +117,13 @@ function kaartenVoorTaak(
       })
       kaarten.push({
         id: `${taakId}-buddy`,
-        type: "marktplaats",
+        type: "buddy-hulp",
         titel: `Vraag een MantelBuddy`,
         tekst: `Een vrijwilliger bij jou in de buurt kan helpen met ${taakNaam.toLowerCase()}.`,
         emoji: "🤝",
         urgentie: "direct",
-        link: `/marktplaats?taak=${taakId}`,
-        linkTekst: "Naar de marktplaats",
+        link: `/buddys?tab=hulpvraag&taak=${taakId}`,
+        linkTekst: "Zoek een buddy",
       })
     } else if (zwaarte === 2) {
       // Matig + Hoog → binnenkort actie
@@ -134,7 +134,7 @@ function kaartenVoorTaak(
         tekst: `Kun je ${taakNaam.toLowerCase()} delen met iemand? Familie, buren of een vrijwilliger?`,
         emoji: "🔄",
         urgentie: "binnenkort",
-        link: `/marktplaats?taak=${taakId}`,
+        link: `/buddys?tab=hulpvraag&taak=${taakId}`,
         linkTekst: "Zoek een helper",
       })
     }
@@ -167,14 +167,14 @@ function kaartenVoorTaak(
         linkTekst: "Zoek hulp",
       })
       kaarten.push({
-        id: `${taakId}-marktplaats`,
-        type: "marktplaats",
-        titel: `Vraag hulp via de marktplaats`,
+        id: `${taakId}-buddy-hulp`,
+        type: "buddy-hulp",
+        titel: `Vraag een MantelBuddy`,
         tekst: `Plaats een hulpvraag voor ${taakNaam.toLowerCase()}. Vrijwilligers kunnen reageren.`,
         emoji: "🤝",
         urgentie: "binnenkort",
-        link: `/marktplaats?taak=${taakId}`,
-        linkTekst: "Naar de marktplaats",
+        link: `/buddys?tab=hulpvraag&taak=${taakId}`,
+        linkTekst: "Zoek een buddy",
       })
     } else if (zwaarte === 2) {
       kaarten.push({
@@ -201,7 +201,7 @@ function kaartenVoorTaak(
         tekst: `Je balans is goed, maar ${taakNaam.toLowerCase()} valt je zwaar. Het is slim om hiervoor hulp te zoeken.`,
         emoji: "📌",
         urgentie: "op-termijn",
-        link: `/marktplaats?taak=${taakId}`,
+        link: `/buddys?tab=hulpvraag&taak=${taakId}`,
         linkTekst: "Bekijk opties",
       })
     }
@@ -269,11 +269,11 @@ export function genereerActiekaarten(
     })
   }
 
-  // Dedupliceer op type (max 1 per type behalve hulp-zoeken en marktplaats)
+  // Dedupliceer op type (max 1 per type behalve hulp-zoeken en buddy-hulp)
   const gezien = new Set<string>()
   const uniek: Actiekaart[] = []
   for (const k of alleKaarten) {
-    const key = k.type === "hulp-zoeken" || k.type === "marktplaats" ? k.id : k.type
+    const key = k.type === "hulp-zoeken" || k.type === "buddy-hulp" ? k.id : k.type
     if (!gezien.has(key)) {
       gezien.add(key)
       uniek.push(k)
@@ -361,7 +361,7 @@ const TAAK_SPECIFIEK: Record<string, Record<"LAAG" | "GEMIDDELD" | "HOOG", strin
   "Boodschappen": {
     LAAG: "De boodschappen lopen soepel. Tip: online bestellen bespaart tijd.",
     GEMIDDELD: "Online boodschappen bestellen scheelt een rit. Of vraag een vrijwilliger om te helpen.",
-    HOOG: "Besteed boodschappen uit. Bestel online of vraag via de marktplaats een vrijwilliger.",
+    HOOG: "Besteed boodschappen uit. Bestel online of vraag een MantelBuddy om te helpen.",
   },
   "Administratie en aanvragen": {
     LAAG: "De administratie loopt. Tip: bewaar belangrijke papieren op één plek.",
@@ -396,7 +396,7 @@ const TAAK_SPECIFIEK: Record<string, Record<"LAAG" | "GEMIDDELD" | "HOOG", strin
   "Klusjes in en om het huis": {
     LAAG: "De klusjes gaan goed. Tip: voor grotere klussen kun je de gemeente vragen.",
     GEMIDDELD: "Gemeente of woningcorporatie heeft vaak een klussendienst. Vrijwilligers kunnen ook helpen.",
-    HOOG: "Laat klusjes over aan anderen. Via de marktplaats of klussendienst van je gemeente.",
+    HOOG: "Laat klusjes over aan anderen. Zoek een MantelBuddy of de klussendienst van je gemeente.",
   },
   "Klusjes": {
     LAAG: "Voor grotere klussen kun je de gemeente vragen.",
