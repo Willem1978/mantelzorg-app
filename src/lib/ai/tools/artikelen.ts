@@ -14,11 +14,14 @@ export function createZoekArtikelenTool() {
       categorie: z
         .string()
         .optional()
-        .describe("Categorie slug: praktische-tips, zelfzorg-balans, rechten-regelingen, geld-financien, hulpmiddelen-technologie, werk-mantelzorg, samenwerken-netwerk"),
+        .describe("Categorie slug: dagelijks-zorgen, zelfzorg-balans, rechten-regelingen, geld-financien, hulpmiddelen-technologie, werk-mantelzorg, samenwerken-netwerk"),
+      tag: z
+        .string()
+        .optional()
+        .describe("Tag slug voor aandoening of situatie, bijv: dementie, kanker, psychisch, jong, werkend, op-afstand"),
       zoekterm: z.string().optional().describe("Zoekterm in titel of beschrijving"),
-      tags: z.array(z.string()).optional().describe("Filter op tag-slugs (bijv. dementie, werkend)"),
     }),
-    execute: async ({ categorie, zoekterm, tags }) => {
+    execute: async ({ categorie, tag, zoekterm }) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const where: Record<string, any> = {
         isActief: true,
@@ -30,15 +33,15 @@ export function createZoekArtikelenTool() {
         where.categorie = categorie
       }
 
+      if (tag) {
+        where.tags = { some: { tag: { slug: tag } } }
+      }
+
       if (zoekterm) {
         where.OR = [
           { titel: { contains: zoekterm, mode: "insensitive" } },
           { beschrijving: { contains: zoekterm, mode: "insensitive" } },
         ]
-      }
-
-      if (tags && tags.length > 0) {
-        where.tags = { some: { tag: { slug: { in: tags } } } }
       }
 
       const artikelen = await prisma.artikel.findMany({
@@ -51,7 +54,9 @@ export function createZoekArtikelenTool() {
           emoji: true,
           categorie: true,
           url: true,
-          tags: { select: { tag: { select: { slug: true, naam: true, emoji: true } } } },
+          tags: {
+            select: { tag: { select: { slug: true, naam: true } } },
+          },
         },
       })
 
@@ -67,8 +72,8 @@ export function createZoekArtikelenTool() {
           emoji: a.emoji,
           categorie: a.categorie,
           url: a.url,
+          tags: a.tags.map((t) => t.tag.naam),
           appLink: `/leren/${a.categorie}`,
-          tags: a.tags.map((t) => ({ slug: t.tag.slug, naam: t.tag.naam, emoji: t.tag.emoji })),
         })),
       }
     },

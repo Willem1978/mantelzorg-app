@@ -7,13 +7,7 @@ export const hulpvragenContent = {
   subtitlePrefix: "Kies hieronder voor wie je hulp zoekt. Tik op het ",
   subtitleHartje: "hartje",
   subtitleSuffix: " om iets te bewaren.",
-  belastingInfo: (niveau: string) =>
-    `De hulp past bij jouw situatie (${niveau}).`,
-  belastingNiveaus: {
-    LAAG: "goed vol te houden",
-    GEMIDDELD: "matig belastend",
-    HOOG: "zwaar belastend",
-  } as Record<string, string>,
+
   tabs: {
     voorJou: {
       emoji: "💜",

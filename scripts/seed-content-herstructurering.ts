@@ -5,7 +5,7 @@ const prisma = new PrismaClient()
 
 async function main() {
   console.log('=== Content Herstructurering ===')
-  console.log('Start migratie van categorieën, sub-hoofdstukken en tags...\n')
+  console.log('Start migratie van categorieën, subcategorieën en tags...\n')
 
   // ============================================
   // 1. CATEGORIE SLUG MAPPING - Update artikelen
@@ -13,7 +13,7 @@ async function main() {
   console.log('1. Categorie slugs updaten op artikelen...')
 
   const slugMappings: { oldSlug: string; newSlug: string }[] = [
-    // "praktische-tips" blijft "praktische-tips" (geen wijziging nodig)
+    { oldSlug: 'praktische-tips', newSlug: 'dagelijks-zorgen' },
     { oldSlug: 'zelfzorg', newSlug: 'zelfzorg-balans' },
     { oldSlug: 'rechten', newSlug: 'rechten-regelingen' },
     { oldSlug: 'financieel', newSlug: 'geld-financien' },
@@ -30,282 +30,181 @@ async function main() {
   }
 
   // ============================================
-  // 2. UPDATE ContentCategorie records (type=LEREN)
+  // 2. CONTENT CATEGORIEËN UPDATEN
   // ============================================
-  console.log('\n2. LEREN categorieën updaten en aanmaken...')
+  console.log('\n2. ContentCategorie records updaten...')
 
-  // Stap 2a: Update bestaande categorieën met nieuwe slugs
-  // We moeten eerst de slug updaten waar die verandert.
-  // Prisma upsert werkt op de unique constraint [type, slug], dus voor slug-wijzigingen
-  // moeten we eerst de bestaande records updaten via een directe query.
-
-  const categorieSlugUpdates: { oldSlug: string; newSlug: string }[] = [
-    { oldSlug: 'zelfzorg', newSlug: 'zelfzorg-balans' },
-    { oldSlug: 'rechten', newSlug: 'rechten-regelingen' },
-    { oldSlug: 'financieel', newSlug: 'geld-financien' },
-    { oldSlug: 'hulpmiddelen-producten', newSlug: 'hulpmiddelen-technologie' },
-  ]
-
-  for (const update of categorieSlugUpdates) {
-    const result = await prisma.$executeRaw`
+  // Update bestaande ContentCategorie slugs
+  for (const mapping of slugMappings) {
+    await prisma.$executeRaw`
       UPDATE "ContentCategorie"
-      SET slug = ${update.newSlug}, "updatedAt" = NOW()
-      WHERE type = 'LEREN' AND slug = ${update.oldSlug}
+      SET slug = ${mapping.newSlug}
+      WHERE slug = ${mapping.oldSlug}
     `
-    if (result > 0) {
-      console.log(`  ContentCategorie slug "${update.oldSlug}" → "${update.newSlug}" bijgewerkt`)
-    } else {
-      console.log(`  ContentCategorie slug "${update.oldSlug}" niet gevonden (mogelijk al gemigreerd)`)
-    }
   }
 
-  // Stap 2b: Upsert alle LEREN categorieën met bijgewerkte gegevens
-  const lerenCategorieen = [
-    {
-      slug: 'praktische-tips',
-      naam: 'Praktische tips',
-      emoji: '📋',
-      beschrijving: 'Tips voor dagelijks organiseren, tijdmanagement en zorgtaken',
-      volgorde: 1,
-    },
-    {
-      slug: 'zelfzorg-balans',
-      naam: 'Zelfzorg & balans',
-      emoji: '🧘',
-      beschrijving: 'Overbelasting herkennen, grenzen stellen en ontspanning',
-      volgorde: 2,
-    },
-    {
-      slug: 'rechten-regelingen',
-      naam: 'Rechten & regelingen',
-      emoji: '⚖️',
-      beschrijving: 'Wettelijke rechten, Wmo, Wlz, Zvw, pgb en mantelzorgwaardering',
-      volgorde: 3,
-    },
-    {
-      slug: 'geld-financien',
-      naam: 'Geld & financiën',
-      emoji: '💰',
-      beschrijving: 'Toeslagen, vergoedingen en belastingvoordelen',
-      volgorde: 4,
-    },
-    {
-      slug: 'hulpmiddelen-technologie',
-      naam: 'Hulpmiddelen & technologie',
-      emoji: '🔧',
-      beschrijving: 'Hulpmiddelen, aanpassingen en slimme technologie',
-      volgorde: 5,
-    },
-    {
-      slug: 'werk-mantelzorg',
-      naam: 'Werk & mantelzorg',
-      emoji: '💼',
-      beschrijving: 'Mantelzorg combineren met werk, rechten op de werkvloer',
-      volgorde: 6,
-    },
-    {
-      slug: 'samenwerken-netwerk',
-      naam: 'Samenwerken & netwerk',
-      emoji: '🤝',
-      beschrijving: 'Hulp vragen, netwerk opbouwen en samenwerken met zorgprofessionals',
-      volgorde: 7,
-    },
+  // Upsert alle 7 hoofdcategorieën
+  const hoofdcategorieen = [
+    { slug: 'dagelijks-zorgen', naam: 'Dagelijks zorgen', emoji: '🏠', volgorde: 1, beschrijving: 'Alles over dagritme, persoonlijke verzorging, maaltijden, huishouden en veiligheid' },
+    { slug: 'zelfzorg-balans', naam: 'Zelfzorg & balans', emoji: '💆', volgorde: 2, beschrijving: 'Overbelasting herkennen, grenzen stellen, ontspanning en emotionele steun' },
+    { slug: 'rechten-regelingen', naam: 'Rechten & regelingen', emoji: '⚖️', volgorde: 3, beschrijving: 'Wmo, Wlz, Zvw, PGB, cliëntondersteuning en mantelzorgwaardering' },
+    { slug: 'geld-financien', naam: 'Geld & financiën', emoji: '💰', volgorde: 4, beschrijving: 'Eigen bijdrage, toeslagen, belastingvoordelen en kosten besparen' },
+    { slug: 'hulpmiddelen-technologie', naam: 'Hulpmiddelen & technologie', emoji: '🔧', volgorde: 5, beschrijving: 'Hulpmiddelen thuis, digitale hulpmiddelen, domotica en woningaanpassingen' },
+    { slug: 'werk-mantelzorg', naam: 'Werk & mantelzorg', emoji: '💼', volgorde: 6, beschrijving: 'Combineren werk en zorg, verlofregeling, flexibel werken' },
+    { slug: 'samenwerken-netwerk', naam: 'Samenwerken & netwerk', emoji: '🤝', volgorde: 7, beschrijving: 'Hulp vragen, professionele zorg, taakverdeling en respijtzorg' },
   ]
 
-  for (const cat of lerenCategorieen) {
+  for (const cat of hoofdcategorieen) {
     await prisma.contentCategorie.upsert({
-      where: { type_slug: { type: 'LEREN', slug: cat.slug } },
+      where: { slug: cat.slug },
+      update: { naam: cat.naam, emoji: cat.emoji, volgorde: cat.volgorde, beschrijving: cat.beschrijving },
       create: {
         type: 'LEREN',
         slug: cat.slug,
         naam: cat.naam,
         emoji: cat.emoji,
-        beschrijving: cat.beschrijving,
         volgorde: cat.volgorde,
+        beschrijving: cat.beschrijving,
+        isActief: true,
       },
-      update: {
-        naam: cat.naam,
-        emoji: cat.emoji,
-        beschrijving: cat.beschrijving,
-        volgorde: cat.volgorde,
+    })
+    console.log(`  ✓ ${cat.emoji} ${cat.naam} (${cat.slug})`)
+  }
+
+  // ============================================
+  // 3. SUBCATEGORIEËN SEEDEN
+  // ============================================
+  console.log('\n3. Subcategorieën seeden...')
+
+  const subcategorieen: { categorie: string; slug: string; naam: string; volgorde: number }[] = [
+    // Dagelijks zorgen
+    { categorie: 'dagelijks-zorgen', slug: 'dagritme-plannen', naam: 'Dagritme & plannen', volgorde: 1 },
+    { categorie: 'dagelijks-zorgen', slug: 'persoonlijke-verzorging', naam: 'Persoonlijke verzorging', volgorde: 2 },
+    { categorie: 'dagelijks-zorgen', slug: 'maaltijden-voeding', naam: 'Maaltijden & voeding', volgorde: 3 },
+    { categorie: 'dagelijks-zorgen', slug: 'huishouden', naam: 'Huishouden', volgorde: 4 },
+    { categorie: 'dagelijks-zorgen', slug: 'veiligheid-thuis', naam: 'Veiligheid thuis', volgorde: 5 },
+    { categorie: 'dagelijks-zorgen', slug: 'medicatie-behandelingen', naam: 'Medicatie & behandelingen', volgorde: 6 },
+    // Zelfzorg & balans
+    { categorie: 'zelfzorg-balans', slug: 'overbelasting-herkennen', naam: 'Overbelasting herkennen', volgorde: 1 },
+    { categorie: 'zelfzorg-balans', slug: 'grenzen-stellen', naam: 'Grenzen stellen', volgorde: 2 },
+    { categorie: 'zelfzorg-balans', slug: 'ontspanning-pauze', naam: 'Ontspanning & pauze', volgorde: 3 },
+    { categorie: 'zelfzorg-balans', slug: 'emotionele-steun', naam: 'Emotionele steun', volgorde: 4 },
+    { categorie: 'zelfzorg-balans', slug: 'rouw-verlies', naam: 'Rouw & verlies', volgorde: 5 },
+    { categorie: 'zelfzorg-balans', slug: 'lotgenoten', naam: 'Lotgenoten', volgorde: 6 },
+    // Rechten & regelingen
+    { categorie: 'rechten-regelingen', slug: 'wmo-gemeente', naam: 'Wmo (gemeente)', volgorde: 1 },
+    { categorie: 'rechten-regelingen', slug: 'wlz-langdurige-zorg', naam: 'Wlz (langdurige zorg)', volgorde: 2 },
+    { categorie: 'rechten-regelingen', slug: 'zvw-zorgverzekering', naam: 'Zvw (zorgverzekering)', volgorde: 3 },
+    { categorie: 'rechten-regelingen', slug: 'pgb', naam: 'PGB', volgorde: 4 },
+    { categorie: 'rechten-regelingen', slug: 'clientondersteuning', naam: 'Cliëntondersteuning', volgorde: 5 },
+    { categorie: 'rechten-regelingen', slug: 'mantelzorgwaardering', naam: 'Mantelzorgwaardering', volgorde: 6 },
+    // Geld & financiën
+    { categorie: 'geld-financien', slug: 'eigen-bijdrage', naam: 'Eigen bijdrage', volgorde: 1 },
+    { categorie: 'geld-financien', slug: 'toeslagen-vergoedingen', naam: 'Toeslagen & vergoedingen', volgorde: 2 },
+    { categorie: 'geld-financien', slug: 'belastingvoordelen', naam: 'Belastingvoordelen', volgorde: 3 },
+    { categorie: 'geld-financien', slug: 'hulpmiddelen-aanvragen', naam: 'Hulpmiddelen aanvragen', volgorde: 4 },
+    { categorie: 'geld-financien', slug: 'kosten-besparen', naam: 'Kosten besparen', volgorde: 5 },
+    // Hulpmiddelen & technologie
+    { categorie: 'hulpmiddelen-technologie', slug: 'hulpmiddelen-thuis', naam: 'Hulpmiddelen thuis', volgorde: 1 },
+    { categorie: 'hulpmiddelen-technologie', slug: 'digitale-hulpmiddelen', naam: 'Digitale hulpmiddelen', volgorde: 2 },
+    { categorie: 'hulpmiddelen-technologie', slug: 'domotica-slim', naam: 'Domotica & slimme technologie', volgorde: 3 },
+    { categorie: 'hulpmiddelen-technologie', slug: 'aanpassingen-woning', naam: 'Aanpassingen woning', volgorde: 4 },
+    // Werk & mantelzorg
+    { categorie: 'werk-mantelzorg', slug: 'combineren-werk-zorg', naam: 'Combineren werk en zorg', volgorde: 1 },
+    { categorie: 'werk-mantelzorg', slug: 'verlofregeling', naam: 'Wettelijke verlofregeling', volgorde: 2 },
+    { categorie: 'werk-mantelzorg', slug: 'gesprek-werkgever', naam: 'Gesprek met werkgever', volgorde: 3 },
+    { categorie: 'werk-mantelzorg', slug: 'flexibel-werken', naam: 'Flexibel werken', volgorde: 4 },
+    { categorie: 'werk-mantelzorg', slug: 'stoppen-werken', naam: 'Stoppen met werken', volgorde: 5 },
+    // Samenwerken & netwerk
+    { categorie: 'samenwerken-netwerk', slug: 'hulp-vragen', naam: 'Hulp vragen', volgorde: 1 },
+    { categorie: 'samenwerken-netwerk', slug: 'professionele-zorg', naam: 'Professionele zorg inschakelen', volgorde: 2 },
+    { categorie: 'samenwerken-netwerk', slug: 'familie-taakverdeling', naam: 'Familie & taakverdeling', volgorde: 3 },
+    { categorie: 'samenwerken-netwerk', slug: 'vrijwilligers-buddys', naam: 'Vrijwilligers & buddys', volgorde: 4 },
+    { categorie: 'samenwerken-netwerk', slug: 'respijtzorg', naam: 'Respijtzorg', volgorde: 5 },
+  ]
+
+  for (const sub of subcategorieen) {
+    const fullSlug = `${sub.categorie}/${sub.slug}`
+    await prisma.contentCategorie.upsert({
+      where: { slug: fullSlug },
+      update: { naam: sub.naam, volgorde: sub.volgorde },
+      create: {
+        type: 'LEREN_SUB',
+        slug: fullSlug,
+        naam: sub.naam,
+        parentSlug: sub.categorie,
+        volgorde: sub.volgorde,
+        isActief: true,
       },
     })
   }
-  console.log(`  ${lerenCategorieen.length} LEREN categorieën upserted`)
+  console.log(`  ✓ ${subcategorieen.length} subcategorieën aangemaakt/bijgewerkt`)
 
   // ============================================
-  // 3. SEED SUB-CATEGORIEËN (type=SUB_HOOFDSTUK)
-  // ============================================
-  console.log('\n3. Sub-hoofdstukken seeden...')
-
-  // Update sub-hoofdstuk parentId referenties waar de parent slug is gewijzigd
-  // We moeten eerst de parent slugs in sub-hoofdstukken bijwerken
-  const lerenParents = await prisma.contentCategorie.findMany({
-    where: { type: 'LEREN' },
-    select: { id: true, slug: true },
-  })
-  const parentMap = Object.fromEntries(lerenParents.map((p) => [p.slug, p.id]))
-
-  const subHoofdstukken: Record<string, { slug: string; naam: string }[]> = {
-    'praktische-tips': [
-      { slug: 'dagelijks-organiseren', naam: 'Dagelijks organiseren' },
-      { slug: 'zorgtaken-verdelen', naam: 'Zorgtaken verdelen' },
-      { slug: 'communicatie-zorgvrager', naam: 'Communicatie met zorgvrager' },
-      { slug: 'afspraken-plannen', naam: 'Afspraken plannen' },
-    ],
-    'zelfzorg-balans': [
-      { slug: 'overbelasting-herkennen', naam: 'Overbelasting herkennen' },
-      { slug: 'grenzen-stellen', naam: 'Grenzen stellen' },
-      { slug: 'ontspanning-bewegen', naam: 'Ontspanning & bewegen' },
-      { slug: 'emotioneel-welzijn', naam: 'Emotioneel welzijn' },
-      { slug: 'slaap-rust', naam: 'Slaap & rust' },
-    ],
-    'rechten-regelingen': [
-      { slug: 'wmo-hulp', naam: 'Wmo hulp' },
-      { slug: 'wlz-langdurige-zorg', naam: 'Wlz langdurige zorg' },
-      { slug: 'pgb-aanvragen', naam: 'Pgb aanvragen' },
-      { slug: 'mantelzorgwaardering', naam: 'Mantelzorgwaardering' },
-      { slug: 'klachten-bezwaar', naam: 'Klachten & bezwaar' },
-    ],
-    'geld-financien': [
-      { slug: 'toeslagen-subsidies', naam: 'Toeslagen & subsidies' },
-      { slug: 'belastingvoordeel', naam: 'Belastingvoordeel' },
-      { slug: 'zorgverzekering', naam: 'Zorgverzekering' },
-      { slug: 'pgb-financieel', naam: 'Pgb financieel' },
-    ],
-    'hulpmiddelen-technologie': [
-      { slug: 'dagelijkse-hulpmiddelen', naam: 'Dagelijkse hulpmiddelen' },
-      { slug: 'slimme-technologie', naam: 'Slimme technologie' },
-      { slug: 'woningaanpassingen', naam: 'Woningaanpassingen' },
-      { slug: 'digitale-tools', naam: 'Digitale tools' },
-    ],
-    'werk-mantelzorg': [
-      { slug: 'rechten-werkvloer', naam: 'Rechten op de werkvloer' },
-      { slug: 'verlof-regelingen', naam: 'Verlof regelingen' },
-      { slug: 'gesprek-werkgever', naam: 'Gesprek met werkgever' },
-      { slug: 'thuiswerken-flexibiliteit', naam: 'Thuiswerken & flexibiliteit' },
-    ],
-    'samenwerken-netwerk': [
-      { slug: 'hulp-vragen', naam: 'Hulp vragen' },
-      { slug: 'zorgnetwerk-opbouwen', naam: 'Zorgnetwerk opbouwen' },
-      { slug: 'samenwerken-professionals', naam: 'Samenwerken met professionals' },
-      { slug: 'lotgenoten-contact', naam: 'Lotgenoten contact' },
-    ],
-  }
-
-  let subCount = 0
-  for (const [categorieSlug, subs] of Object.entries(subHoofdstukken)) {
-    const parentId = parentMap[categorieSlug]
-    if (!parentId) {
-      console.log(`  WAARSCHUWING: Parent categorie "${categorieSlug}" niet gevonden, sub-hoofdstukken overgeslagen`)
-      continue
-    }
-
-    for (let i = 0; i < subs.length; i++) {
-      const sub = subs[i]
-      await prisma.contentCategorie.upsert({
-        where: { type_slug: { type: 'SUB_HOOFDSTUK', slug: sub.slug } },
-        create: {
-          type: 'SUB_HOOFDSTUK',
-          slug: sub.slug,
-          naam: sub.naam,
-          parentId,
-          volgorde: i + 1,
-        },
-        update: {
-          naam: sub.naam,
-          parentId,
-          volgorde: i + 1,
-        },
-      })
-      subCount++
-    }
-  }
-  console.log(`  ${subCount} sub-hoofdstukken seeded`)
-
-  // ============================================
-  // 4. SEED CONTENT TAGS
+  // 4. CONTENT TAGS SEEDEN (aandoeningen + situaties)
   // ============================================
   console.log('\n4. Content tags seeden...')
 
-  // AANDOENING tags (12)
   const aandoeningTags = [
     { slug: 'dementie', naam: 'Dementie', emoji: '🧠', volgorde: 1 },
     { slug: 'kanker', naam: 'Kanker', emoji: '🎗️', volgorde: 2 },
     { slug: 'cva-beroerte', naam: 'CVA / Beroerte', emoji: '🫀', volgorde: 3 },
-    { slug: 'psychisch', naam: 'Psychische aandoening', emoji: '🧩', volgorde: 4 },
-    { slug: 'verstandelijk', naam: 'Verstandelijke beperking', emoji: '💡', volgorde: 5 },
-    { slug: 'lichamelijk', naam: 'Lichamelijke beperking', emoji: '♿', volgorde: 6 },
-    { slug: 'ouderdom', naam: 'Ouderdomsklachten', emoji: '👴', volgorde: 7 },
-    { slug: 'chronisch-ziek', naam: 'Chronisch ziek', emoji: '💊', volgorde: 8 },
-    { slug: 'niet-aangeboren-hersenletsel', naam: 'NAH (hersenletsel)', emoji: '🧠', volgorde: 9 },
-    { slug: 'parkinson', naam: 'Parkinson', emoji: '🤲', volgorde: 10 },
-    { slug: 'als', naam: 'ALS', emoji: '💪', volgorde: 11 },
-    { slug: 'terminaal', naam: 'Terminale ziekte / palliatief', emoji: '🕊️', volgorde: 12 },
+    { slug: 'hartfalen', naam: 'Hartfalen', emoji: '❤️', volgorde: 4 },
+    { slug: 'copd', naam: 'COPD', emoji: '🫁', volgorde: 5 },
+    { slug: 'diabetes', naam: 'Diabetes', emoji: '💉', volgorde: 6 },
+    { slug: 'psychisch', naam: 'Psychische aandoening', emoji: '🧩', volgorde: 7 },
+    { slug: 'verstandelijke-beperking', naam: 'Verstandelijke beperking', emoji: '🌈', volgorde: 8 },
+    { slug: 'lichamelijke-beperking', naam: 'Lichamelijke beperking', emoji: '♿', volgorde: 9 },
+    { slug: 'nah', naam: 'NAH (niet-aangeboren hersenletsel)', emoji: '🧠', volgorde: 10 },
+    { slug: 'ouderdom', naam: 'Ouderdom / Kwetsbaarheid', emoji: '👴', volgorde: 11 },
+    { slug: 'terminaal', naam: 'Terminale fase / Palliatief', emoji: '🕊️', volgorde: 12 },
+  ]
+
+  const situatieTags = [
+    { slug: 'jong', naam: 'Jonge mantelzorger (< 25)', emoji: '👶', volgorde: 1 },
+    { slug: 'werkend', naam: 'Werkende mantelzorger', emoji: '💼', volgorde: 2 },
+    { slug: 'op-afstand', naam: 'Mantelzorger op afstand', emoji: '📍', volgorde: 3 },
+    { slug: 'met-kinderen', naam: 'Mantelzorger met kinderen', emoji: '👨‍👩‍👧', volgorde: 4 },
+    { slug: 'beginnend', naam: 'Beginnende mantelzorger', emoji: '🌱', volgorde: 5 },
+    { slug: 'langdurig', naam: 'Langdurige zorg (> 5 jaar)', emoji: '⏳', volgorde: 6 },
+    { slug: 'partner-zorg', naam: 'Mantelzorger voor partner', emoji: '💑', volgorde: 7 },
+    { slug: 'ouder-zorg', naam: 'Mantelzorger voor ouder', emoji: '👵', volgorde: 8 },
+    { slug: 'kind-zorg', naam: 'Mantelzorger voor kind', emoji: '👧', volgorde: 9 },
   ]
 
   for (const tag of aandoeningTags) {
     await prisma.contentTag.upsert({
       where: { slug: tag.slug },
+      update: { naam: tag.naam, emoji: tag.emoji, volgorde: tag.volgorde },
       create: {
         type: 'AANDOENING',
         slug: tag.slug,
         naam: tag.naam,
         emoji: tag.emoji,
         volgorde: tag.volgorde,
-      },
-      update: {
-        type: 'AANDOENING',
-        naam: tag.naam,
-        emoji: tag.emoji,
-        volgorde: tag.volgorde,
+        isActief: true,
       },
     })
   }
-  console.log(`  ${aandoeningTags.length} AANDOENING tags seeded`)
-
-  // SITUATIE tags (9)
-  const situatieTags = [
-    { slug: 'werkend', naam: 'Werkende mantelzorger', emoji: '💼', volgorde: 1 },
-    { slug: 'jong', naam: 'Jonge mantelzorger', emoji: '🎒', volgorde: 2 },
-    { slug: 'op-afstand', naam: 'Mantelzorg op afstand', emoji: '📍', volgorde: 3 },
-    { slug: 'alleenstaand', naam: 'Alleenstaande mantelzorger', emoji: '🏠', volgorde: 4 },
-    { slug: 'meervoudig', naam: 'Meervoudige mantelzorg', emoji: '👥', volgorde: 5 },
-    { slug: 'partner', naam: 'Partnerzorg', emoji: '💑', volgorde: 6 },
-    { slug: 'ouder-kind', naam: 'Ouder zorgt voor kind', emoji: '👪', volgorde: 7 },
-    { slug: 'kind-ouder', naam: 'Kind zorgt voor ouder', emoji: '🤗', volgorde: 8 },
-    { slug: 'rouwend', naam: 'Rouwende mantelzorger', emoji: '🕯️', volgorde: 9 },
-  ]
+  console.log(`  ✓ ${aandoeningTags.length} aandoening-tags aangemaakt/bijgewerkt`)
 
   for (const tag of situatieTags) {
     await prisma.contentTag.upsert({
       where: { slug: tag.slug },
+      update: { naam: tag.naam, emoji: tag.emoji, volgorde: tag.volgorde },
       create: {
         type: 'SITUATIE',
         slug: tag.slug,
         naam: tag.naam,
         emoji: tag.emoji,
         volgorde: tag.volgorde,
-      },
-      update: {
-        type: 'SITUATIE',
-        naam: tag.naam,
-        emoji: tag.emoji,
-        volgorde: tag.volgorde,
+        isActief: true,
       },
     })
   }
-  console.log(`  ${situatieTags.length} SITUATIE tags seeded`)
+  console.log(`  ✓ ${situatieTags.length} situatie-tags aangemaakt/bijgewerkt`)
 
-  // ============================================
-  // SAMENVATTING
-  // ============================================
-  const totalTags = aandoeningTags.length + situatieTags.length
-  console.log('\n=== Content Herstructurering Voltooid ===')
-  console.log(`  Artikel categorie slugs gemigreerd: ${slugMappings.length} mappings`)
-  console.log(`  LEREN categorieën: ${lerenCategorieen.length} (5 bijgewerkt, 2 nieuw)`)
-  console.log(`  Sub-hoofdstukken: ${subCount}`)
-  console.log(`  Content tags: ${totalTags} (${aandoeningTags.length} aandoening + ${situatieTags.length} situatie)`)
+  console.log('\n=== Content Herstructurering voltooid! ===')
 }
 
 main()
@@ -313,6 +212,4 @@ main()
     console.error('Fout bij content herstructurering:', e)
     process.exit(1)
   })
-  .finally(async () => {
-    await prisma.$disconnect()
-  })
+  .finally(() => prisma.$disconnect())

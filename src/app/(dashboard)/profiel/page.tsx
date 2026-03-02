@@ -220,6 +220,10 @@ export default function ProfielPage() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("")
   const [isDeleting, setIsDeleting] = useState(false)
   const [mijlpalen, setMijlpalen] = useState<Mijlpaal[]>([])
+  const [aandoening, setAandoening] = useState("")
+  const [situatieTags, setSituatieTags] = useState<string[]>([])
+  const [beschikbareTags, setBeschikbareTags] = useState<{ slug: string; naam: string; emoji?: string; type: string }[]>([])
+  const [savingSituatie, setSavingSituatie] = useState(false)
 
   useEffect(() => {
     // Laad profiel uit API
@@ -289,6 +293,30 @@ export default function ProfielPage() {
       }
     }
     loadMijlpalen()
+
+    // Laad beschikbare tags en gebruiker-voorkeuren
+    const loadSituatie = async () => {
+      try {
+        const [tagRes, voorkeurRes] = await Promise.all([
+          fetch("/api/content/tags"),
+          fetch("/api/user/voorkeuren"),
+        ])
+        if (tagRes.ok) {
+          const tagData = await tagRes.json()
+          setBeschikbareTags([...(tagData.aandoeningen || []), ...(tagData.situaties || [])])
+        }
+        if (voorkeurRes.ok) {
+          const voorkeurData = await voorkeurRes.json()
+          if (voorkeurData.aandoening) setAandoening(voorkeurData.aandoening)
+          if (voorkeurData.voorkeuren) {
+            setSituatieTags(voorkeurData.voorkeuren.filter((v: { type: string }) => v.type === "TAG").map((v: { slug: string }) => v.slug))
+          }
+        }
+      } catch {
+        // Stille fout
+      }
+    }
+    loadSituatie()
   }, [])
 
   const handleSave = async () => {
@@ -946,6 +974,85 @@ export default function ProfielPage() {
             )}
           </div>
         </div>
+
+        {/* Jouw situatie */}
+        {beschikbareTags.length > 0 && (
+          <div className="ker-card">
+            <h2 className="font-bold text-foreground mb-2 flex items-center gap-2">
+              <span className="text-xl">🎯</span>
+              Jouw situatie
+            </h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Selecteer wat op jouw situatie van toepassing is. Zo krijg je meer relevante informatie en tips.
+            </p>
+
+            {/* Aandoening selectie */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-foreground mb-2">Aandoening naaste</label>
+              <select
+                value={aandoening}
+                onChange={(e) => setAandoening(e.target.value)}
+                className="ker-input"
+              >
+                <option value="">-- Niet ingevuld --</option>
+                {beschikbareTags.filter((t) => t.type === "AANDOENING").map((t) => (
+                  <option key={t.slug} value={t.slug}>{t.emoji} {t.naam}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Situatie tags */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-foreground mb-2">Mijn situatie</label>
+              <div className="flex flex-wrap gap-2">
+                {beschikbareTags.filter((t) => t.type === "SITUATIE").map((t) => (
+                  <button
+                    key={t.slug}
+                    onClick={() => setSituatieTags((prev) =>
+                      prev.includes(t.slug) ? prev.filter((s) => s !== t.slug) : [...prev, t.slug]
+                    )}
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                      situatieTags.includes(t.slug)
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-card text-muted-foreground border-border hover:border-primary/50"
+                    }`}
+                  >
+                    {t.emoji && <span className="mr-1">{t.emoji}</span>}
+                    {t.naam}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={async () => {
+                setSavingSituatie(true)
+                try {
+                  const res = await fetch("/api/user/voorkeuren", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      aandoening: aandoening || null,
+                      voorkeuren: situatieTags.map((slug) => ({ type: "TAG", slug })),
+                    }),
+                  })
+                  if (res.ok) {
+                    setSaveMessage("Situatie opgeslagen!")
+                    setTimeout(() => setSaveMessage(""), 3000)
+                  }
+                } catch {
+                  // Stille fout
+                } finally {
+                  setSavingSituatie(false)
+                }
+              }}
+              disabled={savingSituatie}
+              className="ker-btn ker-btn-primary w-full"
+            >
+              {savingSituatie ? "Opslaan..." : "Situatie opslaan"}
+            </button>
+          </div>
+        )}
 
         {/* Test resultaat */}
         {profile.testScore !== undefined && niveau && (

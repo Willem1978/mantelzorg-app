@@ -12,13 +12,6 @@ interface ArtikelOptie {
   categorie: string
 }
 
-interface TagOptie {
-  slug: string
-  naam: string
-  emoji: string | null
-  type: string
-}
-
 const TYPE_LABELS: Record<AgentType, string> = {
   "zoek-online": "Online bronnen zoeken",
   genereer: "Artikel genereren",
@@ -44,9 +37,9 @@ const TYPE_BESCHRIJVINGEN: Record<AgentType, string> = {
   genereer: "Genereer een compleet nieuw artikel op B1-taalniveau over een opgegeven onderwerp",
   herschrijf: "Herschrijf een bestaand artikel: verbeter taalniveau, structuur en volledigheid",
   verrijk: "Voeg diepgang toe aan een bestaand artikel: extra tips, FAQ, bronnen en verwijzingen",
-  "categoriseer-bulk": "Analyseer meerdere artikelen en corrigeer categorieën en subhoofdstukken",
-  "hiaten-analyse": "Analyseer per categorie × tag welke combinaties geen artikelen hebben en stel prioriteiten voor",
-  "batch-genereer": "Genereer meerdere artikelen in één keer op basis van hiaten-analyse voorstellen",
+  "categoriseer-bulk": "Analyseer meerdere artikelen en corrigeer categorieën, subhoofdstukken en tags",
+  "hiaten-analyse": "Analyseer de kennisbank op ontbrekende content per categorie en tag (aandoening/situatie)",
+  "batch-genereer": "Genereer meerdere artikelen tegelijk op basis van voorstellen uit de hiaten-analyse",
 }
 
 export default function ContentAgentPage() {
@@ -56,24 +49,13 @@ export default function ContentAgentPage() {
   const [limiet, setLimiet] = useState(20)
   const [opslaan, setOpslaan] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [selectedCategorie, setSelectedCategorie] = useState("")
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [result, setResult] = useState<any>(null)
   const [artikelen, setArtikelen] = useState<ArtikelOptie[]>([])
   const [toepassenLoading, setToepassenLoading] = useState(false)
-  const [beschikbareTags, setBeschikbareTags] = useState<TagOptie[]>([])
-  const [geselecteerdeTags, setGeselecteerdeTags] = useState<string[]>([])
-  const [categorie, setCategorie] = useState("")
   const { showError, showSuccess } = useToast()
-
-  // Laad beschikbare tags
-  useEffect(() => {
-    fetch("/api/content/tags")
-      .then(res => res.json())
-      .then(data => {
-        setBeschikbareTags([...(data.aandoeningen || []), ...(data.situaties || [])])
-      })
-      .catch(() => { /* stil */ })
-  }, [])
 
   // Haal artikelen op voor de selectielijst
   useEffect(() => {
@@ -103,11 +85,7 @@ export default function ContentAgentPage() {
     try {
       const body: Record<string, unknown> = { type }
 
-      if (type === "zoek-online") {
-        if (onderwerp) body.onderwerp = onderwerp
-        if (categorie) body.categorie = categorie
-        if (geselecteerdeTags.length > 0) body.tags = geselecteerdeTags
-      }
+      if (type === "zoek-online" && onderwerp) body.onderwerp = onderwerp
       if (type === "genereer") {
         if (!onderwerp.trim()) {
           showError("Vul een onderwerp in")
@@ -116,8 +94,8 @@ export default function ContentAgentPage() {
         }
         body.onderwerp = onderwerp
         body.opslaan = opslaan
-        if (categorie) body.categorie = categorie
-        if (geselecteerdeTags.length > 0) body.tags = geselecteerdeTags
+        if (selectedCategorie) body.categorie = selectedCategorie
+        if (selectedTags.length > 0) body.tags = selectedTags
       }
       if (type === "herschrijf") {
         if (!artikelId) {
@@ -126,7 +104,7 @@ export default function ContentAgentPage() {
           return
         }
         body.artikelId = artikelId
-        if (onderwerp) body.onderwerp = onderwerp
+        if (onderwerp) body.onderwerp = onderwerp // als instructie
       }
       if (type === "verrijk") {
         if (!artikelId) {
@@ -140,16 +118,15 @@ export default function ContentAgentPage() {
         body.limiet = limiet
       }
       if (type === "hiaten-analyse") {
-        // Geen extra parameters nodig
+        // geen extra input nodig
       }
       if (type === "batch-genereer") {
         if (!result?.voorstellen || result.voorstellen.length === 0) {
-          showError("Voer eerst een hiaten-analyse of zoek-online uit om voorstellen te krijgen")
+          showError("Voer eerst een hiaten-analyse of zoek-online uit om voorstellen te genereren")
           setLoading(false)
           return
         }
         body.voorstellen = result.voorstellen
-        body.opslaan = opslaan
       }
 
       const res = await fetch("/api/ai/admin/content-agent", {
@@ -320,72 +297,54 @@ export default function ContentAgentPage() {
             </div>
           )}
 
-          {/* Categorie selector */}
-          {(type === "zoek-online" || type === "genereer") && (
+          {/* Categorie selectie bij genereren */}
+          {type === "genereer" && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Categorie (optioneel)</label>
               <select
-                value={categorie}
-                onChange={(e) => setCategorie(e.target.value)}
+                value={selectedCategorie}
+                onChange={(e) => setSelectedCategorie(e.target.value)}
                 className="w-full rounded-lg border-gray-300 text-sm py-2 px-3 border focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">-- Automatisch --</option>
-                <option value="praktische-tips">Praktische tips</option>
-                <option value="zelfzorg-balans">Zelfzorg & balans</option>
-                <option value="rechten-regelingen">Rechten & regelingen</option>
-                <option value="geld-financien">Geld & financiën</option>
-                <option value="hulpmiddelen-technologie">Hulpmiddelen & technologie</option>
-                <option value="werk-mantelzorg">Werk & mantelzorg</option>
-                <option value="samenwerken-netwerk">Samenwerken & netwerk</option>
+                <option value="dagelijks-zorgen">Dagelijks zorgen</option>
+                <option value="zelfzorg-balans">Zelfzorg &amp; balans</option>
+                <option value="rechten-regelingen">Rechten &amp; regelingen</option>
+                <option value="geld-financien">Geld &amp; financien</option>
+                <option value="hulpmiddelen-technologie">Hulpmiddelen &amp; technologie</option>
+                <option value="werk-mantelzorg">Werk &amp; mantelzorg</option>
+                <option value="samenwerken-netwerk">Samenwerken &amp; netwerk</option>
               </select>
             </div>
           )}
 
-          {/* Tag selector */}
-          {(type === "zoek-online" || type === "genereer") && beschikbareTags.length > 0 && (
+          {/* Tags selectie bij genereren */}
+          {type === "genereer" && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Tags (optioneel)</label>
-              <div className="flex flex-wrap gap-2 p-2 border border-gray-300 rounded-lg min-h-[42px]">
-                {geselecteerdeTags.map(slug => {
-                  const tag = beschikbareTags.find(t => t.slug === slug)
-                  return (
-                    <span key={slug} className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs">
-                      {tag?.emoji} {tag?.naam || slug}
-                      <button
-                        type="button"
-                        onClick={() => setGeselecteerdeTags(geselecteerdeTags.filter(t => t !== slug))}
-                        className="text-emerald-400 hover:text-red-500 ml-0.5"
-                      >
-                        x
-                      </button>
-                    </span>
-                  )
-                })}
-                <select
-                  value=""
-                  onChange={(e) => {
-                    if (e.target.value && !geselecteerdeTags.includes(e.target.value)) {
-                      setGeselecteerdeTags([...geselecteerdeTags, e.target.value])
-                    }
-                  }}
-                  className="text-xs text-gray-500 border-0 outline-none bg-transparent"
-                >
-                  <option value="">+ Tag toevoegen...</option>
-                  {beschikbareTags
-                    .filter(t => !geselecteerdeTags.includes(t.slug))
-                    .map(t => (
-                      <option key={t.slug} value={t.slug}>
-                        {t.emoji} {t.naam} ({t.type === "AANDOENING" ? "Aandoening" : "Situatie"})
-                      </option>
-                    ))
-                  }
-                </select>
+              <div className="flex flex-wrap gap-2">
+                {["dementie", "kanker", "cva-beroerte", "hartfalen", "copd", "diabetes", "psychisch", "ouderdom", "terminaal", "jong", "werkend", "op-afstand", "beginnend", "langdurig"].map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setSelectedTags((prev) =>
+                      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+                    )}
+                    className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                      selectedTags.includes(tag)
+                        ? "bg-blue-100 text-blue-700 border-blue-300"
+                        : "bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                ))}
               </div>
             </div>
           )}
 
           {/* Opslaan optie bij genereren */}
-          {(type === "genereer" || type === "batch-genereer") && (
+          {type === "genereer" && (
             <label className="flex items-center gap-2 text-sm text-gray-700">
               <input
                 type="checkbox"
@@ -395,6 +354,17 @@ export default function ContentAgentPage() {
               />
               Direct opslaan als concept-artikel
             </label>
+          )}
+
+          {/* Batch-genereer info */}
+          {type === "batch-genereer" && (
+            <div className="text-sm text-gray-600">
+              {result?.voorstellen?.length > 0 ? (
+                <p>Er zijn <strong>{result.voorstellen.length}</strong> voorstellen klaar om te genereren.</p>
+              ) : (
+                <p>Voer eerst een <strong>hiaten-analyse</strong> of <strong>online zoeken</strong> uit om voorstellen te verzamelen.</p>
+              )}
+            </div>
           )}
 
           <button
@@ -587,6 +557,49 @@ export default function ContentAgentPage() {
             </div>
           )}
 
+          {/* Hiaten-analyse resultaat */}
+          {result.type === "hiaten-analyse" && result.matrix && (
+            <div className="bg-white rounded-xl border border-gray-200 p-4">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">Categorie x Tag Matrix</h3>
+              <div className="overflow-x-auto">
+                <table className="text-xs w-full">
+                  <thead>
+                    <tr>
+                      <th className="text-left p-1 font-medium text-gray-600">Categorie</th>
+                      {result.matrix.tags?.map((tag: string) => (
+                        <th key={tag} className="text-center p-1 font-medium text-gray-600">{tag}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {result.matrix.rijen?.map((rij: { categorie: string; cellen: number[] }, i: number) => (
+                      <tr key={i} className="border-t border-gray-100">
+                        <td className="p-1 text-gray-700">{rij.categorie}</td>
+                        {rij.cellen?.map((cel: number, j: number) => (
+                          <td key={j} className={`text-center p-1 ${cel === 0 ? "text-red-500 font-bold" : "text-gray-600"}`}>
+                            {cel}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Batch-genereer resultaat */}
+          {result.type === "batch-genereer" && result.gegenereerd > 0 && (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+              <h3 className="text-sm font-semibold text-green-800">
+                {result.gegenereerd} artikelen gegenereerd
+              </h3>
+              <p className="text-xs text-green-600 mt-1">
+                {result.opgeslagen || 0} opgeslagen, {result.mislukt || 0} mislukt
+              </p>
+            </div>
+          )}
+
           {/* Categorisatie wijzigingen */}
           {result.type === "categoriseer-bulk" && result.wijzigingen?.length > 0 && (
             <div className="space-y-2">
@@ -687,7 +700,7 @@ function ArtikelPreview({ artikel }: { artikel: {
       <div className="flex items-center gap-2 mb-4 flex-wrap">
         <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{artikel.categorie}</span>
         {artikel.tags?.map((tag: string) => (
-          <span key={tag} className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">{tag}</span>
+          <span key={tag} className="text-xs bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full">{tag}</span>
         ))}
       </div>
       <h2 className="text-xl font-bold text-gray-900 mb-2">{artikel.titel}</h2>
@@ -708,7 +721,7 @@ function getHoofdWaarde(result: any): string {
   if (result.type === "verrijk") return result.verrijking ? "Klaar" : "Mislukt"
   if (result.type === "categoriseer-bulk") return `${result.aantalItems || 0}`
   if (result.type === "hiaten-analyse") return `${result.aantalHiaten || 0}`
-  if (result.type === "batch-genereer") return `${result.aantalGegenereerd || 0}`
+  if (result.type === "batch-genereer") return `${result.gegenereerd || 0}`
   return "—"
 }
 

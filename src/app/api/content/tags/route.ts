@@ -11,23 +11,16 @@ export async function GET() {
         type: true,
         slug: true,
         naam: true,
-        beschrijving: true,
         emoji: true,
       },
     })
 
-    // Groepeer per type
-    const grouped: Record<string, typeof tags> = {}
-    for (const tag of tags) {
-      if (!grouped[tag.type]) {
-        grouped[tag.type] = []
-      }
-      grouped[tag.type].push(tag)
-    }
+    const aandoeningen = tags.filter((t) => t.type === "AANDOENING")
+    const situaties = tags.filter((t) => t.type === "SITUATIE")
 
-    return NextResponse.json({ tags: grouped })
+    return NextResponse.json({ aandoeningen, situaties })
   } catch (error) {
-    console.error("Content tags ophalen mislukt:", error)
-    return NextResponse.json({ error: "Content tags ophalen mislukt" }, { status: 500 })
+    console.error("Tags ophalen mislukt:", error)
+    return NextResponse.json({ error: "Tags ophalen mislukt" }, { status: 500 })
   }
 }

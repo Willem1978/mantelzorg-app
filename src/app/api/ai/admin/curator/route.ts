@@ -44,7 +44,6 @@ interface ArtikelSamenvatting {
   subHoofdstuk: string | null
   type: string
   status: string
-  tags: Array<{ slug: string; naam: string; type: string }>
   bron: string | null
   gemeente: string | null
   datum: string
@@ -67,7 +66,6 @@ async function haalArtikelen(limiet: number, alleenGepubliceerd = false): Promis
       subHoofdstuk: true,
       type: true,
       status: true,
-      tags: { select: { tag: { select: { slug: true, naam: true, type: true } } } },
       bron: true,
       gemeente: true,
       updatedAt: true,
@@ -83,7 +81,6 @@ async function haalArtikelen(limiet: number, alleenGepubliceerd = false): Promis
     subHoofdstuk: a.subHoofdstuk,
     type: a.type,
     status: a.status,
-    tags: a.tags?.map((t: any) => ({ slug: t.tag.slug, naam: t.tag.naam, type: t.tag.type })) || [],
     bron: a.bron,
     gemeente: a.gemeente,
     datum: a.updatedAt.toLocaleDateString("nl-NL"),
@@ -116,7 +113,7 @@ REGELS:
 - Geef per artikel een beoordeling: GOED, VERBETEREN, of HERSCHRIJVEN
 - Beoordeel op: volledigheid, leesbaarheid, relevantie voor mantelzorgers, actualiteit
 - Let op: ontbrekende beschrijvingen, te korte of te lange teksten, verouderde info
-- Controleer of de categorie en de toegekende tags logisch zijn
+- Controleer of de categorie logisch is
 - Geef concrete verbeterpunten per artikel
 - Gebruik markdown tabellen voor overzichten`,
     prompt: `Beoordeel de volgende ${artikelen.length} artikelen op kwaliteit en leesbaarheid.
@@ -163,51 +160,32 @@ async function categoriseerArtikelen(limiet: number) {
   })
   const beschikbareCategorieen = categorieenResult.map((c: { categorie: string; _count: number }) => `${c.categorie} (${c._count} artikelen)`)
 
-  // Haal alle beschikbare tags op uit ContentTag
-  const beschikbareTags = await prisma.contentTag.findMany({
-    where: { isActief: true },
-    orderBy: [{ type: "asc" }, { volgorde: "asc" }],
-    select: { slug: true, naam: true, type: true },
-  })
-  const aandoeningTags = beschikbareTags.filter((t) => t.type === "AANDOENING").map((t) => `${t.naam} (${t.slug})`)
-  const situatieTags = beschikbareTags.filter((t) => t.type === "SITUATIE").map((t) => `${t.naam} (${t.slug})`)
-
   const anthropic = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
   const { text } = await generateText({
     model: anthropic("claude-sonnet-4-20250514"),
     maxOutputTokens: 2000,
     system: `Je bent een content-categorisatie specialist voor MantelBuddy, een platform voor mantelzorgers.
-Je analyseert artikelen en beoordeelt of ze correct gecategoriseerd en getagd zijn.
+Je analyseert artikelen en beoordeelt of ze correct gecategoriseerd zijn.
 
 BESCHIKBARE CATEGORIEËN:
 ${beschikbareCategorieen.join("\n")}
-
-BESCHIKBARE TAGS:
-Aandoeningen:
-${aandoeningTags.join("\n")}
-
-Situaties:
-${situatieTags.join("\n")}
 
 REGELS:
 - Schrijf in het Nederlands, zakelijk en objectief
 - Beoordeel per artikel of de huidige categorie correct is
 - Stel een betere categorie voor als de huidige niet klopt
-- Beoordeel ook of de toegekende tags correct en volledig zijn
-- Stel ontbrekende tags voor of tags die niet van toepassing zijn
 - Let op artikelen zonder subhoofdstuk die er wel een nodig hebben
 - Gebruik markdown tabellen voor overzichten`,
-    prompt: `Beoordeel de categorisering en tagging van de volgende ${artikelen.length} artikelen.
+    prompt: `Beoordeel de categorisering van de volgende ${artikelen.length} artikelen.
 
 ARTIKELEN:
 ${JSON.stringify(artikelen, null, 2)}
 
 Geef:
-1. Een overzichtstabel met: ID, titel, huidige categorie, voorgestelde categorie (als anders), huidige tags, voorgestelde tags (als anders)
+1. Een overzichtstabel met: ID, titel, huidige categorie, voorgestelde categorie (als anders)
 2. Artikelen waarvan de categorie NIET klopt (met uitleg)
-3. Artikelen met ontbrekende of onjuiste tags
-4. Artikelen die een sub-hoofdstuk nodig hebben`,
+3. Artikelen die een sub-hoofdstuk of tags nodig hebben`,
   })
 
   const aantalVerkeerd = (text.match(/voorgestelde categorie|NIET klopt|verkeerd/gi) || []).length
@@ -454,7 +432,7 @@ async function detecteerHiaten() {
   }
 
   // Haal bestaande content op: categorieën, aantallen, gemeentes, tags
-  const [categorieStats, gemeenteStats, totaalArtikelen, subHoofdstukken, beschikbareTags] = await Promise.all([
+  const [categorieStats, gemeenteStats, totaalArtikelen, subHoofdstukken, tagStats] = await Promise.all([
     prisma.artikel.groupBy({
       by: ["categorie"],
       where: { isActief: true },
@@ -473,52 +451,15 @@ async function detecteerHiaten() {
     }),
     prisma.contentTag.findMany({
       where: { isActief: true },
-      orderBy: [{ type: "asc" }, { volgorde: "asc" }],
-      select: { slug: true, naam: true, type: true },
+      select: {
+        slug: true,
+        naam: true,
+        type: true,
+        _count: { select: { artikelTags: true } },
+      },
+      orderBy: { volgorde: "asc" },
     }),
   ])
-
-  // Tag coverage: count articles per tag (via ArtikelTag → ContentTag)
-  const tagStats = await prisma.artikelTag.groupBy({
-    by: ["tagId"],
-    _count: true,
-  })
-  const tagDetails = await prisma.contentTag.findMany({
-    where: { id: { in: tagStats.map((t) => t.tagId) }, isActief: true },
-    select: { id: true, slug: true, naam: true, type: true },
-  })
-  const tagVerdeling = tagStats.map((t) => {
-    const detail = tagDetails.find((d) => d.id === t.tagId)
-    return {
-      tag: detail?.naam ?? t.tagId,
-      slug: detail?.slug ?? "",
-      type: detail?.type ?? "",
-      aantalArtikelen: t._count,
-    }
-  })
-
-  // Category × tag matrix: count articles per categorie+tag combination
-  const categorieTagRaw = await prisma.artikelTag.findMany({
-    where: { artikel: { isActief: true } },
-    select: {
-      tag: { select: { naam: true, slug: true, type: true } },
-      artikel: { select: { categorie: true } },
-    },
-  })
-  const categorieTagMap: Record<string, Record<string, number>> = {}
-  for (const entry of categorieTagRaw) {
-    const cat = entry.artikel.categorie
-    const tag = entry.tag.naam
-    if (!categorieTagMap[cat]) categorieTagMap[cat] = {}
-    categorieTagMap[cat][tag] = (categorieTagMap[cat][tag] || 0) + 1
-  }
-  const categorieTagMatrix = Object.entries(categorieTagMap).map(([categorie, tags]) => ({
-    categorie,
-    tags: Object.entries(tags).map(([tag, aantal]) => ({ tag, aantal })),
-  }))
-
-  const aandoeningTags = beschikbareTags.filter((t) => t.type === "AANDOENING").map((t) => t.naam)
-  const situatieTags = beschikbareTags.filter((t) => t.type === "SITUATIE").map((t) => t.naam)
 
   const overzicht = {
     totaalArtikelen,
@@ -535,8 +476,12 @@ async function detecteerHiaten() {
       subHoofdstuk: s.subHoofdstuk,
       aantal: s._count,
     })),
-    tagVerdeling,
-    categorieTagMatrix,
+    tagVerdeling: tagStats.map((t) => ({
+      tag: t.slug,
+      naam: t.naam,
+      type: t.type,
+      aantalArtikelen: t._count.artikelTags,
+    })),
   }
 
   const anthropic = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -571,17 +516,12 @@ HULPCATEGORIEËN VOOR MANTELZORGERS ZELF:
 - Praktische hulp
 - Vervangende zorg (respijt)
 
-BESCHIKBARE TAGS:
-Aandoeningen: ${aandoeningTags.join(", ")}
-Situaties: ${situatieTags.join(", ")}
-
 REGELS:
 - Schrijf in het Nederlands, zakelijk en objectief
 - Identificeer concrete hiaten: welke onderwerpen missen volledig of zijn onderbelicht
-- Kijk naar: zorgtaken zonder content, gemeentes zonder lokale hulp, tags zonder of met te weinig artikelen
-- Analyseer de tag-dekking: welke aandoeningen en situaties hebben onvoldoende content
-- Analyseer de categorie-tag matrix: welke combinaties van categorie en tag ontbreken
+- Kijk naar: zorgtaken zonder content, gemeentes zonder lokale hulp, ontbrekende tags (aandoeningen/situaties)
 - Kijk ook naar: veelvoorkomende scenario's die niet gedekt zijn (bijv. dementie, terminale zorg, jonge mantelzorgers, werkende mantelzorgers)
+- Let op de tag-verdeling: welke aandoeningen en situaties hebben te weinig getagde content
 - Prioriteer hiaten op impact: wat raakt de meeste mantelzorgers
 - Geef concrete suggesties voor nieuwe artikelen
 - Gebruik markdown tabellen voor overzichten`,
@@ -593,12 +533,11 @@ ${JSON.stringify(overzicht, null, 2)}
 Geef:
 1. Een overzicht van de huidige dekking per categorie (tabel)
 2. Zorgtaken die GEEN of te weinig content hebben
-3. Tag-dekking analyse: welke aandoeningen en situaties hebben geen of te weinig content
-4. Categorie-tag matrix analyse: welke combinaties van categorie en tag ontbreken
-5. Belangrijke mantelzorg-onderwerpen die volledig ontbreken (bijv. specifieke doelgroepen, scenario's)
-6. Gemeentes/regio's met weinig lokale content
-7. Top 10 concrete artikelen die geschreven moeten worden (met titel, categorie, tags, en korte beschrijving)
-8. Prioritering: welke hiaten zijn het meest urgent`,
+3. Belangrijke mantelzorg-onderwerpen die volledig ontbreken (bijv. specifieke doelgroepen, scenario's)
+4. Gemeentes/regio's met weinig lokale content
+5. Tags (aandoeningen/situaties) die ondervertegenwoordigd zijn
+6. Top 10 concrete artikelen die geschreven moeten worden (met titel, categorie, tags, en korte beschrijving)
+7. Prioritering: welke hiaten zijn het meest urgent`,
   })
 
   const aantalHiaten = (text.match(/ontbreekt|mist|geen content|onderbelicht|te weinig/gi) || []).length
