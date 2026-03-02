@@ -1,7 +1,7 @@
 # MantelBuddy — Masterplan 2026
 
 **Datum:** 2 maart 2026
-**Versie:** 1.1
+**Versie:** 1.2
 **Baseline:** v2.5.0 + doorontwikkelingen februari 2026 + content herstructurering maart 2026
 **Dit plan vervangt alle eerdere planbestanden.**
 
@@ -28,7 +28,7 @@
 | Component | Versie |
 |-----------|--------|
 | Frontend | Next.js 16.1.4, React 19.2.3, TailwindCSS 4 |
-| Backend | Next.js API Routes (96 endpoints), Prisma ORM |
+| Backend | Next.js API Routes (100+ endpoints), Prisma ORM |
 | Database | PostgreSQL (Supabase) + pgvector |
 | Auth | NextAuth.js v5 (JWT, credentials, magic links) |
 | AI | Anthropic Claude (7 agents) + OpenAI embeddings |
@@ -40,11 +40,12 @@
 
 | Onderdeel | Status | Details |
 |-----------|--------|---------|
-| 7 AI agents | 100% | Ger, Welkom, Balanscoach, Check-in, Analytics, Moderatie, Curator |
+| 8 AI agents | 100% | Ger, Welkom, Balanscoach, Check-in, Analytics, Moderatie, Curator, Content Pipeline Agent |
 | Belastbaarheidstest | 95% | 11 vragen, 10 zorgtaken, scoring, subdomeinen |
 | Dashboard | 85% | Thermometer, advies, trend, artikelen, mijlpalen |
 | Hulpvragen | 90% | Gemeente-filtering, kleur-indicatoren, 2 tabs (voor jou + voor naaste), MantelBuddy actieknoppen |
 | Leren/Informatie | 95% | 47 artikelen, 7 categorieën, 21 tags (aandoening/situatie), gemeente-nieuws, tag-filtering, gebruikersvoorkeuren |
+| Content Pipeline | 90% | 6-staps workflow: Hiaten → Voorstellen → Concepten → Herschrijven → Verrijken → Publiceren. Volledig AI-gestuurd met matrix-analyse, batch-generatie en statustracking |
 | Check-in systeem | 80% | Slimme frequentie, contextuele suggesties, trend |
 | Beheerportaal | 90% | Artikelen, hulpbronnen, gebruikers, alarmen, audit |
 | Gemeenteportaal | 80% | Dashboard, trends, rapportages |
@@ -519,10 +520,51 @@ Het `BelastingNiveauFilter` enum en `belastingNiveau` veld op `Artikel` zijn ver
 | `GET /api/content/tags` | Publieke tags voor frontend |
 | `GET/POST /api/user/voorkeuren` | Gebruikersvoorkeuren opslaan/laden |
 
-#### Content Agent uitbreidingen
+#### Content Pipeline (maart 2026)
+
+**Status: GEREED** — Volledig geïmplementeerde 6-staps content workflow.
+
+De Content Agent pagina (`/beheer/content-agent`) is omgebouwd tot een **pipeline** met duidelijke statusovergangen:
+
+```
+📊 Hiaten → 💡 Voorstellen → 📝 Concepten → ✏️ Herschreven → 🔍 Verrijkt → ✅ Gepubliceerd
+```
+
+**ArtikelStatus enum** uitgebreid met pipeline-statussen:
+| Status | Betekenis | Overgang naar |
+|--------|-----------|---------------|
+| `VOORSTEL` | Idee uit hiaten-analyse of online zoeken | → CONCEPT (via genereren) |
+| `CONCEPT` | AI-gegenereerd artikel, klaar voor review | → HERSCHREVEN (via herschrijven) |
+| `HERSCHREVEN` | Herschreven op B1-niveau | → VERRIJKT (via verrijken) |
+| `VERRIJKT` | Verrijkt met tips/FAQ/bronnen | → GEPUBLICEERD (via publiceren) |
+| `GEPUBLICEERD` | Live voor gebruikers | → GEARCHIVEERD |
+| `GEARCHIVEERD` | Niet meer zichtbaar | — |
+
+**Pipeline acties:**
+| Stap | Actie | API type | Beschrijving |
+|------|-------|----------|--------------|
+| 1 | Hiaten-analyse | `hiaten-analyse` | Categorie × tag dekkingsmatrix, AI identificeert ontbrekende content |
+| 2 | Voorstellen opslaan | `voorstellen-opslaan` | Geselecteerde AI-voorstellen opslaan als VOORSTEL-artikelen |
+| 3 | Artikelen genereren | `batch-genereer` | Volledige artikelen genereren uit voorstellen (→ CONCEPT) |
+| 4 | Herschrijven | `herschrijf` + `toepassen-herschrijving` | B1-niveau herschrijving met before/after preview (→ HERSCHREVEN) |
+| 5 | Verrijken | `verrijk` + `toepassen-verrijking` | Tips, FAQ, bronnen toevoegen (→ VERRIJKT) |
+| 6 | Publiceren | `wijzig-status` | Bulk-publicatie naar GEPUBLICEERD |
+
+**Extra API endpoints:**
+| Endpoint (POST type) | Functie |
+|----------|---------|
+| `pipeline-overzicht` | Aantallen per status + artikelen per pipeline-stap |
+| `voorstellen-opslaan` | Hiaten-voorstellen opslaan als VOORSTEL-artikelen |
+| `toepassen-verrijking` | Verrijkte inhoud toepassen + status → VERRIJKT |
+| `wijzig-status` | Bulk statuswijziging (publiceren, archiveren, etc.) |
+
+#### Content Agent acties (legacy, nog beschikbaar)
 - Tags parameter bij alle acties (genereer, zoek-online)
-- **Nieuw:** Hiaten-analyse (categorie × tag matrix)
-- **Nieuw:** Batch-genereer (meerdere artikelen in één keer)
+- Hiaten-analyse (categorie × tag matrix)
+- Batch-genereer (meerdere artikelen in één keer)
+- Zoek-online (online bronnen doorzoeken)
+- Individueel genereren, herschrijven, verrijken
+- Bulk categoriseren
 
 #### Frontend updates
 - `/leren` pagina: 7 categorie-kaarten i.p.v. 5
@@ -573,6 +615,9 @@ In-memory `Map` objecten vervangen door Prisma model `WhatsAppSession` met JSON 
 - [x] belastingNiveau veld verwijderd, vervangen door tag-systeem
 - [x] Content Agent: hiaten-analyse + batch-genereer
 - [x] Gebruikersvoorkeuren (profiel pagina)
+- [x] Content Pipeline: 6-staps workflow (VOORSTEL → CONCEPT → HERSCHREVEN → VERRIJKT → GEPUBLICEERD)
+- [x] Pipeline UI met selectie, batch-acties, preview en statusovergangen
+- [x] ArtikelStatus uitgebreid met VOORSTEL, HERSCHREVEN, VERRIJKT
 - [ ] Alle overige content in database (170+ items)
 - [ ] 5 nieuwe beheer pagina's
 - [ ] Frontend leest volledig uit database i.p.v. code
@@ -754,7 +799,7 @@ Fase    Naam                              Week    Uren    Status
 3       Persoonlijk Advies & Klantreis    4-6     48u     ○ Open
 4       Buddy-matching & Kaartweergave    7-9     48u     ◑ Grotendeels gereed
 5       Gemeente Onboarding & Auto.       10-12   48u     ○ Open
-6       Content Migratie & CMS            13-15   48u     ◑ Content herstructurering gereed
+6       Content Migratie & CMS            13-15   48u     ◑ Content herstructurering + pipeline gereed
 7       UX Polish & Performance           16-18   48u     ○ Open
 8       Schaalbaarheid & Toekomst         19+     -       ○ Backlog
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
