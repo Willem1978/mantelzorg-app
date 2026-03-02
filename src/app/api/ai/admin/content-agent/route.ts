@@ -382,7 +382,7 @@ async function herschrijfArtikel(artikelId: string, instructies?: string) {
       subHoofdstuk: true,
       type: true,
       bron: true,
-      artikelTags: {
+      tags: {
         select: {
           tag: { select: { slug: true, naam: true, type: true } },
         },
@@ -394,7 +394,7 @@ async function herschrijfArtikel(artikelId: string, instructies?: string) {
     return { type: "herschrijf", error: "Artikel niet gevonden" }
   }
 
-  const huidigeTags = artikel.artikelTags.map((at) => `${at.tag.naam} (${at.tag.slug}, ${at.tag.type})`)
+  const huidigeTags = artikel.tags.map((at) => `${at.tag.naam} (${at.tag.slug}, ${at.tag.type})`)
 
   const plainInhoud = artikel.inhoud
     ? artikel.inhoud.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim()
@@ -618,7 +618,7 @@ async function categoriseerBulk(limiet: number) {
       inhoud: true,
       categorie: true,
       subHoofdstuk: true,
-      artikelTags: {
+      tags: {
         select: { tag: { select: { slug: true, naam: true } } },
       },
     },
@@ -635,7 +635,7 @@ async function categoriseerBulk(limiet: number) {
     inhoud: a.inhoud ? a.inhoud.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 300) : null,
     categorie: a.categorie,
     subHoofdstuk: a.subHoofdstuk,
-    tags: a.artikelTags.map((at) => at.tag.slug),
+    tags: a.tags.map((at) => at.tag.slug),
   }))
 
   const { text } = await generateText({
@@ -833,7 +833,7 @@ async function hiatenAnalyse() {
       select: {
         id: true,
         categorie: true,
-        artikelTags: {
+        tags: {
           select: { tag: { select: { slug: true, type: true } } },
         },
       },
@@ -854,7 +854,7 @@ async function hiatenAnalyse() {
   for (const artikel of artikelen) {
     const cat = artikel.categorie
     if (!matrix[cat]) continue
-    const artikelTagSlugs = artikel.artikelTags.map((at) => at.tag.slug)
+    const artikelTagSlugs = artikel.tags.map((at) => at.tag.slug)
     for (const slug of artikelTagSlugs) {
       if (matrix[cat][slug] !== undefined) {
         matrix[cat][slug]++
@@ -871,7 +871,7 @@ async function hiatenAnalyse() {
   const tagAantallen: Record<string, number> = {}
   for (const tag of alleTags) {
     tagAantallen[tag.slug] = artikelen.filter((a) =>
-      a.artikelTags.some((at) => at.tag.slug === tag.slug)
+      a.tags.some((at) => at.tag.slug === tag.slug)
     ).length
   }
 
@@ -969,9 +969,9 @@ async function batchGenereer(
         opslaan
       )
       resultaten.push({
+        ...resultaat,
         onderwerp: voorstel.onderwerp,
         status: "succes",
-        ...resultaat,
       })
     } catch (err) {
       resultaten.push({
