@@ -934,7 +934,10 @@ enum ArtikelType {
 }
 
 enum ArtikelStatus {
-  CONCEPT           // Nog niet gepubliceerd
+  VOORSTEL          // Idee/voorstel uit hiaten-analyse of online zoeken
+  CONCEPT           // AI-gegenereerd concept, klaar voor herschrijven
+  HERSCHREVEN       // Herschreven op B1-niveau, klaar voor verrijking
+  VERRIJKT          // Verrijkt met extra tips/FAQ/bronnen, klaar voor publicatie
   GEPUBLICEERD      // Live voor gebruikers
   GEARCHIVEERD      // Niet meer zichtbaar
 }
