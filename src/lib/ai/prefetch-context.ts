@@ -37,8 +37,8 @@ export async function prefetchUserContext(
   // Fallback: als alleen één gemeente wordt meegegeven (backwards compatibility)
   const gemZorgvrager = gemeenteZorgvrager ?? gemeenteMantelzorger
 
-  // 0) Haal voorkeuren en aandoening op van de caregiver
-  const caregiver = await prisma.caregiver.findUnique({
+  // 0) Haal gebruiker-voorkeuren op (aandoening, tags)
+  const caregiver = await prisma.caregiver.findFirst({
     where: { userId },
     select: {
       aandoening: true,
@@ -47,9 +47,6 @@ export async function prefetchUserContext(
       },
     },
   })
-
-  const aandoening = caregiver?.aandoening || null
-  const voorkeuren = caregiver?.voorkeuren || []
 
   // 1) Haal de laatste balanstest op
   const test = await prisma.belastbaarheidTest.findFirst({
@@ -81,7 +78,13 @@ export async function prefetchUserContext(
     // Zorgtaken-hulp → gemeente zorgvrager, mantelzorger-hulp → gemeente mantelzorger
     const alleHulp = await fetchAlleHulpbronnenPerCategorie(gemZorgvrager)
     const mantelzorgerHulp = await fetchMantelzorgerHulp(gemeenteMantelzorger)
-    return { heeftTest: false as const, alleHulpPerCategorie: alleHulp, hulpVoorMantelzorger: mantelzorgerHulp, voorkeuren, aandoening }
+    return {
+      heeftTest: false as const,
+      alleHulpPerCategorie: alleHulp,
+      hulpVoorMantelzorger: mantelzorgerHulp,
+      aandoening: caregiver?.aandoening || null,
+      voorkeuren: caregiver?.voorkeuren || [],
+    }
   }
 
   // 2) Bereken deelgebieden
@@ -212,8 +215,8 @@ export async function prefetchUserContext(
       beschrijving: a.beschrijving,
       urgentie: a.urgentie,
     })),
-    voorkeuren,
-    aandoening,
+    aandoening: caregiver?.aandoening || null,
+    voorkeuren: caregiver?.voorkeuren || [],
   }
 }
 
@@ -312,12 +315,15 @@ async function fetchMantelzorgerHulp(gemeente: string | null) {
  * Bouwt een context-blok dat als injectie in het systeem-prompt kan worden gebruikt.
  */
 export function buildContextBlock(ctx: Awaited<ReturnType<typeof prefetchUserContext>>): string {
+  // Voorkeurenblok (voor beide paden)
+  const voorkeurenBlock = buildVoorkeurenBlock(ctx.aandoening, ctx.voorkeuren)
+
   if (!ctx.heeftTest) {
     let block = `\n\n--- GEBRUIKERSCONTEXT ---
 Deze gebruiker heeft nog GEEN balanstest gedaan. Moedig aan om de test te doen via /belastbaarheidstest (duurt 5 minuten).`
 
+    block += voorkeurenBlock
     // Toch hulpbronnen tonen als die er zijn
-    block += buildVoorkeurenBlock(ctx.aandoening, ctx.voorkeuren)
     block += buildHulpPerCategorieBlock(ctx.alleHulpPerCategorie)
     block += buildMantelzorgerHulpBlock(ctx.hulpVoorMantelzorger)
     block += `\n--- EINDE CONTEXT ---`
@@ -335,7 +341,7 @@ BALANSTEST (${ctx.testDatum}):
     block += `\n- Advies bij dit niveau: ${ctx.adviesVoorTotaal}`
   }
 
-  block += buildVoorkeurenBlock(ctx.aandoening, ctx.voorkeuren)
+  block += voorkeurenBlock
 
   block += `\n\nDEELGEBIEDEN:`
   for (const d of ctx.deelgebieden) {
@@ -403,34 +409,6 @@ function formatHulpkaart(b: any): string {
   return `{{hulpkaart:${b.naam}|${dienst}|${beschrijving}|${telefoon}|${website}|${gemeente}|${kosten}|${openingstijden}}}`
 }
 
-function buildVoorkeurenBlock(
-  aandoening: string | null,
-  voorkeuren: { type: string; slug: string }[],
-): string {
-  if (!aandoening && voorkeuren.length === 0) return ""
-
-  let block = `\n\nGEBRUIKERSVOORKEUREN:`
-  if (aandoening) {
-    block += `\n- Aandoening zorgvrager: ${aandoening}`
-  }
-
-  const categorieVoorkeuren = voorkeuren
-    .filter((v) => v.type === "CATEGORIE")
-    .map((v) => v.slug)
-  if (categorieVoorkeuren.length > 0) {
-    block += `\n- Favoriete categorieën: ${categorieVoorkeuren.join(", ")}`
-  }
-
-  const tagVoorkeuren = voorkeuren
-    .filter((v) => v.type === "TAG")
-    .map((v) => v.slug)
-  if (tagVoorkeuren.length > 0) {
-    block += `\n- Favoriete tags: ${tagVoorkeuren.join(", ")}`
-  }
-
-  return block
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function buildHulpPerCategorieBlock(perCategorie: Record<string, any[]>): string {
   const entries = Object.entries(perCategorie)
@@ -443,6 +421,25 @@ function buildHulpPerCategorieBlock(perCategorie: Record<string, any[]>): string
       block += `\n  ${formatHulpkaart(b)}`
     }
   }
+  return block
+}
+
+function buildVoorkeurenBlock(aandoening: string | null, voorkeuren: { type: string; slug: string }[]): string {
+  if (!aandoening && voorkeuren.length === 0) return ""
+
+  let block = `\n\nGEBRUIKERSVOORKEUREN:`
+  if (aandoening) {
+    block += `\n- Aandoening naaste: ${aandoening}`
+  }
+  const tagVoorkeuren = voorkeuren.filter((v) => v.type === "TAG")
+  const catVoorkeuren = voorkeuren.filter((v) => v.type === "CATEGORIE")
+  if (tagVoorkeuren.length > 0) {
+    block += `\n- Interessegebieden: ${tagVoorkeuren.map((v) => v.slug).join(", ")}`
+  }
+  if (catVoorkeuren.length > 0) {
+    block += `\n- Favoriete categorieën: ${catVoorkeuren.map((v) => v.slug).join(", ")}`
+  }
+  block += `\nStem je antwoorden af op deze voorkeuren wanneer relevant.`
   return block
 }
 

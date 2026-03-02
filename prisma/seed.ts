@@ -233,6 +233,7 @@ async function main() {
         categorie: 'gemeentenieuws',
         type: 'GEMEENTE_NIEUWS',
         status: 'GEPUBLICEERD',
+
         gemeente: gn.gemeente,
         publicatieDatum: new Date(gn.datum),
         isActief: true,

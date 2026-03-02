@@ -683,11 +683,6 @@ function HulpPageContent() {
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
           {c.subtitlePrefix}<span className="text-primary font-semibold">{c.subtitleHartje}</span>{c.subtitleSuffix}
-          {hulpData?.testNiveau && (
-            <span>
-              {' '}{c.belastingInfo(c.belastingNiveaus[hulpData.testNiveau] || hulpData.testNiveau)}
-            </span>
-          )}
         </p>
       </div>
 

@@ -2,31 +2,24 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   const session = await auth()
   if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Niet geautoriseerd" }, { status: 401 })
   }
 
-  const { searchParams } = new URL(request.url)
-  const type = searchParams.get("type") || ""
-
   try {
-    const where: Record<string, unknown> = {}
-
-    if (type === "AANDOENING" || type === "SITUATIE") {
-      where.type = type
-    }
-
     const tags = await prisma.contentTag.findMany({
-      where,
       orderBy: [{ type: "asc" }, { volgorde: "asc" }],
+      include: {
+        _count: { select: { artikelTags: true } },
+      },
     })
 
     return NextResponse.json({ tags })
   } catch (error) {
     console.error("Content tags ophalen mislukt:", error)
-    return NextResponse.json({ error: "Content tags ophalen mislukt" }, { status: 500 })
+    return NextResponse.json({ error: "Tags ophalen mislukt" }, { status: 500 })
   }
 }
 
@@ -41,17 +34,7 @@ export async function POST(request: NextRequest) {
     const { type, slug, naam, beschrijving, emoji, volgorde } = body
 
     if (!type || !slug || !naam) {
-      return NextResponse.json(
-        { error: "Type, slug en naam zijn verplicht" },
-        { status: 400 }
-      )
-    }
-
-    if (type !== "AANDOENING" && type !== "SITUATIE") {
-      return NextResponse.json(
-        { error: "Type moet AANDOENING of SITUATIE zijn" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "type, slug en naam zijn verplicht" }, { status: 400 })
     }
 
     const tag = await prisma.contentTag.create({
@@ -68,6 +51,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ tag }, { status: 201 })
   } catch (error) {
     console.error("Content tag aanmaken mislukt:", error)
-    return NextResponse.json({ error: "Content tag aanmaken mislukt" }, { status: 500 })
+    return NextResponse.json({ error: "Tag aanmaken mislukt" }, { status: 500 })
   }
 }

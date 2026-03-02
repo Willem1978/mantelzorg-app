@@ -18,8 +18,8 @@ model User {
   emailVerified  DateTime?
   image          String?
   role           UserRole            @default(CAREGIVER)
-  gemeenteNaam   String? // Alleen voor GEMEENTE_ADMIN: naam van de gemeente
-  gemeenteRollen String[] // Sub-rollen binnen gemeente: COMMUNICATIE, HULPBRONNEN, BELEID
+  gemeenteNaam   String?             // Alleen voor GEMEENTE_ADMIN: naam van de gemeente
+  gemeenteRollen String[]            // Sub-rollen binnen gemeente: COMMUNICATIE, HULPBRONNEN, BELEID
   isActive       Boolean             @default(true)
   adminNotities  String?
   sessionVersion Int                 @default(1) // Incrementeert bij elke login om oude sessies te invalideren
@@ -75,15 +75,15 @@ model VerificationToken {
 }
 
 model InviteToken {
-  id             String    @id @default(cuid())
-  email          String
-  token          String    @unique
-  gemeenteNaam   String?
+  id        String    @id @default(cuid())
+  email     String
+  token     String    @unique
+  gemeenteNaam String?
   gemeenteRollen String[]
-  invitedBy      String
-  expiresAt      DateTime
-  usedAt         DateTime?
-  createdAt      DateTime  @default(now())
+  invitedBy String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
 }
 
 model MagicLinkToken {
@@ -100,7 +100,7 @@ model Caregiver {
   id                        String                  @id @default(cuid())
   userId                    String                  @unique
   dateOfBirth               DateTime?
-  phoneNumber               String?                 @unique
+  phoneNumber               String?              @unique
   postalCode                String?
   city                      String?
   careRecipient             String?
@@ -121,12 +121,11 @@ model Caregiver {
   neighborhood              String?
   profileCompleted          Boolean                 @default(false)
   street                    String?
-  gelezenNieuws             Json? // Array van gelezen gemeente-nieuws IDs
-  aandoening                String? // Primaire aandoening van de zorgvrager (bijv. "dementie", "kanker")
+  gelezenNieuws             Json?                   // Array van gelezen gemeente-nieuws IDs
   // AVG consent tracking
-  privacyConsentAt          DateTime? // Tijdstip privacy toestemming
-  dataProcessingConsentAt   DateTime? // Tijdstip gegevensverwerking toestemming
-  healthDataConsentAt       DateTime? // Tijdstip gezondheidsdata toestemming (Art. 9 AVG)
+  privacyConsentAt          DateTime?               // Tijdstip privacy toestemming
+  dataProcessingConsentAt   DateTime?               // Tijdstip gegevensverwerking toestemming
+  healthDataConsentAt       DateTime?               // Tijdstip gezondheidsdata toestemming (Art. 9 AVG)
   belastbaarheidTests       BelastbaarheidTest[]
   calendarEvents            CalendarEvent[]
   user                      User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -141,7 +140,8 @@ model Caregiver {
   gegevenBeoordelingen      BuddyBeoordeling[]
   // Favorieten
   favorieten                Favoriet[]
-  // Content voorkeuren
+  // Aandoening zorgvrager & voorkeuren
+  aandoening                String?                 // Primaire aandoening van zorgvrager (tag slug)
   voorkeuren                GebruikerVoorkeur[]
 
   @@index([municipality])
@@ -413,12 +413,12 @@ model Zorgorganisatie {
   website               String?
   adres                 String?
   postcode              String?
-  woonplaats            String? // Vestigingsplaats van de organisatie
-  gemeente              String? // Dekkingsgebied gemeente (null bij landelijk/provincie)
-  provincie             String? // Dekkingsgebied provincie
+  woonplaats            String?             // Vestigingsplaats van de organisatie
+  gemeente              String?             // Dekkingsgebied gemeente (null bij landelijk/provincie)
+  provincie             String?             // Dekkingsgebied provincie
   dekkingNiveau         String              @default("GEMEENTE") // LANDELIJK, PROVINCIE, GEMEENTE, WOONPLAATS, WIJK
-  dekkingWoonplaatsen   Json? // Array van woonplaatsen binnen gemeente (null = hele gemeente)
-  dekkingWijken         Json? // Array van wijknamen binnen gemeente (null = hele gemeente)
+  dekkingWoonplaatsen   Json?               // Array van woonplaatsen binnen gemeente (null = hele gemeente)
+  dekkingWijken         Json?               // Array van wijknamen binnen gemeente (null = hele gemeente)
   isActief              Boolean             @default(true)
   createdAt             DateTime            @default(now())
   updatedAt             DateTime            @updatedAt
@@ -431,17 +431,17 @@ model Zorgorganisatie {
   doelgroep             String?
   kosten                String?
   locatieOmschrijving   String?
-  onderdeelTest         String? // Categorie: Persoonlijke verzorging, Ondersteuning, Vervangende mantelzorg, etc.
+  onderdeelTest         String?             // Categorie: Persoonlijke verzorging, Ondersteuning, Vervangende mantelzorg, etc.
   soortHulp             String?
   voorwaarden           String?
-  verschijntIn          String[] // Array van plekken waar dit item verschijnt (voor cross-referencing)
-  routeLabel            String? // Wet/route label: Wmo, Zvw, Wlz (voor display op hulpkaarten)
-  bronLabel             String? // Bronlabel: Landelijk, Gemeente, Zvw, Wlz, Overig
+  verschijntIn          String[]            // Array van plekken waar dit item verschijnt (voor cross-referencing)
+  routeLabel            String?             // Wet/route label: Wmo, Zvw, Wlz (voor display op hulpkaarten)
+  bronLabel             String?             // Bronlabel: Landelijk, Gemeente, Zvw, Wlz, Overig
   zorgverzekeraar       Boolean             @default(false) // Tag: valt onder zorgverzekeraar
 
   // Vector embedding voor semantische zoek (pgvector, 1536 dimensies)
   // Gegenereerd door OpenAI text-embedding-3-small
-  embedding Unsupported("vector(1536)")?
+  embedding             Unsupported("vector(1536)")?
 
   @@index([isActief, gemeente])
   @@index([isActief, onderdeelTest])
@@ -479,32 +479,32 @@ model AlarmLog {
 // ============================================
 
 model Artikel {
-  id              String        @id @default(cuid())
+  id              String          @id @default(cuid())
   titel           String
   beschrijving    String
-  inhoud          String? // Rich text inhoud (optioneel, voor uitgebreide artikelen)
-  url             String? // Externe link
-  bron            String? // Bronnaam (bijv. "MantelzorgNL")
+  inhoud          String?         // Rich text inhoud (optioneel, voor uitgebreide artikelen)
+  url             String?         // Externe link
+  bron            String?         // Bronnaam (bijv. "MantelzorgNL")
   emoji           String?
-  categorie       String // Slug: praktische-tips, zelfzorg-balans, rechten-regelingen, geld-financien, hulpmiddelen-technologie, werk-mantelzorg, samenwerken-netwerk
-  subHoofdstuk    String? // Sub-chapter slug binnen categorie
-  type            ArtikelType   @default(ARTIKEL)
-  status          ArtikelStatus @default(CONCEPT)
-  bronLabel       String? // Bronlabel: Landelijk, Gemeente (Wmo), Zorgverzekeraar (Zvw), Wlz, Overig
-  gemeente        String? // Alleen voor gemeente-nieuws
+  categorie       String          // Slug: praktische-tips, zelfzorg, rechten, financieel, hulpmiddelen-producten
+  subHoofdstuk    String?         // Sub-chapter slug binnen categorie (bijv. "dagelijks-organiseren", "overbelasting-herkennen")
+  type            ArtikelType     @default(ARTIKEL)
+  status          ArtikelStatus   @default(CONCEPT)
+  bronLabel       String?         // Bronlabel: Landelijk, Gemeente (Wmo), Zorgverzekeraar (Zvw), Wlz, Overig
+  gemeente        String?         // Alleen voor gemeente-nieuws
   publicatieDatum DateTime?
-  sorteerVolgorde Int           @default(0)
-  isActief        Boolean       @default(true)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  aangemaaaktDoor String? // User ID van de maker
+  sorteerVolgorde Int             @default(0)
+  isActief        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  aangemaaaktDoor String?         // User ID van de maker
 
   // Tags (many-to-many via ArtikelTag)
-  tags ArtikelTag[]
+  tags            ArtikelTag[]
 
   // Vector embedding voor semantische zoek (pgvector, 1536 dimensies)
   // Gegenereerd door OpenAI text-embedding-3-small
-  embedding Unsupported("vector(1536)")?
+  embedding             Unsupported("vector(1536)")?
 
   @@index([categorie, isActief])
   @@index([type, isActief])
@@ -513,14 +513,14 @@ model Artikel {
 }
 
 model AuditLog {
-  id         String   @id @default(cuid())
-  userId     String
-  actie      String // CREATE, UPDATE, DELETE, LOGIN, etc.
-  entiteit   String // User, Artikel, Zorgorganisatie, etc.
-  entiteitId String?
-  details    Json? // Extra informatie over de wijziging
-  ipAdres    String?
-  createdAt  DateTime @default(now())
+  id          String   @id @default(cuid())
+  userId      String
+  actie       String   // CREATE, UPDATE, DELETE, LOGIN, etc.
+  entiteit    String   // User, Artikel, Zorgorganisatie, etc.
+  entiteitId  String?
+  details     Json?    // Extra informatie over de wijziging
+  ipAdres     String?
+  createdAt   DateTime @default(now())
 
   @@index([userId])
   @@index([entiteit, entiteitId])
@@ -532,21 +532,21 @@ model AuditLog {
 // ============================================
 
 model Favoriet {
-  id           String       @id @default(cuid())
-  caregiverId  String
-  type         FavorietType
-  itemId       String // Uniek ID: voor HULP = slug van naam+gemeente, voor INFORMATIE = categorie-id
-  titel        String
-  beschrijving String?
-  categorie    String? // Groepering (bijv. "Persoonlijke verzorging", "Praktische tips")
-  url          String?
-  telefoon     String?
-  icon         String? // Emoji icoon
-  isVoltooid   Boolean      @default(false)
-  voltooitOp   DateTime?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  caregiver    Caregiver    @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+  id            String       @id @default(cuid())
+  caregiverId   String
+  type          FavorietType
+  itemId        String       // Uniek ID: voor HULP = slug van naam+gemeente, voor INFORMATIE = categorie-id
+  titel         String
+  beschrijving  String?
+  categorie     String?      // Groepering (bijv. "Persoonlijke verzorging", "Praktische tips")
+  url           String?
+  telefoon      String?
+  icon          String?      // Emoji icoon
+  isVoltooid    Boolean      @default(false)
+  voltooitOp    DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  caregiver     Caregiver    @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
 
   @@unique([caregiverId, type, itemId])
   @@index([caregiverId])
@@ -557,174 +557,174 @@ model Favoriet {
 // ============================================
 
 model MantelBuddy {
-  id String @id @default(cuid())
+  id                String              @id @default(cuid())
 
   // Persoonlijke gegevens
-  voornaam   String
-  achternaam String
-  email      String @unique
-  telefoon   String
-  postcode   String
-  woonplaats String
+  voornaam          String
+  achternaam        String
+  email             String              @unique
+  telefoon          String
+  postcode          String
+  woonplaats        String
 
   // Locatie (geocoded van postcode)
-  latitude       Float?
-  longitude      Float?
-  maxReisafstand Int? // Max km bereid te reizen (standaard 10)
+  latitude          Float?
+  longitude         Float?
+  maxReisafstand    Int?                // Max km bereid te reizen (standaard 10)
 
   // Wat wil de buddy doen
-  hulpvormen      String[] // gesprek, boodschappen, vervoer, klusjes, oppas, administratie
-  beschikbaarheid BuddyBeschikbaarheid @default(BEIDE)
-  motivatie       String?
-  ervaring        String?
+  hulpvormen        String[]            // gesprek, boodschappen, vervoer, klusjes, oppas, administratie
+  beschikbaarheid   BuddyBeschikbaarheid @default(BEIDE)
+  motivatie         String?
+  ervaring          String?
 
   // Status & verificatie
-  status           BuddyStatus @default(AANGEMELD)
-  vogGoedgekeurd   Boolean     @default(false)
-  trainingVoltooid Boolean     @default(false)
-  isActief         Boolean     @default(false)
+  status            BuddyStatus         @default(AANGEMELD)
+  vogGoedgekeurd    Boolean             @default(false)
+  trainingVoltooid  Boolean             @default(false)
+  isActief          Boolean             @default(false)
 
   // Scores & beoordelingen
-  gemiddeldeScore        Float @default(0)
-  aantalBeoordelingen    Int   @default(0)
-  betrouwbaarheidScore   Float @default(0)
-  aantalTakenVoltooid    Int   @default(0)
-  aantalTakenGeannuleerd Int   @default(0)
+  gemiddeldeScore   Float               @default(0)
+  aantalBeoordelingen Int               @default(0)
+  betrouwbaarheidScore Float            @default(0)
+  aantalTakenVoltooid Int               @default(0)
+  aantalTakenGeannuleerd Int            @default(0)
 
   // Relaties
-  userId                 String?            @unique
-  user                   User?              @relation(fields: [userId], references: [id])
-  matches                BuddyMatch[]
-  taakReacties           BuddyTaakReactie[]
+  userId            String?             @unique
+  user              User?               @relation(fields: [userId], references: [id])
+  matches           BuddyMatch[]
+  taakReacties      BuddyTaakReactie[]
   ontvangenBeoordelingen BuddyBeoordeling[] @relation("BeoordeeldeBuddy")
   gegevenBeoordelingen   BuddyBeoordeling[] @relation("BeoordelendePersoon")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 }
 
 model BuddyMatch {
-  id          String @id @default(cuid())
-  buddyId     String
-  caregiverId String
+  id                String              @id @default(cuid())
+  buddyId           String
+  caregiverId       String
 
   // Status van de match
-  status MatchStatus @default(VOORGESTELD)
+  status            MatchStatus         @default(VOORGESTELD)
 
   // Type match
-  isVasteBuddy Boolean @default(false) // vast maatje vs eenmalig
+  isVasteBuddy      Boolean             @default(false)  // vast maatje vs eenmalig
 
   // Notities
-  notities String?
+  notities          String?
 
   // Relaties
-  buddy        MantelBuddy        @relation(fields: [buddyId], references: [id], onDelete: Cascade)
-  caregiver    Caregiver          @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
-  taakReacties BuddyTaakReactie[]
-  berichten    Bericht[]
+  buddy             MantelBuddy         @relation(fields: [buddyId], references: [id], onDelete: Cascade)
+  caregiver         Caregiver           @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+  taakReacties      BuddyTaakReactie[]
+  berichten         Bericht[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 
   @@unique([buddyId, caregiverId])
 }
 
 model BuddyTaak {
-  id          String @id @default(cuid())
-  caregiverId String
+  id                String              @id @default(cuid())
+  caregiverId       String
 
   // Taak details
-  titel        String
-  beschrijving String?
-  categorie    BuddyTaakCategorie
+  titel             String
+  beschrijving      String?
+  categorie         BuddyTaakCategorie
 
   // Wanneer
-  datum      DateTime?
-  tijdstip   String? // bijv. "ochtend", "middag", "avond"
-  isFlexibel Boolean   @default(true)
+  datum             DateTime?
+  tijdstip          String?             // bijv. "ochtend", "middag", "avond"
+  isFlexibel        Boolean             @default(true)
 
   // Status
-  status TaakUitzetStatus @default(OPEN)
+  status            TaakUitzetStatus    @default(OPEN)
 
   // Koppeling
-  toegewezenAan String? // MantelBuddy id
+  toegewezenAan     String?             // MantelBuddy id
 
   // Relaties
-  caregiver Caregiver          @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
-  reacties  BuddyTaakReactie[]
+  caregiver         Caregiver           @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+  reacties          BuddyTaakReactie[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 }
 
 model BuddyTaakReactie {
-  id      String  @id @default(cuid())
-  taakId  String
-  buddyId String
-  matchId String?
+  id                String              @id @default(cuid())
+  taakId            String
+  buddyId           String
+  matchId           String?
 
   // Status
-  status ReactieStatus @default(INTERESSE)
+  status            ReactieStatus       @default(INTERESSE)
 
   // Bericht van de buddy
-  bericht String?
+  bericht           String?
 
   // Relaties
-  taak  BuddyTaak   @relation(fields: [taakId], references: [id], onDelete: Cascade)
-  buddy MantelBuddy @relation(fields: [buddyId], references: [id], onDelete: Cascade)
-  match BuddyMatch? @relation(fields: [matchId], references: [id])
+  taak              BuddyTaak           @relation(fields: [taakId], references: [id], onDelete: Cascade)
+  buddy             MantelBuddy         @relation(fields: [buddyId], references: [id], onDelete: Cascade)
+  match             BuddyMatch?         @relation(fields: [matchId], references: [id])
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 
   @@unique([taakId, buddyId])
 }
 
 model BuddyBeoordeling {
-  id String @id @default(cuid())
+  id                String              @id @default(cuid())
 
   // Wie beoordeelt wie
-  buddyId          String // De beoordeelde MantelBuddy
-  beoordeeldDoorId String? // Optioneel: als dit een buddy is die terugkoppelt
-  caregiverId      String? // De mantelzorger die beoordeelt
+  buddyId           String              // De beoordeelde MantelBuddy
+  beoordeeldDoorId  String?             // Optioneel: als dit een buddy is die terugkoppelt
+  caregiverId       String?             // De mantelzorger die beoordeelt
 
   // Scores (1-5 sterren)
-  algemeenScore        Int // Algemene ervaring
-  betrouwbaarheidScore Int? // Kwam op tijd, deed wat afgesproken
-  vriendelijkheidScore Int? // Was vriendelijk en behulpzaam
-  kwaliteitScore       Int? // Kwaliteit van de hulp
+  algemeenScore     Int                 // Algemene ervaring
+  betrouwbaarheidScore Int?             // Kwam op tijd, deed wat afgesproken
+  vriendelijkheidScore Int?             // Was vriendelijk en behulpzaam
+  kwaliteitScore    Int?                // Kwaliteit van de hulp
 
   // Feedback
   positieveFeedback String?
   verbeterpunten    String?
 
   // Zichtbaarheid
-  isAnoniem   Boolean @default(false)
-  isZichtbaar Boolean @default(true)
+  isAnoniem         Boolean             @default(false)
+  isZichtbaar       Boolean             @default(true)
 
   // Relaties
-  buddy          MantelBuddy  @relation("BeoordeeldeBuddy", fields: [buddyId], references: [id], onDelete: Cascade)
-  beoordeeldDoor MantelBuddy? @relation("BeoordelendePersoon", fields: [beoordeeldDoorId], references: [id])
-  caregiver      Caregiver?   @relation(fields: [caregiverId], references: [id])
+  buddy             MantelBuddy         @relation("BeoordeeldeBuddy", fields: [buddyId], references: [id], onDelete: Cascade)
+  beoordeeldDoor    MantelBuddy?        @relation("BeoordelendePersoon", fields: [beoordeeldDoorId], references: [id])
+  caregiver         Caregiver?          @relation(fields: [caregiverId], references: [id])
 
-  createdAt DateTime @default(now())
+  createdAt         DateTime            @default(now())
 
   @@index([buddyId])
 }
 
 model Bericht {
-  id         String @id @default(cuid())
-  matchId    String
-  afzenderId String // User id
+  id                String              @id @default(cuid())
+  matchId           String
+  afzenderId        String              // User id
 
-  inhoud    String
-  isGelezen Boolean   @default(false)
-  gelezenOp DateTime?
+  inhoud            String
+  isGelezen         Boolean             @default(false)
+  gelezenOp         DateTime?
 
-  match    BuddyMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  afzender User       @relation(fields: [afzenderId], references: [id])
+  match             BuddyMatch          @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  afzender          User                @relation(fields: [afzenderId], references: [id])
 
-  createdAt DateTime @default(now())
+  createdAt         DateTime            @default(now())
 
   @@index([matchId])
   @@index([matchId, createdAt])
@@ -735,65 +735,65 @@ model Bericht {
 // ============================================
 
 enum FavorietType {
-  HULP // Hulporganisatie van hulpvragen pagina
-  INFORMATIE // Leren/informatie item van informatie pagina
+  HULP        // Hulporganisatie van hulpvragen pagina
+  INFORMATIE  // Leren/informatie item van informatie pagina
 }
 
 enum BuddyBeschikbaarheid {
-  EENMALIG // Alleen losse taken
-  VAST // Alleen vast maatje
-  BEIDE // Allebei
+  EENMALIG          // Alleen losse taken
+  VAST              // Alleen vast maatje
+  BEIDE             // Allebei
 }
 
 enum BuddyStatus {
-  AANGEMELD // Net aangemeld
-  IN_BEHANDELING // Kennismakingsgesprek gepland
-  VOG_AANGEVRAAGD // VOG in behandeling
-  GOEDGEKEURD // Volledig goedgekeurd, kan matchen
-  INACTIEF // Tijdelijk niet beschikbaar
-  AFGEWEZEN // Aanmelding afgewezen
+  AANGEMELD         // Net aangemeld
+  IN_BEHANDELING    // Kennismakingsgesprek gepland
+  VOG_AANGEVRAAGD   // VOG in behandeling
+  GOEDGEKEURD       // Volledig goedgekeurd, kan matchen
+  INACTIEF          // Tijdelijk niet beschikbaar
+  AFGEWEZEN         // Aanmelding afgewezen
 }
 
 enum MatchStatus {
-  VOORGESTELD // Match voorgesteld aan beide partijen
-  BUDDY_AKKOORD // Buddy heeft geaccepteerd
+  VOORGESTELD       // Match voorgesteld aan beide partijen
+  BUDDY_AKKOORD     // Buddy heeft geaccepteerd
   CAREGIVER_AKKOORD // Mantelzorger heeft geaccepteerd
-  ACTIEF // Match is actief
-  GEPAUZEERD // Tijdelijk gepauzeerd
-  BEEINDIGD // Match is beëindigd
+  ACTIEF            // Match is actief
+  GEPAUZEERD        // Tijdelijk gepauzeerd
+  BEEINDIGD         // Match is beëindigd
 }
 
 enum BuddyTaakCategorie {
-  GESPREK // Koffiedrinken, luisterend oor
-  BOODSCHAPPEN // Supermarkt, apotheek
-  VERVOER // Naar afspraken rijden
-  KLUSJES // Kleine reparaties, tuin
-  OPPAS // Bij zorgvrager zijn
-  ADMINISTRATIE // Papierwerk, formulieren
-  OVERIG // Anders
+  GESPREK           // Koffiedrinken, luisterend oor
+  BOODSCHAPPEN      // Supermarkt, apotheek
+  VERVOER           // Naar afspraken rijden
+  KLUSJES           // Kleine reparaties, tuin
+  OPPAS             // Bij zorgvrager zijn
+  ADMINISTRATIE     // Papierwerk, formulieren
+  OVERIG            // Anders
 }
 
 enum TaakUitzetStatus {
-  OPEN // Taak staat open
-  REACTIES // Er zijn reacties
-  TOEGEWEZEN // Iemand is toegewezen
-  VOLTOOID // Taak is voltooid
-  GEANNULEERD // Taak geannuleerd
+  OPEN              // Taak staat open
+  REACTIES          // Er zijn reacties
+  TOEGEWEZEN        // Iemand is toegewezen
+  VOLTOOID          // Taak is voltooid
+  GEANNULEERD       // Taak geannuleerd
 }
 
 enum ReactieStatus {
-  INTERESSE // Buddy heeft interesse getoond
-  GEACCEPTEERD // Mantelzorger heeft buddy gekozen
-  AFGEWEZEN // Niet gekozen
-  VOLTOOID // Taak is voltooid door deze buddy
+  INTERESSE         // Buddy heeft interesse getoond
+  GEACCEPTEERD      // Mantelzorger heeft buddy gekozen
+  AFGEWEZEN         // Niet gekozen
+  VOLTOOID          // Taak is voltooid door deze buddy
 }
 
 enum UserRole {
   CAREGIVER
-  BUDDY // Nieuwe rol voor MantelBuddy vrijwilligers
+  BUDDY             // Nieuwe rol voor MantelBuddy vrijwilligers
   ORG_MEMBER
   ORG_ADMIN
-  GEMEENTE_ADMIN // Gemeenteportaal medewerker
+  GEMEENTE_ADMIN    // Gemeenteportaal medewerker
   ADMIN
 }
 
@@ -846,10 +846,10 @@ enum NotificationType {
   HELP_REQUEST_UPDATE
   TIP
   SYSTEM
-  BUDDY_REACTIE // Buddy reageert op hulpvraag
-  REACTIE_GEACCEPTEERD // Mantelzorger accepteert buddy
-  REACTIE_AFGEWEZEN // Mantelzorger wijst buddy af
-  BUDDY_BERICHT // Nieuw chatbericht
+  BUDDY_REACTIE           // Buddy reageert op hulpvraag
+  REACTIE_GEACCEPTEERD    // Mantelzorger accepteert buddy
+  REACTIE_AFGEWEZEN       // Mantelzorger wijst buddy af
+  BUDDY_BERICHT           // Nieuw chatbericht
 }
 
 enum HelpCategory {
@@ -928,15 +928,15 @@ enum AlarmUrgentie {
 }
 
 enum ArtikelType {
-  ARTIKEL // Regulier informatief artikel
-  GEMEENTE_NIEUWS // Gemeentenieuws
-  TIP // Korte tip
+  ARTIKEL           // Regulier informatief artikel
+  GEMEENTE_NIEUWS   // Gemeentenieuws
+  TIP               // Korte tip
 }
 
 enum ArtikelStatus {
-  CONCEPT // Nog niet gepubliceerd
-  GEPUBLICEERD // Live voor gebruikers
-  GEARCHIVEERD // Niet meer zichtbaar
+  CONCEPT           // Nog niet gepubliceerd
+  GEPUBLICEERD      // Live voor gebruikers
+  GEARCHIVEERD      // Niet meer zichtbaar
 }
 
 // ============================================
@@ -974,7 +974,7 @@ model GebruikerVoorkeur {
   id          String       @id @default(cuid())
   caregiverId String
   type        VoorkeurType
-  slug        String // Verwijst naar categorie-slug of tag-slug
+  slug        String       // Verwijst naar categorie-slug of tag-slug
   createdAt   DateTime     @default(now())
   caregiver   Caregiver    @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
 
@@ -983,13 +983,13 @@ model GebruikerVoorkeur {
 }
 
 enum TagType {
-  AANDOENING // Bijv. dementie, kanker, CVA
-  SITUATIE // Bijv. werkend, jong, op-afstand
+  AANDOENING    // Bijv. dementie, kanker, CVA
+  SITUATIE      // Bijv. werkend, jong, op-afstand
 }
 
 enum VoorkeurType {
-  CATEGORIE // Favoriete content-categorie
-  TAG // Favoriete tag (aandoening/situatie)
+  CATEGORIE     // Favoriete content-categorie
+  TAG           // Favoriete tag (aandoening/situatie)
 }
 
 // ============================================
@@ -998,22 +998,22 @@ enum VoorkeurType {
 
 // Balanstest en Check-in vragen
 model BalanstestVraag {
-  id            String    @id @default(cuid())
-  type          VraagType
-  vraagId       String    @unique // unieke key, bijv. "q1", "c1"
-  vraagTekst    String
-  beschrijving  String? // Extra uitleg of sectie header intro
-  tip           String? // Tip tekst bij de vraag
-  sectie        String? // Sectie header (bijv. "Jouw energie", "Jouw gevoel")
-  opties        Json? // Array van antwoordopties [{label, waarde, score, icon}]
-  gewicht       Float     @default(1.0)
-  reversed      Boolean   @default(false) // Voor check-in: is "ja" het positieve antwoord?
-  isMultiSelect Boolean   @default(false) // Voor check-in multi-select vragen
-  emoji         String?
-  volgorde      Int       @default(0)
-  isActief      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String    @id @default(cuid())
+  type         VraagType
+  vraagId      String    @unique  // unieke key, bijv. "q1", "c1"
+  vraagTekst   String
+  beschrijving String?            // Extra uitleg of sectie header intro
+  tip          String?            // Tip tekst bij de vraag
+  sectie       String?            // Sectie header (bijv. "Jouw energie", "Jouw gevoel")
+  opties       Json?              // Array van antwoordopties [{label, waarde, score, icon}]
+  gewicht      Float    @default(1.0)
+  reversed     Boolean  @default(false) // Voor check-in: is "ja" het positieve antwoord?
+  isMultiSelect Boolean @default(false) // Voor check-in multi-select vragen
+  emoji        String?
+  volgorde     Int      @default(0)
+  isActief     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([type, isActief])
 }
@@ -1026,52 +1026,52 @@ enum VraagType {
 // Zorgtaak definities (gebruikt in balanstest en hulpvragen)
 model Zorgtaak {
   id           String   @id @default(cuid())
-  taakId       String   @unique // unieke key, bijv. "t1", "verzorging"
+  taakId       String   @unique  // unieke key, bijv. "t1", "verzorging"
   naam         String
   beschrijving String?
-  categorie    String? // Groep: "Dagelijks leven", "Organisatie", etc.
+  categorie    String?            // Groep: "Dagelijks leven", "Organisatie", etc.
   emoji        String?
-  icon         String? // Icoon naam
-  kort         String? // Korte weergavenaam
-  routeLabel   String? // "Wmo", "Zvw", etc.
-  groep        String? // Visuele groep (bijv. "Dagelijks leven")
+  icon         String?            // Icoon naam
+  kort         String?            // Korte weergavenaam
+  routeLabel   String?            // "Wmo", "Zvw", etc.
+  groep        String?            // Visuele groep (bijv. "Dagelijks leven")
   volgorde     Int      @default(0)
   isActief     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  mappings TaakCategorieMapping[]
+  mappings     TaakCategorieMapping[]
 
   @@index([isActief])
 }
 
 // Taak-naar-categorie mappings (vertaalt diverse taaknamen naar canonical categorie)
 model TaakCategorieMapping {
-  id         String   @id @default(cuid())
-  bronNaam   String   @unique // Naam zoals binnenkomt (bijv. "Wassen/aankleden")
-  zorgtaakId String
-  zorgtaak   Zorgtaak @relation(fields: [zorgtaakId], references: [id], onDelete: Cascade)
-  bron       String? // "WEB", "WHATSAPP" — herkomst van de mapping
-  isActief   Boolean  @default(true)
-  createdAt  DateTime @default(now())
+  id           String   @id @default(cuid())
+  bronNaam     String   @unique  // Naam zoals binnenkomt (bijv. "Wassen/aankleden")
+  zorgtaakId   String
+  zorgtaak     Zorgtaak @relation(fields: [zorgtaakId], references: [id], onDelete: Cascade)
+  bron         String?            // "WEB", "WHATSAPP" — herkomst van de mapping
+  isActief     Boolean  @default(true)
+  createdAt    DateTime @default(now())
 
   @@index([zorgtaakId])
 }
 
 // Content categorieën (leren, hulpvraag, sub-hoofdstukken, etc.)
 model ContentCategorie {
-  id           String             @id @default(cuid())
+  id           String            @id @default(cuid())
   type         CategorieType
   slug         String
   naam         String
   beschrijving String?
   emoji        String?
-  icon         String? // Icoon naam
-  hint         String? // Extra hint tekst
+  icon         String?            // Icoon naam
+  hint         String?            // Extra hint tekst
   parentId     String?
   parent       ContentCategorie?  @relation("CategorieHierarchie", fields: [parentId], references: [id])
   children     ContentCategorie[] @relation("CategorieHierarchie")
-  metadata     Json? // Extra data (bronLabelKleur, routeLabel, etc.)
+  metadata     Json?              // Extra data (bronLabelKleur, routeLabel, etc.)
   volgorde     Int                @default(0)
   isActief     Boolean            @default(true)
   createdAt    DateTime           @default(now())
@@ -1083,11 +1083,11 @@ model ContentCategorie {
 }
 
 enum CategorieType {
-  LEREN // Leren hoofdcategorieën (Praktische tips, Zelfzorg, etc.)
-  SUB_HOOFDSTUK // Sub-hoofdstukken binnen leren categorieën
-  HULPVRAAG // Hulpvraag categorieën (Even vrij, Praten, etc.)
-  HULP_ZORGVRAGER // Hulp categorieën voor zorgvrager
-  HULP_MANTELZORGER // Hulp categorieën voor mantelzorger
+  LEREN              // Leren hoofdcategorieën (Praktische tips, Zelfzorg, etc.)
+  SUB_HOOFDSTUK      // Sub-hoofdstukken binnen leren categorieën
+  HULPVRAAG          // Hulpvraag categorieën (Even vrij, Praten, etc.)
+  HULP_ZORGVRAGER    // Hulp categorieën voor zorgvrager
+  HULP_MANTELZORGER  // Hulp categorieën voor mantelzorger
 }
 
 // Formulier opties (dropdown/selectie opties)
@@ -1108,41 +1108,41 @@ model FormulierOptie {
 }
 
 enum OptieGroep {
-  RELATIE // partner, ouder, kind, etc.
-  UREN_PER_WEEK // 0-5, 5-10, etc.
-  ZORGDUUR // <1 jaar, 1-3 jaar, etc.
-  UREN_BALANSTEST // Uren opties voor balanstest (0-2, 2-4, etc.)
-  BUDDY_HULPVORM // gesprek, boodschappen, vervoer, etc.
-  BUDDY_BESCHIKBAARHEID // eenmalig, vast, beide
-  CHECKIN_HULP // Hulp opties bij check-in vraag
+  RELATIE                // partner, ouder, kind, etc.
+  UREN_PER_WEEK          // 0-5, 5-10, etc.
+  ZORGDUUR               // <1 jaar, 1-3 jaar, etc.
+  UREN_BALANSTEST        // Uren opties voor balanstest (0-2, 2-4, etc.)
+  BUDDY_HULPVORM         // gesprek, boodschappen, vervoer, etc.
+  BUDDY_BESCHIKBAARHEID  // eenmalig, vast, beide
+  CHECKIN_HULP           // Hulp opties bij check-in vraag
 }
 
 // App content (onboarding, tutorial, pagina intro's, etc.)
 model AppContent {
-  id         String         @id @default(cuid())
-  type       AppContentType
-  sleutel    String
-  titel      String?
-  inhoud     String? // Hoofdtekst (markdown of plain text)
-  subtekst   String? // Secundaire tekst
-  emoji      String?
-  icon       String?
-  afbeelding String? // URL naar afbeelding
-  metadata   Json? // Extra data (feature cards, knopteksten, etc.)
-  volgorde   Int            @default(0)
-  isActief   Boolean        @default(true)
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
+  id           String         @id @default(cuid())
+  type         AppContentType
+  sleutel      String
+  titel        String?
+  inhoud       String?        // Hoofdtekst (markdown of plain text)
+  subtekst     String?        // Secundaire tekst
+  emoji        String?
+  icon         String?
+  afbeelding   String?        // URL naar afbeelding
+  metadata     Json?          // Extra data (feature cards, knopteksten, etc.)
+  volgorde     Int            @default(0)
+  isActief     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 
   @@unique([type, sleutel])
   @@index([type, isActief])
 }
 
 enum AppContentType {
-  ONBOARDING // Onboarding flow stappen
-  TUTORIAL // Tutorial stappen
-  PAGINA_INTRO // Pagina titels en beschrijvingen
-  FEATURE_CARD // Feature uitleg kaarten
+  ONBOARDING     // Onboarding flow stappen
+  TUTORIAL       // Tutorial stappen
+  PAGINA_INTRO   // Pagina titels en beschrijvingen
+  FEATURE_CARD   // Feature uitleg kaarten
 }
 
 // ============================================
@@ -1151,8 +1151,8 @@ enum AppContentType {
 
 model CoachAdvies {
   id        String   @id @default(cuid())
-  sleutel   String   @unique // bijv. "totaal.LAAG", "energie.HOOG", "taak.t1.GEMIDDELD"
-  label     String? // Leesbaar label voor admin UI
+  sleutel   String   @unique  // bijv. "totaal.LAAG", "energie.HOOG", "taak.t1.GEMIDDELD"
+  label     String?           // Leesbaar label voor admin UI
   advies    String   @db.Text // De adviestekst die Ger gebruikt
   isActief  Boolean  @default(true)
   updatedAt DateTime @updatedAt
@@ -1165,37 +1165,37 @@ model CoachAdvies {
 // ============================================
 
 model Gemeente {
-  id       String  @id @default(cuid())
-  naam     String  @unique // Officiële gemeentenaam
-  code     String? @unique // CBS gemeentecode
-  isActief Boolean @default(true)
+  id                    String   @id @default(cuid())
+  naam                  String   @unique  // Officiële gemeentenaam
+  code                  String?  @unique  // CBS gemeentecode
+  isActief              Boolean  @default(true)
 
   // Contactgegevens
-  contactEmail    String?
-  contactTelefoon String?
-  websiteUrl      String?
-  wmoLoketUrl     String?
+  contactEmail          String?
+  contactTelefoon       String?
+  websiteUrl            String?
+  wmoLoketUrl           String?
 
   // Aangepast advies per niveau
-  adviesLaag      String? @db.Text // Advies tekst bij LAAG niveau
-  adviesGemiddeld String? @db.Text // Advies tekst bij GEMIDDELD niveau
-  adviesHoog      String? @db.Text // Advies tekst bij HOOG niveau
+  adviesLaag            String?  @db.Text  // Advies tekst bij LAAG niveau
+  adviesGemiddeld       String?  @db.Text  // Advies tekst bij GEMIDDELD niveau
+  adviesHoog            String?  @db.Text  // Advies tekst bij HOOG niveau
 
   // Gekoppelde organisaties per belastingniveau
-  organisatieLaagId      String? // Zorgorganisatie ID voor LAAG niveau
+  organisatieLaagId     String?  // Zorgorganisatie ID voor LAAG niveau
   organisatieGemiddeldId String? // Zorgorganisatie ID voor GEMIDDELD niveau
-  organisatieHoogId      String? // Zorgorganisatie ID voor HOOG niveau
+  organisatieHoogId     String?  // Zorgorganisatie ID voor HOOG niveau
 
   // Aangepaste hulpbronnen links
-  mantelzorgSteunpunt     String? // URL mantelzorgsteunpunt
+  mantelzorgSteunpunt   String?  // URL mantelzorgsteunpunt
   mantelzorgSteunpuntNaam String? // Naam steunpunt
-  respijtzorgUrl          String?
-  dagopvangUrl            String?
+  respijtzorgUrl        String?
+  dagopvangUrl          String?
 
   // Metadata
-  notities  String?  @db.Text
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  notities              String?  @db.Text
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   @@index([isActief])
 }
@@ -1206,15 +1206,15 @@ model Gemeente {
 
 model SiteSettings {
   id        String   @id @default(cuid())
-  categorie String // "branding", "kleuren", "teksten"
+  categorie String   // "branding", "kleuren", "teksten"
   sleutel   String   @unique // bijv. "branding.appName", "kleuren.primary", "teksten.profiel.header.subtitle"
   waarde    String   @db.Text // De waarde (tekst, kleurcode, of base64 logo)
-  label     String? // Leesbaar label voor admin UI
+  label     String?  // Leesbaar label voor admin UI
   type      String   @default("text") // "text", "color", "image", "textarea"
-  groep     String? // Groepering in admin UI
+  groep     String?  // Groepering in admin UI
   volgorde  Int      @default(0)
   updatedAt DateTime @updatedAt
-  updatedBy String? // User ID van de laatste wijziging
+  updatedBy String?  // User ID van de laatste wijziging
 
   @@index([categorie])
 }
