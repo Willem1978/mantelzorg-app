@@ -71,7 +71,7 @@ export async function GET() {
       gemeente: caregiver.municipality || null,
     })
   } catch (error) {
-    console.error("Marktplaats GET error:", error)
+    console.error("Hulpvragen GET error:", error)
     return NextResponse.json(
       { error: "Er ging iets mis bij het ophalen" },
       { status: 500 }
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ taak })
   } catch (error) {
-    console.error("Marktplaats POST error:", error)
+    console.error("Hulpvragen POST error:", error)
     return NextResponse.json(
       { error: "Er ging iets mis bij het aanmaken" },
       { status: 500 }

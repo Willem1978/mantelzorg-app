@@ -8,9 +8,9 @@ import { BuddyKaart, type BuddyOpKaart } from "@/components/BuddyKaart"
 import { GerPageIntro } from "@/components/ui"
 import { Button } from "@/components/ui"
 import Link from "next/link"
-import { marktplaatsContent } from "@/config/content"
+import { hulpvragenPageContent } from "@/config/content"
 
-const c = marktplaatsContent
+const c = hulpvragenPageContent
 
 // ============================================
 // TYPES
@@ -68,7 +68,7 @@ interface BuddyTaak {
   reacties: BuddyReactie[]
 }
 
-interface MarktplaatsData {
+interface HulpvragenData {
   taken: BuddyTaak[]
   zorgtaakZwaarte: Record<string, string>
   gemeente: string | null
@@ -144,8 +144,8 @@ function BuddysPageContent() {
   const [selectedBuddyId, setSelectedBuddyId] = useState<string | null>(null)
   const hasFetchedProfiel = useRef(false)
 
-  // --- Marktplaats state ---
-  const [marktData, setMarktData] = useState<MarktplaatsData | null>(null)
+  // --- Hulpvragen state ---
+  const [marktData, setMarktData] = useState<HulpvragenData | null>(null)
   const [marktLoading, setMarktLoading] = useState(true)
   const [gekozenTaak, setGekozenTaak] = useState<string | null>(null)
   const [titel, setTitel] = useState("")
@@ -190,14 +190,14 @@ function BuddysPageContent() {
     loadProfiel()
   }, [])
 
-  // Marktplaats data laden
+  // Hulpvragen data laden
   useEffect(() => {
     if (hasFetchedMarkt.current) return
     hasFetchedMarkt.current = true
 
     async function loadMarktData() {
       try {
-        const res = await fetch("/api/marktplaats")
+        const res = await fetch("/api/hulpvragen")
         if (res.ok) {
           const json = await res.json()
           setMarktData(json)
@@ -268,7 +268,7 @@ function BuddysPageContent() {
     setSubmitError(null)
 
     try {
-      const res = await fetch("/api/marktplaats", {
+      const res = await fetch("/api/hulpvragen", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -283,8 +283,8 @@ function BuddysPageContent() {
 
       if (!res.ok) throw new Error("Versturen mislukt")
 
-      // Refresh marktplaats data
-      const refreshRes = await fetch("/api/marktplaats")
+      // Refresh hulpvragen data
+      const refreshRes = await fetch("/api/hulpvragen")
       if (refreshRes.ok) {
         const json = await refreshRes.json()
         setMarktData(json)
@@ -742,7 +742,7 @@ function BuddysPageContent() {
               taken={marktData.taken}
               onRefresh={async () => {
                 try {
-                  const res = await fetch("/api/marktplaats")
+                  const res = await fetch("/api/hulpvragen")
                   if (res.ok) {
                     const json = await res.json()
                     setMarktData(json)
@@ -769,7 +769,7 @@ function MijnHulpvragen({ taken, onRefresh }: { taken: BuddyTaak[]; onRefresh?: 
   const handleReactie = async (taakId: string, reactieId: string, actie: "accepteer" | "afwijzen") => {
     setActieBezig(reactieId)
     try {
-      const res = await fetch(`/api/marktplaats/${taakId}/reacties/${reactieId}`, {
+      const res = await fetch(`/api/hulpvragen/${taakId}/reacties/${reactieId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ actie }),

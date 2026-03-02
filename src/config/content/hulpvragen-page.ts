@@ -1,8 +1,8 @@
 /**
- * Marktplaats pagina teksten (B1 taalgebruik).
+ * Hulpvragen pagina teksten (B1 taalgebruik).
  */
 
-export const marktplaatsContent = {
+export const hulpvragenPageContent = {
   title: "Hulpaanvragen",
   subtitle: "Vraag hulp bij een zorgtaak. Vrijwilligers bij jou in de buurt kunnen helpen.",
 
@@ -86,7 +86,7 @@ export const marktplaatsContent = {
   // Breadcrumbs
   breadcrumb: {
     home: "Home",
-    marktplaats: "Hulpaanvragen",
+    hulpvragen: "Hulpaanvragen",
   },
 
   // Taak zwaarte badges

@@ -96,7 +96,7 @@ export default function BuddyDashboardPage() {
     const fetchData = async () => {
       try {
         const [openRes, matchRes] = await Promise.all([
-          fetch("/api/marktplaats/open"),
+          fetch("/api/hulpvragen/open"),
           fetch("/api/buddys/mijn-matches"),
         ])
 
@@ -123,7 +123,7 @@ export default function BuddyDashboardPage() {
   const handleReageer = async (taakId: string) => {
     setReageerBezig(taakId)
     try {
-      const res = await fetch(`/api/marktplaats/${taakId}/reageer`, {
+      const res = await fetch(`/api/hulpvragen/${taakId}/reageer`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
