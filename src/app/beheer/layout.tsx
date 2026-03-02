@@ -54,6 +54,7 @@ const menuGroepen: { label: string; items: { href: string; label: string; icon: 
       { href: "/beheer/analytics", label: "Analytics & Signalen", icon: "📈" },
       { href: "/beheer/moderatie", label: "Moderatie", icon: "🛡️" },
       { href: "/beheer/curator", label: "Content Curator", icon: "✍️" },
+      { href: "/beheer/content-agent", label: "Content Agent", icon: "🤖" },
     ],
   },
   {
