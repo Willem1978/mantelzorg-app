@@ -84,7 +84,6 @@ export async function POST(request: NextRequest) {
         categorie: "evenement",
         type: "GEMEENTE_NIEUWS",
         status: "GEPUBLICEERD",
-        belastingNiveau: "ALLE",
         gemeente: gemeenteNaam,
         publicatieDatum: new Date(publicatieDatum),
         aangemaaaktDoor: userId,

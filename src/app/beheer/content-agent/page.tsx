@@ -4,12 +4,19 @@ import { useState, useEffect } from "react"
 import { AdminSpinner } from "@/components/admin"
 import { useToast } from "@/components/ui/Toast"
 
-type AgentType = "zoek-online" | "genereer" | "herschrijf" | "verrijk" | "categoriseer-bulk"
+type AgentType = "zoek-online" | "genereer" | "herschrijf" | "verrijk" | "categoriseer-bulk" | "hiaten-analyse" | "batch-genereer"
 
 interface ArtikelOptie {
   id: string
   titel: string
   categorie: string
+}
+
+interface TagOptie {
+  slug: string
+  naam: string
+  emoji: string | null
+  type: string
 }
 
 const TYPE_LABELS: Record<AgentType, string> = {
@@ -18,6 +25,8 @@ const TYPE_LABELS: Record<AgentType, string> = {
   herschrijf: "Artikel herschrijven",
   verrijk: "Artikel verrijken",
   "categoriseer-bulk": "Bulk categoriseren",
+  "hiaten-analyse": "Hiaten-analyse",
+  "batch-genereer": "Batch genereren",
 }
 
 const TYPE_ICONEN: Record<AgentType, string> = {
@@ -26,6 +35,8 @@ const TYPE_ICONEN: Record<AgentType, string> = {
   herschrijf: "📝",
   verrijk: "🔍",
   "categoriseer-bulk": "🗂️",
+  "hiaten-analyse": "📊",
+  "batch-genereer": "🚀",
 }
 
 const TYPE_BESCHRIJVINGEN: Record<AgentType, string> = {
@@ -33,7 +44,9 @@ const TYPE_BESCHRIJVINGEN: Record<AgentType, string> = {
   genereer: "Genereer een compleet nieuw artikel op B1-taalniveau over een opgegeven onderwerp",
   herschrijf: "Herschrijf een bestaand artikel: verbeter taalniveau, structuur en volledigheid",
   verrijk: "Voeg diepgang toe aan een bestaand artikel: extra tips, FAQ, bronnen en verwijzingen",
-  "categoriseer-bulk": "Analyseer meerdere artikelen en corrigeer categorieën, subhoofdstukken en belastingniveaus",
+  "categoriseer-bulk": "Analyseer meerdere artikelen en corrigeer categorieën en subhoofdstukken",
+  "hiaten-analyse": "Analyseer per categorie × tag welke combinaties geen artikelen hebben en stel prioriteiten voor",
+  "batch-genereer": "Genereer meerdere artikelen in één keer op basis van hiaten-analyse voorstellen",
 }
 
 export default function ContentAgentPage() {
@@ -47,7 +60,20 @@ export default function ContentAgentPage() {
   const [result, setResult] = useState<any>(null)
   const [artikelen, setArtikelen] = useState<ArtikelOptie[]>([])
   const [toepassenLoading, setToepassenLoading] = useState(false)
+  const [beschikbareTags, setBeschikbareTags] = useState<TagOptie[]>([])
+  const [geselecteerdeTags, setGeselecteerdeTags] = useState<string[]>([])
+  const [categorie, setCategorie] = useState("")
   const { showError, showSuccess } = useToast()
+
+  // Laad beschikbare tags
+  useEffect(() => {
+    fetch("/api/content/tags")
+      .then(res => res.json())
+      .then(data => {
+        setBeschikbareTags([...(data.aandoeningen || []), ...(data.situaties || [])])
+      })
+      .catch(() => { /* stil */ })
+  }, [])
 
   // Haal artikelen op voor de selectielijst
   useEffect(() => {
@@ -77,7 +103,11 @@ export default function ContentAgentPage() {
     try {
       const body: Record<string, unknown> = { type }
 
-      if (type === "zoek-online" && onderwerp) body.onderwerp = onderwerp
+      if (type === "zoek-online") {
+        if (onderwerp) body.onderwerp = onderwerp
+        if (categorie) body.categorie = categorie
+        if (geselecteerdeTags.length > 0) body.tags = geselecteerdeTags
+      }
       if (type === "genereer") {
         if (!onderwerp.trim()) {
           showError("Vul een onderwerp in")
@@ -86,6 +116,8 @@ export default function ContentAgentPage() {
         }
         body.onderwerp = onderwerp
         body.opslaan = opslaan
+        if (categorie) body.categorie = categorie
+        if (geselecteerdeTags.length > 0) body.tags = geselecteerdeTags
       }
       if (type === "herschrijf") {
         if (!artikelId) {
@@ -94,7 +126,7 @@ export default function ContentAgentPage() {
           return
         }
         body.artikelId = artikelId
-        if (onderwerp) body.onderwerp = onderwerp // als instructie
+        if (onderwerp) body.onderwerp = onderwerp
       }
       if (type === "verrijk") {
         if (!artikelId) {
@@ -106,6 +138,18 @@ export default function ContentAgentPage() {
       }
       if (type === "categoriseer-bulk") {
         body.limiet = limiet
+      }
+      if (type === "hiaten-analyse") {
+        // Geen extra parameters nodig
+      }
+      if (type === "batch-genereer") {
+        if (!result?.voorstellen || result.voorstellen.length === 0) {
+          showError("Voer eerst een hiaten-analyse of zoek-online uit om voorstellen te krijgen")
+          setLoading(false)
+          return
+        }
+        body.voorstellen = result.voorstellen
+        body.opslaan = opslaan
       }
 
       const res = await fetch("/api/ai/admin/content-agent", {
@@ -179,7 +223,7 @@ export default function ContentAgentPage() {
       </div>
 
       {/* Agent type selectie */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
         {(Object.keys(TYPE_LABELS) as AgentType[]).map((t) => (
           <button
             key={t}
@@ -276,8 +320,72 @@ export default function ContentAgentPage() {
             </div>
           )}
 
+          {/* Categorie selector */}
+          {(type === "zoek-online" || type === "genereer") && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Categorie (optioneel)</label>
+              <select
+                value={categorie}
+                onChange={(e) => setCategorie(e.target.value)}
+                className="w-full rounded-lg border-gray-300 text-sm py-2 px-3 border focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">-- Automatisch --</option>
+                <option value="praktische-tips">Praktische tips</option>
+                <option value="zelfzorg-balans">Zelfzorg & balans</option>
+                <option value="rechten-regelingen">Rechten & regelingen</option>
+                <option value="geld-financien">Geld & financiën</option>
+                <option value="hulpmiddelen-technologie">Hulpmiddelen & technologie</option>
+                <option value="werk-mantelzorg">Werk & mantelzorg</option>
+                <option value="samenwerken-netwerk">Samenwerken & netwerk</option>
+              </select>
+            </div>
+          )}
+
+          {/* Tag selector */}
+          {(type === "zoek-online" || type === "genereer") && beschikbareTags.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tags (optioneel)</label>
+              <div className="flex flex-wrap gap-2 p-2 border border-gray-300 rounded-lg min-h-[42px]">
+                {geselecteerdeTags.map(slug => {
+                  const tag = beschikbareTags.find(t => t.slug === slug)
+                  return (
+                    <span key={slug} className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs">
+                      {tag?.emoji} {tag?.naam || slug}
+                      <button
+                        type="button"
+                        onClick={() => setGeselecteerdeTags(geselecteerdeTags.filter(t => t !== slug))}
+                        className="text-emerald-400 hover:text-red-500 ml-0.5"
+                      >
+                        x
+                      </button>
+                    </span>
+                  )
+                })}
+                <select
+                  value=""
+                  onChange={(e) => {
+                    if (e.target.value && !geselecteerdeTags.includes(e.target.value)) {
+                      setGeselecteerdeTags([...geselecteerdeTags, e.target.value])
+                    }
+                  }}
+                  className="text-xs text-gray-500 border-0 outline-none bg-transparent"
+                >
+                  <option value="">+ Tag toevoegen...</option>
+                  {beschikbareTags
+                    .filter(t => !geselecteerdeTags.includes(t.slug))
+                    .map(t => (
+                      <option key={t.slug} value={t.slug}>
+                        {t.emoji} {t.naam} ({t.type === "AANDOENING" ? "Aandoening" : "Situatie"})
+                      </option>
+                    ))
+                  }
+                </select>
+              </div>
+            </div>
+          )}
+
           {/* Opslaan optie bij genereren */}
-          {type === "genereer" && (
+          {(type === "genereer" || type === "batch-genereer") && (
             <label className="flex items-center gap-2 text-sm text-gray-700">
               <input
                 type="checkbox"
@@ -572,16 +680,14 @@ function ArtikelPreview({ artikel }: { artikel: {
   beschrijving: string
   inhoud: string
   categorie: string
-  belastingNiveau: string
   tags?: string[]
 } }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6">
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
         <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">{artikel.categorie}</span>
-        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">{artikel.belastingNiveau}</span>
         {artikel.tags?.map((tag: string) => (
-          <span key={tag} className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{tag}</span>
+          <span key={tag} className="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full">{tag}</span>
         ))}
       </div>
       <h2 className="text-xl font-bold text-gray-900 mb-2">{artikel.titel}</h2>
@@ -601,6 +707,8 @@ function getHoofdWaarde(result: any): string {
   if (result.type === "herschrijf") return result.herschreven ? "Klaar" : "Mislukt"
   if (result.type === "verrijk") return result.verrijking ? "Klaar" : "Mislukt"
   if (result.type === "categoriseer-bulk") return `${result.aantalItems || 0}`
+  if (result.type === "hiaten-analyse") return `${result.aantalHiaten || 0}`
+  if (result.type === "batch-genereer") return `${result.aantalGegenereerd || 0}`
   return "—"
 }
 
@@ -611,6 +719,8 @@ function getDetail(result: any): string {
   if (result.type === "herschrijf") return "artikel herschreven"
   if (result.type === "verrijk") return "artikel verrijkt"
   if (result.type === "categoriseer-bulk") return "artikelen geanalyseerd"
+  if (result.type === "hiaten-analyse") return "hiaten gevonden"
+  if (result.type === "batch-genereer") return "artikelen gegenereerd"
   return ""
 }
 

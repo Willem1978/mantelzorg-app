@@ -7,6 +7,10 @@ import { FavorietButton } from "@/components/FavorietButton"
 import { Breadcrumbs } from "@/components/ui/Breadcrumbs"
 import { ContentModal } from "@/components/ui/ContentModal"
 
+interface ArtikelTag {
+  tag: { slug: string; naam: string; emoji: string | null; type: string }
+}
+
 interface Artikel {
   id: string
   titel: string
@@ -17,6 +21,7 @@ interface Artikel {
   emoji: string | null
   subHoofdstuk: string | null
   bronLabel: string | null
+  tags?: ArtikelTag[]
 }
 
 
@@ -36,6 +41,8 @@ export default function CategoriePage() {
   const [items, setItems] = useState<Artikel[]>([])
   const [loading, setLoading] = useState(true)
   const [favorieten, setFavorieten] = useState<Record<string, string>>({})
+  const [beschikbareTags, setBeschikbareTags] = useState<Array<{ slug: string; naam: string; emoji: string | null; type: string }>>([])
+  const [actieveTag, setActieveTag] = useState<string | null>(null)
   const hasFetched = useRef(false)
 
   // Fetch category info and sub-chapters from API
@@ -83,6 +90,17 @@ export default function CategoriePage() {
     }
 
     loadContent()
+  }, [])
+
+  // Laad tags
+  useEffect(() => {
+    fetch("/api/content/tags")
+      .then(res => res.json())
+      .then(data => {
+        const alleTags = [...(data.aandoeningen || []), ...(data.situaties || [])]
+        setBeschikbareTags(alleTags)
+      })
+      .catch(() => { /* stil */ })
   }, [])
 
   // Fetch artikelen once content is loaded
@@ -167,12 +185,17 @@ export default function CategoriePage() {
     )
   }
 
+  // Filter artikelen op actieve tag
+  const gefilterdeItems = actieveTag
+    ? items.filter(a => a.tags?.some(t => t.tag.slug === actieveTag))
+    : items
+
   // Groepeer artikelen per sub-hoofdstuk
   const subs = subHoofdstukken[categorie] || []
   const gegroepeerd: Record<string, Artikel[]> = {}
   const ongegroepeerd: Artikel[] = []
 
-  for (const artikel of items) {
+  for (const artikel of gefilterdeItems) {
     if (artikel.subHoofdstuk && subs.some(s => s.slug === artikel.subHoofdstuk)) {
       if (!gegroepeerd[artikel.subHoofdstuk]) gegroepeerd[artikel.subHoofdstuk] = []
       gegroepeerd[artikel.subHoofdstuk].push(artikel)
@@ -200,11 +223,36 @@ export default function CategoriePage() {
       <p className="text-sm text-muted-foreground mb-6">{info.beschrijving}</p>
 
       {/* Uitleg hartje */}
-      <div className="bg-primary/5 rounded-xl p-3 mb-6">
+      <div className="bg-primary/5 rounded-xl p-3 mb-4">
         <p className="text-sm text-muted-foreground">
           Tik op het <span className="text-primary font-semibold">hartje</span> om een artikel te bewaren bij je favorieten.
         </p>
       </div>
+
+      {/* Tag filter bar */}
+      {beschikbareTags.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          <button
+            onClick={() => setActieveTag(null)}
+            className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+              actieveTag === null ? "bg-primary text-white border-primary" : "bg-white text-muted-foreground border-gray-200 hover:border-primary"
+            }`}
+          >
+            Alles
+          </button>
+          {beschikbareTags.map(tag => (
+            <button
+              key={tag.slug}
+              onClick={() => setActieveTag(actieveTag === tag.slug ? null : tag.slug)}
+              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                actieveTag === tag.slug ? "bg-primary text-white border-primary" : "bg-white text-muted-foreground border-gray-200 hover:border-primary"
+              }`}
+            >
+              {tag.emoji} {tag.naam}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Loading state */}
       {loading && (
@@ -214,9 +262,16 @@ export default function CategoriePage() {
       )}
 
       {/* Geen artikelen */}
-      {!loading && items.length === 0 && (
+      {!loading && gefilterdeItems.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">Nog geen artikelen in deze categorie.</p>
+          <p className="text-muted-foreground">
+            {actieveTag ? "Geen artikelen gevonden met deze tag." : "Nog geen artikelen in deze categorie."}
+          </p>
+          {actieveTag && (
+            <button onClick={() => setActieveTag(null)} className="text-primary text-sm mt-2 hover:underline">
+              Toon alle artikelen
+            </button>
+          )}
         </div>
       )}
 
@@ -315,7 +370,12 @@ function ArtikelCard({ artikel, categorieTitel, isFavorited, favorietId }: {
           <p className="text-xs text-muted-foreground leading-relaxed mb-2 pl-7 line-clamp-2">
             {artikel.beschrijving}
           </p>
-          <div className="flex items-center gap-3 pl-7 flex-wrap">
+          <div className="flex items-center gap-2 pl-7 flex-wrap">
+            {artikel.tags && artikel.tags.length > 0 && artikel.tags.map(t => (
+              <span key={t.tag.slug} className="text-xs px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                {t.tag.emoji} {t.tag.naam}
+              </span>
+            ))}
             {artikel.bron && (
               <span className="text-xs text-muted-foreground">{artikel.bron}</span>
             )}

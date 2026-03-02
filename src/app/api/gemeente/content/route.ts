@@ -23,7 +23,6 @@ export async function GET() {
         emoji: true,
         categorie: true,
         status: true,
-        belastingNiveau: true,
         publicatieDatum: true,
         sorteerVolgorde: true,
         createdAt: true,
@@ -53,7 +52,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { titel, beschrijving, inhoud, url, bron, emoji, belastingNiveau, publicatieDatum } = body
+    const { titel, beschrijving, inhoud, url, bron, emoji, publicatieDatum } = body
 
     // Validatie van verplichte velden
     if (!titel || typeof titel !== "string" || titel.trim().length === 0) {
@@ -81,7 +80,6 @@ export async function POST(request: NextRequest) {
         categorie: "gemeente-nieuws",
         type: "GEMEENTE_NIEUWS",
         status: "GEPUBLICEERD",
-        belastingNiveau: belastingNiveau || "ALLE",
         gemeente: gemeenteNaam,
         publicatieDatum: publicatieDatum ? new Date(publicatieDatum) : new Date(),
         aangemaaaktDoor: userId,

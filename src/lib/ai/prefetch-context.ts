@@ -37,6 +37,20 @@ export async function prefetchUserContext(
   // Fallback: als alleen één gemeente wordt meegegeven (backwards compatibility)
   const gemZorgvrager = gemeenteZorgvrager ?? gemeenteMantelzorger
 
+  // 0) Haal voorkeuren en aandoening op van de caregiver
+  const caregiver = await prisma.caregiver.findUnique({
+    where: { userId },
+    select: {
+      aandoening: true,
+      voorkeuren: {
+        select: { type: true, slug: true },
+      },
+    },
+  })
+
+  const aandoening = caregiver?.aandoening || null
+  const voorkeuren = caregiver?.voorkeuren || []
+
   // 1) Haal de laatste balanstest op
   const test = await prisma.belastbaarheidTest.findFirst({
     where: { caregiver: { userId }, isCompleted: true },
@@ -67,7 +81,7 @@ export async function prefetchUserContext(
     // Zorgtaken-hulp → gemeente zorgvrager, mantelzorger-hulp → gemeente mantelzorger
     const alleHulp = await fetchAlleHulpbronnenPerCategorie(gemZorgvrager)
     const mantelzorgerHulp = await fetchMantelzorgerHulp(gemeenteMantelzorger)
-    return { heeftTest: false as const, alleHulpPerCategorie: alleHulp, hulpVoorMantelzorger: mantelzorgerHulp }
+    return { heeftTest: false as const, alleHulpPerCategorie: alleHulp, hulpVoorMantelzorger: mantelzorgerHulp, voorkeuren, aandoening }
   }
 
   // 2) Bereken deelgebieden
@@ -198,6 +212,8 @@ export async function prefetchUserContext(
       beschrijving: a.beschrijving,
       urgentie: a.urgentie,
     })),
+    voorkeuren,
+    aandoening,
   }
 }
 
@@ -301,6 +317,7 @@ export function buildContextBlock(ctx: Awaited<ReturnType<typeof prefetchUserCon
 Deze gebruiker heeft nog GEEN balanstest gedaan. Moedig aan om de test te doen via /belastbaarheidstest (duurt 5 minuten).`
 
     // Toch hulpbronnen tonen als die er zijn
+    block += buildVoorkeurenBlock(ctx.aandoening, ctx.voorkeuren)
     block += buildHulpPerCategorieBlock(ctx.alleHulpPerCategorie)
     block += buildMantelzorgerHulpBlock(ctx.hulpVoorMantelzorger)
     block += `\n--- EINDE CONTEXT ---`
@@ -317,6 +334,8 @@ BALANSTEST (${ctx.testDatum}):
   if (ctx.adviesVoorTotaal) {
     block += `\n- Advies bij dit niveau: ${ctx.adviesVoorTotaal}`
   }
+
+  block += buildVoorkeurenBlock(ctx.aandoening, ctx.voorkeuren)
 
   block += `\n\nDEELGEBIEDEN:`
   for (const d of ctx.deelgebieden) {
@@ -382,6 +401,34 @@ function formatHulpkaart(b: any): string {
   const kosten = b.kosten || ""
   const openingstijden = b.openingstijden || ""
   return `{{hulpkaart:${b.naam}|${dienst}|${beschrijving}|${telefoon}|${website}|${gemeente}|${kosten}|${openingstijden}}}`
+}
+
+function buildVoorkeurenBlock(
+  aandoening: string | null,
+  voorkeuren: { type: string; slug: string }[],
+): string {
+  if (!aandoening && voorkeuren.length === 0) return ""
+
+  let block = `\n\nGEBRUIKERSVOORKEUREN:`
+  if (aandoening) {
+    block += `\n- Aandoening zorgvrager: ${aandoening}`
+  }
+
+  const categorieVoorkeuren = voorkeuren
+    .filter((v) => v.type === "CATEGORIE")
+    .map((v) => v.slug)
+  if (categorieVoorkeuren.length > 0) {
+    block += `\n- Favoriete categorieën: ${categorieVoorkeuren.join(", ")}`
+  }
+
+  const tagVoorkeuren = voorkeuren
+    .filter((v) => v.type === "TAG")
+    .map((v) => v.slug)
+  if (tagVoorkeuren.length > 0) {
+    block += `\n- Favoriete tags: ${tagVoorkeuren.join(", ")}`
+  }
+
+  return block
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

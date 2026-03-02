@@ -1,8 +1,8 @@
 # MantelBuddy — Masterplan 2026
 
-**Datum:** 1 maart 2026
-**Versie:** 1.0
-**Baseline:** v2.5.0 + doorontwikkelingen februari 2026
+**Datum:** 2 maart 2026
+**Versie:** 1.1
+**Baseline:** v2.5.0 + doorontwikkelingen februari 2026 + content herstructurering maart 2026
 **Dit plan vervangt alle eerdere planbestanden.**
 
 ---
@@ -44,7 +44,7 @@
 | Belastbaarheidstest | 95% | 11 vragen, 10 zorgtaken, scoring, subdomeinen |
 | Dashboard | 85% | Thermometer, advies, trend, artikelen, mijlpalen |
 | Hulpvragen | 90% | Gemeente-filtering, kleur-indicatoren, 2 tabs (voor jou + voor naaste), MantelBuddy actieknoppen |
-| Leren/Informatie | 90% | 47 artikelen, categorieën, gemeente-nieuws |
+| Leren/Informatie | 95% | 47 artikelen, 7 categorieën, 21 tags (aandoening/situatie), gemeente-nieuws, tag-filtering, gebruikersvoorkeuren |
 | Check-in systeem | 80% | Slimme frequentie, contextuele suggesties, trend |
 | Beheerportaal | 90% | Artikelen, hulpbronnen, gebruikers, alarmen, audit |
 | Gemeenteportaal | 80% | Dashboard, trends, rapportages |
@@ -476,26 +476,71 @@ Nieuw component op gemeente-dashboard:
 
 ### 6.1 Nieuwe database modellen
 
-6 nieuwe modellen:
+9 nieuwe modellen (6 origineel + 3 uit content herstructurering):
 
-| Model | Doel | Items |
-|-------|------|-------|
-| `BalanstestVraag` | Balanstest + check-in vragen | ~16 |
-| `Zorgtaak` | Zorgtaak definities | ~10 |
-| `TaakCategorieMapping` | Taak-naar-categorie koppelingen | ~25 |
-| `ContentCategorie` | Leren/hulpvraag/WhatsApp categorieën | ~60 |
-| `FormulierOptie` | Alle dropdown/selectie opties | ~30 |
-| `AppContent` | Onboarding, tutorial, pagina-intro's | ~30 |
+| Model | Doel | Items | Status |
+|-------|------|-------|--------|
+| `BalanstestVraag` | Balanstest + check-in vragen | ~16 | Gereed |
+| `Zorgtaak` | Zorgtaak definities | ~10 | Gereed |
+| `TaakCategorieMapping` | Taak-naar-categorie koppelingen | ~25 | Gereed |
+| `ContentCategorie` | Leren/hulpvraag/WhatsApp categorieën | ~60 | Gereed |
+| `FormulierOptie` | Alle dropdown/selectie opties | ~30 | Gereed |
+| `AppContent` | Onboarding, tutorial, pagina-intro's | ~30 | Gereed |
+| `ContentTag` | Tags voor aandoeningen (12) en situaties (9) | 21 | **NIEUW - Gereed** |
+| `ArtikelTag` | Many-to-many koppeling artikelen ↔ tags | variabel | **NIEUW - Gereed** |
+| `GebruikerVoorkeur` | Gebruikersvoorkeuren (categorie/tag selecties) | variabel | **NIEUW - Gereed** |
 
-### 6.2 Seed scripts & migratie
+### 6.2 Content Herstructurering (maart 2026)
 
-Script `scripts/seed-content.ts` dat alle huidige hardcoded content naar database migreert.
+**Status: GEREED** — Geïmplementeerd op 2 maart 2026
 
-### 6.3 API endpoints (beheer + publiek)
+#### Categorie herstructurering (5 → 7 categorieën)
+| Oud | Nieuw | Actie |
+|-----|-------|-------|
+| praktische-tips | praktische-tips | Ongewijzigd |
+| zelfzorg | zelfzorg-balans | Hernoemd |
+| rechten | rechten-regelingen | Hernoemd |
+| financieel | geld-financien | Hernoemd |
+| hulpmiddelen-producten | hulpmiddelen-technologie | Hernoemd |
+| — | werk-mantelzorg | **Nieuw** |
+| — | samenwerken-netwerk | **Nieuw** |
 
-~10 nieuwe API routes voor CRUD + read-only endpoints.
+#### Tag-systeem (21 tags)
+- **12 aandoeningen:** dementie, kanker, CVA/beroerte, psychisch, verstandelijke beperking, lichamelijke beperking, ouderdom, chronisch ziek, NAH, parkinson, ALS, terminaal/palliatief
+- **9 situaties:** werkend, jong, op afstand, alleenstaand, meervoudig, partnerzorg, ouder→kind, kind→ouder, rouwend
 
-### 6.4 Beheer pagina's (5 nieuwe secties)
+#### Verwijderd: `belastingNiveau` veld
+Het `BelastingNiveauFilter` enum en `belastingNiveau` veld op `Artikel` zijn verwijderd. Content personalisatie verloopt nu via tags en gebruikersvoorkeuren i.p.v. het statische belastingniveau-filter.
+
+#### Nieuwe API endpoints
+| Endpoint | Functie |
+|----------|---------|
+| `GET/POST /api/beheer/content-tags` | CRUD voor tags (admin) |
+| `GET /api/content/tags` | Publieke tags voor frontend |
+| `GET/POST /api/user/voorkeuren` | Gebruikersvoorkeuren opslaan/laden |
+
+#### Content Agent uitbreidingen
+- Tags parameter bij alle acties (genereer, zoek-online)
+- **Nieuw:** Hiaten-analyse (categorie × tag matrix)
+- **Nieuw:** Batch-genereer (meerdere artikelen in één keer)
+
+#### Frontend updates
+- `/leren` pagina: 7 categorie-kaarten i.p.v. 5
+- `/leren/[categorie]` pagina: tag-filter bar, tag-badges op artikelen
+- `/profiel` pagina: "Jouw situatie" blok (aandoening, situatie, categorie-interesses)
+- `/beheer/artikelen`: tag-selector i.p.v. belastingniveau dropdown
+- `/beheer/content-agent`: categorie/tag selectors, hiaten-analyse tab
+
+### 6.3 Seed scripts & migratie
+
+- `scripts/seed-content.ts` — alle huidige hardcoded content naar database
+- `scripts/seed-content-herstructurering.ts` — **NIEUW** — categorie slug-migratie, subcategorieën, tags
+
+### 6.4 API endpoints (beheer + publiek)
+
+~13 nieuwe API routes voor CRUD + read-only endpoints (inclusief tag en voorkeur endpoints).
+
+### 6.5 Beheer pagina's (5 nieuwe secties)
 
 | Pagina | Functie |
 |--------|---------|
@@ -505,7 +550,7 @@ Script `scripts/seed-content.ts` dat alle huidige hardcoded content naar databas
 | `/beheer/formulier-opties` | Beheer formulier opties |
 | `/beheer/app-content` | Beheer app content (onboarding, tutorial) |
 
-### 6.5 Frontend refactoring
+### 6.6 Frontend refactoring
 
 8+ bestanden omzetten van hardcoded imports naar API calls:
 - `belastbaarheidstest/page.tsx`
@@ -517,16 +562,20 @@ Script `scripts/seed-content.ts` dat alle huidige hardcoded content naar databas
 - `word-mantelbuddy/page.tsx`
 - `whatsapp-session.ts`
 
-### 6.6 WhatsApp sessies naar database
+### 6.7 WhatsApp sessies naar database
 **Prioriteit: HOOG**
 
 In-memory `Map` objecten vervangen door Prisma model `WhatsAppSession` met JSON data-veld en TTL van 30 minuten.
 
 ### Deliverables Fase 6
-- [ ] 6 nieuwe database modellen + migraties
-- [ ] Alle content in database (170+ items)
+- [x] 9 nieuwe database modellen + migraties (inclusief ContentTag, ArtikelTag, GebruikerVoorkeur)
+- [x] Content herstructurering: 7 categorieën, 21 tags, tag-filtering
+- [x] belastingNiveau veld verwijderd, vervangen door tag-systeem
+- [x] Content Agent: hiaten-analyse + batch-genereer
+- [x] Gebruikersvoorkeuren (profiel pagina)
+- [ ] Alle overige content in database (170+ items)
 - [ ] 5 nieuwe beheer pagina's
-- [ ] Frontend leest uit database i.p.v. code
+- [ ] Frontend leest volledig uit database i.p.v. code
 - [ ] WhatsApp sessies persistent in database
 
 **Geschatte doorlooptijd:** 3 weken (~48 uur)
@@ -633,14 +682,15 @@ Deze items zijn bewust geparkeerd omdat ze pas waardevol zijn nadat de basis ste
 | Weekplan met favorieten | Complexe feature, bewezen vraag eerst valideren |
 | Contactstatus bij hulporganisaties | HulpbronContact model, pas na hulpvragenflow |
 | Zorgtaken pagina (`/zorgtaken`) | Pas na content migratie |
-| 2FA voor admin | Optioneel, vereist TOTP library |
+| 2FA voor admin | **GEBLOKKEERD — zie 8.3** |
 | Rich text editor uitbreiden | TipTap is al geinstalleerd |
 | Media-upload (S3/Cloudinary) | Externe afhankelijkheid |
 | Push notificaties | Vereist VAPID keys + backend |
 | Seizoensgebonden content | Aanbevelingsengine, pas na CMS migratie |
 | Email-templates beheer | Vereist email service uitbreiding |
-| Gemeente-admin content per niveau | Pas na content migratie |
+| Gemeente-admin content per niveau | Pas na content migratie (deels gereed via tag-systeem) |
 | Slimme aanbevelingsengine | Machine learning, pas na voldoende data |
+| Verwerkersovereenkomsten | **GEBLOKKEERD — zie 8.4** |
 
 ### 8.2 Monitoring & observability
 
@@ -648,6 +698,49 @@ Deze items zijn bewust geparkeerd omdat ze pas waardevol zijn nadat de basis ste
 - Uptime monitoring via health-check
 - Database performance monitoring
 - Error tracking met context (userId, route, params)
+
+### 8.3 2FA voor admin-accounts
+**Status: GEBLOKKEERD — Mailserver nog niet operationeel**
+
+> **MAG NIET VERGETEN WORDEN** — Dit is een essentieel beveiligingsonderdeel.
+
+2FA (Two-Factor Authentication) voor admin- en gemeente-admin accounts kan **niet** geïmplementeerd worden zolang er geen werkende mailserver/SMTP-service is geconfigureerd. 2FA vereist:
+
+1. **E-mailservice** voor het versturen van verificatiecodes (of als fallback-kanaal)
+2. **TOTP library** (bijv. `otplib`) voor authenticator app support
+3. **Recovery codes** die per e-mail verzonden kunnen worden
+
+**Voorwaarden:**
+- [ ] SMTP-service configureren (bijv. SendGrid, Resend, AWS SES)
+- [ ] E-mail versturen werkend krijgen (wachtwoord reset, magic links, verificatie)
+- [ ] Pas daarna: TOTP-based 2FA implementeren voor admin accounts
+- [ ] QR-code scannen + backup codes flow
+
+**Tijdlijn:** Zodra mailserver operationeel is. Prioriteit: HOOG voor productie.
+
+### 8.4 Verwerkersovereenkomsten (AVG)
+**Status: GEBLOKKEERD — Juridisch traject nog niet gestart**
+
+> **MAG NIET VERGETEN WORDEN** — Dit is een wettelijke verplichting onder de AVG/GDPR.
+
+Verwerkersovereenkomsten (data processing agreements) moeten afgesloten worden met alle externe dienstverleners die persoonsgegevens verwerken:
+
+| Dienstverlener | Type gegevens | Status |
+|----------------|---------------|--------|
+| Supabase (database) | Alle persoonsgegevens, gezondheidsdata (Art. 9 AVG) | **TODO** |
+| Vercel (hosting) | IP-adressen, sessiedata | **TODO** |
+| Anthropic (AI) | Gespreksinhoud, zorgsituatie | **TODO** |
+| OpenAI (embeddings) | Artikelinhoud (geen persoonsgegevens) | **TODO — controleer** |
+| Twilio (WhatsApp) | Telefoonnummers, chatberichten | **TODO** |
+
+**Acties:**
+- [ ] Verwerkersovereenkomst opstellen/ondertekenen per leverancier
+- [ ] DPIA (Data Protection Impact Assessment) uitvoeren vanwege gezondheidsdata
+- [ ] Privacy policy updaten met alle verwerkers
+- [ ] Register van verwerkingsactiviteiten bijhouden (Art. 30 AVG)
+- [ ] Toezien op sub-verwerkers (Supabase → AWS, Vercel → AWS, etc.)
+
+**Tijdlijn:** Voor lancering in productie met echte gebruikersdata. Juridisch advies inwinnen.
 
 ---
 
@@ -661,11 +754,16 @@ Fase    Naam                              Week    Uren    Status
 3       Persoonlijk Advies & Klantreis    4-6     48u     ○ Open
 4       Buddy-matching & Kaartweergave    7-9     48u     ◑ Grotendeels gereed
 5       Gemeente Onboarding & Auto.       10-12   48u     ○ Open
-6       Content Migratie & CMS            13-15   48u     ○ Open
+6       Content Migratie & CMS            13-15   48u     ◑ Content herstructurering gereed
 7       UX Polish & Performance           16-18   48u     ○ Open
 8       Schaalbaarheid & Toekomst         19+     -       ○ Backlog
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Totaal (Fase 1-7)                                 288u
+
+⚠️  BLOKKERENDE ITEMS (MAG NIET VERGETEN):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- 2FA voor admin:          Geblokkeerd door ontbrekende mailserver (zie 8.3)
+- Verwerkersovereenkomsten: Juridisch traject nog niet gestart (zie 8.4)
 ```
 
 ### Afhankelijkheden tussen fases
