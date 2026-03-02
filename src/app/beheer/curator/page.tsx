@@ -4,11 +4,11 @@ import { useState } from "react"
 import { AdminSpinner } from "@/components/admin"
 import { useToast } from "@/components/ui/Toast"
 
-type CuratieType = "review" | "categoriseer" | "b1check" | "duplicaten" | "alles"
+type CuratieType = "review" | "categoriseer" | "b1check" | "duplicaten" | "hiaten" | "alles"
 
 interface CuratieResultaat {
   type: string
-  aantalItems: number
+  aantalItems?: number
   aantalVerbeteren?: number
   aantalHerschrijven?: number
   aantalVerkeerdeCategorie?: number
@@ -16,6 +16,10 @@ interface CuratieResultaat {
   aantalGrensgebied?: number
   aantalB1Ok?: number
   aantalDuplicaten?: number
+  aantalHiaten?: number
+  totaalArtikelen?: number
+  aantalCategorieen?: number
+  aantalGemeentes?: number
   methode?: string
   analyse: string
 }
@@ -27,6 +31,7 @@ interface CuratieResponse {
   categoriseer?: CuratieResultaat
   b1check?: CuratieResultaat
   duplicaten?: CuratieResultaat
+  hiaten?: CuratieResultaat
 }
 
 const TYPE_LABELS: Record<CuratieType, string> = {
@@ -35,6 +40,7 @@ const TYPE_LABELS: Record<CuratieType, string> = {
   categoriseer: "Categorisering",
   b1check: "B1-taalniveau",
   duplicaten: "Duplicaten-detectie",
+  hiaten: "Hiaten-detectie",
 }
 
 const TYPE_BESCHRIJVINGEN: Record<CuratieType, string> = {
@@ -43,6 +49,7 @@ const TYPE_BESCHRIJVINGEN: Record<CuratieType, string> = {
   categoriseer: "Controleer of artikelen correct gecategoriseerd zijn",
   b1check: "Check of teksten voldoen aan B1-taalniveau (ERK/CEFR)",
   duplicaten: "Zoek naar overlappende of dubbele artikelen via vector similarity",
+  hiaten: "Detecteer ontbrekende content en gaps in de kennisbank",
 }
 
 export default function CuratorPage() {
@@ -73,7 +80,7 @@ export default function CuratorPage() {
   }
 
   const secties = result
-    ? [result.review, result.categoriseer, result.b1check, result.duplicaten].filter(Boolean) as CuratieResultaat[]
+    ? [result.review, result.categoriseer, result.b1check, result.duplicaten, result.hiaten].filter(Boolean) as CuratieResultaat[]
     : []
 
   return (
@@ -158,14 +165,19 @@ function SamenvattingCard({ data }: { data: CuratieResultaat }) {
   const icon =
     data.type === "review" ? "📝" :
     data.type === "categoriseer" ? "🗂️" :
-    data.type === "b1check" ? "📖" : "🔍"
+    data.type === "b1check" ? "📖" :
+    data.type === "hiaten" ? "🕳️" : "🔍"
 
   const label =
     data.type === "review" ? "Kwaliteit" :
     data.type === "categoriseer" ? "Categorisering" :
-    data.type === "b1check" ? "B1-taalniveau" : "Duplicaten"
+    data.type === "b1check" ? "B1-taalniveau" :
+    data.type === "hiaten" ? "Hiaten" : "Duplicaten"
 
   const badge = getBadge(data)
+
+  const mainNumber = data.type === "hiaten" ? (data.totaalArtikelen ?? 0) : (data.aantalItems ?? 0)
+  const mainLabel = data.type === "hiaten" ? "artikelen in kennisbank" : "artikelen geanalyseerd"
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4">
@@ -180,8 +192,8 @@ function SamenvattingCard({ data }: { data: CuratieResultaat }) {
           </span>
         )}
       </div>
-      <p className="text-2xl font-bold text-gray-900">{data.aantalItems}</p>
-      <p className="text-xs text-gray-400 mt-1">artikelen geanalyseerd</p>
+      <p className="text-2xl font-bold text-gray-900">{mainNumber}</p>
+      <p className="text-xs text-gray-400 mt-1">{mainLabel}</p>
     </div>
   )
 }
@@ -203,6 +215,10 @@ function getBadge(data: CuratieResultaat): { text: string; className: string } |
     const n = (data.aantalDuplicaten ?? 0)
     if (n > 0) return { text: `${n} paren`, className: "bg-orange-100 text-orange-700" }
   }
+  if (data.type === "hiaten") {
+    const n = (data.aantalHiaten ?? 0)
+    if (n > 0) return { text: `${n} hiaten`, className: "bg-purple-100 text-purple-700" }
+  }
   return null
 }
 
@@ -212,12 +228,14 @@ function CuratieCard({ data }: { data: CuratieResultaat }) {
   const icon =
     data.type === "review" ? "📝" :
     data.type === "categoriseer" ? "🗂️" :
-    data.type === "b1check" ? "📖" : "🔍"
+    data.type === "b1check" ? "📖" :
+    data.type === "hiaten" ? "🕳️" : "🔍"
 
   const label =
     data.type === "review" ? "Kwaliteit & Leesbaarheid" :
     data.type === "categoriseer" ? "Categorisering" :
-    data.type === "b1check" ? "B1-taalniveau Check" : "Duplicaten-detectie"
+    data.type === "b1check" ? "B1-taalniveau Check" :
+    data.type === "hiaten" ? "Hiaten-detectie" : "Duplicaten-detectie"
 
   const subtitle = getSubtitle(data)
 
@@ -249,7 +267,13 @@ function CuratieCard({ data }: { data: CuratieResultaat }) {
 }
 
 function getSubtitle(data: CuratieResultaat): string {
-  const parts = [`${data.aantalItems} artikelen`]
+  if (data.type === "hiaten") {
+    const parts = [`${data.totaalArtikelen ?? 0} artikelen`]
+    if (data.aantalCategorieen) parts.push(`${data.aantalCategorieen} categorieën`)
+    if (data.aantalGemeentes) parts.push(`${data.aantalGemeentes} gemeentes`)
+    return parts.join(" · ")
+  }
+  const parts = [`${data.aantalItems ?? 0} artikelen`]
   if (data.type === "review") {
     if (data.aantalHerschrijven) parts.push(`${data.aantalHerschrijven} herschrijven`)
     if (data.aantalVerbeteren) parts.push(`${data.aantalVerbeteren} verbeteren`)
