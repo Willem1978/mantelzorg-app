@@ -91,7 +91,7 @@ export async function GET() {
 
     return NextResponse.json({ taken: gefilterd })
   } catch (error) {
-    console.error("Marktplaats open GET error:", error)
+    console.error("Hulpvragen open GET error:", error)
     return NextResponse.json(
       { error: "Er ging iets mis bij het ophalen" },
       { status: 500 }
