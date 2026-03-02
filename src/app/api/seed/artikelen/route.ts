@@ -116,7 +116,7 @@ export async function POST(request: Request) {
       const inhoud = alleInhoud[a.id] || null
       await prisma.artikel.upsert({
         where: { id: a.id },
-        create: { id: a.id, titel: a.titel, beschrijving: a.beschrijving, inhoud, url: a.url, bron: a.bron, emoji: a.emoji, categorie: a.categorie, subHoofdstuk: a.subHoofdstuk, bronLabel: a.bronLabel, type: "ARTIKEL", status: "GEPUBLICEERD", belastingNiveau: "ALLE", sorteerVolgorde: a.sorteerVolgorde, isActief: true },
+        create: { id: a.id, titel: a.titel, beschrijving: a.beschrijving, inhoud, url: a.url, bron: a.bron, emoji: a.emoji, categorie: a.categorie, subHoofdstuk: a.subHoofdstuk, bronLabel: a.bronLabel, type: "ARTIKEL", status: "GEPUBLICEERD", sorteerVolgorde: a.sorteerVolgorde, isActief: true },
         update: { titel: a.titel, beschrijving: a.beschrijving, inhoud, url: a.url, bron: a.bron, emoji: a.emoji, categorie: a.categorie, subHoofdstuk: a.subHoofdstuk, bronLabel: a.bronLabel, sorteerVolgorde: a.sorteerVolgorde },
       })
     }
@@ -135,7 +135,7 @@ export async function POST(request: Request) {
     for (const gn of gemeenteNieuwsData) {
       await prisma.artikel.upsert({
         where: { id: gn.id },
-        create: { id: gn.id, titel: gn.titel, beschrijving: gn.beschrijving, url: gn.url, emoji: gn.emoji, categorie: "gemeentenieuws", type: "GEMEENTE_NIEUWS", status: "GEPUBLICEERD", belastingNiveau: "ALLE", gemeente: gn.gemeente, publicatieDatum: new Date(gn.datum), isActief: true },
+        create: { id: gn.id, titel: gn.titel, beschrijving: gn.beschrijving, url: gn.url, emoji: gn.emoji, categorie: "gemeentenieuws", type: "GEMEENTE_NIEUWS", status: "GEPUBLICEERD", gemeente: gn.gemeente, publicatieDatum: new Date(gn.datum), isActief: true },
         update: { titel: gn.titel, beschrijving: gn.beschrijving, url: gn.url, emoji: gn.emoji, gemeente: gn.gemeente, publicatieDatum: new Date(gn.datum) },
       })
     }
