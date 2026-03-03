@@ -304,21 +304,31 @@ function BuddysPageContent() {
     }
   }
 
-  // Kaart data — gebruik werkelijke (privacy-safe) coördinaten van de API
-  const buddysOpKaart: BuddyOpKaart[] = matches
-    .filter((m) => m.latitude != null && m.longitude != null)
-    .map((m) => ({
-      buddyId: m.buddyId,
-      voornaam: m.voornaam,
-      woonplaats: m.woonplaats,
-      hulpvormen: m.hulpvormen,
-      beschikbaarheid: m.beschikbaarheid,
-      vogGoedgekeurd: m.vogGoedgekeurd,
-      matchPercentage: m.matchPercentage,
-      afstandKm: m.afstandKm,
-      latitude: m.latitude!,
-      longitude: m.longitude!,
-    }))
+  // Deterministische offset voor buddys zonder coördinaten (op basis van ID)
+  function hashOffset(id: string, factor: number): number {
+    let h = 0
+    for (let i = 0; i < id.length; i++) {
+      h = ((h << 5) - h) + id.charCodeAt(i)
+      h = h & h
+    }
+    return ((h % 1000) / 1000 - 0.5) * factor
+  }
+
+  // Kaart data — gebruik werkelijke coördinaten, of plaats bij centrum als geen coords
+  const centrumLat = profiel?.careRecipientLatitude || 52.09
+  const centrumLng = profiel?.careRecipientLongitude || 5.12
+  const buddysOpKaart: BuddyOpKaart[] = matches.map((m) => ({
+    buddyId: m.buddyId,
+    voornaam: m.voornaam,
+    woonplaats: m.woonplaats,
+    hulpvormen: m.hulpvormen,
+    beschikbaarheid: m.beschikbaarheid,
+    vogGoedgekeurd: m.vogGoedgekeurd,
+    matchPercentage: m.matchPercentage,
+    afstandKm: m.afstandKm,
+    latitude: m.latitude ?? centrumLat + hashOffset(m.buddyId, 0.02),
+    longitude: m.longitude ?? centrumLng + hashOffset(m.buddyId + "lng", 0.03),
+  }))
 
   // Tabs configuratie
   const tabs: { id: TabType; label: string; emoji: string }[] = [
@@ -531,7 +541,7 @@ function BuddysPageContent() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                           </svg>
-                          {m.woonplaats}
+                          {m.woonplaats || "Onbekend"}
                           {m.afstandKm != null && ` \u00b7 ${m.afstandKm} km`}
                           {" \u00b7 "}
                           {BESCHIKBAARHEID_LABELS[m.beschikbaarheid] || m.beschikbaarheid}

@@ -41,14 +41,19 @@ function matchKleur(pct: number): string {
   return "#94a3b8" // grijs
 }
 
-// Resize handler component
+// Resize handler component — wacht tot container gerendered is
 function MapResizer({ center }: { center: [number, number] }) {
   const map = useMap?.()
   useEffect(() => {
-    if (map) {
+    if (!map) return
+    // Eerste invalidateSize na korte delay (container is net gemount)
+    const t1 = setTimeout(() => {
       map.invalidateSize()
       map.setView(center, map.getZoom())
-    }
+    }, 250)
+    // Tweede keer voor edge cases (bijv. tab switch, animatie)
+    const t2 = setTimeout(() => map.invalidateSize(), 600)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [map, center])
   return null
 }
@@ -71,6 +76,15 @@ export function BuddyKaart({
         setLoaded(true)
         return
       }
+
+      // Leaflet CSS alvast injecteren zodat het klaarstaat
+      if (!document.querySelector('link[href*="leaflet"]')) {
+        const link = document.createElement("link")
+        link.rel = "stylesheet"
+        link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        document.head.appendChild(link)
+      }
+
       const leaflet = await import("leaflet")
       const rl = await import("react-leaflet")
       L = leaflet
