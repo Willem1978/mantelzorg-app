@@ -10,6 +10,72 @@ import { berekenImpactScore } from "@/lib/dashboard/impact-score"
 
 export const dynamic = "force-dynamic"
 
+async function getStappenVoorGebruiker(
+  gemeente: string | null | undefined,
+  niveau: string | null
+) {
+  if (!niveau) return []
+
+  try {
+    // Probeer gemeente-specifieke stappen
+    let stappen = gemeente
+      ? await prisma.gemeenteStap.findMany({
+          where: {
+            gemeenteNaam: gemeente,
+            niveau: niveau as "LAAG" | "GEMIDDELD" | "HOOG",
+            isActief: true,
+          },
+          orderBy: { stapNummer: "asc" },
+        })
+      : []
+
+    // Fallback naar default
+    if (stappen.length === 0) {
+      stappen = await prisma.gemeenteStap.findMany({
+        where: {
+          gemeenteNaam: "_default",
+          niveau: niveau as "LAAG" | "GEMIDDELD" | "HOOG",
+          isActief: true,
+        },
+        orderBy: { stapNummer: "asc" },
+      })
+    }
+
+    // Verrijk met organisatie/artikel
+    return Promise.all(
+      stappen.map(async (stap) => {
+        let organisatie = null
+        let artikel = null
+
+        if (stap.organisatieId) {
+          organisatie = await prisma.zorgorganisatie.findUnique({
+            where: { id: stap.organisatieId },
+            select: { id: true, naam: true, telefoon: true, website: true },
+          })
+        }
+        if (stap.artikelId) {
+          artikel = await prisma.artikel.findUnique({
+            where: { id: stap.artikelId },
+            select: { id: true, titel: true, categorie: true, emoji: true },
+          })
+        }
+
+        return {
+          stapNummer: stap.stapNummer,
+          titel: stap.titel,
+          beschrijving: stap.beschrijving,
+          emoji: stap.emoji,
+          organisatie,
+          artikel,
+          externeUrl: stap.externeUrl,
+        }
+      })
+    )
+  } catch {
+    return []
+  }
+}
+
 // GET: Dashboard data ophalen
 export async function GET() {
   try {
@@ -378,6 +444,12 @@ export async function GET() {
           woonplaats: caregiver.careRecipientCity,
         },
       },
+
+      // Jouw stappenplan
+      stappen: await getStappenVoorGebruiker(
+        gebruikerGemeente,
+        latestTest?.belastingNiveau || null
+      ),
     })
   } catch (error) {
     console.error("Dashboard GET error:", error)

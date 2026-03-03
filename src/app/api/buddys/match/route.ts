@@ -75,6 +75,17 @@ export async function POST(request: Request) {
 
     const matches = matchBuddys(buddysForMatching, matchRequest)
 
+    // Privacy-safe: verschuif buddy-coördinaten met ~500m deterministische offset
+    function privacyOffset(id: string, coord: number, factor: number): number {
+      let hash = 0
+      for (let i = 0; i < id.length; i++) {
+        hash = ((hash << 5) - hash) + id.charCodeAt(i)
+        hash = hash & hash
+      }
+      const offset = ((hash % 1000) / 1000 - 0.5) * factor
+      return coord + offset
+    }
+
     return NextResponse.json({
       matches: matches.map((m) => ({
         buddyId: m.buddy.id,
@@ -86,6 +97,13 @@ export async function POST(request: Request) {
         matchPercentage: m.matchPercentage,
         afstandKm: m.afstandKm,
         details: m.details,
+        // Approximate coordinates (privacy-safe: ~500m offset)
+        latitude: m.buddy.latitude != null
+          ? privacyOffset(m.buddy.id, m.buddy.latitude, 0.009)
+          : null,
+        longitude: m.buddy.longitude != null
+          ? privacyOffset(m.buddy.id, m.buddy.longitude, 0.012)
+          : null,
       })),
       totaal: matches.length,
     })

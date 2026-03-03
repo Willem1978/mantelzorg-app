@@ -25,6 +25,8 @@ interface MatchResult {
   vogGoedgekeurd: boolean
   matchPercentage: number
   afstandKm: number | null
+  latitude: number | null
+  longitude: number | null
   details: {
     taakOverlapScore: number
     afstandScore: number
@@ -302,9 +304,9 @@ function BuddysPageContent() {
     }
   }
 
-  // Kaart data
+  // Kaart data — gebruik werkelijke (privacy-safe) coördinaten van de API
   const buddysOpKaart: BuddyOpKaart[] = matches
-    .filter((m): m is MatchResult & { afstandKm: number } => m.afstandKm != null)
+    .filter((m) => m.latitude != null && m.longitude != null)
     .map((m) => ({
       buddyId: m.buddyId,
       voornaam: m.voornaam,
@@ -314,8 +316,8 @@ function BuddysPageContent() {
       vogGoedgekeurd: m.vogGoedgekeurd,
       matchPercentage: m.matchPercentage,
       afstandKm: m.afstandKm,
-      latitude: (profiel?.careRecipientLatitude || 52.09) + (Math.random() - 0.5) * (radiusKm / 111),
-      longitude: (profiel?.careRecipientLongitude || 5.12) + (Math.random() - 0.5) * (radiusKm / 70),
+      latitude: m.latitude!,
+      longitude: m.longitude!,
     }))
 
   // Tabs configuratie
@@ -357,153 +359,201 @@ function BuddysPageContent() {
 
       {/* TAB: Zoek buddy */}
       {activeTab === "zoeken" && (
-        <div className="space-y-4">
-          <h2 className="text-lg font-bold text-foreground">Buddy&apos;s in de buurt</h2>
-          <p className="text-sm text-muted-foreground">
-            Vind een MantelBuddy die bij jou past.
-          </p>
-
-          {/* Zorgtaak filter */}
+        <div className="space-y-5">
+          {/* Header */}
           <div>
-            <h3 className="text-sm font-semibold text-foreground mb-2">Waar zoek je hulp bij?</h3>
-            <div className="flex flex-wrap gap-2">
-              {ZORGTAKEN.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => toggleTaak(t.dbValue)}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all border min-h-[40px]",
-                    selectedTaken.includes(t.dbValue)
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-card text-foreground border-border hover:border-primary/30"
-                  )}
-                >
-                  <span>{t.emoji}</span>
-                  <span>{t.naam}</span>
-                </button>
-              ))}
-            </div>
+            <h2 className="text-lg font-bold text-foreground mb-1">Buddy&apos;s in de buurt</h2>
+            <p className="text-sm text-muted-foreground">
+              Vind een MantelBuddy die bij jou past op basis van wat je nodig hebt.
+            </p>
           </div>
 
-          {/* Beschikbaarheid */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Type:</span>
-            {[
-              { value: "", label: "Alle" },
-              { value: "EENMALIG", label: "Eenmalig" },
-              { value: "VAST", label: "Regelmatig" },
-            ].map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => setBeschikbaarheid(opt.value)}
-                className={cn(
-                  "px-3 py-2 rounded-lg text-sm font-medium transition-all min-h-[40px]",
-                  beschikbaarheid === opt.value
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-secondary"
-                )}
-              >
-                {opt.label}
-              </button>
-            ))}
+          {/* Filters card */}
+          <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
+            <div>
+              <h3 className="text-sm font-semibold text-foreground mb-2.5">Waar zoek je hulp bij?</h3>
+              <div className="flex flex-wrap gap-2">
+                {ZORGTAKEN.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => toggleTaak(t.dbValue)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all border",
+                      selectedTaken.includes(t.dbValue)
+                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                        : "bg-background text-foreground border-border hover:border-primary/40 hover:bg-primary/5"
+                    )}
+                  >
+                    <span>{t.emoji}</span>
+                    <span>{t.naam}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-1">
+              <span className="text-sm font-medium text-foreground">Beschikbaarheid:</span>
+              <div className="flex gap-1.5">
+                {[
+                  { value: "", label: "Alle" },
+                  { value: "EENMALIG", label: "Eenmalig" },
+                  { value: "VAST", label: "Regelmatig" },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setBeschikbaarheid(opt.value)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
+                      beschikbaarheid === opt.value
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Kaart */}
           {profiel?.careRecipientLatitude && profiel?.careRecipientLongitude && (
-            <BuddyKaart
-              buddys={buddysOpKaart}
-              centrumLat={profiel.careRecipientLatitude}
-              centrumLng={profiel.careRecipientLongitude}
-              radiusKm={radiusKm}
-              onRadiusChange={setRadiusKm}
-              onBuddyClick={setSelectedBuddyId}
-              className="rounded-xl overflow-hidden border border-border"
-            />
-          )}
-
-          {!profiel?.careRecipientLatitude && !loading && (
-            <div className="bg-[var(--accent-amber-bg)] border border-[var(--accent-amber)]/20 rounded-xl p-4">
-              <p className="text-sm text-foreground">
-                Vul het adres van je naaste in bij je <Link href="/profiel" className="text-primary underline">profiel</Link> om buddy&apos;s op de kaart te zien.
-              </p>
+            <div className="rounded-2xl overflow-hidden border border-border shadow-sm">
+              <BuddyKaart
+                buddys={buddysOpKaart}
+                centrumLat={profiel.careRecipientLatitude}
+                centrumLng={profiel.careRecipientLongitude}
+                radiusKm={radiusKm}
+                onRadiusChange={setRadiusKm}
+                onBuddyClick={setSelectedBuddyId}
+              />
             </div>
           )}
 
-          {/* Resultaten */}
+          {!profiel?.careRecipientLatitude && !loading && (
+            <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 rounded-2xl p-4">
+              <span className="text-xl flex-shrink-0">📍</span>
+              <div>
+                <p className="text-sm font-medium text-foreground mb-1">Adres naaste nodig voor kaart</p>
+                <p className="text-sm text-muted-foreground">
+                  Vul het adres van je naaste in bij je{" "}
+                  <Link href="/profiel" className="text-primary font-medium hover:underline">profiel</Link>
+                  {" "}om buddy&apos;s op de kaart te zien.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Resultaten header */}
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-foreground">
               {loading ? "Zoeken..." : `${matches.length} buddy${matches.length !== 1 ? "'s" : ""} gevonden`}
             </h3>
+            {!loading && matches.length > 0 && (
+              <button
+                onClick={() => zoekBuddys()}
+                className="text-xs text-primary font-medium hover:underline"
+              >
+                Vernieuwen
+              </button>
+            )}
           </div>
 
           {error && (
-            <div className="bg-[var(--accent-red-bg)] border border-[var(--accent-red)]/20 rounded-xl p-4">
+            <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 rounded-2xl p-4">
               <p className="text-sm text-foreground">{error}</p>
             </div>
           )}
 
           {loading && (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+              <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
           )}
 
           {!loading && matches.length === 0 && !error && (
-            <div className="text-center py-12">
+            <div className="text-center py-12 bg-card border border-border rounded-2xl">
               <p className="text-4xl mb-3">🔍</p>
-              <p className="text-foreground font-medium">Geen buddy&apos;s gevonden</p>
+              <p className="text-foreground font-semibold">Geen buddy&apos;s gevonden</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Probeer een grotere afstand of minder filters.
+                Probeer een grotere afstand of andere filters.
               </p>
             </div>
           )}
 
-          {/* Buddy lijst */}
+          {/* Buddy kaarten */}
           <div className="space-y-3">
-            {matches.map((m) => (
-              <div
-                key={m.buddyId}
-                className={cn(
-                  "bg-card border rounded-xl p-4 transition-all",
-                  selectedBuddyId === m.buddyId
-                    ? "border-primary shadow-md"
-                    : "border-border hover:border-primary/30"
-                )}
-                onClick={() => setSelectedBuddyId(m.buddyId === selectedBuddyId ? null : m.buddyId)}
-              >
-                <div className="flex items-start gap-3">
-                  {/* Avatar */}
-                  <div className="w-12 h-12 rounded-full bg-[var(--accent-green-bg)] flex items-center justify-center flex-shrink-0">
-                    <span className="text-lg font-bold text-[var(--accent-green)]">
-                      {m.voornaam.charAt(0)}
-                    </span>
-                  </div>
+            {matches.map((m) => {
+              const isSelected = selectedBuddyId === m.buddyId
+              const matchColor = m.matchPercentage >= 75
+                ? "text-emerald-600 dark:text-emerald-400"
+                : m.matchPercentage >= 50
+                  ? "text-amber-600 dark:text-amber-400"
+                  : "text-muted-foreground"
+              const matchBg = m.matchPercentage >= 75
+                ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/40"
+                : m.matchPercentage >= 50
+                  ? "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/40"
+                  : "bg-muted border-border"
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-foreground">{m.voornaam}</h3>
-                      {m.vogGoedgekeurd && (
-                        <span className="text-[10px] bg-[var(--accent-green-bg)] text-[var(--accent-green)] px-1.5 py-0.5 rounded-full font-medium">
-                          VOG ✓
+              return (
+                <div
+                  key={m.buddyId}
+                  className={cn(
+                    "bg-card border-2 rounded-2xl transition-all cursor-pointer",
+                    isSelected
+                      ? "border-primary shadow-lg shadow-primary/10"
+                      : "border-border hover:border-primary/30 hover:shadow-md"
+                  )}
+                  onClick={() => setSelectedBuddyId(isSelected ? null : m.buddyId)}
+                >
+                  <div className="p-4">
+                    <div className="flex items-start gap-3.5">
+                      {/* Avatar */}
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <span className="text-lg font-bold text-primary">
+                          {m.voornaam.charAt(0)}
                         </span>
-                      )}
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <h3 className="font-semibold text-foreground text-base">{m.voornaam}</h3>
+                          {m.vogGoedgekeurd && (
+                            <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full font-semibold">
+                              VOG
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          {m.woonplaats}
+                          {m.afstandKm != null && ` \u00b7 ${m.afstandKm} km`}
+                          {" \u00b7 "}
+                          {BESCHIKBAARHEID_LABELS[m.beschikbaarheid] || m.beschikbaarheid}
+                        </p>
+                      </div>
+
+                      {/* Match badge */}
+                      <div className={cn("flex-shrink-0 px-3 py-1.5 rounded-xl border", matchBg)}>
+                        <span className={cn("text-lg font-bold", matchColor)}>
+                          {m.matchPercentage}%
+                        </span>
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {m.woonplaats}
-                      {m.afstandKm != null && ` · ${m.afstandKm} km`}
-                      {" · "}
-                      {BESCHIKBAARHEID_LABELS[m.beschikbaarheid] || m.beschikbaarheid}
-                    </p>
 
                     {/* Hulpvormen */}
-                    <div className="flex flex-wrap gap-1.5 mt-2">
+                    <div className="flex flex-wrap gap-1.5 mt-3 pl-[58px]">
                       {m.hulpvormen.map((h) => {
                         const info = getHulpvormInfo(h)
                         return (
                           <span
                             key={h}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-xs text-foreground"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-muted/80 text-xs font-medium text-foreground"
                           >
                             {info.emoji} {info.label}
                           </span>
@@ -512,65 +562,39 @@ function BuddysPageContent() {
                     </div>
                   </div>
 
-                  {/* Match percentage */}
-                  <div className="flex-shrink-0 text-center">
-                    <div
-                      className={cn(
-                        "w-14 h-14 rounded-full flex items-center justify-center border-2",
-                        m.matchPercentage >= 75
-                          ? "border-[var(--accent-green)] bg-[var(--accent-green-bg)]"
-                          : m.matchPercentage >= 50
-                            ? "border-[var(--accent-amber)] bg-[var(--accent-amber-bg)]"
-                            : "border-border bg-muted"
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          "text-lg font-bold",
-                          m.matchPercentage >= 75
-                            ? "text-[var(--accent-green)]"
-                            : m.matchPercentage >= 50
-                              ? "text-[var(--accent-amber)]"
-                              : "text-muted-foreground"
-                        )}
-                      >
-                        {m.matchPercentage}%
-                      </span>
+                  {/* Expanded detail */}
+                  {isSelected && (
+                    <div className="px-4 pb-4">
+                      <div className="pt-3 border-t border-border">
+                        <div className="grid grid-cols-3 gap-2 mb-4">
+                          <div className="text-center bg-muted/50 rounded-xl py-2.5">
+                            <p className="text-xs text-muted-foreground mb-0.5">Taken</p>
+                            <p className="text-base font-bold text-foreground">{m.details.taakOverlapScore}%</p>
+                          </div>
+                          <div className="text-center bg-muted/50 rounded-xl py-2.5">
+                            <p className="text-xs text-muted-foreground mb-0.5">Afstand</p>
+                            <p className="text-base font-bold text-foreground">{m.details.afstandScore}%</p>
+                          </div>
+                          <div className="text-center bg-muted/50 rounded-xl py-2.5">
+                            <p className="text-xs text-muted-foreground mb-0.5">Kwaliteit</p>
+                            <p className="text-base font-bold text-foreground">{m.details.beschikbaarheidScore}%</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setActiveTab("hulpvraag")
+                          }}
+                          className="ker-btn ker-btn-primary w-full text-center text-sm py-3 rounded-xl font-semibold"
+                        >
+                          Vraag hulp aan {m.voornaam}
+                        </button>
+                      </div>
                     </div>
-                    <span className="text-[10px] text-muted-foreground mt-0.5 block">match</span>
-                  </div>
+                  )}
                 </div>
-
-                {/* Expanded detail */}
-                {selectedBuddyId === m.buddyId && (
-                  <div className="mt-3 pt-3 border-t border-border">
-                    <div className="grid grid-cols-3 gap-3 mb-3">
-                      <div className="text-center">
-                        <p className="text-xs text-muted-foreground">Taken</p>
-                        <p className="text-sm font-semibold text-foreground">{m.details.taakOverlapScore}%</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs text-muted-foreground">Afstand</p>
-                        <p className="text-sm font-semibold text-foreground">{m.details.afstandScore}%</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-xs text-muted-foreground">Kwaliteit</p>
-                        <p className="text-sm font-semibold text-foreground">{m.details.beschikbaarheidScore}%</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setActiveTab("hulpvraag")
-                      }}
-                      className="ker-btn ker-btn-primary w-full text-center text-sm"
-                    >
-                      Vraag hulp aan {m.voornaam}
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}
