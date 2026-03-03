@@ -1,13 +1,22 @@
 /**
- * Balanstest Coach API endpoint.
+ * MantelCoach API endpoint (voorheen: Balanstest Coach).
  *
- * Wordt aangeroepen NA afronding van de balanstest.
- * - Interpreteert scores en geeft persoonlijk advies
- * - Koppelt aan relevante Zorgorganisaties op basis van gemeente + belastingniveau
- * - Vergelijkt met eerdere testen (trend)
- * - Zoekt relevante artikelen als coaching-materiaal
- * - Registreert alarmsignalen bij hoge belasting
- * - Genereert een samenvatting voor het BelastbaarheidRapport
+ * De MantelCoach is de persoonlijke coach voor de mantelzorger.
+ * Wordt gebruikt in ALLE fasen:
+ * - Welkom: eerste kennismaking, website uitleg, aansturen op balanstest
+ * - Na balanstest: scores interpreteren, gemeente-advies, doorcoaching
+ * - Doorlopend: profiel-check, check-in herinneringen, artikelen delen
+ *
+ * Beschikbare tools:
+ * - bekijkGebruikerStatus  → profiel, test, check-in, voorkeuren status
+ * - bekijkBalanstest       → scores, deelgebieden, taken, adviezen
+ * - bekijkTestTrend        → vergelijking met eerdere testen
+ * - bekijkGemeenteAdvies   → gemeente-specifiek advies + organisatie per niveau
+ * - zoekHulpbronnen        → hulporganisaties per gemeente/taak
+ * - zoekArtikelen          → artikelen met inhoud per categorie/zoekterm
+ * - semantischZoeken       → slimme zoek in artikelen + hulpbronnen
+ * - registreerAlarm        → alarmsignaal registreren bij hoge belasting
+ * - genereerRapportSamenvatting → rapport opslaan
  *
  * De response is een streaming AI-response (toUIMessageStreamResponse).
  */
@@ -17,8 +26,10 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { buildBalanscoachPrompt } from "@/lib/ai/prompts/balanscoach"
 import {
+  createBekijkGebruikerStatusTool,
   createBekijkBalanstestTool,
   createBekijkTestTrendTool,
+  createBekijkGemeenteAdviesTool,
   createZoekHulpbronnenTool,
   createZoekArtikelenTool,
   createSemantischZoekenTool,
@@ -26,7 +37,7 @@ import {
   createGenereerRapportSamenvattingTool,
 } from "@/lib/ai/tools"
 
-// Vercel serverless function timeout: meer tools + doorcoaching vereist meer tijd
+// Meer tools + doorcoaching vereist meer tijd
 export const maxDuration = 45
 
 const anthropic = createAnthropic({
@@ -72,11 +83,10 @@ export async function POST(req: Request) {
 
   const gemeenteMantelzorger = caregiver?.municipality || caregiver?.city || null
   const gemeenteZorgvrager = caregiver?.careRecipientMunicipality || caregiver?.careRecipientCity || gemeenteMantelzorger
+  const gemeente = gemeenteZorgvrager || gemeenteMantelzorger
   const userId = session.user.id
 
   try {
-    const gemeente = gemeenteZorgvrager || gemeenteMantelzorger
-
     const result = streamText({
       model: anthropic("claude-sonnet-4-20250514"),
       system: buildBalanscoachPrompt(gemeente),
@@ -84,8 +94,10 @@ export async function POST(req: Request) {
       maxOutputTokens: 2048,
       stopWhen: stepCountIs(8),
       tools: {
+        bekijkGebruikerStatus: createBekijkGebruikerStatusTool({ userId }),
         bekijkBalanstest: createBekijkBalanstestTool({ userId, gemeenteZorgvrager, gemeenteMantelzorger }),
         bekijkTestTrend: createBekijkTestTrendTool({ userId }),
+        bekijkGemeenteAdvies: createBekijkGemeenteAdviesTool({ gemeenteZorgvrager, gemeenteMantelzorger }),
         zoekHulpbronnen: createZoekHulpbronnenTool({ gemeenteZorgvrager, gemeenteMantelzorger }),
         zoekArtikelen: createZoekArtikelenTool(),
         semantischZoeken: createSemantischZoekenTool(gemeente),
@@ -96,10 +108,10 @@ export async function POST(req: Request) {
 
     return result.toUIMessageStreamResponse()
   } catch (error) {
-    console.error("[Balanscoach] Fout:", error)
+    console.error("[MantelCoach] Fout:", error)
     const message = error instanceof Error ? error.message : "Onbekende fout"
     return new Response(
-      JSON.stringify({ error: `Balanscoach fout: ${message}` }),
+      JSON.stringify({ error: `MantelCoach fout: ${message}` }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     )
   }
