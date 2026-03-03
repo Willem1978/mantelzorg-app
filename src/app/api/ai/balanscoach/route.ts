@@ -1,21 +1,8 @@
 /**
  * MantelCoach API endpoint.
  *
- * De MantelCoach begeleidt de mantelzorger in alle fasen:
- * - Nieuwe gebruiker → welkom + aansturen op test
- * - Test gedaan → resultaten bespreken + doorcoachen (PRIORITEIT)
- * - Terugkerende gebruiker → check-in, trends, hulp zoeken
- *
- * Beschikbare tools:
- * - bekijkGebruikerStatus  → profiel, test, check-in, voorkeuren status
- * - bekijkBalanstest       → scores, deelgebieden, taken, adviezen
- * - bekijkTestTrend        → vergelijking met eerdere testen
- * - bekijkGemeenteAdvies   → gemeente-specifiek advies + organisatie per niveau
- * - zoekHulpbronnen        → hulporganisaties per gemeente/taak
- * - zoekArtikelen          → artikelen met inhoud per categorie/zoekterm
- * - semantischZoeken       → slimme zoek in artikelen + hulpbronnen
- * - registreerAlarm        → alarmsignaal registreren bij hoge belasting
- * - genereerRapportSamenvatting → rapport opslaan
+ * De MantelCoach (Ger) begeleidt de mantelzorger in alle fasen en op alle pagina's.
+ * Accepteert een optioneel "pagina" veld in de request body voor context-aware coaching.
  *
  * De response is een streaming AI-response (toUIMessageStreamResponse).
  */
@@ -28,7 +15,6 @@ import {
   createBekijkGebruikerStatusTool,
   createBekijkBalanstestTool,
   createBekijkTestTrendTool,
-  createBekijkGemeenteAdviesTool,
   createZoekHulpbronnenTool,
   createZoekArtikelenTool,
   createSemantischZoekenTool,
@@ -58,6 +44,7 @@ export async function POST(req: Request) {
 
   const body = await req.json()
   const rawMessages = body.messages
+  const pagina = body.pagina || null // optionele pagina-context
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const messages = rawMessages.map((msg: any) => {
@@ -88,7 +75,7 @@ export async function POST(req: Request) {
   try {
     const result = streamText({
       model: anthropic("claude-sonnet-4-20250514"),
-      system: buildBalanscoachPrompt(gemeente),
+      system: buildBalanscoachPrompt(gemeente, pagina),
       messages,
       maxOutputTokens: 2048,
       stopWhen: stepCountIs(8),
@@ -96,7 +83,6 @@ export async function POST(req: Request) {
         bekijkGebruikerStatus: createBekijkGebruikerStatusTool({ userId }),
         bekijkBalanstest: createBekijkBalanstestTool({ userId, gemeenteZorgvrager, gemeenteMantelzorger }),
         bekijkTestTrend: createBekijkTestTrendTool({ userId }),
-        bekijkGemeenteAdvies: createBekijkGemeenteAdviesTool({ gemeenteZorgvrager, gemeenteMantelzorger }),
         zoekHulpbronnen: createZoekHulpbronnenTool({ gemeenteZorgvrager, gemeenteMantelzorger }),
         zoekArtikelen: createZoekArtikelenTool(),
         semantischZoeken: createSemantischZoekenTool(gemeente),
