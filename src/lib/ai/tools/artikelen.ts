@@ -1,15 +1,36 @@
 /**
  * Tool: zoekArtikelen
  * Zoekt gepubliceerde artikelen en tips over mantelzorg.
+ * Geeft ook de artikelinhoud mee zodat de coach concrete informatie
+ * uit het artikel kan gebruiken in zijn advies.
  */
 import { tool } from "ai"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 
+/**
+ * Strip HTML tags en trim tot maxLengte tekens.
+ * Zo kan de coach de inhoud gebruiken zonder HTML-rommel.
+ */
+function stripHtmlAndTrim(html: string | null, maxLengte = 1500): string | null {
+  if (!html) return null
+  const tekst = html
+    .replace(/<[^>]*>/g, " ")    // HTML tags verwijderen
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, " ")        // Meerdere spaties samenvoegen
+    .trim()
+  if (tekst.length <= maxLengte) return tekst
+  return tekst.slice(0, maxLengte) + "..."
+}
+
 export function createZoekArtikelenTool() {
   return tool({
     description:
-      "Zoek informatie-artikelen en tips over mantelzorg. Gebruik dit voor advies en informatie over specifieke onderwerpen (slaap, energie, zelfzorg, rechten, financieel).",
+      "Zoek informatie-artikelen en tips over mantelzorg. Gebruik dit voor advies en informatie over specifieke onderwerpen (slaap, energie, zelfzorg, rechten, financieel). Geeft ook de artikelinhoud mee zodat je concrete tips en informatie kunt delen.",
     inputSchema: z.object({
       categorie: z
         .string()
@@ -51,6 +72,7 @@ export function createZoekArtikelenTool() {
         select: {
           titel: true,
           beschrijving: true,
+          inhoud: true,
           emoji: true,
           categorie: true,
           url: true,
@@ -69,6 +91,7 @@ export function createZoekArtikelenTool() {
         artikelen: artikelen.map((a) => ({
           titel: a.titel,
           beschrijving: a.beschrijving,
+          inhoud: stripHtmlAndTrim(a.inhoud),
           emoji: a.emoji,
           categorie: a.categorie,
           url: a.url,
