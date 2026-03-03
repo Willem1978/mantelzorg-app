@@ -1,0 +1,347 @@
+"use client"
+
+import { useState, useRef, useEffect, useCallback } from "react"
+import { useRouter, usePathname } from "next/navigation"
+import { useChat } from "@ai-sdk/react"
+import { DefaultChatTransport } from "ai"
+import { cn } from "@/lib/utils"
+import { GerAvatar } from "@/components/GerAvatar"
+import { parseHulpkaarten, HulpKaart } from "@/components/ai/HulpKaart"
+
+/**
+ * Button syntax parsing:
+ *   {{knop:Label:/pad}}   → navigation button
+ *   {{vraag:Vraagtekst}}  → chat action button
+ */
+const BUTTON_REGEX = /\{\{(knop|vraag):([^}]+)\}\}/g
+
+interface ParsedButton {
+  type: "knop" | "vraag"
+  label: string
+  target: string
+}
+
+function parseButtons(text: string): { cleanText: string; buttons: ParsedButton[] } {
+  const buttons: ParsedButton[] = []
+  const cleanText = text.replace(BUTTON_REGEX, (_, type: string, content: string) => {
+    if (type === "knop") {
+      const lastColon = content.lastIndexOf(":/")
+      if (lastColon !== -1) {
+        buttons.push({ type: "knop", label: content.substring(0, lastColon).trim(), target: content.substring(lastColon + 1).trim() })
+      }
+    } else if (type === "vraag") {
+      buttons.push({ type: "vraag", label: content.trim(), target: content.trim() })
+    }
+    return ""
+  })
+  return { cleanText: cleanText.trimEnd(), buttons }
+}
+
+function formatMessage(content: string): React.ReactNode {
+  const lines = content.split("\n")
+  return lines.map((line, i) => {
+    const formatted = line.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    if (line.startsWith("- ") || line.startsWith("• ")) {
+      return (
+        <div key={i} className="flex gap-2 ml-1">
+          <span className="text-primary">•</span>
+          <span dangerouslySetInnerHTML={{ __html: formatted.slice(2) }} />
+        </div>
+      )
+    }
+    if (formatted !== line) {
+      return <p key={i} dangerouslySetInnerHTML={{ __html: formatted }} />
+    }
+    return line ? <p key={i}>{line}</p> : <br key={i} />
+  })
+}
+
+/**
+ * Bepaal de pagina-context op basis van het pad.
+ * Dit wordt meegegeven aan de API zodat Ger weet op welke pagina de gebruiker zit.
+ */
+function getPaginaContext(pathname: string): string {
+  if (pathname.startsWith("/leren")) return "informatie"
+  if (pathname.startsWith("/hulpvragen")) return "hulp"
+  if (pathname.startsWith("/buddys")) return "mantelbuddy"
+  if (pathname.startsWith("/belastbaarheidstest")) return "balanstest"
+  if (pathname.startsWith("/check-in")) return "checkin"
+  if (pathname === "/dashboard") return "dashboard"
+  if (pathname === "/rapport") return "rapport"
+  if (pathname === "/agenda") return "agenda"
+  if (pathname === "/profiel") return "profiel"
+  return "algemeen"
+}
+
+/**
+ * FloatingGerChat — De floating chat widget voor Ger op alle dashboard-pagina's.
+ *
+ * Kenmerken:
+ * - Floating button rechtsonder (zoals de huidige "Vraag Ger" knop)
+ * - Opent een chatpaneel bij klikken
+ * - Stuurt pagina-context mee naar de API
+ * - Auto-start bericht bij openen (pagina-specifiek)
+ */
+export function FloatingGerChat() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const [isOpen, setIsOpen] = useState(false)
+  const [hasSentInitial, setHasSentInitial] = useState(false)
+  const [currentPage, setCurrentPage] = useState("")
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [input, setInput] = useState("")
+
+  const paginaContext = getPaginaContext(pathname)
+
+  const { messages, sendMessage, status, error, setMessages } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/ai/balanscoach",
+      prepareSendMessagesRequest: async ({ messages: msgs, body, ...rest }) => {
+        const converted = msgs.map((msg) => ({
+          role: msg.role,
+          content: msg.parts
+            ?.filter((p): p is { type: "text"; text: string } => p.type === "text")
+            .map((p) => p.text)
+            .join("") || "",
+        }))
+        return { ...rest, body: { ...body, messages: converted, pagina: paginaContext } }
+      },
+    }),
+  })
+
+  const isLoading = status === "submitted" || status === "streaming"
+
+  // Als de pagina verandert en chat open is, reset en stuur nieuwe context
+  useEffect(() => {
+    if (isOpen && currentPage !== paginaContext) {
+      setCurrentPage(paginaContext)
+      setHasSentInitial(false)
+      setMessages([])
+    }
+  }, [paginaContext, isOpen, currentPage, setMessages])
+
+  // Stuur automatisch een contextbericht bij openen
+  useEffect(() => {
+    if (isOpen && !hasSentInitial) {
+      setHasSentInitial(true)
+      setCurrentPage(paginaContext)
+
+      const startBericht = getStartBericht(paginaContext)
+      sendMessage({ text: startBericht })
+    }
+  }, [isOpen, hasSentInitial, paginaContext, sendMessage])
+
+  // Auto-scroll
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
+
+  const getMessageText = (message: typeof messages[number]): string => {
+    const parts = message.parts
+    if (!parts || parts.length === 0) return ""
+    return parts
+      .filter((p): p is { type: "text"; text: string } => p.type === "text")
+      .map((p) => p.text)
+      .join("")
+  }
+
+  const handleSend = useCallback((text: string) => {
+    if (!text.trim() || isLoading) return
+    sendMessage({ text: text.trim() })
+    setInput("")
+  }, [isLoading, sendMessage])
+
+  const handleButtonClick = useCallback((button: ParsedButton) => {
+    if (button.type === "knop") {
+      router.push(button.target)
+    } else {
+      handleSend(button.target)
+    }
+  }, [router, handleSend])
+
+  const handleOpen = () => {
+    setIsOpen(true)
+  }
+
+  const handleClose = () => {
+    setIsOpen(false)
+  }
+
+  // Floating button (gesloten)
+  if (!isOpen) {
+    return (
+      <button
+        onClick={handleOpen}
+        className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-40 flex items-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-full shadow-lg hover:opacity-90 transition-all active:scale-95"
+        aria-label="Vraag Ger"
+      >
+        <GerAvatar size="xs" className="!w-6 !h-6" />
+        <span className="text-sm font-medium hidden sm:inline">Vraag Ger</span>
+      </button>
+    )
+  }
+
+  // Chat panel (open)
+  return (
+    <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-50 w-[calc(100vw-2rem)] max-w-sm">
+      <div className="bg-card border border-border rounded-2xl shadow-2xl flex flex-col max-h-[70vh]">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <div className="flex items-center gap-2">
+            <GerAvatar size="xs" className="!w-8 !h-8" />
+            <div>
+              <span className="font-semibold text-sm text-foreground">Ger</span>
+              <p className="text-[10px] text-muted-foreground">Je MantelCoach</p>
+            </div>
+          </div>
+          <button
+            onClick={handleClose}
+            className="text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted transition-colors"
+            aria-label="Sluiten"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Berichten */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-[200px]">
+          {messages
+            .filter((m) => m.role === "assistant")
+            .map((message) => {
+              const rawText = getMessageText(message)
+              if (!rawText) return null
+              const { cleanText: textWithoutCards, kaarten } = parseHulpkaarten(rawText)
+              const { cleanText, buttons } = parseButtons(textWithoutCards)
+
+              return (
+                <div key={message.id}>
+                  {cleanText && (
+                    <div className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
+                      {formatMessage(cleanText)}
+                    </div>
+                  )}
+                  {kaarten.length > 0 && (
+                    <div className="flex flex-col gap-2 mt-2">
+                      {kaarten.map((kaart, i) => (
+                        <HulpKaart key={i} kaart={kaart} />
+                      ))}
+                    </div>
+                  )}
+                  {buttons.length > 0 && (
+                    <div className="flex flex-col gap-1.5 mt-3">
+                      {buttons.map((btn, i) => (
+                        <button
+                          key={i}
+                          onClick={() => handleButtonClick(btn)}
+                          disabled={isLoading}
+                          className={cn(
+                            "flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left",
+                            "bg-primary/5 border border-primary/20 text-foreground hover:bg-primary/10 hover:border-primary/40",
+                            isLoading && "opacity-50 cursor-not-allowed"
+                          )}
+                        >
+                          <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold flex-shrink-0">
+                            {i + 1}
+                          </span>
+                          <span className="flex-1">{btn.label}</span>
+                          {btn.type === "knop" ? (
+                            <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+
+          {/* Laden */}
+          {isLoading && messages.filter((m) => m.role === "assistant").every((m) => !getMessageText(m)) && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="flex gap-1">
+                <div className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:0ms]" />
+                <div className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:150ms]" />
+                <div className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:300ms]" />
+              </div>
+              <span className="text-xs">Ger denkt na...</span>
+            </div>
+          )}
+
+          {/* Error */}
+          {error && (
+            <div className="bg-[var(--accent-red-bg)] border border-[var(--accent-red)]/20 rounded-xl p-3">
+              <p className="text-sm text-foreground">
+                Oeps, dat lukte niet. Probeer het later opnieuw.
+              </p>
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input */}
+        <form
+          onSubmit={(e) => { e.preventDefault(); handleSend(input) }}
+          className="flex items-center gap-2 p-3 border-t border-border"
+        >
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Stel je vraag..."
+            className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+            disabled={isLoading}
+            autoComplete="off"
+          />
+          <button
+            type="submit"
+            disabled={isLoading || !input.trim()}
+            className={cn(
+              "p-2 rounded-lg transition-all flex-shrink-0",
+              input.trim() && !isLoading
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground"
+            )}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            </svg>
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Geeft het initiële bericht terug dat Ger stuurt op basis van de pagina.
+ * Dit bericht wordt als "user" gestuurd zodat Ger erop reageert.
+ */
+function getStartBericht(pagina: string): string {
+  switch (pagina) {
+    case "informatie":
+      return "[pagina:informatie] De gebruiker heeft de chat geopend op de Informatie-pagina (tips en artikelen)."
+    case "hulp":
+      return "[pagina:hulp] De gebruiker heeft de chat geopend op de Hulp-pagina (hulp zoeken in de buurt)."
+    case "mantelbuddy":
+      return "[pagina:mantelbuddy] De gebruiker heeft de chat geopend op de MantelBuddy-pagina (een buddy zoeken)."
+    case "balanstest":
+      return "[pagina:balanstest] De gebruiker heeft de chat geopend op de Balanstest-pagina."
+    case "checkin":
+      return "[pagina:checkin] De gebruiker heeft de chat geopend op de Check-in pagina."
+    case "rapport":
+      return "[pagina:rapport] De gebruiker heeft de chat geopend op de Rapport-pagina."
+    case "profiel":
+      return "[pagina:profiel] De gebruiker heeft de chat geopend op de Profiel-pagina."
+    default:
+      return "[pagina:algemeen] De gebruiker heeft de chat geopend."
+  }
+}

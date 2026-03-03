@@ -2,13 +2,12 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { usePathname } from "next/navigation"
-import Link from "next/link"
 import { Navbar } from "@/components/layout/Navbar"
 import { MobileNav } from "@/components/navigation/MobileNav"
 import { SessionValidator } from "@/components/SessionValidator"
 import { Tutorial, TUTORIAL_STORAGE_KEY } from "@/components/Tutorial"
 import { Onboarding } from "@/components/Onboarding"
-import { GerAvatar } from "@/components/GerAvatar"
+import { FloatingGerChat } from "@/components/ai/FloatingGerChat"
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -22,8 +21,8 @@ export function DashboardShell({ children }: DashboardShellProps) {
   const [isChecked, setIsChecked] = useState(false)
   const hasFetched = useRef(false)
 
-  // Verberg Ger-knop op pagina's waar Ger al zichtbaar is
-  const hideGerButton = pathname === "/ai-assistent" || pathname === "/dashboard"
+  // Verberg Ger chat op pagina's waar Ger al zichtbaar is (dashboard heeft eigen DashboardGerChat)
+  const hideGerChat = pathname === "/ai-assistent" || pathname === "/dashboard"
 
   // Initieel: haal naam op en check onboarding/tutorial status
   useEffect(() => {
@@ -102,17 +101,8 @@ export function DashboardShell({ children }: DashboardShellProps) {
       </main>
       <MobileNav />
 
-      {/* Floating "Vraag Ger" knop — altijd bereikbaar behalve op dashboard en ai-assistent */}
-      {!hideGerButton && (
-        <Link
-          href="/ai-assistent"
-          className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-40 flex items-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-full shadow-lg hover:opacity-90 transition-all active:scale-95"
-          aria-label="Vraag Ger"
-        >
-          <GerAvatar size="xs" className="!w-6 !h-6" />
-          <span className="text-sm font-medium hidden sm:inline">Vraag Ger</span>
-        </Link>
-      )}
+      {/* Floating Ger chat — altijd bereikbaar behalve op dashboard en ai-assistent */}
+      {!hideGerChat && <FloatingGerChat />}
 
       {/* Onboarding welkomstflow voor nieuwe gebruikers (met profielvragen) */}
       {isChecked && showOnboarding && (
