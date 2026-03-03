@@ -7,7 +7,7 @@
  * - Laatste check-in (wanneer, of er een nieuwe nodig is)
  * - Voorkeuren (aandoening, categorieën, tags)
  *
- * Hiermee kan de coach bepalen wat de gebruiker als eerste moet doen.
+ * De coach roept dit ALTIJD aan bij het eerste bericht om te bepalen welke flow te volgen.
  */
 import { tool } from "ai"
 import { z } from "zod"
@@ -16,9 +16,14 @@ import { prisma } from "@/lib/prisma"
 export function createBekijkGebruikerStatusTool(ctx: { userId: string }) {
   return tool({
     description:
-      "Bekijk de volledige status van de gebruiker: profielcompleetheid, laatste test, laatste check-in, voorkeuren. Gebruik dit als eerste stap om te bepalen wat de mantelzorger nodig heeft.",
+      "Bekijk de volledige status van de gebruiker: profielcompleetheid, laatste test, laatste check-in, voorkeuren. ROEP DIT ALTIJD AAN bij het eerste bericht om te bepalen hoe je de gebruiker het beste kunt helpen.",
     inputSchema: z.object({}),
     execute: async () => {
+      const user = await prisma.user.findUnique({
+        where: { id: ctx.userId },
+        select: { name: true },
+      })
+
       const caregiver = await prisma.caregiver.findUnique({
         where: { userId: ctx.userId },
         select: {
@@ -47,8 +52,12 @@ export function createBekijkGebruikerStatusTool(ctx: { userId: string }) {
       if (!caregiver) {
         return {
           gevonden: false,
-          bericht: "Geen mantelzorgerprofiel gevonden. De gebruiker moet eerst een profiel aanmaken.",
-          acties: [{ type: "profiel", label: "Maak je profiel aan", pad: "/profiel" }],
+          naam: user?.name || null,
+          isNieuweGebruiker: true,
+          profiel: { percentage: 0, compleet: false, ontbrekendeVelden: ["profiel nog niet aangemaakt"] },
+          balanstest: { gedaan: false, aantalTests: 0 },
+          checkIn: { gedaan: false, nodig: false },
+          samenvatting: "Nieuwe gebruiker. Heeft nog geen profiel en geen test.",
         }
       }
 
@@ -100,6 +109,9 @@ export function createBekijkGebruikerStatusTool(ctx: { userId: string }) {
       const testVerouderd = laatsteTest?.completedAt
         ? laatsteTest.completedAt < drieMandenGeleden
         : false
+      const dagenSindsTest = laatsteTest?.completedAt
+        ? Math.floor((nu.getTime() - laatsteTest.completedAt.getTime()) / (24 * 60 * 60 * 1000))
+        : null
 
       // Laatste check-in
       const laatsteCheckIn = await prisma.monthlyCheckIn.findFirst({
@@ -113,57 +125,32 @@ export function createBekijkGebruikerStatusTool(ctx: { userId: string }) {
       })
 
       const eenMaandGeleden = new Date(nu.getTime() - 30 * 24 * 60 * 60 * 1000)
-      const checkInNodig = !laatsteCheckIn?.completedAt || laatsteCheckIn.completedAt < eenMaandGeleden
+      const checkInNodig = laatsteTest
+        ? (!laatsteCheckIn?.completedAt || laatsteCheckIn.completedAt < eenMaandGeleden)
+        : false
 
-      // Bepaal benodigde acties
-      const acties: Array<{ type: string; label: string; pad: string; prioriteit: string }> = []
+      // Samenvatting voor de coach
+      const heeftTest = !!laatsteTest
+      const isNieuw = !caregiver.onboardedAt
+      let samenvatting = ""
 
-      if (profielPercentage < 80) {
-        acties.push({
-          type: "profiel",
-          label: "Maak je profiel compleet",
-          pad: "/profiel",
-          prioriteit: "hoog",
-        })
-      }
-
-      if (!heeftVoorkeuren) {
-        acties.push({
-          type: "voorkeuren",
-          label: "Stel je voorkeuren in",
-          pad: "/profiel",
-          prioriteit: "gemiddeld",
-        })
-      }
-
-      if (!laatsteTest) {
-        acties.push({
-          type: "balanstest",
-          label: "Doe de balanstest",
-          pad: "/belastbaarheidstest",
-          prioriteit: "hoog",
-        })
-      } else if (testVerouderd) {
-        acties.push({
-          type: "balanstest",
-          label: "Doe een nieuwe balanstest (de vorige is ouder dan 3 maanden)",
-          pad: "/belastbaarheidstest",
-          prioriteit: "hoog",
-        })
-      }
-
-      if (checkInNodig && laatsteTest) {
-        acties.push({
-          type: "checkin",
-          label: "Doe je maandelijkse check-in",
-          pad: "/check-in",
-          prioriteit: "gemiddeld",
-        })
+      if (isNieuw && !heeftTest) {
+        samenvatting = "Nieuwe gebruiker. Profiel is nog niet af en heeft nog geen test gedaan."
+      } else if (heeftTest && !testVerouderd) {
+        samenvatting = `Heeft een recente test (${dagenSindsTest} dagen geleden) met score ${laatsteTest!.totaleBelastingScore}/24 (${laatsteTest!.belastingNiveau}).`
+        if (checkInNodig) samenvatting += " Check-in is nodig."
+        if (ontbrekendeVelden.length > 0) samenvatting += ` Profiel mist nog: ${ontbrekendeVelden.join(", ")}.`
+      } else if (heeftTest && testVerouderd) {
+        samenvatting = `Test is verouderd (${dagenSindsTest} dagen geleden). Nieuwe test aanraden.`
+      } else {
+        samenvatting = "Heeft een profiel maar nog geen test gedaan."
       }
 
       return {
         gevonden: true,
-        isNieuweGebruiker: !caregiver.onboardedAt,
+        naam: user?.name || null,
+        isNieuweGebruiker: isNieuw,
+        samenvatting,
         profiel: {
           percentage: profielPercentage,
           compleet: profielPercentage === 100,
@@ -181,9 +168,7 @@ export function createBekijkGebruikerStatusTool(ctx: { userId: string }) {
               gedaan: true,
               aantalTests,
               laatsteDatum: laatsteTest.completedAt,
-              dagenGeleden: laatsteTest.completedAt
-                ? Math.floor((nu.getTime() - laatsteTest.completedAt.getTime()) / (24 * 60 * 60 * 1000))
-                : null,
+              dagenGeleden: dagenSindsTest,
               score: laatsteTest.totaleBelastingScore,
               niveau: laatsteTest.belastingNiveau,
               zorguren: laatsteTest.totaleZorguren,
@@ -197,8 +182,7 @@ export function createBekijkGebruikerStatusTool(ctx: { userId: string }) {
               welzijn: laatsteCheckIn.overallWellbeing,
               nodig: checkInNodig,
             }
-          : { gedaan: false, nodig: true },
-        acties,
+          : { gedaan: false, nodig: checkInNodig },
       }
     },
   })

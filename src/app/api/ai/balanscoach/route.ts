@@ -1,11 +1,10 @@
 /**
- * MantelCoach API endpoint (voorheen: Balanstest Coach).
+ * MantelCoach API endpoint.
  *
- * De MantelCoach is de persoonlijke coach voor de mantelzorger.
- * Wordt gebruikt in ALLE fasen:
- * - Welkom: eerste kennismaking, website uitleg, aansturen op balanstest
- * - Na balanstest: scores interpreteren, gemeente-advies, doorcoaching
- * - Doorlopend: profiel-check, check-in herinneringen, artikelen delen
+ * De MantelCoach begeleidt de mantelzorger in alle fasen:
+ * - Nieuwe gebruiker → welkom + aansturen op test
+ * - Test gedaan → resultaten bespreken + doorcoachen (PRIORITEIT)
+ * - Terugkerende gebruiker → check-in, trends, hulp zoeken
  *
  * Beschikbare tools:
  * - bekijkGebruikerStatus  → profiel, test, check-in, voorkeuren status
