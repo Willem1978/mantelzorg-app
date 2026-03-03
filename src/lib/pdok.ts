@@ -204,6 +204,49 @@ export function extractMunicipalityOnly(address: PDOKAddress): MunicipalityInfo 
 }
 
 /**
+ * Geocodeer een woonplaats/straat naar coördinaten via PDOK
+ * Retourneert latitude en longitude, of null als niet gevonden
+ */
+export async function geocodeLocation(woonplaats: string, straat?: string): Promise<{
+  latitude: number
+  longitude: number
+} | null> {
+  try {
+    const query = straat ? `${straat}, ${woonplaats}` : woonplaats
+    const fq = straat ? "type:weg" : "type:woonplaats"
+
+    const params = new URLSearchParams({
+      q: query,
+      fq,
+      rows: "1",
+    })
+
+    const response = await fetch(`${PDOK_BASE_URL}/free?${params}`)
+
+    if (!response.ok) return null
+
+    const data = await response.json()
+    const doc = data.response?.docs?.[0]
+
+    if (!doc?.centroide_ll) return null
+
+    // centroide_ll format: "POINT(lon lat)"
+    const match = doc.centroide_ll.match(/POINT\(([^ ]+) ([^ ]+)\)/)
+    if (!match) return null
+
+    const longitude = parseFloat(match[1])
+    const latitude = parseFloat(match[2])
+
+    if (isNaN(latitude) || isNaN(longitude)) return null
+
+    return { latitude, longitude }
+  } catch (error) {
+    console.error("PDOK geocode error:", error)
+    return null
+  }
+}
+
+/**
  * Valideer postcode format (Nederlandse postcode)
  */
 export function isValidPostcode(postcode: string): boolean {

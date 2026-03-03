@@ -975,84 +975,8 @@ export default function ProfielPage() {
           </div>
         </div>
 
-        {/* Jouw situatie */}
-        {beschikbareTags.length > 0 && (
-          <div className="ker-card">
-            <h2 className="font-bold text-foreground mb-2 flex items-center gap-2">
-              <span className="text-xl">🎯</span>
-              Jouw situatie
-            </h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              Selecteer wat op jouw situatie van toepassing is. Zo krijg je meer relevante informatie en tips.
-            </p>
-
-            {/* Aandoening selectie */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-foreground mb-2">Aandoening naaste</label>
-              <select
-                value={aandoening}
-                onChange={(e) => setAandoening(e.target.value)}
-                className="ker-input"
-              >
-                <option value="">-- Niet ingevuld --</option>
-                {beschikbareTags.filter((t) => t.type === "AANDOENING").map((t) => (
-                  <option key={t.slug} value={t.slug}>{t.emoji} {t.naam}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Situatie tags */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-foreground mb-2">Mijn situatie</label>
-              <div className="flex flex-wrap gap-2">
-                {beschikbareTags.filter((t) => t.type === "SITUATIE").map((t) => (
-                  <button
-                    key={t.slug}
-                    onClick={() => setSituatieTags((prev) =>
-                      prev.includes(t.slug) ? prev.filter((s) => s !== t.slug) : [...prev, t.slug]
-                    )}
-                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                      situatieTags.includes(t.slug)
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-card text-muted-foreground border-border hover:border-primary/50"
-                    }`}
-                  >
-                    {t.emoji && <span className="mr-1">{t.emoji}</span>}
-                    {t.naam}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <button
-              onClick={async () => {
-                setSavingSituatie(true)
-                try {
-                  const res = await fetch("/api/user/voorkeuren", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      aandoening: aandoening || null,
-                      voorkeuren: situatieTags.map((slug) => ({ type: "TAG", slug })),
-                    }),
-                  })
-                  if (res.ok) {
-                    setSaveMessage("Situatie opgeslagen!")
-                    setTimeout(() => setSaveMessage(""), 3000)
-                  }
-                } catch {
-                  // Stille fout
-                } finally {
-                  setSavingSituatie(false)
-                }
-              }}
-              disabled={savingSituatie}
-              className="ker-btn ker-btn-primary w-full"
-            >
-              {savingSituatie ? "Opslaan..." : "Situatie opslaan"}
-            </button>
-          </div>
-        )}
+        {/* Jouw situatie - Aandoening & voorkeuren */}
+        <JouwSituatieBlok />
 
         {/* Test resultaat */}
         {profile.testScore !== undefined && niveau && (
@@ -1102,52 +1026,6 @@ export default function ProfielPage() {
               </div>
             </div>
           </Link>
-        )}
-
-        {/* Jouw reis (mijlpalen) */}
-        {mijlpalen.length > 0 && (
-          <div className="ker-card">
-            <h2 className="font-bold text-foreground mb-4 flex items-center gap-2">
-              <span className="text-xl">{c.reis.emoji}</span>
-              {c.reis.title}
-            </h2>
-            <div className="relative pl-6">
-              <div className="absolute left-[11px] top-2 bottom-2 w-0.5 bg-border" />
-              <div className="space-y-4">
-                {mijlpalen.map((mijlpaal, i) => (
-                  <div key={mijlpaal.id} className="relative flex items-start gap-3">
-                    <div
-                      className={cn(
-                        "absolute -left-6 w-[22px] h-[22px] rounded-full flex items-center justify-center text-xs border-2 z-10",
-                        mijlpaal.behaald
-                          ? "bg-primary border-primary text-primary-foreground"
-                          : "bg-background border-border text-muted-foreground"
-                      )}
-                    >
-                      {mijlpaal.behaald ? "✓" : (i + 1)}
-                    </div>
-                    <div className={cn("flex-1 min-w-0", !mijlpaal.behaald && "opacity-50")}>
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{mijlpaal.emoji}</span>
-                        <span className="font-semibold text-sm">{mijlpaal.titel}</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground ml-7">
-                        {mijlpaal.behaald
-                          ? mijlpaal.datum
-                            ? new Date(mijlpaal.datum).toLocaleDateString("nl-NL", {
-                                day: "numeric",
-                                month: "long",
-                                year: "numeric",
-                              })
-                            : mijlpaal.beschrijving
-                          : mijlpaal.beschrijving}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
         )}
 
         {/* WhatsApp koppeling */}
@@ -1231,9 +1109,6 @@ export default function ProfielPage() {
             </div>
           )}
         </div>
-
-        {/* Jouw situatie - Aandoening & voorkeuren */}
-        <JouwSituatieBlok />
 
         {/* Weergave-instellingen */}
         <div className="ker-card">
