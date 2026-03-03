@@ -353,10 +353,22 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
           )}
 
           {error && (
-            <div className="bg-[var(--accent-red-bg)] border border-[var(--accent-red)]/20 rounded-xl p-3">
+            <div className="bg-[var(--accent-red-bg)] border border-[var(--accent-red)]/20 rounded-xl p-3 space-y-2">
               <p className="text-sm text-foreground">
-                Oeps, dat lukte niet. Probeer het nog eens.
+                Oeps, dat lukte niet. {error.message && error.message !== "fetch failed" ? error.message : "Probeer het later nog eens."}
               </p>
+              <button
+                onClick={() => {
+                  const lastUserMsg = [...messages].reverse().find(m => m.role === "user")
+                  if (lastUserMsg) {
+                    const text = getMessageText(lastUserMsg)
+                    if (text) sendMessage({ text })
+                  }
+                }}
+                className="text-xs px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+              >
+                Opnieuw proberen
+              </button>
             </div>
           )}
 

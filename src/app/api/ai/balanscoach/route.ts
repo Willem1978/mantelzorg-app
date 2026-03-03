@@ -37,13 +37,42 @@ export async function POST(req: Request) {
     )
   }
 
-  const session = await auth()
-  if (!session?.user?.id) {
-    return new Response("Niet ingelogd", { status: 401 })
+  let session
+  try {
+    session = await auth()
+  } catch (authError) {
+    console.error("[MantelCoach] Auth fout:", authError)
+    return new Response(
+      JSON.stringify({ error: "Sessie verlopen. Log opnieuw in." }),
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    )
   }
 
-  const body = await req.json()
+  if (!session?.user?.id) {
+    return new Response(
+      JSON.stringify({ error: "Je bent niet ingelogd. Log eerst in." }),
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    )
+  }
+
+  let body
+  try {
+    body = await req.json()
+  } catch {
+    return new Response(
+      JSON.stringify({ error: "Ongeldig verzoek." }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    )
+  }
+
   const rawMessages = body.messages
+  if (!Array.isArray(rawMessages) || rawMessages.length === 0) {
+    return new Response(
+      JSON.stringify({ error: "Geen berichten ontvangen." }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    )
+  }
+
   const pagina = body.pagina || null // optionele pagina-context
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -61,16 +90,24 @@ export async function POST(req: Request) {
     return { role: msg.role, content: "" }
   })
 
-  // Twee gemeenten: zorgtaken → gemeente zorgvrager, mantelzorger hulp → gemeente mantelzorger
-  const caregiver = await prisma.caregiver.findUnique({
-    where: { userId: session.user.id },
-    select: { municipality: true, city: true, careRecipientMunicipality: true, careRecipientCity: true },
-  })
-
-  const gemeenteMantelzorger = caregiver?.municipality || caregiver?.city || null
-  const gemeenteZorgvrager = caregiver?.careRecipientMunicipality || caregiver?.careRecipientCity || gemeenteMantelzorger
-  const gemeente = gemeenteZorgvrager || gemeenteMantelzorger
   const userId = session.user.id
+
+  // Twee gemeenten: zorgtaken → gemeente zorgvrager, mantelzorger hulp → gemeente mantelzorger
+  let gemeenteMantelzorger: string | null = null
+  let gemeenteZorgvrager: string | null = null
+  try {
+    const caregiver = await prisma.caregiver.findUnique({
+      where: { userId },
+      select: { municipality: true, city: true, careRecipientMunicipality: true, careRecipientCity: true },
+    })
+    gemeenteMantelzorger = caregiver?.municipality || caregiver?.city || null
+    gemeenteZorgvrager = caregiver?.careRecipientMunicipality || caregiver?.careRecipientCity || gemeenteMantelzorger
+  } catch (dbError) {
+    console.error("[MantelCoach] Database fout bij gemeente ophalen:", dbError)
+    // Ga door zonder gemeente — tools werken dan zonder locatie-filter
+  }
+
+  const gemeente = gemeenteZorgvrager || gemeenteMantelzorger
 
   try {
     const result = streamText({
