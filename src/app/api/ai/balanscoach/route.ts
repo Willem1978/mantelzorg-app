@@ -4,6 +4,9 @@
  * Wordt aangeroepen NA afronding van de balanstest.
  * - Interpreteert scores en geeft persoonlijk advies
  * - Koppelt aan relevante Zorgorganisaties op basis van gemeente + belastingniveau
+ * - Vergelijkt met eerdere testen (trend)
+ * - Zoekt relevante artikelen als coaching-materiaal
+ * - Registreert alarmsignalen bij hoge belasting
  * - Genereert een samenvatting voor het BelastbaarheidRapport
  *
  * De response is een streaming AI-response (toUIMessageStreamResponse).
@@ -15,13 +18,16 @@ import { prisma } from "@/lib/prisma"
 import { buildBalanscoachPrompt } from "@/lib/ai/prompts/balanscoach"
 import {
   createBekijkBalanstestTool,
+  createBekijkTestTrendTool,
   createZoekHulpbronnenTool,
   createZoekArtikelenTool,
+  createSemantischZoekenTool,
+  createRegistreerAlarmTool,
   createGenereerRapportSamenvattingTool,
 } from "@/lib/ai/tools"
 
-// Vercel serverless function timeout: AI tool calls + DB queries need more than default 10s
-export const maxDuration = 30
+// Vercel serverless function timeout: meer tools + doorcoaching vereist meer tijd
+export const maxDuration = 45
 
 const anthropic = createAnthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -69,16 +75,21 @@ export async function POST(req: Request) {
   const userId = session.user.id
 
   try {
+    const gemeente = gemeenteZorgvrager || gemeenteMantelzorger
+
     const result = streamText({
       model: anthropic("claude-sonnet-4-20250514"),
-      system: buildBalanscoachPrompt(gemeenteZorgvrager || gemeenteMantelzorger),
+      system: buildBalanscoachPrompt(gemeente),
       messages,
-      maxOutputTokens: 1500,
-      stopWhen: stepCountIs(5),
+      maxOutputTokens: 2048,
+      stopWhen: stepCountIs(8),
       tools: {
         bekijkBalanstest: createBekijkBalanstestTool({ userId, gemeenteZorgvrager, gemeenteMantelzorger }),
+        bekijkTestTrend: createBekijkTestTrendTool({ userId }),
         zoekHulpbronnen: createZoekHulpbronnenTool({ gemeenteZorgvrager, gemeenteMantelzorger }),
         zoekArtikelen: createZoekArtikelenTool(),
+        semantischZoeken: createSemantischZoekenTool(gemeente),
+        registreerAlarm: createRegistreerAlarmTool({ userId }),
         genereerRapportSamenvatting: createGenereerRapportSamenvattingTool({ userId }),
       },
     })
