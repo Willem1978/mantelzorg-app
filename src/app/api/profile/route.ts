@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { geocodeLocation } from "@/lib/pdok"
 
 // GET: Profiel ophalen
 export async function GET() {
@@ -113,6 +114,18 @@ export async function PUT(request: Request) {
       phoneUpdate = { phoneNumber: validPhone }
     }
 
+    // Geocodeer naaste-adres naar coördinaten (voor buddy-kaart)
+    let careRecipientCoords: { careRecipientLatitude?: number; careRecipientLongitude?: number } = {}
+    if (body.naasteWoonplaats) {
+      const coords = await geocodeLocation(body.naasteWoonplaats, body.naasteStraat || undefined)
+      if (coords) {
+        careRecipientCoords = {
+          careRecipientLatitude: coords.latitude,
+          careRecipientLongitude: coords.longitude,
+        }
+      }
+    }
+
     // Update caregiver
     const caregiver = await prisma.caregiver.update({
       where: { id: session.user.caregiverId },
@@ -131,6 +144,8 @@ export async function PUT(request: Request) {
         careRecipientCity: body.naasteWoonplaats,
         careRecipientMunicipality: body.naasteGemeente,
         careRecipientNeighborhood: body.naasteWijk,
+        // Naaste coördinaten
+        ...careRecipientCoords,
         // Status
         profileCompleted,
       }
