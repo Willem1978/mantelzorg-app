@@ -24,13 +24,6 @@ interface Artikel {
   tags?: ArtikelTag[]
 }
 
-interface ContentTag {
-  slug: string
-  naam: string
-  type: string
-  emoji?: string
-}
-
 
 export default function CategoriePage() {
   const params = useParams()
@@ -49,28 +42,50 @@ export default function CategoriePage() {
   const [loading, setLoading] = useState(true)
   const [favorieten, setFavorieten] = useState<Record<string, string>>({})
   const hasFetched = useRef(false)
-  const [tags, setTags] = useState<ContentTag[]>([])
-  const [activeTag, setActiveTag] = useState<string | null>(null)
 
-  // Fetch category info and sub-chapters from API
+  // Relevantie filter (vervangt tag-chips)
+  const [alleenRelevant, setAlleenRelevant] = useState(false)
+  const [gebruikerTags, setGebruikerTags] = useState<string[]>([])
+  const [heeftVoorkeuren, setHeeftVoorkeuren] = useState(false)
+
+  // Inklapbare secties
+  const [openSecties, setOpenSecties] = useState<Set<string>>(new Set())
+
+  const toggleSectie = (slug: string) => {
+    setOpenSecties(prev => {
+      const next = new Set(prev)
+      if (next.has(slug)) next.delete(slug)
+      else next.add(slug)
+      return next
+    })
+  }
+
+  // Fetch category info, tags, en gebruikersvoorkeuren
   useEffect(() => {
     if (hasFetchedContent.current) return
     hasFetchedContent.current = true
 
     const loadContent = async () => {
       try {
-        const [catRes, tagRes] = await Promise.all([
+        const [catRes, voorkeurRes] = await Promise.all([
           fetch("/api/content/categorieen?type=LEREN"),
-          fetch("/api/content/tags"),
+          fetch("/api/user/voorkeuren").catch(() => null),
         ])
         if (!catRes.ok) throw new Error("Fout bij laden van categorieën")
 
         const data = await catRes.json()
         const allCategories = data.categorieen || []
 
-        if (tagRes.ok) {
-          const tagData = await tagRes.json()
-          setTags([...(tagData.aandoeningen || []), ...(tagData.situaties || [])])
+        // Gebruikersvoorkeuren laden
+        if (voorkeurRes?.ok) {
+          const voorkeurData = await voorkeurRes.json()
+          const tagSlugs = (voorkeurData.voorkeuren || [])
+            .filter((v: { type: string }) => v.type === "TAG")
+            .map((v: { slug: string }) => v.slug)
+          // Voeg aandoening toe als die er is
+          if (voorkeurData.aandoening) tagSlugs.push(voorkeurData.aandoening)
+          setGebruikerTags(tagSlugs)
+          setHeeftVoorkeuren(tagSlugs.length > 0)
         }
 
         // Build categorieInfo map
@@ -107,19 +122,16 @@ export default function CategoriePage() {
     loadContent()
   }, [])
 
-  // Fetch artikelen once content is loaded (or when tag filter changes)
+  // Fetch artikelen once content is loaded
   useEffect(() => {
     if (contentLoading || !categorieInfo[categorie]) return
-    // Only skip on first load if already fetched without a tag change
-    if (hasFetched.current && activeTag === null) return
+    if (hasFetched.current) return
     hasFetched.current = true
 
     const loadData = async () => {
       setLoading(true)
       try {
-        // Haal artikelen op uit database
-        let url = `/api/artikelen?categorie=${encodeURIComponent(categorie)}&type=ARTIKEL`
-        if (activeTag) url += `&tag=${encodeURIComponent(activeTag)}`
+        const url = `/api/artikelen?categorie=${encodeURIComponent(categorie)}&type=ARTIKEL`
         const res = await fetch(url)
         if (res.ok) {
           const data = await res.json()
@@ -149,7 +161,15 @@ export default function CategoriePage() {
     }
 
     loadData()
-  }, [categorie, contentLoading, categorieInfo, activeTag])
+  }, [categorie, contentLoading, categorieInfo])
+
+  // Filter artikelen op basis van relevantie
+  const gefilterdeItems = alleenRelevant && gebruikerTags.length > 0
+    ? items.filter(artikel => {
+        if (!artikel.tags || artikel.tags.length === 0) return false
+        return artikel.tags.some(at => gebruikerTags.includes(at.tag.slug))
+      })
+    : items
 
   // Loading state
   if (contentLoading) {
@@ -199,7 +219,7 @@ export default function CategoriePage() {
   const gegroepeerd: Record<string, Artikel[]> = {}
   const ongegroepeerd: Artikel[] = []
 
-  for (const artikel of items) {
+  for (const artikel of gefilterdeItems) {
     if (artikel.subHoofdstuk && subs.some(s => s.slug === artikel.subHoofdstuk)) {
       if (!gegroepeerd[artikel.subHoofdstuk]) gegroepeerd[artikel.subHoofdstuk] = []
       gegroepeerd[artikel.subHoofdstuk].push(artikel)
@@ -224,44 +244,54 @@ export default function CategoriePage() {
         <span className="text-3xl">{info.emoji}</span>
         <h1 className="text-2xl font-bold">{info.titel}</h1>
       </div>
-      <p className="text-sm text-muted-foreground mb-6">{info.beschrijving}</p>
+      <p className="text-sm text-muted-foreground mb-4">{info.beschrijving}</p>
 
-      {/* Uitleg hartje */}
-      <div className="bg-primary/5 rounded-xl p-3 mb-4">
-        <p className="text-sm text-muted-foreground">
-          Tik op het <span className="text-primary font-semibold">hartje</span> om een artikel te bewaren bij je favorieten.
-        </p>
-      </div>
-
-      {/* Tag filter chips */}
-      {tags.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-6">
-          <button
-            onClick={() => { setActiveTag(null); hasFetched.current = false }}
-            className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-              !activeTag
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-card text-muted-foreground border-border hover:border-primary/50"
-            }`}
-          >
-            Alles
-          </button>
-          {tags.map((tag) => (
+      {/* Relevantie toggle */}
+      <div className="bg-card border border-border rounded-xl p-3 mb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <button
-              key={tag.slug}
-              onClick={() => { setActiveTag(tag.slug === activeTag ? null : tag.slug); hasFetched.current = false }}
-              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                activeTag === tag.slug
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-card text-muted-foreground border-border hover:border-primary/50"
+              onClick={() => setAlleenRelevant(!alleenRelevant)}
+              className={`relative w-11 h-6 rounded-full transition-colors ${
+                alleenRelevant ? "bg-primary" : "bg-muted-foreground/30"
               }`}
+              role="switch"
+              aria-checked={alleenRelevant}
             >
-              {tag.emoji && <span className="mr-1">{tag.emoji}</span>}
-              {tag.naam}
+              <span
+                className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                  alleenRelevant ? "translate-x-5" : "translate-x-0"
+                }`}
+              />
             </button>
-          ))}
+            <div>
+              <span className="text-sm font-medium text-foreground">
+                {alleenRelevant ? "Alleen relevant voor jou" : "Alle artikelen"}
+              </span>
+              <p className="text-xs text-muted-foreground">
+                {alleenRelevant
+                  ? `${gefilterdeItems.length} van ${items.length} artikelen`
+                  : `${items.length} artikelen`}
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/profiel"
+            className="text-xs text-primary hover:underline whitespace-nowrap"
+          >
+            Voorkeuren beheren →
+          </Link>
         </div>
-      )}
+        {alleenRelevant && !heeftVoorkeuren && (
+          <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-xs text-amber-700">
+              Je hebt nog geen voorkeuren ingesteld. Ga naar je{" "}
+              <Link href="/profiel" className="font-semibold underline">profiel</Link>{" "}
+              om je situatie in te vullen, dan filteren we de artikelen voor jou.
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* Loading state */}
       {loading && (
@@ -271,48 +301,72 @@ export default function CategoriePage() {
       )}
 
       {/* Geen artikelen */}
-      {!loading && items.length === 0 && (
+      {!loading && gefilterdeItems.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">Nog geen artikelen in deze categorie.</p>
+          <p className="text-muted-foreground">
+            {alleenRelevant
+              ? "Geen artikelen gevonden voor jouw situatie. Probeer alle artikelen te tonen."
+              : "Nog geen artikelen in deze categorie."}
+          </p>
         </div>
       )}
 
-      {/* Artikelen gegroepeerd per sub-hoofdstuk */}
-      {heeftSubHoofdstukken && subs.map((sub) => {
+      {/* Artikelen gegroepeerd per sub-hoofdstuk (inklapbaar) */}
+      {!loading && heeftSubHoofdstukken && subs.map((sub) => {
         const artikelen = gegroepeerd[sub.slug]
         if (!artikelen || artikelen.length === 0) return null
 
-        return (
-          <div key={sub.slug} className="mb-8">
-            <div className="mb-3">
-              <h2 className="font-bold text-base text-foreground">{sub.titel}</h2>
-              <p className="text-xs text-muted-foreground">{sub.beschrijving}</p>
-            </div>
-            <div className="space-y-3">
-              {artikelen.map(artikel => {
-                const favKey = `INFORMATIE:${artikel.id}`
-                const isFavorited = !!favorieten[favKey]
-                const favorietId = favorieten[favKey]
+        const isOpen = openSecties.has(sub.slug)
 
-                return (
-                  <ArtikelCard
-                    key={artikel.id}
-                    artikel={artikel}
-                    categorieTitel={info.titel}
-                    isFavorited={isFavorited}
-                    favorietId={favorietId}
-                  />
-                )
-              })}
-            </div>
+        return (
+          <div key={sub.slug} className="mb-3">
+            <button
+              onClick={() => toggleSectie(sub.slug)}
+              className="w-full flex items-center gap-3 p-3 bg-card border border-border rounded-xl hover:bg-muted/50 transition-colors text-left"
+            >
+              <div className="flex-1 min-w-0">
+                <h2 className="font-bold text-sm text-foreground">{sub.titel}</h2>
+                <p className="text-xs text-muted-foreground">{sub.beschrijving}</p>
+              </div>
+              <span className="text-xs text-muted-foreground whitespace-nowrap bg-muted px-2 py-0.5 rounded-full">
+                {artikelen.length}
+              </span>
+              <svg
+                className={`w-5 h-5 text-muted-foreground flex-shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {isOpen && (
+              <div className="space-y-3 mt-3 ml-1">
+                {artikelen.map(artikel => {
+                  const favKey = `INFORMATIE:${artikel.id}`
+                  const isFavorited = !!favorieten[favKey]
+                  const favorietId = favorieten[favKey]
+
+                  return (
+                    <ArtikelCard
+                      key={artikel.id}
+                      artikel={artikel}
+                      categorieTitel={info.titel}
+                      isFavorited={isFavorited}
+                      favorietId={favorietId}
+                    />
+                  )
+                })}
+              </div>
+            )}
           </div>
         )
       })}
 
       {/* Ongegroepeerde artikelen (zonder sub-hoofdstuk, of als er geen subs zijn) */}
-      {(!heeftSubHoofdstukken ? items : ongegroepeerd).length > 0 && (
+      {!loading && (!heeftSubHoofdstukken ? gefilterdeItems : ongegroepeerd).length > 0 && (
         <div className="space-y-3">
-          {(!heeftSubHoofdstukken ? items : ongegroepeerd).map(artikel => {
+          {(!heeftSubHoofdstukken ? gefilterdeItems : ongegroepeerd).map(artikel => {
             const favKey = `INFORMATIE:${artikel.id}`
             const isFavorited = !!favorieten[favKey]
             const favorietId = favorieten[favKey]
