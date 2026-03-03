@@ -43,6 +43,7 @@ const menuGroepen: { label: string; items: { href: string; label: string; icon: 
     label: "Inrichting",
     items: [
       { href: "/beheer/gemeenten", label: "Gemeenten", icon: "🏛️" },
+      { href: "/beheer/stappen", label: "Stappenplan", icon: "🪜" },
       { href: "/beheer/huisstijl", label: "Huisstijl & Teksten", icon: "🎨" },
       { href: "/beheer/categorieen", label: "Categorieën", icon: "🗂️" },
       { href: "/beheer/formulier-opties", label: "Formulier opties", icon: "📝" },

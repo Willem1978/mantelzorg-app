@@ -1204,6 +1204,32 @@ model Gemeente {
 }
 
 // ============================================
+// GEMEENTE STAPPEN (Jouw stappenplan per gemeente)
+// ============================================
+
+model GemeenteStap {
+  id              String          @id @default(cuid())
+  gemeenteNaam    String          // Gemeente naam (of "_default" voor generiek)
+  niveau          BelastingNiveau // LAAG, GEMIDDELD, HOOG
+  stapNummer      Int             // 1, 2, of 3
+  titel           String
+  beschrijving    String?
+  emoji           String?
+
+  // Link naar organisatie (hulpkaart) OF artikel
+  organisatieId   String?         // Optioneel: link naar Zorgorganisatie
+  artikelId       String?         // Optioneel: link naar Artikel
+  externeUrl      String?         // Optioneel: externe URL
+
+  isActief        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@unique([gemeenteNaam, niveau, stapNummer])
+  @@index([gemeenteNaam, niveau, isActief])
+}
+
+// ============================================
 // SITE INSTELLINGEN (huisstijl, teksten, logo)
 // ============================================
 

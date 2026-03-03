@@ -114,6 +114,15 @@ interface DashboardData {
     respijtzorgUrl?: string | null
     dagopvangUrl?: string | null
   } | null
+  stappen?: {
+    stapNummer: number
+    titel: string
+    beschrijving: string | null
+    emoji: string | null
+    organisatie: { id: string; naam: string; telefoon: string | null; website: string | null } | null
+    artikel: { id: string; titel: string; categorie: string; emoji: string | null } | null
+    externeUrl: string | null
+  }[]
 }
 
 export default function DashboardPage() {
@@ -267,24 +276,62 @@ function DashboardContentView() {
         />
       )}
 
-      {/* 3. DRIE GEADVISEERDE ACTIES */}
+      {/* 3. JOUW STAPPENPLAN */}
       <section>
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          Aanbevolen voor jou
+          Jouw stappen
         </h2>
-        <div className="space-y-2">
-          {adviezenActions.map((action, i) => (
-            <Link key={i} href={action.href}>
-              <div className="flex items-center gap-3 p-3.5 rounded-xl border-2 border-border bg-card hover:bg-primary/5 hover:border-primary/30 transition-all group">
-                <span className="text-xl w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">{action.emoji}</span>
-                <span className="text-sm font-medium text-foreground flex-1">{action.label}</span>
-                <svg className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-            </Link>
-          ))}
-        </div>
+        {data?.stappen && data.stappen.length > 0 ? (
+          <div className="space-y-3">
+            {data.stappen.map((stap) => {
+              // Bepaal link en label
+              let href = "#"
+              let linkLabel = ""
+              if (stap.organisatie?.website) {
+                href = stap.organisatie.website
+                linkLabel = stap.organisatie.naam
+              } else if (stap.artikel) {
+                href = `/leren/${stap.artikel.categorie}`
+                linkLabel = stap.artikel.titel
+              } else if (stap.externeUrl) {
+                href = stap.externeUrl
+                linkLabel = "Bekijk meer"
+              }
+
+              const isExternal = href.startsWith("http")
+
+              return (
+                <div key={stap.stapNummer} className="relative">
+                  {isExternal ? (
+                    <a href={href} target="_blank" rel="noopener noreferrer" className="block">
+                      <StapCard stap={stap} linkLabel={linkLabel} />
+                    </a>
+                  ) : href !== "#" ? (
+                    <Link href={href}>
+                      <StapCard stap={stap} linkLabel={linkLabel} />
+                    </Link>
+                  ) : (
+                    <StapCard stap={stap} linkLabel={linkLabel} />
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {adviezenActions.map((action, i) => (
+              <Link key={i} href={action.href}>
+                <div className="flex items-center gap-3 p-3.5 rounded-xl border-2 border-border bg-card hover:bg-primary/5 hover:border-primary/30 transition-all group">
+                  <span className="text-xl w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">{action.emoji}</span>
+                  <span className="text-sm font-medium text-foreground flex-1">{action.label}</span>
+                  <svg className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* 4. WHATSAPP HULP */}
@@ -334,6 +381,53 @@ function DashboardContentView() {
           </div>
         </div>
       </section>
+    </div>
+  )
+}
+
+function StapCard({ stap, linkLabel }: {
+  stap: {
+    stapNummer: number
+    titel: string
+    beschrijving: string | null
+    emoji: string | null
+    organisatie: { id: string; naam: string; telefoon: string | null; website: string | null } | null
+    artikel: { id: string; titel: string; categorie: string; emoji: string | null } | null
+    externeUrl: string | null
+  }
+  linkLabel: string
+}) {
+  const stepColors = [
+    "bg-primary text-primary-foreground",
+    "bg-primary/80 text-primary-foreground",
+    "bg-primary/60 text-primary-foreground",
+  ]
+
+  return (
+    <div className="flex items-start gap-3.5 p-4 rounded-2xl border-2 border-border bg-card hover:bg-primary/5 hover:border-primary/30 transition-all group">
+      {/* Stapnummer badge */}
+      <div className={`w-9 h-9 rounded-xl ${stepColors[stap.stapNummer - 1] || stepColors[0]} flex items-center justify-center flex-shrink-0 font-bold text-sm shadow-sm`}>
+        {stap.stapNummer}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          {stap.emoji && <span className="text-base">{stap.emoji}</span>}
+          <h3 className="text-sm font-semibold text-foreground">{stap.titel}</h3>
+        </div>
+        {stap.beschrijving && (
+          <p className="text-xs text-muted-foreground line-clamp-2 mb-1">{stap.beschrijving}</p>
+        )}
+        {linkLabel && (
+          <span className="text-xs text-primary font-medium group-hover:underline">{linkLabel}</span>
+        )}
+      </div>
+
+      {/* Arrow */}
+      <svg className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+      </svg>
     </div>
   )
 }
