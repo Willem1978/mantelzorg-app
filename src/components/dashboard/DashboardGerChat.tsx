@@ -138,7 +138,7 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
 
   const { messages, sendMessage, status, error } = useChat({
     transport: new DefaultChatTransport({
-      api: "/api/ai/chat",
+      api: "/api/ai/balanscoach",
       prepareSendMessagesRequest: async ({ messages: msgs, body, ...rest }) => {
         const converted = msgs.map((msg) => ({
           role: msg.role,
@@ -147,7 +147,7 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
             .map((p) => p.text)
             .join("") || "",
         }))
-        return { ...rest, body: { ...body, messages: converted } }
+        return { ...rest, body: { ...body, messages: converted, pagina: "dashboard" } }
       },
     }),
   })
