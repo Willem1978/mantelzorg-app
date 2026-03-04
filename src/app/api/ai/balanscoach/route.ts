@@ -133,7 +133,7 @@ Gebruik deze data direct om de juiste flow te kiezen. Roep bekijkGebruikerStatus
       system: systemPrompt,
       messages,
       maxOutputTokens: 2048,
-      stopWhen: stepCountIs(5),
+      stopWhen: stepCountIs(7),
       tools: {
         bekijkGebruikerStatus: createBekijkGebruikerStatusTool({ userId }),
         bekijkBalanstest: createBekijkBalanstestTool({ userId, gemeenteZorgvrager, gemeenteMantelzorger }),
