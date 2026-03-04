@@ -120,17 +120,19 @@ export function BalansThermometer({
               return (
                 <div
                   key={dg.naam}
-                  className="rounded-xl p-3 text-center"
+                  className="rounded-xl p-3 flex items-center gap-2"
                   style={{ backgroundColor: dgConfig.bgColor }}
                 >
-                  <span className="text-xl block">{dg.emoji}</span>
-                  <p className="text-[11px] font-medium text-foreground mt-1">{dg.naam}</p>
-                  <span
-                    className="text-[10px] font-bold px-2 py-0.5 rounded-full inline-block mt-1.5"
-                    style={{ backgroundColor: `${dgConfig.color}20`, color: dgConfig.color }}
-                  >
-                    {dgConfig.label}
-                  </span>
+                  <span className="text-xl flex-shrink-0">{dg.emoji}</span>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-medium text-foreground leading-tight">{dg.naam}</p>
+                    <span
+                      className="text-[10px] font-bold px-2 py-0.5 rounded-full inline-block mt-1"
+                      style={{ backgroundColor: `${dgConfig.color}20`, color: dgConfig.color }}
+                    >
+                      {dgConfig.label}
+                    </span>
+                  </div>
                 </div>
               )
             })}
