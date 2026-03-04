@@ -31,7 +31,7 @@ const HULPKAART_REGEX = /\{\{hulpkaart:([^}]+)\}\}/g
  */
 export function parseHulpkaarten(text: string): { cleanText: string; kaarten: ParsedHulpkaart[] } {
   const kaarten: ParsedHulpkaart[] = []
-  const cleanText = text.replace(HULPKAART_REGEX, (_, content: string) => {
+  let cleanText = text.replace(HULPKAART_REGEX, (_, content: string) => {
     const parts = content.split("|")
     if (parts.length >= 1 && parts[0].trim()) {
       kaarten.push({
@@ -47,7 +47,9 @@ export function parseHulpkaarten(text: string): { cleanText: string; kaarten: Pa
     }
     return ""
   })
-  return { cleanText: cleanText.trimEnd(), kaarten }
+  // Verwijder overbodige lege regels die overblijven na het strippen van hulpkaarten
+  cleanText = cleanText.replace(/\n{3,}/g, "\n\n").trim()
+  return { cleanText, kaarten }
 }
 
 /**

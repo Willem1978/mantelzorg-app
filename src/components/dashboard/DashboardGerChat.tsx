@@ -38,7 +38,7 @@ function parseButtons(text: string): { cleanText: string; buttons: ParsedButton[
     }
     return ""
   })
-  return { cleanText: cleanText.trimEnd(), buttons }
+  return { cleanText: cleanText.replace(/\n{3,}/g, "\n\n").trim(), buttons }
 }
 
 export interface GerChatContext {
