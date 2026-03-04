@@ -77,6 +77,16 @@ ALTER TABLE IF EXISTS "ContentCategorie" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS "FormulierOptie" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS "AppContent" ENABLE ROW LEVEL SECURITY;
 
+-- Overige tabellen (eerder ontbrekend)
+ALTER TABLE IF EXISTS "SiteSettings" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "Gemeente" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "CoachAdvies" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "Bericht" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "ArtikelTag" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "ContentTag" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "GebruikerVoorkeur" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS "GemeenteStap" ENABLE ROW LEVEL SECURITY;
+
 -- Prisma migrations tabel
 ALTER TABLE IF EXISTS "_prisma_migrations" ENABLE ROW LEVEL SECURITY;
 
@@ -105,6 +115,8 @@ DECLARE
     'MantelBuddy', 'BuddyMatch', 'BuddyTaak', 'BuddyTaakReactie', 'BuddyBeoordeling',
     'BalanstestVraag', 'Zorgtaak', 'TaakCategorieMapping',
     'ContentCategorie', 'FormulierOptie', 'AppContent',
+    'SiteSettings', 'Gemeente', 'CoachAdvies', 'Bericht',
+    'ArtikelTag', 'ContentTag', 'GebruikerVoorkeur', 'GemeenteStap',
     '_prisma_migrations'
   ];
 BEGIN
