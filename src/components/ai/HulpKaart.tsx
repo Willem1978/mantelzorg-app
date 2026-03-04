@@ -103,6 +103,11 @@ export function HulpKaart({ kaart, className }: { kaart: ParsedHulpkaart; classN
         gemeente={kaart.gemeente || undefined}
         kosten={kaart.kosten || undefined}
         openingstijden={kaart.openingstijden || undefined}
+        favoriet={{
+          type: "HULP",
+          itemId: `ai-${(kaart.dienst || kaart.naam).toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+          categorie: "AI aanbeveling",
+        }}
       />
     </>
   )

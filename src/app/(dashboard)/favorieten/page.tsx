@@ -495,6 +495,13 @@ function FavorietCard({
           inhoud={artikelLoading ? "Laden..." : artikelData?.inhoud}
           bron={artikelData?.bron}
           website={fav.url}
+          favoriet={{
+            type: fav.type as "HULP" | "INFORMATIE",
+            itemId: fav.itemId,
+            categorie: fav.categorie || undefined,
+            initialFavorited: true,
+            initialFavorietId: fav.id,
+          }}
         />
       )}
     </>

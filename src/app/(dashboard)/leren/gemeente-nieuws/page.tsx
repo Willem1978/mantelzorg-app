@@ -426,6 +426,13 @@ function NieuwsCard({
         inhoud={item.inhoud}
         url={item.url}
         gemeente={item.gemeente}
+        favoriet={{
+          type: "INFORMATIE",
+          itemId: item.id,
+          categorie: "Gemeente nieuws",
+          initialFavorited: isFavorited,
+          initialFavorietId: favorietId,
+        }}
       />
     </>
   )
