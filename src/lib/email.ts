@@ -391,6 +391,69 @@ export async function sendNieuwBerichtEmail(
   })
 }
 
+export async function sendContentEmail(
+  email: string,
+  naam: string,
+  content: {
+    titel: string
+    beschrijving?: string | null
+    organisatie?: string | null
+    gemeente?: string | null
+    telefoon?: string | null
+    website?: string | null
+    kosten?: string | null
+    openingstijden?: string | null
+    soortHulp?: string | null
+  },
+): Promise<boolean> {
+  const detailRijen = [
+    content.organisatie && `<tr><td style="color:#6b7280;padding:4px 12px 4px 0;font-size:13px;vertical-align:top;">Organisatie</td><td style="color:#111827;padding:4px 0;font-size:13px;">${content.organisatie}</td></tr>`,
+    content.gemeente && `<tr><td style="color:#6b7280;padding:4px 12px 4px 0;font-size:13px;vertical-align:top;">Locatie</td><td style="color:#111827;padding:4px 0;font-size:13px;">${content.gemeente}</td></tr>`,
+    content.soortHulp && `<tr><td style="color:#6b7280;padding:4px 12px 4px 0;font-size:13px;vertical-align:top;">Soort hulp</td><td style="color:#111827;padding:4px 0;font-size:13px;">${content.soortHulp}</td></tr>`,
+    content.kosten && `<tr><td style="color:#6b7280;padding:4px 12px 4px 0;font-size:13px;vertical-align:top;">Kosten</td><td style="color:#111827;padding:4px 0;font-size:13px;">${content.kosten}</td></tr>`,
+    content.openingstijden && `<tr><td style="color:#6b7280;padding:4px 12px 4px 0;font-size:13px;vertical-align:top;">Bereikbaar</td><td style="color:#111827;padding:4px 0;font-size:13px;">${content.openingstijden}</td></tr>`,
+    content.telefoon && `<tr><td style="color:#6b7280;padding:4px 12px 4px 0;font-size:13px;vertical-align:top;">Telefoon</td><td style="color:#111827;padding:4px 0;font-size:13px;"><a href="tel:${content.telefoon}" style="color:#2C7A7B;text-decoration:none;">${content.telefoon}</a></td></tr>`,
+  ].filter(Boolean).join("")
+
+  const websiteKnop = content.website
+    ? `<div style="text-align:center;margin:20px 0 0;">
+        <a href="${content.website}" style="display:inline-block;padding:12px 28px;background:#2C7A7B;color:white;text-decoration:none;border-radius:12px;font-weight:600;font-size:14px;">
+          Naar website
+        </a>
+      </div>`
+    : ""
+
+  const plainDetails = [
+    content.organisatie && `Organisatie: ${content.organisatie}`,
+    content.gemeente && `Locatie: ${content.gemeente}`,
+    content.telefoon && `Telefoon: ${content.telefoon}`,
+    content.website && `Website: ${content.website}`,
+    content.kosten && `Kosten: ${content.kosten}`,
+  ].filter(Boolean).join("\n")
+
+  return sendEmail({
+    to: email,
+    subject: `${content.titel} - ${APP_NAME}`,
+    html: emailWrapper(`
+      <h1 style="font-size:20px; color:#111827; margin:0 0 8px;">
+        Hoi${naam ? ` ${naam}` : ""}!
+      </h1>
+      <p style="font-size:15px; color:#4b5563; line-height:1.6; margin:0 0 16px;">
+        Je hebt het volgende item bewaard vanuit ${APP_NAME}:
+      </p>
+      <div style="background:#f9fafb; border-radius:12px; padding:20px; margin:0 0 20px;">
+        <h2 style="font-size:17px; color:#111827; margin:0 0 8px; font-weight:700;">
+          ${content.titel}
+        </h2>
+        ${content.beschrijving ? `<p style="font-size:14px; color:#4b5563; line-height:1.5; margin:0 0 12px;">${content.beschrijving}</p>` : ""}
+        ${detailRijen ? `<table style="border-collapse:collapse;">${detailRijen}</table>` : ""}
+      </div>
+      ${websiteKnop}
+    `),
+    text: `${content.titel}\n\n${content.beschrijving || ""}\n\n${plainDetails}`,
+  })
+}
+
 export async function sendAlarmNotificationEmail(
   email: string,
   gemeenteNaam: string,

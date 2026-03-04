@@ -1299,6 +1299,13 @@ function HulpbronCard({ hulp, favorieten, categorie }: {
         soortHulp={hulp.soortHulp}
         bronLabel={hulp.bronLabel}
         doelgroep={hulp.doelgroep}
+        favoriet={{
+          type: "HULP",
+          itemId,
+          categorie,
+          initialFavorited: isFavorited,
+          initialFavorietId: favorietId,
+        }}
       />
     </>
   )
@@ -1367,6 +1374,13 @@ function LandelijkeHulpCard({ hulp, favorieten, categorie }: {
         openingstijden={hulp.openingstijden}
         soortHulp={hulp.soortHulp}
         bronLabel={hulp.bronLabel}
+        favoriet={{
+          type: "HULP",
+          itemId,
+          categorie: categorie || c.kaart.landelijk,
+          initialFavorited: isFavorited,
+          initialFavorietId: favorietId,
+        }}
       />
     </>
   )

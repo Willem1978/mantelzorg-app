@@ -1,8 +1,16 @@
 "use client"
 
-import { useEffect, useRef, useCallback } from "react"
+import { useEffect, useRef, useCallback, useState } from "react"
 import DOMPurify from "isomorphic-dompurify"
 import { ensureAbsoluteUrl } from "@/lib/utils"
+
+interface FavorietProps {
+  type: "HULP" | "INFORMATIE"
+  itemId: string
+  categorie?: string
+  initialFavorited?: boolean
+  initialFavorietId?: string
+}
 
 interface ContentModalProps {
   isOpen: boolean
@@ -23,6 +31,7 @@ interface ContentModalProps {
   dienst?: string | null
   openingstijden?: string | null
   organisatie?: string | null
+  favoriet?: FavorietProps | null
 }
 
 export function ContentModal({
@@ -44,9 +53,99 @@ export function ContentModal({
   dienst,
   openingstijden,
   organisatie,
+  favoriet,
 }: ContentModalProps) {
   const modalRef = useRef<HTMLDivElement>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
+
+  // Favoriet state
+  const [isFavorited, setIsFavorited] = useState(favoriet?.initialFavorited ?? false)
+  const [favorietId, setFavorietId] = useState(favoriet?.initialFavorietId)
+  const [favLoading, setFavLoading] = useState(false)
+  const [favAnimating, setFavAnimating] = useState(false)
+
+  // Mail state
+  const [mailStatus, setMailStatus] = useState<"idle" | "sending" | "sent" | "error">("idle")
+
+  // Sync favoriet state when props change
+  useEffect(() => {
+    setIsFavorited(favoriet?.initialFavorited ?? false)
+    setFavorietId(favoriet?.initialFavorietId)
+  }, [favoriet?.initialFavorited, favoriet?.initialFavorietId])
+
+  // Reset mail status when modal closes
+  useEffect(() => {
+    if (!isOpen) setMailStatus("idle")
+  }, [isOpen])
+
+  const weergaveTitelVoorEmail = dienst || titel
+
+  const handleFavorietToggle = async () => {
+    if (!favoriet || favLoading) return
+    setFavLoading(true)
+    setFavAnimating(true)
+    setTimeout(() => setFavAnimating(false), 400)
+
+    const wasFavorited = isFavorited
+    setIsFavorited(!wasFavorited)
+
+    try {
+      if (wasFavorited && favorietId) {
+        const res = await fetch(`/api/favorieten/${favorietId}`, { method: "DELETE" })
+        if (!res.ok) throw new Error()
+        setFavorietId(undefined)
+      } else {
+        const res = await fetch("/api/favorieten", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: favoriet.type,
+            itemId: favoriet.itemId,
+            titel: weergaveTitelVoorEmail,
+            beschrijving,
+            categorie: favoriet.categorie,
+            url: url || website,
+            telefoon,
+            icon: emoji,
+          }),
+        })
+        if (!res.ok) throw new Error()
+        const data = await res.json()
+        setFavorietId(data?.favoriet?.id)
+      }
+      window.dispatchEvent(new Event("favorieten-updated"))
+    } catch {
+      setIsFavorited(wasFavorited)
+    } finally {
+      setFavLoading(false)
+    }
+  }
+
+  const handleMail = async () => {
+    if (mailStatus === "sending" || mailStatus === "sent") return
+    setMailStatus("sending")
+    try {
+      const res = await fetch("/api/email/content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          titel: weergaveTitelVoorEmail,
+          beschrijving,
+          organisatie: organisatie || (dienst && dienst !== titel ? titel : null),
+          gemeente,
+          telefoon,
+          website: url || website,
+          kosten,
+          openingstijden,
+          soortHulp,
+        }),
+      })
+      setMailStatus(res.ok ? "sent" : "error")
+      if (res.ok) setTimeout(() => setMailStatus("idle"), 3000)
+    } catch {
+      setMailStatus("error")
+    }
+  }
 
   // Focus trap: houd focus binnen de modal
   const handleTabKey = useCallback((e: KeyboardEvent) => {
@@ -287,30 +386,72 @@ export function ContentModal({
         </div>
 
         {/* Footer met knoppen */}
-        {(telefoon || url || website) && (
-          <div className="px-5 py-4 border-t border-border space-y-2">
-            {telefoon && (
-              <a
-                href={`tel:${telefoon}`}
-                className="ker-btn ker-btn-primary w-full flex items-center justify-center gap-2"
+        <div className="px-5 py-4 border-t border-border space-y-2">
+          {/* Favoriet en mail knoppen */}
+          {favoriet && (
+            <div className="flex gap-2">
+              <button
+                onClick={handleFavorietToggle}
+                disabled={favLoading}
+                className={`flex-1 ker-btn ker-btn-secondary flex items-center justify-center gap-2 ${favAnimating ? "animate-heart-bounce" : ""}`}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
-                Bel {telefoon}
-              </a>
-            )}
-            {(url || website) && (
-              <a
-                href={ensureAbsoluteUrl(url || website)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`ker-btn w-full flex items-center justify-center gap-2 ${telefoon ? "ker-btn-secondary" : "ker-btn-primary"}`}
+                <svg
+                  className={`w-4 h-4 transition-colors ${isFavorited ? "text-primary fill-primary" : ""}`}
+                  fill={isFavorited ? "currentColor" : "none"}
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+                {isFavorited ? "Bewaard" : "Bewaren"}
+              </button>
+              <button
+                onClick={handleMail}
+                disabled={mailStatus === "sending" || mailStatus === "sent"}
+                className="flex-1 ker-btn ker-btn-secondary flex items-center justify-center gap-2"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                Naar website
-              </a>
-            )}
-          </div>
-        )}
+                {mailStatus === "sending" ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                    Versturen...
+                  </>
+                ) : mailStatus === "sent" ? (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    Verstuurd!
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                    Mail naar mij
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* Telefoon en website knoppen */}
+          {telefoon && (
+            <a
+              href={`tel:${telefoon}`}
+              className="ker-btn ker-btn-primary w-full flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+              Bel {telefoon}
+            </a>
+          )}
+          {(url || website) && (
+            <a
+              href={ensureAbsoluteUrl(url || website)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`ker-btn w-full flex items-center justify-center gap-2 ${telefoon ? "ker-btn-secondary" : "ker-btn-primary"}`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+              Naar website
+            </a>
+          )}
+        </div>
       </div>
     </div>
   )

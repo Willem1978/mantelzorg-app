@@ -446,6 +446,13 @@ function ArtikelCard({ artikel, categorieTitel, isFavorited, favorietId }: {
         inhoud={artikel.inhoud}
         bron={artikel.bron}
         website={artikel.url}
+        favoriet={{
+          type: "INFORMATIE",
+          itemId: artikel.id,
+          categorie: categorieTitel,
+          initialFavorited: isFavorited,
+          initialFavorietId: favorietId,
+        }}
       />
     </>
   )

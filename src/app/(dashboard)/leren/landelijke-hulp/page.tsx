@@ -239,6 +239,13 @@ function HulpCard({ hulp, favorieten, categorie }: {
         website={hulp.website}
         kosten={hulp.kosten}
         openingstijden={hulp.openingstijden}
+        favoriet={{
+          type: "HULP",
+          itemId,
+          categorie,
+          initialFavorited: isFavorited,
+          initialFavorietId: favorietId,
+        }}
       />
     </>
   )
