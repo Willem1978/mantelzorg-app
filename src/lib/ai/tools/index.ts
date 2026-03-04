@@ -2,7 +2,7 @@
  * Barrel export voor alle AI tools.
  * Elke tool is een factory-functie die user context ontvangt.
  */
-export { createBekijkGebruikerStatusTool } from "./gebruiker-status"
+export { createBekijkGebruikerStatusTool, fetchGebruikerStatus } from "./gebruiker-status"
 export { createBekijkBalanstestTool } from "./balanstest"
 export { createBekijkTestTrendTool } from "./test-trend"
 export { createBekijkGemeenteAdviesTool } from "./gemeente-advies"
