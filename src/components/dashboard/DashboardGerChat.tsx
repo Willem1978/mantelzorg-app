@@ -108,10 +108,10 @@ function buildGreetingMessage(ctx: GerChatContext): string {
   // PRIORITEIT 1: Heeft een test → coaching op basis van resultaten
   if (ctx.hasTest) {
     if (ctx.niveau === "HOOG") {
-      return `${greeting} ${naam}. Ik zie dat je veel op je bordje hebt. Wat kan ik voor jou doen?\n\nDat is zwaar. Weet dat je er niet alleen voor staat — ik help je graag om hulp te vinden.`
+      return `${greeting} ${naam}. Ik zie dat je veel op je bordje hebt. Weet dat je er niet alleen voor staat — ik help je graag om hulp te vinden. Wat kan ik voor jou doen?`
     }
     if (ctx.niveau === "GEMIDDELD") {
-      return `${greeting} ${naam}! Je doet heel veel. Wat kan ik voor jou doen?\n\nVergeet niet ook goed voor jezelf te zorgen.`
+      return `${greeting} ${naam}! Je doet heel veel. Vergeet niet ook goed voor jezelf te zorgen. Wat kan ik voor jou doen?`
     }
     return `${greeting} ${naam}! Goed bezig, je houdt het goed vol. Wat kan ik voor jou doen?`
   }
