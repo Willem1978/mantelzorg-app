@@ -26,6 +26,28 @@ function generateHulpItemId(naam: string, gemeente: string | null | undefined): 
   return `${slugify(naam)}-${slugify(gemeente || 'landelijk')}`
 }
 
+// Splits "Organisatie - Dienstnaam" in organisatie en dienst
+// wanneer het dienst-veld niet apart gevuld is in de database
+function splitNaamDienst(naam: string, dienst: string | null | undefined): { displayNaam: string; organisatieNaam: string | null } {
+  // Als dienst apart is ingevuld, gebruik die
+  if (dienst) {
+    return {
+      displayNaam: dienst,
+      organisatieNaam: naam !== dienst ? naam : null,
+    }
+  }
+  // Probeer "Org - Dienst" te splitsen
+  const dashIndex = naam.indexOf(' - ')
+  if (dashIndex > 0) {
+    return {
+      displayNaam: naam.substring(dashIndex + 3),
+      organisatieNaam: naam.substring(0, dashIndex),
+    }
+  }
+  // Geen scheiding gevonden, gebruik naam als titel
+  return { displayNaam: naam, organisatieNaam: null }
+}
+
 interface Hulpbron {
   naam: string
   telefoon: string | null
@@ -1223,10 +1245,7 @@ function HulpbronCard({ hulp, favorieten, categorie }: {
   const isFavorited = !!(favorieten && favorieten[favKey])
   const favorietId = favorieten?.[favKey]
 
-  // Dienst als primaire naam, organisatie als secundair
-  const displayNaam = hulp.dienst || hulp.naam
-  // Organisatienaam tonen als de dienst de titel is
-  const organisatieNaam = hulp.dienst && hulp.naam !== hulp.dienst ? hulp.naam : null
+  const { displayNaam, organisatieNaam } = splitNaamDienst(hulp.naam, hulp.dienst)
 
   return (
     <>
@@ -1269,8 +1288,8 @@ function HulpbronCard({ hulp, favorieten, categorie }: {
       <ContentModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        titel={hulp.naam}
-        dienst={hulp.dienst}
+        titel={displayNaam}
+        organisatie={organisatieNaam}
         beschrijving={hulp.beschrijving}
         gemeente={hulp.gemeente}
         telefoon={hulp.telefoon}
@@ -1297,7 +1316,7 @@ function LandelijkeHulpCard({ hulp, favorieten, categorie }: {
   const isFavorited = !!(favorieten && favorieten[favKey])
   const favorietId = favorieten?.[favKey]
 
-  const displayNaam = hulp.dienst || hulp.naam
+  const { displayNaam, organisatieNaam } = splitNaamDienst(hulp.naam, hulp.dienst)
 
   return (
     <>
@@ -1339,8 +1358,8 @@ function LandelijkeHulpCard({ hulp, favorieten, categorie }: {
       <ContentModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        titel={hulp.naam}
-        dienst={hulp.dienst}
+        titel={displayNaam}
+        organisatie={organisatieNaam}
         beschrijving={hulp.beschrijving}
         telefoon={hulp.telefoon}
         website={hulp.website}

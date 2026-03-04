@@ -168,12 +168,10 @@ export function ContentModal({
     })
   }
 
-  // Bepaal de weergavetitel: dienst als die er is, anders originele titel
+  // Weergavetitel: dienst als die er is, anders originele titel
   const weergaveTitel = dienst || titel
-  // Organisatienaam: expliciet meegegeven, of altijd de titel als het een hulpbron is
-  // (hulpbronnen herkennen we doordat telefoon of website is meegegeven zonder inhoud)
-  const isHulpbron = !inhoud && (telefoon || website)
-  const organisatieNaam = organisatie || (dienst && dienst !== titel ? titel : null) || (isHulpbron ? titel : null)
+  // Organisatienaam: expliciet meegegeven, of afgeleid uit dienst/titel verschil
+  const organisatieNaam = organisatie || (dienst && dienst !== titel ? titel : null)
 
   // Doelgroep label vertalen
   const doelgroepLabel = doelgroep === "MANTELZORGER"
