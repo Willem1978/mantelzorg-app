@@ -92,17 +92,11 @@ export function BalansThermometer({
 
       {/* Thermometer balk met zones */}
       <div>
-        <div className="relative">
-          <div className="h-3 rounded-full overflow-hidden flex">
-            <div className="flex-1 bg-[var(--accent-green)]/15" />
-            <div className="flex-1 bg-[var(--accent-amber)]/15" />
-            <div className="flex-1 bg-[var(--accent-red)]/15" />
-          </div>
-          {/* Indicator */}
+        <div className="h-3 rounded-full overflow-hidden bg-muted/30">
           <div
-            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-white shadow-md transition-all duration-700"
+            className="h-full rounded-full transition-all duration-700"
             style={{
-              left: `calc(${Math.max(3, Math.min(97, percentage))}% - 0.5rem)`,
+              width: `${Math.max(6, percentage)}%`,
               backgroundColor: config.color,
             }}
           />
@@ -148,7 +142,7 @@ export function BalansThermometer({
       {zorgtaken.length > 0 && (
         <div>
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-            Jouw {zorgtaken.length} zorgtaken
+            Jouw zorgtaken
           </p>
           <div className="grid grid-cols-3 gap-2">
             <div
