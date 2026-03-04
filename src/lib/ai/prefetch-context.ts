@@ -523,9 +523,10 @@ Pas je advies hierop aan — deze mantelzorger is NIET nieuw in het zoeken van h
 }
 
 function buildGemeenteContactBlock(gc: { naam: string; telefoon: string | null; email: string | null; website: string | null; beschrijving: string | null; gemeente: string }): string {
-  const dienst = gc.beschrijving || `Hulpverlener gemeente ${gc.gemeente}`
+  const dienstNaam = `Mantelzorgloket ${gc.gemeente}`
+  const beschrijvingTekst = gc.beschrijving || ""
   let block = `\n\nGEMEENTE HULPVERLENER — kopieer letterlijk:`
-  block += `\n  {{hulpkaart:${gc.naam}|${dienst}||${gc.telefoon || ""}|${gc.website || ""}|${gc.gemeente || ""}||}}`
+  block += `\n  {{hulpkaart:${gc.naam}|${dienstNaam}|${beschrijvingTekst}|${gc.telefoon || ""}|${gc.website || ""}|${gc.gemeente || ""}||}}`
   if (gc.email) block += `\n  Email: ${gc.email}`
   return block
 }

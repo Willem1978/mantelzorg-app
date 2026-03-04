@@ -80,6 +80,7 @@ export async function POST(req: Request) {
   const pagina = body.pagina || null
   const userId = session.user.id
 
+  // Filter lege berichten (tool-call stappen zonder tekst) om API fouten te voorkomen
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const messages = rawMessages.map((msg: any) => {
     if (msg.content !== undefined) {
@@ -93,7 +94,7 @@ export async function POST(req: Request) {
       return { role: msg.role, content: text }
     }
     return { role: msg.role, content: "" }
-  })
+  }).filter((msg: { content: string }) => msg.content.trim() !== "")
 
   // PRE-FETCH: haal gemeente + gebruikersstatus + gemeenteContact tegelijk op
   // Dit bespaart de AI 1-2 tool calls = 10-15 seconden sneller
@@ -122,10 +123,11 @@ export async function POST(req: Request) {
     if (gemeenteVoorContact && niveau) {
       const gemeenteContact = await resolveGemeenteContact(gemeenteVoorContact, niveau)
       if (gemeenteContact) {
-        const dienst = gemeenteContact.beschrijving || gemeenteContact.adviesTekst || `Mantelzorgloket gemeente ${gemeenteContact.gemeente}`
+        const dienstNaam = `Mantelzorgloket ${gemeenteContact.gemeente}`
+        const beschrijvingTekst = gemeenteContact.beschrijving || gemeenteContact.adviesTekst || ""
         gemeenteContactBlok = `\n\n--- GEMEENTE HULPVERLENER (AUTOMATISCH GELADEN) ---
 Dit is het mantelzorgloket/de hulpverlener gekoppeld aan gemeente ${gemeenteContact.gemeente} voor niveau ${niveau}:
-{{hulpkaart:${gemeenteContact.naam}|${dienst}||${gemeenteContact.telefoon || ""}|${gemeenteContact.website || ""}|${gemeenteContact.gemeente || ""}||}}
+{{hulpkaart:${gemeenteContact.naam}|${dienstNaam}|${beschrijvingTekst}|${gemeenteContact.telefoon || ""}|${gemeenteContact.website || ""}|${gemeenteContact.gemeente || ""}||}}
 ${gemeenteContact.email ? `Email: ${gemeenteContact.email}` : ""}
 ${gemeenteContact.adviesTekst ? `Gemeente-advies: ${gemeenteContact.adviesTekst}` : ""}
 Verwijs de mantelzorger ALTIJD naar deze hulpverlener bij hulpvragen.

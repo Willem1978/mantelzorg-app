@@ -34,10 +34,25 @@ export function parseHulpkaarten(text: string): { cleanText: string; kaarten: Pa
   let cleanText = text.replace(HULPKAART_REGEX, (_, content: string) => {
     const parts = content.split("|")
     if (parts.length >= 1 && parts[0].trim()) {
+      let naam = parts[0]?.trim() || ""
+      let dienst = parts[1]?.trim() || ""
+      let beschrijving = parts[2]?.trim() || ""
+
+      // Robuustheid: als de AI per ongeluk de beschrijving in het verkeerde veld zet
+      // (> 60 tekens is vrijwel zeker een beschrijving, geen korte naam/dienst)
+      if (naam.length > 60 && !beschrijving) {
+        beschrijving = naam
+        naam = dienst || "Hulpbron"
+        dienst = ""
+      } else if (dienst.length > 60 && !beschrijving) {
+        beschrijving = dienst
+        dienst = ""
+      }
+
       kaarten.push({
-        naam: parts[0]?.trim() || "",
-        dienst: parts[1]?.trim() || "",
-        beschrijving: parts[2]?.trim() || "",
+        naam,
+        dienst,
+        beschrijving,
         telefoon: parts[3]?.trim() || "",
         website: parts[4]?.trim() || "",
         gemeente: parts[5]?.trim() || "",

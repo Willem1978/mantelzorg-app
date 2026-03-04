@@ -51,6 +51,7 @@ export async function POST(req: Request) {
   const rawMessages = body.messages
 
   // Handle both UI messages (parts format) and pre-converted model messages (content format)
+  // Filter lege berichten (tool-call stappen zonder tekst) om API fouten te voorkomen
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const messages = rawMessages.map((msg: any) => {
     if (msg.content !== undefined) {
@@ -64,7 +65,7 @@ export async function POST(req: Request) {
       return { role: msg.role, content: text }
     }
     return { role: msg.role, content: "" }
-  })
+  }).filter((msg: { content: string }) => msg.content.trim() !== "")
 
   // Haal gebruikerscontext op — twee gemeenten: mantelzorger en zorgvrager
   // Hulp bij zorgtaken (verzorging, boodschappen, klusjes) → gemeente zorgvrager
@@ -88,7 +89,7 @@ export async function POST(req: Request) {
       system: buildAssistentPrompt(gemeenteMantelzorger, gemeenteZorgvrager, contextBlock),
       messages,
       maxOutputTokens: 2048,
-      stopWhen: stepCountIs(3),
+      stopWhen: stepCountIs(7),
       tools: {
         // Tools beschikbaar voor extra zoekopdrachten (niet nodig voor standaard vragen)
         bekijkTestTrend: createBekijkTestTrendTool({ userId }),

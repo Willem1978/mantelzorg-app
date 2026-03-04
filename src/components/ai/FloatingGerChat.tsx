@@ -97,13 +97,16 @@ export function FloatingGerChat() {
     transport: new DefaultChatTransport({
       api: "/api/ai/balanscoach",
       prepareSendMessagesRequest: async ({ messages: msgs, body, ...rest }) => {
-        const converted = msgs.map((msg) => ({
-          role: msg.role,
-          content: msg.parts
-            ?.filter((p): p is { type: "text"; text: string } => p.type === "text")
-            .map((p) => p.text)
-            .join("") || "",
-        }))
+        const converted = msgs
+          .map((msg) => ({
+            role: msg.role,
+            content: msg.parts
+              ?.filter((p): p is { type: "text"; text: string } => p.type === "text")
+              .map((p) => p.text)
+              .join("") || "",
+          }))
+          // Filter lege berichten (tool-call stappen zonder tekst) — die laten de API crashen
+          .filter((msg) => msg.content.trim() !== "")
         return { ...rest, body: { ...body, messages: converted, pagina: paginaContext } }
       },
     }),
