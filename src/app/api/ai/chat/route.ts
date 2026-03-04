@@ -28,9 +28,22 @@ export async function POST(req: Request) {
     )
   }
 
-  const session = await auth()
+  let session
+  try {
+    session = await auth()
+  } catch (authError) {
+    console.error("[AI Chat] Auth fout:", authError)
+    return new Response(
+      JSON.stringify({ error: "Sessie verlopen. Log opnieuw in." }),
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    )
+  }
+
   if (!session?.user?.id) {
-    return new Response("Niet ingelogd", { status: 401 })
+    return new Response(
+      JSON.stringify({ error: "Je bent niet ingelogd. Log eerst in." }),
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    )
   }
 
   const body = await req.json()
