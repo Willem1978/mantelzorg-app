@@ -1,8 +1,8 @@
 # MantelBuddy — Masterplan 2026
 
-**Datum:** 2 maart 2026
-**Versie:** 1.2
-**Baseline:** v2.5.0 + doorontwikkelingen februari 2026 + content herstructurering maart 2026
+**Datum:** 4 maart 2026
+**Versie:** 1.3
+**Baseline:** v2.5.0 + doorontwikkelingen februari 2026 + content herstructurering + MantelCoach + dashboard redesign maart 2026
 **Dit plan vervangt alle eerdere planbestanden.**
 
 ---
@@ -31,7 +31,7 @@
 | Backend | Next.js API Routes (100+ endpoints), Prisma ORM |
 | Database | PostgreSQL (Supabase) + pgvector |
 | Auth | NextAuth.js v5 (JWT, credentials, magic links) |
-| AI | Anthropic Claude (7 agents) + OpenAI embeddings |
+| AI | Anthropic Claude (8 agents, incl. MantelCoach) + OpenAI embeddings |
 | WhatsApp | Twilio |
 | Hosting | Vercel |
 | Tests | Vitest (29 tests) |
@@ -40,9 +40,10 @@
 
 | Onderdeel | Status | Details |
 |-----------|--------|---------|
-| 8 AI agents | 100% | Ger, Welkom, Balanscoach, Check-in, Analytics, Moderatie, Curator, Content Pipeline Agent |
+| 8 AI agents | 100% | Ger (MantelCoach), Welkom, Balanscoach, Check-in, Analytics, Moderatie, Curator, Content Pipeline Agent |
+| MantelCoach (Ger) | **NIEUW** 100% | Context-aware per pagina, per-deelgebied coaching, personalisatie op aandoening/situatie, B1-taal, doorcoaching |
 | Belastbaarheidstest | 95% | 11 vragen, 10 zorgtaken, scoring, subdomeinen |
-| Dashboard | 85% | Thermometer, advies, trend, artikelen, mijlpalen |
+| Dashboard | **95%** | Ger-chat bovenaan, BalansThermometer met gekleurde balk + zorgtaken-hokjes, "Jouw stappen" sectie, WhatsApp |
 | Hulpvragen | 90% | Gemeente-filtering, kleur-indicatoren, 2 tabs (voor jou + voor naaste), MantelBuddy actieknoppen |
 | Leren/Informatie | 95% | 47 artikelen, 7 categorieën, 21 tags (aandoening/situatie), gemeente-nieuws, tag-filtering, gebruikersvoorkeuren |
 | Content Pipeline | 90% | 6-staps workflow: Hiaten → Voorstellen → Concepten → Herschrijven → Verrijken → Publiceren. Volledig AI-gestuurd met matrix-analyse, batch-generatie en statustracking |
@@ -54,27 +55,27 @@
 | Onboarding | 80% | 5-stappen flow, profiel, gemeente-zoek |
 | MantelBuddy's (/buddys) | 75% | Kaart + matching, hulpvraag plaatsen, mijn vragen beheren, buddy-reacties, chat. Vervangt /marktplaats |
 | PWA | 60% | Manifest, service worker, installeerbaar (placeholder iconen) |
-| UI/UX senioren | 65% | Grote fonts, hoog contrast, breadcrumbs, help-systeem |
+| UI/UX senioren | **75%** | Grote fonts, hoog contrast, Verstuur-knoppen, gekleurde thermometer, zorgtaken-hokjes |
 
 ### Bekende Problemen (uit alle analyses)
 
-| # | Probleem | Ernst | Bron |
-|---|----------|-------|------|
-| 1 | `.env.production` met API-keys staat in git | KRITIEK | Security |
-| 2 | `TAAK_NAAR_ONDERDEEL` mapping is volledig fout (alle 9) | KRITIEK | Functionaliteit |
-| 3 | `niveauFilter` in hulpbronnen.ts wordt genegeerd | HOOG | Functionaliteit |
-| 4 | Input validatie ontbreekt bij 45+ API routes | HOOG | Security |
-| 5 | Build script gebruikt `--accept-data-loss` | HOOG | Security |
-| 6 | WhatsApp sessies in-memory (geen persistentie) | HOOG | Stabiliteit |
-| 7 | 26x `as any` in code (type safety) | GEMIDDELD | Code kwaliteit |
-| 8 | Inconsistente error responses (4 formaten) | GEMIDDELD | API kwaliteit |
-| 9 | Geen caching strategie (94/96 routes force-dynamic) | GEMIDDELD | Performance |
-| 10 | Ontbrekende database indexes | GEMIDDELD | Performance |
-| 11 | 170+ content-items hardcoded in broncode | GEMIDDELD | Beheerbaar |
-| 12 | `isActief` niet afgedwongen bij gemeente-login | GEMIDDELD | Security |
-| 13 | WhatsApp alarm-detectie ontbreekt | HOOG | Functionaliteit |
-| 14 | Ontbrekende cascade deletes in Prisma | LAAG | Data-integriteit |
-| 15 | Geen service layer (Prisma direct in routes) | LAAG | Architectuur |
+| # | Probleem | Ernst | Status |
+|---|----------|-------|--------|
+| 1 | ~~`.env.production` met API-keys staat in git~~ | ~~KRITIEK~~ | ✅ **OPGELOST** — in `.gitignore`, niet meer in repo |
+| 2 | ~~`TAAK_NAAR_ONDERDEEL` mapping is volledig fout~~ | ~~KRITIEK~~ | ◑ **DEELS** — `options.ts` correct, WhatsApp nog hardcoded |
+| 3 | ~~`niveauFilter` in hulpbronnen.ts wordt genegeerd~~ | ~~HOOG~~ | ✅ **OPGELOST** — filtert nu op zichtbaarBijLaag/Gemiddeld/Hoog |
+| 4 | Input validatie ontbreekt bij 45+ API routes | HOOG | ⚠️ Minimaal — Zod alleen in `validations.ts` |
+| 5 | ~~Build script gebruikt `--accept-data-loss`~~ | ~~HOOG~~ | ✅ **OPGELOST** — verwijderd |
+| 6 | WhatsApp sessies in-memory (geen persistentie) | HOOG | ❌ Open |
+| 7 | ~~26x~~ 16x `as any` in code (type safety) | GEMIDDELD | ◑ Verbeterd (26→16) |
+| 8 | ~~Inconsistente error responses (4 formaten)~~ | ~~GEMIDDELD~~ | ✅ **OPGELOST** — `api-response.ts` helper actief |
+| 9 | Geen caching strategie (94/96 routes force-dynamic) | GEMIDDELD | ❌ Open |
+| 10 | ~~Ontbrekende database indexes~~ | ~~GEMIDDELD~~ | ✅ **OPGELOST** — uitgebreide indexes aanwezig |
+| 11 | 170+ content-items hardcoded in broncode | GEMIDDELD | ◑ Deels (tag-systeem gereed, content nog in code) |
+| 12 | `isActief` niet afgedwongen bij login | GEMIDDELD | ❌ Open — niet gecheckt in `auth.ts` |
+| 13 | WhatsApp alarm-detectie ontbreekt | HOOG | ❌ Open |
+| 14 | Ontbrekende cascade deletes in Prisma | LAAG | ❌ Open |
+| 15 | Geen service layer (Prisma direct in routes) | LAAG | ❌ Open |
 
 ---
 
@@ -83,80 +84,56 @@
 > **Doel:** Alle kritieke beveiligingsproblemen oplossen en functie-brekende bugs fixen.
 > **Motto:** "Eerst het huis op orde."
 
-### 1.1 API-keys uit git verwijderen
+### 1.1 API-keys uit git verwijderen ✅ GEREED
+**Prioriteit: KRITIEK — OPGELOST**
+
+`.env.production` staat in `.gitignore` en is niet meer aanwezig in de repository.
+
+### 1.2 Build script beveiligen ✅ GEREED
+**Prioriteit: KRITIEK — OPGELOST**
+
+`--accept-data-loss` is verwijderd. Build script gebruikt nu `prisma db push --skip-generate`.
+
+### 1.3 TAAK_NAAR_ONDERDEEL mapping fixen ◑ DEELS GEREED
 **Prioriteit: KRITIEK**
 
-| Actie | Bestand |
-|-------|---------|
-| `.env.production` toevoegen aan `.gitignore` | `.gitignore` |
-| Keys verwijderen uit git-historie (of roteren) | git history |
-| API-keys verplaatsen naar Vercel Environment Variables | Vercel dashboard |
-| `.env.local.example` aanmaken met placeholder-waarden | `.env.local.example` |
+Mapping in `src/config/options.ts` is correct. **Nog te doen:** de WhatsApp handler (`src/app/api/whatsapp/webhook/handlers/belastbaarheidstest.ts`) bevat nog een hardcoded mapping (regels 318-327) die niet de centrale config gebruikt en t9/t10 mist.
 
-### 1.2 Build script beveiligen
-**Prioriteit: KRITIEK**
+### 1.4 niveauFilter activeren in hulpbronnen ✅ GEREED
+**Prioriteit: HOOG — OPGELOST**
 
-| Actie | Bestand |
-|-------|---------|
-| `--accept-data-loss` verwijderen uit build script | `scripts/build.js` |
-| Error handling toevoegen voor `prisma generate` | `scripts/build.js` |
-| Validatie toevoegen dat migraties up-to-date zijn | `scripts/build.js` |
+Filtert nu correct op `zichtbaarBijLaag/Gemiddeld/Hoog` velden in alle Prisma queries.
 
-### 1.3 TAAK_NAAR_ONDERDEEL mapping fixen
-**Prioriteit: KRITIEK**
+### 1.5 isActief afdwingen bij login
+**Prioriteit: HOOG — NOG OPEN**
 
-Alle 9 mappings in `src/app/api/dashboard/route.ts` zijn verkeerd. Correcte mapping:
+De `authorize` callback in `src/lib/auth.ts` checkt het `isActive` veld op User **niet** bij login. Inactieve gebruikers en gemeenten kunnen nog inloggen.
 
-| Taak ID | Naam | Correcte mapping |
-|---------|------|-----------------|
-| t1 | Administratie en geldzaken | Administratie en aanvragen |
-| t2 | Regelen en afspraken maken | Plannen en organiseren |
-| t3 | Boodschappen doen | Boodschappen |
-| t4 | Bezoek en gezelschap | Sociaal contact en activiteiten |
-| t5 | Vervoer naar afspraken | Vervoer |
-| t6 | Persoonlijke verzorging | Persoonlijke verzorging |
-| t7 | Eten en drinken | Bereiden en/of nuttigen van maaltijden |
-| t8 | Huishouden | Huishoudelijke taken |
-| t9 | Klusjes | Klusjes in en om het huis |
-
-**Bestanden:** `src/app/api/dashboard/route.ts`, `src/config/options.ts`
-
-### 1.4 niveauFilter activeren in hulpbronnen
-**Prioriteit: HOOG**
-
-De `belastingNiveau` parameter wordt ontvangen maar niet gebruikt. De `zichtbaarBijLaag/Gemiddeld/Hoog` velden op `Zorgorganisatie` moeten geactiveerd worden in de query.
-
-**Bestand:** `src/lib/dashboard/hulpbronnen.ts`
-
-### 1.5 isActief afdwingen bij gemeente-login
-**Prioriteit: HOOG**
-
-Inactieve gemeenten kunnen nu nog inloggen in het gemeente-portaal.
-
-**Bestand:** `src/lib/gemeente-auth.ts`
+**Bestand:** `src/lib/auth.ts`
 
 ### 1.6 WhatsApp alarm-detectie toevoegen
-**Prioriteit: HOOG**
+**Prioriteit: HOOG — NOG OPEN**
 
-De WhatsApp-handler slaat alarm-detectie (`checkAlarmindicatoren()`) over.
+De WhatsApp-handler voert geen alarm-detectie (`checkAlarmindicatoren()`) uit na test-voltooiing. Geen integratie met `AlarmLog` model.
 
-**Bestand:** `src/lib/whatsapp/belastbaarheidstest.ts`
+**Bestand:** `src/app/api/whatsapp/webhook/handlers/belastbaarheidstest.ts`
 
-### 1.7 Health-check endpoint
-**Prioriteit: GEMIDDELD**
+### 1.7 Health-check endpoint ✅ GEREED
+**Prioriteit: GEMIDDELD — OPGELOST**
 
-Nieuw endpoint `/api/health` voor uptime monitoring met database connectie-check.
+`/api/health` endpoint operationeel met database connectie-check, latency meting en environment validatie.
 
 ### Deliverables Fase 1
-- [ ] Geen API-keys meer in git
-- [ ] Build script zonder `--accept-data-loss`
-- [ ] Correcte taak-naar-hulpcategorie mapping
-- [ ] Score-gebaseerde hulpbron-filtering werkt
-- [ ] Gemeente-login respecteert isActief
+- [x] Geen API-keys meer in git
+- [x] Build script zonder `--accept-data-loss`
+- [x] Correcte taak-naar-hulpcategorie mapping (hoofdflow; WhatsApp nog hardcoded)
+- [x] Score-gebaseerde hulpbron-filtering werkt
+- [ ] ~~Gemeente-login~~ Alle logins respecteren isActief
 - [ ] WhatsApp alarm-detectie actief
-- [ ] Health-check endpoint operationeel
+- [ ] WhatsApp TAAK_NAAR_ONDERDEEL uit centrale config halen
+- [x] Health-check endpoint operationeel
 
-**Geschatte doorlooptijd:** 1 week (~16 uur)
+**Status:** ◑ Grotendeels gereed — 5/7 items af, 2 open (isActief + WhatsApp alarm)
 
 ---
 
@@ -179,34 +156,28 @@ Zod schemas toevoegen voor alle 45+ routes zonder validatie. Top prioriteit:
 
 **Bestand:** Uitbreiden `src/lib/validations.ts` + toepassen in routes.
 
-### 2.2 Consistente error responses
-**Prioriteit: GEMIDDELD**
+### 2.2 Consistente error responses ✅ GEREED
+**Prioriteit: GEMIDDELD — OPGELOST**
 
-Centrale helper `src/lib/api-response.ts`:
-- Standaard formaat: `{ error: string, code?: string }`
-- Helpers: `unauthorized()`, `forbidden()`, `notFound()`, `badRequest()`, `internal()`
-- Geen interne errors lekken naar client
+`src/lib/api-response.ts` bevat helpers: `unauthorized()`, `forbidden()`, `notFound()`, `badRequest()`, `conflict()`, `methodNotAllowed()`, `internal()` + `apiSuccess<T>()`.
 
 ### 2.3 Type safety verbeteren
-**Prioriteit: GEMIDDELD**
+**Prioriteit: GEMIDDELD — VERBETERD**
 
-- NextAuth types uitbreiden in `src/types/next-auth.d.ts`
-- 26x `as any` verwijderen uit 11 bestanden
-- Focus: `src/middleware.ts` (4x), `src/lib/auth.ts` (6x)
+- `as any` teruggebracht van 26 naar 16 instanties
+- Resterende locaties: belastbaarheidstest (4x), content/route seed (3x), gemeente/layout (4x), WellbeingChart (1x), gemeente-auth (1x), pdf-rapport (2x)
+- Focus nog nodig: `gemeente/layout.tsx` session casting, `belastbaarheidstest.ts` type casting
 
-### 2.4 Database optimalisatie
-**Prioriteit: GEMIDDELD**
+### 2.4 Database optimalisatie ✅ GEREED
+**Prioriteit: GEMIDDELD — OPGELOST**
 
-Ontbrekende indexes toevoegen:
-```
-BelastbaarheidTest: @@index([gemeente]), @@index([isCompleted, gemeente]), @@index([completedAt])
-Caregiver: @@index([municipality])
-```
+Uitgebreide indexes aanwezig:
+- `BelastbaarheidTest`: 4 indexes (caregiverId, gemeente, isCompleted+gemeente, completedAt)
+- `Zorgorganisatie`: 3 indexes (isActief+gemeente, isActief+onderdeelTest, gemeente)
+- `Artikel`: 4 indexes (categorie+isActief, type+isActief, gemeente, subHoofdstuk)
+- `User`, `MantelBuddy` en gerelateerde tabellen: geindexeerd
 
-Cascade deletes configureren:
-```
-BelastbaarheidTest.caregiver: onDelete: SetNull
-```
+Cascade deletes nog te configureren.
 
 ### 2.5 Testdekking verhogen (29 → 50+)
 **Prioriteit: GEMIDDELD**
@@ -229,13 +200,14 @@ Error boundary component met fallback UI toevoegen.
 
 ### Deliverables Fase 2
 - [ ] Zod validatie op alle publieke API routes
-- [ ] Consistente error response helper in gebruik
-- [ ] 0x `as any` in codebase
-- [ ] Database indexes toegevoegd
+- [x] Consistente error response helper in gebruik
+- [ ] 0x `as any` in codebase (nu 16, was 26)
+- [x] Database indexes toegevoegd
 - [ ] 50+ werkende tests
 - [ ] Structured logging actief
+- [ ] Cascade deletes configureren
 
-**Geschatte doorlooptijd:** 2 weken (~32 uur)
+**Status:** ◑ Deels gereed — 2/6 items af, rest open
 
 ---
 
@@ -259,19 +231,16 @@ Nieuwe pagina `/rapport/persoonlijk` die direct na de test getoond wordt:
 - Nieuw: `src/lib/rapport/persoonlijk-advies.ts`
 - Wijzig: `src/app/(dashboard)/belastbaarheidstest/page.tsx` (redirect na test)
 
-### 3.2 Ger pro-actief na test
-**Prioriteit: HOOG**
+### 3.2 Ger pro-actief na test ✅ GEREED
+**Prioriteit: HOOG — OPGELOST**
 
-Na score-berekening automatisch een kort, warm, persoonlijk bericht van Ger genereren (max 150 woorden). Opslaan bij `BelastbaarheidRapport` en tonen op de persoonlijk-advies pagina.
+Na test-voltooiing verschijnt direct een AgentChat component met Ger (MantelCoach) die:
+- Automatisch een persoonlijk bericht genereert op basis van score, niveau, uren en taken
+- Per-deelgebied (Energie/Gevoel/Tijd) coaching biedt
+- Personaliseert op aandoening en situatie (dementie, werkend, jong, etc.)
+- Dashboard-begroeting past zich aan op testniveau (zwaar/matig/goed)
 
-**Database wijziging:**
-```
-BelastbaarheidRapport: + gerBericht (String?)
-```
-
-**Bestanden:**
-- Wijzig: `src/app/api/belastbaarheidstest/route.ts`
-- Wijzig: `src/app/api/ai/balanscoach/route.ts`
+**Bestanden:** `belastbaarheidstest/page.tsx`, `DashboardGerChat.tsx`, `balanscoach.ts` (MantelCoach prompt)
 
 ### 3.3 Gastgebruiker flow verbeteren
 **Prioriteit: HOOG**
@@ -280,14 +249,16 @@ BelastbaarheidRapport: + gerBericht (String?)
 - Duidelijke CTA: "Maak een account aan om je resultaten te bewaren"
 - Na account aanmaken: automatisch testresultaten koppelen
 
-### 3.4 Dashboard herstructureren
-**Prioriteit: GEMIDDELD**
+### 3.4 Dashboard herstructureren ✅ GEREED
+**Prioriteit: GEMIDDELD — OPGELOST**
 
-- "Volgende stap" sectie prominent maken (1 focus + max 3 CTA's)
-- Zorgtaken sorteren op impact-score (`uren x zwaarte`)
-- Ger-widget onderin: "Heb je een vraag? Praat met Ger"
-- Trend-indicator bij meerdere tests
-- Check-in knop prominent
+Dashboard volledig herontworpen (maart 2026):
+- ✅ **Ger-chat bovenaan** — DashboardGerChat als eerste sectie met proactieve begroeting
+- ✅ **"Jouw stappen" sectie** — Gepersonaliseerd stappenplan per gemeente en testniveau (max 3 stappen)
+- ✅ **BalansThermometer redesign** — Gekleurde balk (groen/oranje/rood), zorgtaken in 3 hokjes, deelgebieden
+- ✅ **Zorgtaken in hokjes** — Licht (groen), Matig (oranje), Zwaar (rood) met aantallen
+- ✅ **FloatingGerChat op alle pagina's** — Context-aware per pagina met "Verstuur" knop
+- ✅ **WhatsApp sectie** — QR-code + directe link naar Ger via WhatsApp
 
 ### 3.5 Noodknop / SOS functie
 **Prioriteit: GEMIDDELD**
@@ -301,13 +272,13 @@ Prominente "Ik heb NU hulp nodig" knop op het dashboard:
 Geen inlog vereist voor de homepage-variant.
 
 ### Deliverables Fase 3
-- [ ] Persoonlijk advies pagina na balanstest
-- [ ] Ger genereert automatisch bericht na test
+- [ ] Persoonlijk advies pagina na balanstest (apart van rapport)
+- [x] Ger genereert automatisch bericht na test (MantelCoach)
 - [ ] Gastgebruikers zien ook persoonlijk advies
-- [ ] Dashboard geherstructureerd met focuskaart
+- [x] Dashboard geherstructureerd met Ger, stappen, balanskaart, zorgtaken-hokjes
 - [ ] SOS-knop op dashboard en homepage
 
-**Geschatte doorlooptijd:** 3 weken (~48 uur)
+**Status:** ◑ Deels gereed — 2/5 items af (+ MantelCoach als bonus), 3 open
 
 ---
 
@@ -632,25 +603,24 @@ In-memory `Map` objecten vervangen door Prisma model `WhatsAppSession` met JSON 
 > **Doel:** De app optimaliseren voor de doelgroep (oudere gebruikers) en sneller maken.
 > **Motto:** "Snel, helder, toegankelijk."
 
-### 7.1 Ger prominent maken
-**Prioriteit: HOOG**
+### 7.1 Ger prominent maken ✅ GEREED
+**Prioriteit: HOOG — OPGELOST**
 
-- Homepage redesign: Ger centraal met ingebed chatvenster (niet meer alleen floating button)
-- Dashboard: Ger-kaart bovenaan met proactieve berichten
-- Visuele upgrade: animaties, typindicator, consistent kleurschema
+Volledig geimplementeerd (maart 2026):
+- ✅ **Dashboard**: `DashboardGerChat` bovenaan met proactieve begroeting, quick-action knoppen
+- ✅ **Alle pagina's**: `FloatingGerChat` context-aware per pagina (informatie, hulp, buddys, balanstest, etc.)
+- ✅ **MantelCoach branding**: Ger heet overal "Je MantelCoach", consistent kleurschema
+- ✅ **Visuele upgrade**: GerAvatar component, typindicator, "Verstuur" knop consistent
+- ✅ **Homepage**: Ingebedde chat met Ger
 
-**Bestanden:**
-- Nieuw: `src/components/ai/GerHeroChat.tsx`
-- Nieuw: `src/components/ai/GerDashboardCard.tsx`
-- Wijzig: `src/app/page.tsx` (homepage redesign)
-- Wijzig: `src/app/(dashboard)/dashboard/page.tsx`
+**Bestanden:** `DashboardGerChat.tsx`, `FloatingGerChat.tsx`, `GerAvatar.tsx`, `balanscoach.ts`
 
-### 7.2 Navigatie verbeteren ✅ DEELS GEREED
+### 7.2 Navigatie verbeteren ✅ GROTENDEELS GEREED
 **Prioriteit: GEMIDDELD**
 
-- ~~"Marktplaats" hernoemen naar "Buddyhulp"~~ ✅ Heet nu "Mantelbuddy's" in navigatie
-- Badge met buddy-matches op navigatie ✅ Werkt
-- "Opgeslagen" toevoegen aan navigatie (nog te doen)
+- ✅ "Marktplaats" hernoemd naar "Mantelbuddy's" in navigatie
+- ✅ Badge met buddy-matches op navigatie (amber badge voor zware taken)
+- ❌ "Opgeslagen" toevoegen aan navigatie (nog te doen — lage prioriteit)
 
 **Bestanden:** `src/components/navigation/MobileNav.tsx`, `src/components/layout/Navbar.tsx`
 
@@ -699,15 +669,15 @@ src/lib/services/
 Aanvullende tests voor: matching-algoritme, geocoding, gemeente wizard, buddy-flow, content API.
 
 ### Deliverables Fase 7
-- [ ] Ger prominent op homepage en dashboard
-- [ ] Verbeterde navigatie met buddy-badges
+- [x] Ger prominent op homepage en dashboard (MantelCoach + DashboardGerChat + FloatingGerChat)
+- [x] Verbeterde navigatie met buddy-badges
 - [ ] Caching op alle relevante routes
 - [ ] N+1 queries opgelost
 - [ ] WCAG 2.1 AA compliant
 - [ ] 60+ tests
 - [ ] Service layer voor kernfuncties
 
-**Geschatte doorlooptijd:** 3 weken (~48 uur)
+**Status:** ◑ Deels gereed — 2/7 items af (Ger + navigatie), 5 open
 
 ---
 
@@ -794,19 +764,29 @@ Verwerkersovereenkomsten (data processing agreements) moeten afgesloten worden m
 ```
 Fase    Naam                              Week    Uren    Status
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1       Beveiliging & Kritieke Fixes      1       16u     ○ Open
-2       Technische Schuld & Stabiliteit   2-3     32u     ○ Open
-3       Persoonlijk Advies & Klantreis    4-6     48u     ○ Open
+1       Beveiliging & Kritieke Fixes      1       16u     ◑ 5/7 gereed (isActief + WhatsApp alarm open)
+2       Technische Schuld & Stabiliteit   2-3     32u     ◑ 2/6 gereed (error helper + indexes)
+3       Persoonlijk Advies & Klantreis    4-6     48u     ◑ 2/5 gereed (MantelCoach + dashboard redesign)
 4       Buddy-matching & Kaartweergave    7-9     48u     ◑ Grotendeels gereed
 5       Gemeente Onboarding & Auto.       10-12   48u     ○ Open
 6       Content Migratie & CMS            13-15   48u     ◑ Content herstructurering + pipeline gereed
-7       UX Polish & Performance           16-18   48u     ○ Open
+7       UX Polish & Performance           16-18   48u     ◑ 2/7 gereed (Ger prominent + navigatie)
 8       Schaalbaarheid & Toekomst         19+     -       ○ Backlog
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Totaal (Fase 1-7)                                 288u
 
+✅ RECENT AFGEROND (maart 2026):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- MantelCoach:             Ger omgebouwd tot volledige coach met deelgebied-coaching
+- Dashboard redesign:      Ger bovenaan, BalansThermometer met gekleurde balk + zorgtaken-hokjes
+- FloatingGerChat:         Context-aware per pagina, "Verstuur" knop, auto-start
+- Security fixes:          .env uit git, build script, niveauFilter, health-check, api-response helper
+- Database indexes:        Uitgebreide indexes op alle kernmodellen
+
 ⚠️  BLOKKERENDE ITEMS (MAG NIET VERGETEN):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- isActief login check:    Inactieve gebruikers kunnen nog inloggen (zie 1.5)
+- WhatsApp alarm-detectie: Ontbreekt nog volledig (zie 1.6)
 - 2FA voor admin:          Geblokkeerd door ontbrekende mailserver (zie 8.3)
 - Verwerkersovereenkomsten: Juridisch traject nog niet gestart (zie 8.4)
 ```
@@ -844,4 +824,4 @@ De volgende items uit eerdere plannen zijn bewust geschrapt:
 
 ---
 
-*Dit masterplan is opgesteld op 1 maart 2026 op basis van grondige analyse van alle bestaande plannen, module-statusdocumenten en de volledige MantelBuddy codebase. Het consolideert en vervangt alle eerdere planbestanden.*
+*Dit masterplan is opgesteld op 1 maart 2026 en bijgewerkt op 4 maart 2026 (v1.3). Wijzigingen v1.3: MantelCoach implementatie, dashboard redesign (BalansThermometer, zorgtaken-hokjes), FloatingGerChat context-aware, security fixes status, bekende problemen status-update.*

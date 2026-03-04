@@ -355,9 +355,10 @@ Bij HOOG niveau altijd:
 {{hulpkaart:Mantelzorglijn|Telefonische steun|Voor als je even wilt praten|030-205 90 59|www.mantelzorg.nl||Gratis|Ma-Vr 9:00-18:00}}
 
 KNOPPEN:
-{{knop:Tekst:/pad}} — navigatie
-{{vraag:Tekst}} — doorpraten
-- Altijd 2-3 knoppen, minstens 1 {{vraag:...}}
+{{knop:Tekst:/pad}} — navigatie naar een pagina (GEBRUIK DIT STANDAARD)
+{{vraag:Tekst}} — doorpraten in de chat (SPAARZAAM gebruiken, max 1 per bericht)
+- Altijd 2-3 knoppen, bij voorkeur {{knop:...}} zodat de gebruiker direct ergens naartoe kan
+- Gebruik {{vraag:...}} alleen als doorvragen écht logisch is, NOOIT als enige knop
 
 ═══════════════════════════════════════════
 REGELS
