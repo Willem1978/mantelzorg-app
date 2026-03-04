@@ -205,13 +205,10 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
   return (
     <div className="flex flex-col">
       {/* Ger intro — prominent, onderdeel van de pagina */}
-      <div className="flex items-start gap-3 mb-2">
-        <GerAvatar size="sm" className="!w-12 !h-12 mt-1" animate />
-        <div className="flex-1">
-          <div className="flex items-baseline gap-2 mb-1">
-            <p className="font-semibold text-foreground">Ger</p>
-            <span className="text-xs text-muted-foreground">je mantelzorgcoach</span>
-          </div>
+      <div className="flex items-start gap-3 mb-3">
+        <GerAvatar size="sm" className="!w-10 !h-10 mt-0.5 flex-shrink-0" animate />
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-foreground mb-1">Ger</p>
           <div className="bg-primary/5 border border-primary/10 rounded-2xl rounded-tl-md px-4 py-3">
             <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
               {formatMessage(greetingMessage)}
@@ -222,7 +219,7 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
 
       {/* Snelkeuze opties — gekleurde kaarten */}
       {!hasMessages && proactiveActions.length > 0 && (
-        <div className="ml-15 pl-[3.75rem] mb-4">
+        <div className="pl-[3.25rem] mb-4">
           <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Kies een optie of type jouw vraag:</p>
           <div className="grid gap-2">
             {proactiveActions.map((action, i) => {
@@ -280,13 +277,13 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
               <div
                 key={message.id}
                 className={cn(
-                  "flex gap-2 items-start",
+                  "flex gap-3 items-start",
                   message.role === "user" && "flex-row-reverse"
                 )}
               >
                 <div
                   className={cn(
-                    "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+                    "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0",
                     message.role === "user"
                       ? "bg-primary text-primary-foreground"
                       : "bg-primary/10"
@@ -297,12 +294,12 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   ) : (
-                    <GerAvatar size="xs" className="!w-8 !h-8" />
+                    <GerAvatar size="xs" className="!w-10 !h-10" />
                   )}
                 </div>
 
                 <div className={cn(
-                  "max-w-[85%] flex flex-col gap-1.5",
+                  "flex-1 min-w-0 flex flex-col gap-1.5",
                   message.role === "user" && "items-end"
                 )}>
                   {cleanText && (
@@ -361,9 +358,9 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
           })}
 
           {showTypingIndicator && (
-            <div className="flex gap-2 items-start">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <GerAvatar size="xs" className="!w-8 !h-8" />
+            <div className="flex gap-3 items-start">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <GerAvatar size="xs" className="!w-10 !h-10" />
               </div>
               <div className="bg-primary/5 border border-primary/10 rounded-2xl rounded-tl-md px-4 py-3">
                 <div className="flex gap-1.5">
