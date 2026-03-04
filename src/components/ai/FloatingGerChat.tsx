@@ -214,6 +214,8 @@ export function FloatingGerChat() {
               if (!rawText) return null
               const { cleanText: textWithoutCards, kaarten } = parseHulpkaarten(rawText)
               const { cleanText, buttons } = parseButtons(textWithoutCards)
+              const actieKnoppen = buttons.filter(b => b.type === "knop").slice(0, 1)
+              const vraagKnoppen = buttons.filter(b => b.type === "vraag").slice(0, 2)
 
               return (
                 <div key={message.id}>
@@ -222,16 +224,10 @@ export function FloatingGerChat() {
                       {formatMessage(cleanText)}
                     </div>
                   )}
-                  {kaarten.length > 0 && (
-                    <div className="flex flex-col gap-2 mt-2">
-                      {kaarten.map((kaart, i) => (
-                        <HulpKaart key={i} kaart={kaart} />
-                      ))}
-                    </div>
-                  )}
-                  {buttons.length > 0 && (
+                  {/* Actieknop — max 1, direct na tekst */}
+                  {actieKnoppen.length > 0 && (
                     <div className="flex flex-col gap-1.5 mt-3">
-                      {buttons.map((btn, i) => (
+                      {actieKnoppen.map((btn, i) => (
                         <button
                           key={i}
                           onClick={() => handleButtonClick(btn)}
@@ -242,19 +238,40 @@ export function FloatingGerChat() {
                             isLoading && "opacity-50 cursor-not-allowed"
                           )}
                         >
-                          <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold flex-shrink-0">
-                            {i + 1}
-                          </span>
-                          <span className="flex-1">{btn.label}</span>
-                          {btn.type === "knop" ? (
-                            <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                            </svg>
-                          ) : (
-                            <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
+                          <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                          </svg>
+                          <span className="flex-1 font-medium">{btn.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {/* Hulpkaarten — max 2 */}
+                  {kaarten.length > 0 && (
+                    <div className="flex flex-col gap-2 mt-2">
+                      {kaarten.slice(0, 2).map((kaart, i) => (
+                        <HulpKaart key={i} kaart={kaart} />
+                      ))}
+                    </div>
+                  )}
+                  {/* Vraagknoppen — max 2, onderaan */}
+                  {vraagKnoppen.length > 0 && (
+                    <div className="flex flex-col gap-1.5 mt-3">
+                      {vraagKnoppen.map((btn, i) => (
+                        <button
+                          key={i}
+                          onClick={() => handleButtonClick(btn)}
+                          disabled={isLoading}
+                          className={cn(
+                            "flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-sm transition-all text-left",
+                            "bg-muted/60 border border-border/50 text-foreground hover:border-border hover:bg-muted",
+                            isLoading && "opacity-50 cursor-not-allowed"
                           )}
+                        >
+                          <svg className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          </svg>
+                          <span className="flex-1">{btn.label}</span>
                         </button>
                       ))}
                     </div>

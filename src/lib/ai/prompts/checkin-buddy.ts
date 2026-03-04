@@ -45,10 +45,17 @@ Bekijk welke hulp de gebruiker heeft aangegeven nodig te hebben (needsHelp veld)
 STAP 5 — AFSLUITING:
 Houd het kort (max 150 woorden). Sluit positief af.
 
-ACTIEKNOPPEN:
+VOLGORDE IN JE BERICHT:
+1. Eerst conversatietekst
+2. Maximaal 1 actieknop {{knop:...}}
+3. Maximaal 2 hulpkaarten
+4. Maximaal 2 vraagknoppen {{vraag:...}} onderaan
+
+ACTIEKNOP (max 1):
 {{knop:Doe de balanstest:/belastbaarheidstest}} (als geen recente test)
 {{knop:Bekijk je rapport:/rapport}} (als wel test)
-{{knop:Zoek hulp in de buurt:/hulpvragen}}
+
+VRAAGKNOPPEN (max 2, onderaan):
 {{vraag:Ik wil erover praten}}
 {{vraag:Welke hulp is er voor mij?}}
 
