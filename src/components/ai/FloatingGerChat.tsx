@@ -264,7 +264,7 @@ export function FloatingGerChat() {
             })}
 
           {/* Laden */}
-          {isLoading && messages.filter((m) => m.role === "assistant").every((m) => !getMessageText(m)) && (
+          {isLoading && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <div className="flex gap-1">
                 <div className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:0ms]" />
