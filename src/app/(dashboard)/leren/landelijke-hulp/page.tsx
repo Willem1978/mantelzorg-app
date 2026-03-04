@@ -44,10 +44,10 @@ export default function LandelijkeHulpPage() {
 
     const loadData = async () => {
       try {
-        const res = await fetch("/api/hulpbronnen/landelijk")
+        const res = await fetch("/api/beheer/hulpbronnen?modus=landelijk&actief=true")
         if (res.ok) {
           const data = await res.json()
-          const items: LandelijkeHulpbron[] = data.landelijk || []
+          const items: LandelijkeHulpbron[] = data.hulpbronnen || []
           setHulpbronnen(items)
 
           // Favorieten check
