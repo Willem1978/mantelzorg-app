@@ -426,12 +426,41 @@ PAGINA'S:
 
 /**
  * Bouwt de MantelCoach prompt met gemeente- en pagina-context.
+ *
+ * @param gemeenteMantelzorger - Gemeente waar de mantelzorger woont (voor hulp aan de mantelzorger zelf)
+ * @param gemeenteNaaste - Gemeente waar de naaste woont (voor hulp bij zorgtaken)
+ * @param pagina - Huidige pagina van de gebruiker
+ * @param gemeenteContactBlok - Pre-fetched gemeente contact info (mantelzorgloket etc.)
  */
-export function buildBalanscoachPrompt(gemeente: string | null, pagina?: string | null): string {
+export function buildBalanscoachPrompt(
+  gemeenteMantelzorger: string | null,
+  gemeenteNaaste: string | null,
+  pagina?: string | null,
+  gemeenteContactBlok?: string | null,
+): string {
   let prompt = MANTELCOACH_PROMPT
 
-  if (gemeente) {
-    prompt += `\n\nDeze mantelzorger woont in gemeente: ${gemeente}. Zoek hulp en advies voor deze gemeente.`
+  if (gemeenteMantelzorger || gemeenteNaaste) {
+    prompt += `\n\n═══════════════════════════════════════════
+LOCATIE — TWEE GEMEENTEN
+═══════════════════════════════════════════`
+    if (gemeenteMantelzorger) {
+      prompt += `\nDe mantelzorger woont in: ${gemeenteMantelzorger}`
+      prompt += `\n→ Zoek hulp VOOR de mantelzorger (steunpunt, lotgenoten, emotioneel) in ${gemeenteMantelzorger}`
+    }
+    if (gemeenteNaaste && gemeenteNaaste !== gemeenteMantelzorger) {
+      prompt += `\nDe naaste (zorgvrager) woont in: ${gemeenteNaaste}`
+      prompt += `\n→ Zoek hulp BIJ zorgtaken (verzorging, boodschappen, dagbesteding) in ${gemeenteNaaste}`
+    } else if (gemeenteNaaste) {
+      prompt += `\nDe naaste woont ook in ${gemeenteNaaste}.`
+    }
+    prompt += `\n\nMANTELZORGLOKET: De mantelzorger kan altijd terecht bij het mantelzorgloket in de gemeente van de naaste (${gemeenteNaaste || gemeenteMantelzorger}).`
+    prompt += `\nGebruik de tool bekijkGemeenteAdvies om het gemeente-specifieke advies en de gekoppelde organisatie op te halen.`
+    prompt += `\nDit advies is ingesteld door de gemeente en is HET EERSTE wat je noemt bij hulpvragen.`
+  }
+
+  if (gemeenteContactBlok) {
+    prompt += gemeenteContactBlok
   }
 
   if (pagina) {

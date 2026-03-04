@@ -23,7 +23,9 @@ import {
   createSemantischZoekenTool,
   createRegistreerAlarmTool,
   createGenereerRapportSamenvattingTool,
+  createBekijkGemeenteAdviesTool,
 } from "@/lib/ai/tools"
+import { resolveGemeenteContact } from "@/lib/ai/gemeente-resolver"
 
 export const maxDuration = 45
 
@@ -93,11 +95,12 @@ export async function POST(req: Request) {
     return { role: msg.role, content: "" }
   })
 
-  // PRE-FETCH: haal gemeente + gebruikersstatus tegelijk op
+  // PRE-FETCH: haal gemeente + gebruikersstatus + gemeenteContact tegelijk op
   // Dit bespaart de AI 1-2 tool calls = 10-15 seconden sneller
   let gemeenteMantelzorger: string | null = null
   let gemeenteZorgvrager: string | null = null
   let statusContext = ""
+  let gemeenteContactBlok = ""
 
   try {
     const [caregiver, gebruikerStatus] = await Promise.all([
@@ -111,6 +114,25 @@ export async function POST(req: Request) {
     gemeenteMantelzorger = caregiver?.municipality || caregiver?.city || null
     gemeenteZorgvrager = caregiver?.careRecipientMunicipality || caregiver?.careRecipientCity || gemeenteMantelzorger
 
+    // Pre-fetch gemeenteContact (mantelzorgloket) op basis van belastingniveau
+    const gemeenteVoorContact = gemeenteZorgvrager || gemeenteMantelzorger
+    const niveau = gebruikerStatus?.balanstest && "niveau" in gebruikerStatus.balanstest
+      ? gebruikerStatus.balanstest.niveau as string
+      : null
+    if (gemeenteVoorContact && niveau) {
+      const gemeenteContact = await resolveGemeenteContact(gemeenteVoorContact, niveau)
+      if (gemeenteContact) {
+        const dienst = gemeenteContact.beschrijving || gemeenteContact.adviesTekst || `Mantelzorgloket gemeente ${gemeenteContact.gemeente}`
+        gemeenteContactBlok = `\n\n--- GEMEENTE HULPVERLENER (AUTOMATISCH GELADEN) ---
+Dit is het mantelzorgloket/de hulpverlener gekoppeld aan gemeente ${gemeenteContact.gemeente} voor niveau ${niveau}:
+{{hulpkaart:${gemeenteContact.naam}|${dienst}||${gemeenteContact.telefoon || ""}|${gemeenteContact.website || ""}|${gemeenteContact.gemeente || ""}||}}
+${gemeenteContact.email ? `Email: ${gemeenteContact.email}` : ""}
+${gemeenteContact.adviesTekst ? `Gemeente-advies: ${gemeenteContact.adviesTekst}` : ""}
+Verwijs de mantelzorger ALTIJD naar deze hulpverlener bij hulpvragen.
+--- EINDE GEMEENTE HULPVERLENER ---`
+      }
+    }
+
     // Bouw de status-context die in de prompt wordt geïnjecteerd
     statusContext = `\n\n--- GEBRUIKERSSTATUS (AUTOMATISCH GELADEN) ---
 Je HOEFT bekijkGebruikerStatus NIET aan te roepen. De data is hier:
@@ -123,10 +145,8 @@ Gebruik deze data direct om de juiste flow te kiezen. Roep bekijkGebruikerStatus
     statusContext = "\n\nLet op: de status kon niet vooraf worden geladen. Roep bekijkGebruikerStatus aan."
   }
 
-  const gemeente = gemeenteZorgvrager || gemeenteMantelzorger
-
   try {
-    const systemPrompt = buildBalanscoachPrompt(gemeente, pagina) + statusContext
+    const systemPrompt = buildBalanscoachPrompt(gemeenteMantelzorger, gemeenteZorgvrager, pagina, gemeenteContactBlok) + statusContext
 
     const result = streamText({
       model: anthropic("claude-sonnet-4-20250514"),
@@ -140,9 +160,10 @@ Gebruik deze data direct om de juiste flow te kiezen. Roep bekijkGebruikerStatus
         bekijkTestTrend: createBekijkTestTrendTool({ userId }),
         zoekHulpbronnen: createZoekHulpbronnenTool({ gemeenteZorgvrager, gemeenteMantelzorger }),
         zoekArtikelen: createZoekArtikelenTool(),
-        semantischZoeken: createSemantischZoekenTool(gemeente),
+        semantischZoeken: createSemantischZoekenTool(gemeenteZorgvrager || gemeenteMantelzorger),
         registreerAlarm: createRegistreerAlarmTool({ userId }),
         genereerRapportSamenvatting: createGenereerRapportSamenvattingTool({ userId }),
+        bekijkGemeenteAdvies: createBekijkGemeenteAdviesTool({ gemeenteZorgvrager, gemeenteMantelzorger }),
       },
     })
 
