@@ -118,7 +118,7 @@ export function BalansThermometer({
               <div
                 key={dg.naam}
                 className="rounded-xl p-2.5 text-center"
-                style={{ backgroundColor: `${dgConfig.color}12` }}
+                style={{ backgroundColor: dgConfig.bgColor }}
               >
                 <span className="text-lg block">{dg.emoji}</span>
                 <p className="text-xs font-medium text-foreground mt-0.5">{dg.naam}</p>
@@ -148,13 +148,7 @@ export function BalansThermometer({
               <span className="text-lg font-bold block" style={{ color: "var(--accent-green)" }}>
                 {goedCount}
               </span>
-              <p className="text-xs font-medium text-foreground mt-0.5">Licht</p>
-              <span
-                className="text-[10px] font-bold px-1.5 py-0.5 rounded-full inline-block mt-1"
-                style={{ backgroundColor: "rgba(34,197,94,0.15)", color: "var(--accent-green)" }}
-              >
-                💚 Goed
-              </span>
+              <p className="text-xs font-medium text-foreground mt-0.5">Goed</p>
             </div>
             <div
               className="rounded-xl p-2.5 text-center"
@@ -164,12 +158,6 @@ export function BalansThermometer({
                 {matigCount}
               </span>
               <p className="text-xs font-medium text-foreground mt-0.5">Matig</p>
-              <span
-                className="text-[10px] font-bold px-1.5 py-0.5 rounded-full inline-block mt-1"
-                style={{ backgroundColor: "rgba(245,158,11,0.15)", color: "var(--accent-amber)" }}
-              >
-                🧡 Matig
-              </span>
             </div>
             <div
               className="rounded-xl p-2.5 text-center"
@@ -179,12 +167,6 @@ export function BalansThermometer({
                 {zwaarCount}
               </span>
               <p className="text-xs font-medium text-foreground mt-0.5">Zwaar</p>
-              <span
-                className="text-[10px] font-bold px-1.5 py-0.5 rounded-full inline-block mt-1"
-                style={{ backgroundColor: "rgba(239,68,68,0.15)", color: "var(--accent-red)" }}
-              >
-                ❤️ Zwaar
-              </span>
             </div>
           </div>
         </div>

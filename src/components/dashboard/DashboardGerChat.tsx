@@ -94,9 +94,17 @@ function buildProactiveActions(ctx: GerChatContext): { label: string; emoji: str
   return actions
 }
 
+function getGreetingText(): string {
+  const hour = new Date().getHours()
+  if (hour < 12) return "Goedemorgen"
+  if (hour < 18) return "Goedemiddag"
+  return "Goedenavond"
+}
+
 function buildGreetingMessage(ctx: GerChatContext): string {
+  const greeting = getGreetingText()
   const naam = ctx.userName || "daar"
-  return `Hoi ${naam}, fijn dat je er bent! Hoe kan ik jou helpen?`
+  return `${greeting} ${naam}, fijn dat je er bent! Hoe kan ik jou helpen?`
 }
 
 export function DashboardGerChat({ context }: { context?: GerChatContext }) {
