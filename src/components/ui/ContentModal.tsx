@@ -239,7 +239,7 @@ export function ContentModal({
           )}
 
           {/* Details als één samenhangend blok */}
-          {(organisatieNaam || gemeente || kosten || (telefoon && openingstijden)) && (
+          {(organisatieNaam || gemeente || kosten || openingstijden || soortHulp || doelgroepLabel) && (
             <div className="space-y-2 text-sm">
               {gemeente && (
                 <div className="flex gap-2">
@@ -253,13 +253,25 @@ export function ContentModal({
                   <span className="text-foreground">{organisatieNaam}</span>
                 </div>
               )}
+              {soortHulp && (
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground w-28 flex-shrink-0">Soort hulp</span>
+                  <span className="text-foreground">{soortHulp}</span>
+                </div>
+              )}
+              {doelgroepLabel && (
+                <div className="flex gap-2">
+                  <span className="text-muted-foreground w-28 flex-shrink-0">Doelgroep</span>
+                  <span className="text-foreground">{doelgroepLabel}</span>
+                </div>
+              )}
               {kosten && (
                 <div className="flex gap-2">
                   <span className="text-muted-foreground w-28 flex-shrink-0">Kosten</span>
                   <span className="text-foreground">{kosten}</span>
                 </div>
               )}
-              {telefoon && openingstijden && (
+              {openingstijden && (
                 <div className="flex gap-2">
                   <span className="text-muted-foreground w-28 flex-shrink-0">Bereikbaar</span>
                   <span className="text-foreground">{openingstijden}</span>
@@ -269,9 +281,9 @@ export function ContentModal({
           )}
 
           {/* Bronverwijzing */}
-          {!organisatieNaam && bron && (
+          {!organisatieNaam && (bron || bronLabel) && (
             <p className="text-xs text-muted-foreground mt-3">
-              Bron: {bron}
+              Bron: {bronLabel || bron}
             </p>
           )}
         </div>
