@@ -38,11 +38,14 @@ export function parseHulpkaarten(text: string): { cleanText: string; kaarten: Pa
       let dienst = parts[1]?.trim() || ""
       let beschrijving = parts[2]?.trim() || ""
 
-      // Robuustheid: als de AI per ongeluk de beschrijving in het naam-veld zet
-      // (naam > 60 tekens is vrijwel zeker een beschrijving, geen organisatienaam)
+      // Robuustheid: als de AI per ongeluk de beschrijving in het verkeerde veld zet
+      // (> 60 tekens is vrijwel zeker een beschrijving, geen korte naam/dienst)
       if (naam.length > 60 && !beschrijving) {
         beschrijving = naam
         naam = dienst || "Hulpbron"
+        dienst = ""
+      } else if (dienst.length > 60 && !beschrijving) {
+        beschrijving = dienst
         dienst = ""
       }
 
