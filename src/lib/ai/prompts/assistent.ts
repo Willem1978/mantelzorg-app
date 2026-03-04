@@ -144,13 +144,28 @@ APP PAGINA'S:
 - /profiel — Je profiel aanpassen`
 
 /**
- * Bouwt het systeem-prompt met optionele gemeente en pre-fetched context.
+ * Bouwt het systeem-prompt met optionele gemeenten en pre-fetched context.
+ *
+ * @param gemeenteMantelzorger - Gemeente waar de mantelzorger woont
+ * @param gemeenteNaaste - Gemeente waar de naaste woont (voor zorgtaken)
+ * @param contextBlock - Pre-fetched context (balanstest, hulpbronnen, etc.)
  */
-export function buildAssistentPrompt(gemeente: string | null, contextBlock?: string): string {
+export function buildAssistentPrompt(
+  gemeenteMantelzorger: string | null,
+  gemeenteNaaste?: string | null,
+  contextBlock?: string,
+): string {
   let prompt = ASSISTENT_PROMPT
 
-  if (gemeente) {
-    prompt += `\n\nDeze gebruiker woont in gemeente: ${gemeente}. Gebruik dit bij het zoeken naar lokale hulp.`
+  if (gemeenteMantelzorger || gemeenteNaaste) {
+    const gemNaaste = gemeenteNaaste || gemeenteMantelzorger
+    if (gemeenteMantelzorger) {
+      prompt += `\n\nDe mantelzorger woont in: ${gemeenteMantelzorger}. Zoek hulp voor de mantelzorger (steunpunt, emotioneel) in ${gemeenteMantelzorger}.`
+    }
+    if (gemNaaste && gemNaaste !== gemeenteMantelzorger) {
+      prompt += `\nDe naaste woont in: ${gemNaaste}. Zoek hulp bij zorgtaken (verzorging, boodschappen) in ${gemNaaste}.`
+    }
+    prompt += `\nHet mantelzorgloket zit in de gemeente van de naaste (${gemNaaste}).`
   }
 
   if (contextBlock) {

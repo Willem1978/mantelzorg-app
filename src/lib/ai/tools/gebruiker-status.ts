@@ -156,6 +156,10 @@ export async function fetchGebruikerStatus(userId: string) {
       compleet: profielPercentage === 100,
       ontbrekendeVelden,
       gemeente: caregiver.municipality || caregiver.city,
+      woonplaats: caregiver.city || null,
+      gemeenteNaaste: caregiver.careRecipientMunicipality || caregiver.careRecipientCity || null,
+      woonplaatsNaaste: caregiver.careRecipientCity || null,
+      naamNaaste: caregiver.careRecipientName || null,
       aandoening: caregiver.aandoening,
     },
     voorkeuren: {
