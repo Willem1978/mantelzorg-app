@@ -63,61 +63,66 @@ function getGreetingText(): string {
 function buildProactiveActions(ctx: GerChatContext): { label: string; emoji: string; action: string }[] {
   const actions: { label: string; emoji: string; action: string }[] = []
 
-  if (ctx.isFirstVisit || !ctx.hasProfile) {
-    actions.push({ label: "Wat kan ik hier doen?", emoji: "💡", action: "vraag" })
-    actions.push({ label: "Maak mijn profiel aan", emoji: "👤", action: "/profiel" })
-    actions.push({ label: "Start de balanstest", emoji: "📊", action: "/belastbaarheidstest" })
-    return actions
+  // PRIORITEIT 1: Heeft een test → help ze verder (ongeacht profielstatus)
+  if (ctx.hasTest) {
+    if (ctx.zwareTaken && ctx.zwareTaken > 0) {
+      actions.push({ label: "Help me met mijn zware taken", emoji: "🤝", action: "vraag" })
+    }
+    if (!ctx.checkInDone) {
+      actions.push({ label: "Hoe gaat het vandaag?", emoji: "💬", action: "vraag" })
+    }
+    if (ctx.needsNewTest) {
+      actions.push({ label: "Doe een nieuwe balanstest", emoji: "📊", action: "/belastbaarheidstest" })
+    }
+    if (ctx.niveau === "HOOG") {
+      actions.push({ label: "Ik heb hulp nodig", emoji: "❤️", action: "vraag" })
+    }
+    if (actions.length < 3) {
+      actions.push({ label: "Welke hulp is er bij mij in de buurt?", emoji: "🏘️", action: "vraag" })
+    }
+    if (actions.length < 3) {
+      actions.push({ label: "Geef me een tip", emoji: "💡", action: "vraag" })
+    }
+    return actions.slice(0, 3)
   }
 
-  if (!ctx.hasTest) {
+  // PRIORITEIT 2: Geen test maar wel een profiel → stuur aan op test
+  if (ctx.hasProfile) {
     actions.push({ label: "Start de balanstest", emoji: "📊", action: "/belastbaarheidstest" })
     actions.push({ label: "Wat is de balanstest?", emoji: "❓", action: "vraag" })
     actions.push({ label: "Geef me een tip", emoji: "💡", action: "vraag" })
     return actions
   }
 
-  if (ctx.zwareTaken && ctx.zwareTaken > 0) {
-    actions.push({ label: "Help me met mijn zware taken", emoji: "🤝", action: "vraag" })
-  }
-  if (!ctx.checkInDone) {
-    actions.push({ label: "Hoe gaat het vandaag?", emoji: "💬", action: "vraag" })
-  }
-  if (ctx.needsNewTest) {
-    actions.push({ label: "Doe een nieuwe balanstest", emoji: "📊", action: "/belastbaarheidstest" })
-  }
-  if (ctx.niveau === "HOOG") {
-    actions.push({ label: "Ik heb hulp nodig", emoji: "❤️", action: "vraag" })
-  }
-  if (actions.length < 3) {
-    actions.push({ label: "Welke hulp is er bij mij in de buurt?", emoji: "🏘️", action: "vraag" })
-  }
-  if (actions.length < 3) {
-    actions.push({ label: "Geef me een tip", emoji: "💡", action: "vraag" })
-  }
-
-  return actions.slice(0, 3)
+  // PRIORITEIT 3: Helemaal nieuw → welkom
+  actions.push({ label: "Wat kan ik hier doen?", emoji: "💡", action: "vraag" })
+  actions.push({ label: "Maak mijn profiel aan", emoji: "👤", action: "/profiel" })
+  actions.push({ label: "Start de balanstest", emoji: "📊", action: "/belastbaarheidstest" })
+  return actions
 }
 
 function buildGreetingMessage(ctx: GerChatContext): string {
   const greeting = getGreetingText()
   const naam = ctx.userName || "daar"
 
-  if (ctx.isFirstVisit || !ctx.hasProfile) {
-    return `${greeting} ${naam}! Welkom bij MantelBuddy. Ik ben Ger, je persoonlijke mantelzorgcoach. Wat kan ik voor jou doen?\n\nIk help je om beter voor jezelf te zorgen terwijl je voor een ander zorgt. Je kunt me alles vragen over mantelzorg, hulp in je buurt, of hoe je beter voor jezelf kunt zorgen.`
+  // PRIORITEIT 1: Heeft een test → coaching op basis van resultaten
+  if (ctx.hasTest) {
+    if (ctx.niveau === "HOOG") {
+      return `${greeting} ${naam}. Ik zie dat je veel op je bordje hebt. Wat kan ik voor jou doen?\n\nDat is zwaar. Weet dat je er niet alleen voor staat — ik help je graag om hulp te vinden.`
+    }
+    if (ctx.niveau === "GEMIDDELD") {
+      return `${greeting} ${naam}! Je doet heel veel. Wat kan ik voor jou doen?\n\nVergeet niet ook goed voor jezelf te zorgen.`
+    }
+    return `${greeting} ${naam}! Goed bezig, je houdt het goed vol. Wat kan ik voor jou doen?`
   }
 
-  if (!ctx.hasTest) {
+  // PRIORITEIT 2: Geen test maar wel een profiel → stuur aan op test
+  if (ctx.hasProfile) {
     return `${greeting} ${naam}! Fijn dat je er bent. Wat kan ik voor jou doen?\n\nJe hebt nog geen balanstest gedaan. Met de test ontdek je hoe het met je gaat en waar je hulp bij kunt krijgen. Het duurt maar 5 minuten.`
   }
 
-  if (ctx.niveau === "HOOG") {
-    return `${greeting} ${naam}. Ik zie dat je veel op je bordje hebt. Wat kan ik voor jou doen?\n\nDat is zwaar. Weet dat je er niet alleen voor staat — ik help je graag om hulp te vinden.`
-  }
-  if (ctx.niveau === "GEMIDDELD") {
-    return `${greeting} ${naam}! Je doet heel veel. Wat kan ik voor jou doen?\n\nVergeet niet ook goed voor jezelf te zorgen.`
-  }
-  return `${greeting} ${naam}! Goed bezig, je houdt het goed vol. Wat kan ik voor jou doen?`
+  // PRIORITEIT 3: Helemaal nieuw → welkom
+  return `${greeting} ${naam}! Welkom bij MantelBuddy. Ik ben Ger, je persoonlijke mantelzorgcoach. Wat kan ik voor jou doen?\n\nIk help je om beter voor jezelf te zorgen terwijl je voor een ander zorgt. Je kunt me alles vragen over mantelzorg, hulp in je buurt, of hoe je beter voor jezelf kunt zorgen.`
 }
 
 export function DashboardGerChat({ context }: { context?: GerChatContext }) {
