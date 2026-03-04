@@ -51,6 +51,7 @@ returns table (
   similarity float
 )
 language plpgsql
+set search_path = public, extensions
 as $$
 begin
   return query
@@ -96,6 +97,7 @@ returns table (
   similarity float
 )
 language plpgsql
+set search_path = public, extensions
 as $$
 begin
   return query
@@ -140,6 +142,7 @@ returns table (
   similarity float
 )
 language plpgsql
+set search_path = public, extensions
 as $$
 begin
   return query
