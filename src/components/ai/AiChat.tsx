@@ -125,11 +125,11 @@ export function AiChat() {
         {/* Welkomstbericht */}
         {messages.length === 0 && (
           <div className="flex gap-3 items-start">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <span className="text-lg">🤖</span>
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <span className="text-sm">🤖</span>
             </div>
-            <div className="flex-1">
-              <div className="bg-card rounded-2xl rounded-tl-md p-4 border border-border shadow-sm">
+            <div className="flex-1 min-w-0">
+              <div className="bg-card rounded-2xl rounded-tl-md p-3 border border-border shadow-sm">
                 <p className="font-semibold text-foreground mb-1">Hoi! Ik ben Ger</p>
                 <p className="text-sm text-muted-foreground">
                   Ik help je graag met vragen over mantelzorg. Vraag me bijvoorbeeld
@@ -198,7 +198,7 @@ export function AiChat() {
 
               {/* Bericht + Knoppen */}
               <div className={cn(
-                "max-w-[85%] flex flex-col gap-2",
+                "flex-1 min-w-0 flex flex-col gap-2",
                 message.role === "user" && "items-end"
               )}>
                 {/* Tekst bubble */}
