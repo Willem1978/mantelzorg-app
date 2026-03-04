@@ -10,6 +10,7 @@ import { prisma } from "@/lib/prisma"
 import { berekenDeelgebieden } from "@/lib/dashboard/deelgebieden"
 import { loadCoachAdviezen } from "@/lib/ai/coach-advies"
 import { resolveGemeenteContact } from "@/lib/ai/gemeente-resolver"
+import { fetchOpenActiepunten } from "@/lib/ai/tools/actiepunten"
 import { DEELGEBIED_SLEUTEL_MAP, TAAK_ID_MAP } from "@/lib/ai/types"
 import { ZORGTAKEN, TAAK_NAAM_VARIANTEN } from "@/config/options"
 
@@ -37,7 +38,7 @@ export async function prefetchUserContext(
   // Fallback: als alleen één gemeente wordt meegegeven (backwards compatibility)
   const gemZorgvrager = gemeenteZorgvrager ?? gemeenteMantelzorger
 
-  // 0) Haal gebruiker-voorkeuren op (aandoening, tags)
+  // 0) Haal gebruiker-voorkeuren + organisatiekoppelingen op
   const caregiver = await prisma.caregiver.findFirst({
     where: { userId },
     select: {
@@ -45,8 +46,21 @@ export async function prefetchUserContext(
       voorkeuren: {
         select: { type: true, slug: true },
       },
+      organisationLinks: {
+        where: {
+          organisation: { isActive: true },
+        },
+        select: {
+          organisation: {
+            select: { name: true, description: true, phone: true, website: true },
+          },
+        },
+      },
     },
   })
+
+  // 0b) Haal openstaande actiepunten op voor opvolging
+  const actiepunten = await fetchOpenActiepunten(userId)
 
   // 1) Haal de laatste balanstest op
   const test = await prisma.belastbaarheidTest.findFirst({
@@ -78,12 +92,25 @@ export async function prefetchUserContext(
     // Zorgtaken-hulp → gemeente zorgvrager, mantelzorger-hulp → gemeente mantelzorger
     const alleHulp = await fetchAlleHulpbronnenPerCategorie(gemZorgvrager)
     const mantelzorgerHulp = await fetchMantelzorgerHulp(gemeenteMantelzorger)
+    // Haal gemeente contact op (zonder niveau — gebruik GEMIDDELD als default)
+    const gemeenteVoorContact = gemZorgvrager || gemeenteMantelzorger
+    const gemeenteContact = gemeenteVoorContact
+      ? await resolveGemeenteContact(gemeenteVoorContact, "GEMIDDELD")
+      : null
     return {
       heeftTest: false as const,
       alleHulpPerCategorie: alleHulp,
       hulpVoorMantelzorger: mantelzorgerHulp,
+      gemeenteContact,
       aandoening: caregiver?.aandoening || null,
       voorkeuren: caregiver?.voorkeuren || [],
+      actiepunten,
+      externeHulp: caregiver?.organisationLinks?.map((l) => ({
+        naam: l.organisation.name,
+        beschrijving: l.organisation.description,
+        telefoon: l.organisation.phone,
+        website: l.organisation.website,
+      })) || [],
     }
   }
 
@@ -217,6 +244,13 @@ export async function prefetchUserContext(
     })),
     aandoening: caregiver?.aandoening || null,
     voorkeuren: caregiver?.voorkeuren || [],
+    actiepunten,
+    externeHulp: caregiver?.organisationLinks?.map((l) => ({
+      naam: l.organisation.name,
+      beschrijving: l.organisation.description,
+      telefoon: l.organisation.phone,
+      website: l.organisation.website,
+    })) || [],
   }
 }
 
@@ -318,14 +352,24 @@ export function buildContextBlock(ctx: Awaited<ReturnType<typeof prefetchUserCon
   // Voorkeurenblok (voor beide paden)
   const voorkeurenBlock = buildVoorkeurenBlock(ctx.aandoening, ctx.voorkeuren)
 
+  // Actiepunten blok (voor beide paden)
+  const actiepuntenBlock = buildActiepuntenBlock(ctx.actiepunten)
+  // Externe hulp blok (voor beide paden)
+  const externeHulpBlock = buildExterneHulpBlock(ctx.externeHulp)
+
   if (!ctx.heeftTest) {
     let block = `\n\n--- GEBRUIKERSCONTEXT ---
 Deze gebruiker heeft nog GEEN balanstest gedaan. Moedig aan om de test te doen via /belastbaarheidstest (duurt 5 minuten).`
 
     block += voorkeurenBlock
+    block += actiepuntenBlock
+    block += externeHulpBlock
     // Toch hulpbronnen tonen als die er zijn
     block += buildHulpPerCategorieBlock(ctx.alleHulpPerCategorie)
     block += buildMantelzorgerHulpBlock(ctx.hulpVoorMantelzorger)
+    if (ctx.gemeenteContact) {
+      block += buildGemeenteContactBlock(ctx.gemeenteContact)
+    }
     block += `\n--- EINDE CONTEXT ---`
     return block
   }
@@ -342,6 +386,8 @@ BALANSTEST (${ctx.testDatum}):
   }
 
   block += voorkeurenBlock
+  block += actiepuntenBlock
+  block += externeHulpBlock
 
   block += `\n\nDEELGEBIEDEN:`
   for (const d of ctx.deelgebieden) {
@@ -376,11 +422,7 @@ BALANSTEST (${ctx.testDatum}):
   block += buildMantelzorgerHulpBlock(ctx.hulpVoorMantelzorger)
 
   if (ctx.gemeenteContact) {
-    const gc = ctx.gemeenteContact
-    const dienst = gc.beschrijving || gc.adviesTekst || `Hulpverlener gemeente ${gc.gemeente}`
-    block += `\n\nGEMEENTE HULPVERLENER — kopieer letterlijk:`
-    block += `\n  {{hulpkaart:${gc.naam}|${dienst}||${gc.telefoon || ""}|${gc.website || ""}|${gc.gemeente || ""}||}}`
-    if (gc.email) block += `\n  Email: ${gc.email}`
+    block += buildGemeenteContactBlock(ctx.gemeenteContact)
   }
 
   if (ctx.alarmen.length > 0) {
@@ -451,5 +493,39 @@ function buildMantelzorgerHulpBlock(hulp: any[]): string {
   for (const b of hulp) {
     block += `\n  ${formatHulpkaart(b)}`
   }
+  return block
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildActiepuntenBlock(actiepunten: any[]): string {
+  if (!actiepunten || actiepunten.length === 0) return ""
+
+  let block = `\n\nOPENSTAANDE ACTIEPUNTEN (uit vorige gesprekken):
+Begin het gesprek met opvolging! Vraag: "Vorige keer spraken we over [actie]. Is dat gelukt?"`
+  for (const a of actiepunten) {
+    const datum = a.createdAt
+      ? new Date(a.createdAt).toLocaleDateString("nl-NL", { day: "numeric", month: "long" })
+      : ""
+    block += `\n- ${a.title}${a.description ? ` (${a.description})` : ""}${datum ? ` — ${datum}` : ""}`
+  }
+  return block
+}
+
+function buildExterneHulpBlock(externeHulp: { naam: string; beschrijving?: string | null; telefoon?: string | null; website?: string | null }[]): string {
+  if (!externeHulp || externeHulp.length === 0) return ""
+
+  let block = `\n\nEXTERNE HULP DIE DEZE GEBRUIKER AL ONTVANGT:
+Pas je advies hierop aan — deze mantelzorger is NIET nieuw in het zoeken van hulp.`
+  for (const h of externeHulp) {
+    block += `\n- ${h.naam}${h.beschrijving ? `: ${h.beschrijving}` : ""}`
+  }
+  return block
+}
+
+function buildGemeenteContactBlock(gc: { naam: string; telefoon: string | null; email: string | null; website: string | null; beschrijving: string | null; gemeente: string }): string {
+  const dienst = gc.beschrijving || `Hulpverlener gemeente ${gc.gemeente}`
+  let block = `\n\nGEMEENTE HULPVERLENER — kopieer letterlijk:`
+  block += `\n  {{hulpkaart:${gc.naam}|${dienst}||${gc.telefoon || ""}|${gc.website || ""}|${gc.gemeente || ""}||}}`
+  if (gc.email) block += `\n  Email: ${gc.email}`
   return block
 }

@@ -75,7 +75,7 @@ export async function POST(req: Request) {
       model: anthropic("claude-sonnet-4-20250514"),
       system: buildCheckinBuddyPrompt(gemeenteZorgvrager || gemeenteMantelzorger),
       messages,
-      maxOutputTokens: 1000,
+      maxOutputTokens: 1500,
       stopWhen: stepCountIs(5),
       tools: {
         bekijkBalanstest: createBekijkBalanstestTool({ userId, gemeenteZorgvrager, gemeenteMantelzorger }),
