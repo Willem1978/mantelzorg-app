@@ -53,13 +53,6 @@ export interface GerChatContext {
   isFirstVisit?: boolean
 }
 
-function getGreetingText(): string {
-  const hour = new Date().getHours()
-  if (hour < 12) return "Goedemorgen"
-  if (hour < 18) return "Goedemiddag"
-  return "Goedenavond"
-}
-
 function buildProactiveActions(ctx: GerChatContext): { label: string; emoji: string; action: string; color: string }[] {
   const actions: { label: string; emoji: string; action: string; color: string }[] = []
 
@@ -102,27 +95,8 @@ function buildProactiveActions(ctx: GerChatContext): { label: string; emoji: str
 }
 
 function buildGreetingMessage(ctx: GerChatContext): string {
-  const greeting = getGreetingText()
   const naam = ctx.userName || "daar"
-
-  // PRIORITEIT 1: Heeft een test → coaching op basis van resultaten
-  if (ctx.hasTest) {
-    if (ctx.niveau === "HOOG") {
-      return `${greeting} ${naam}. Je hebt veel op je bordje. Ik help je graag. Wat kan ik voor je doen?`
-    }
-    if (ctx.niveau === "GEMIDDELD") {
-      return `${greeting} ${naam}! Je doet veel. Zorg ook goed voor jezelf. Wat kan ik voor je doen?`
-    }
-    return `${greeting} ${naam}! Goed bezig, je houdt het goed vol. Wat kan ik voor jou doen?`
-  }
-
-  // PRIORITEIT 2: Geen test maar wel een profiel → stuur aan op test
-  if (ctx.hasProfile) {
-    return `${greeting} ${naam}! Fijn dat je er bent. Wat kan ik voor jou doen?\n\nJe hebt nog geen balanstest gedaan. Met de test ontdek je hoe het met je gaat en waar je hulp bij kunt krijgen. Het duurt maar 5 minuten.`
-  }
-
-  // PRIORITEIT 3: Helemaal nieuw → welkom
-  return `${greeting} ${naam}! Welkom bij MantelBuddy. Ik ben Ger, je persoonlijke mantelzorgcoach. Wat kan ik voor jou doen?\n\nIk help je om beter voor jezelf te zorgen terwijl je voor een ander zorgt. Je kunt me alles vragen over mantelzorg, hulp in je buurt, of hoe je beter voor jezelf kunt zorgen.`
+  return `Hoi ${naam}, fijn dat je er bent! Hoe kan ik jou helpen?`
 }
 
 export function DashboardGerChat({ context }: { context?: GerChatContext }) {
@@ -204,11 +178,10 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
 
   return (
     <div className="flex flex-col">
-      {/* Ger intro — prominent, onderdeel van de pagina */}
+      {/* Ger intro — begroeting */}
       <div className="flex items-start gap-3 mb-3">
         <GerAvatar size="sm" className="!w-10 !h-10 mt-0.5 flex-shrink-0" animate />
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-foreground mb-1">Ger</p>
           <div className="bg-primary/5 border border-primary/10 rounded-2xl rounded-tl-md px-4 py-3">
             <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
               {formatMessage(greetingMessage)}
@@ -405,7 +378,7 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Of stel je vraag hier..."
+            placeholder="Type jouw vraag hier..."
             className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none text-sm py-1"
             disabled={isLoading}
             autoComplete="off"
