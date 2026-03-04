@@ -88,7 +88,7 @@ export async function POST(req: Request) {
       system: buildAssistentPrompt(gemeenteMantelzorger, gemeenteZorgvrager, contextBlock),
       messages,
       maxOutputTokens: 2048,
-      stopWhen: stepCountIs(3),
+      stopWhen: stepCountIs(7),
       tools: {
         // Tools beschikbaar voor extra zoekopdrachten (niet nodig voor standaard vragen)
         bekijkTestTrend: createBekijkTestTrendTool({ userId }),

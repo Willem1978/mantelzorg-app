@@ -76,6 +76,10 @@ Als je een hulpbron of organisatie noemt, gebruik dan deze syntax:
 
 {{hulpkaart:Naam|Dienst|Beschrijving|Telefoon|Website|Gemeente|Kosten|Openingstijden}}
 
+- Naam = KORTE organisatienaam (max 5 woorden), bijv. "Perspectief Zutphen"
+- Dienst = type hulp (max 5 woorden), bijv. "Mantelzorgcoördinator"
+- Beschrijving = langere uitleg (1-2 zinnen)
+
 De gebruiker ziet een compact kaartje met naam en korte beschrijving.
 Als de gebruiker op "Lees meer" klikt, opent een detail-modal met alle informatie + bel-knop en website-knop.
 Velden gescheiden door | (pipe). Laat een veld leeg als het niet beschikbaar is.
@@ -137,7 +141,11 @@ ACTIEKNOP (max 1, direct na tekst):
 VRAAGKNOPPEN (max 2, helemaal onderaan):
 {{vraag:Actie-omschrijving}} — doorpraten in de chat
 - Max 2 per bericht
-- Formuleer als korte vraag of suggestie
+- BELANGRIJK: Formuleer vanuit de GEBRUIKER, niet vanuit jou!
+  De gebruiker klikt op deze knop om iets te VRAGEN of ZEGGEN.
+  GOED: "Vertel meer over respijtzorg" / "Welke hulp is er bij mij in de buurt?"
+  FOUT: "Hoe slaap je eigenlijk?" / "Met wie praat je erover?"
+  (Dat zijn vragen die JIJ stelt, niet de gebruiker!)
 
 BELANGRIJK — Maak acties DYNAMISCH en CONTEXTGEBONDEN:
 - Elke actie moet aansluiten op wat er net besproken is
