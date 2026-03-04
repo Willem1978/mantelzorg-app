@@ -148,7 +148,7 @@ export function BalansThermometer({
       {zorgtaken.length > 0 && (
         <div>
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-            Jouw {zorgtaken.length} zorgtaken
+            Jouw zorgtaken
           </p>
           <div className="grid grid-cols-3 gap-2">
             <div
