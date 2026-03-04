@@ -90,21 +90,17 @@ export function BalansThermometer({
           </div>
         </div>
 
-        {/* Thermometer balk */}
+        {/* Thermometer balk — één kleur, dikker */}
         <div className="relative">
-          <div className="h-3 rounded-full overflow-hidden flex bg-background/50 border border-border/30">
-            <div className="h-full rounded-l-full" style={{ width: "33.3%", backgroundColor: "var(--accent-green)" }} />
-            <div className="h-full" style={{ width: "33.4%", backgroundColor: "var(--accent-amber)" }} />
-            <div className="h-full rounded-r-full" style={{ width: "33.3%", backgroundColor: "var(--accent-red)" }} />
+          <div className="h-5 rounded-full overflow-hidden bg-muted/40 border border-border/30">
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{
+                width: `${Math.max(6, percentage)}%`,
+                backgroundColor: config.color,
+              }}
+            />
           </div>
-          <div
-            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-white shadow-md transition-all duration-700"
-            style={{
-              left: `${Math.max(4, Math.min(percentage, 96))}%`,
-              borderColor: config.color,
-              borderWidth: "3px",
-            }}
-          />
         </div>
         <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
           <span>Goed</span>
@@ -138,29 +134,58 @@ export function BalansThermometer({
         </div>
       )}
 
-      {/* Taken teller: groen / oranje / rood */}
+      {/* Zorgtaken in drie hokjes: licht / matig / zwaar */}
       {zorgtaken.length > 0 && (
-        <div className="flex items-center justify-between pt-2 border-t border-border/30">
-          <span className="text-xs text-muted-foreground">{zorgtaken.length} zorgtaken</span>
-          <div className="flex items-center gap-3">
-            {goedCount > 0 && (
-              <div className="flex items-center gap-1">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "var(--accent-green)" }} />
-                <span className="text-sm font-semibold text-foreground">{goedCount}</span>
-              </div>
-            )}
-            {matigCount > 0 && (
-              <div className="flex items-center gap-1">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "var(--accent-amber)" }} />
-                <span className="text-sm font-semibold text-foreground">{matigCount}</span>
-              </div>
-            )}
-            {zwaarCount > 0 && (
-              <div className="flex items-center gap-1">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: "var(--accent-red)" }} />
-                <span className="text-sm font-semibold text-foreground">{zwaarCount}</span>
-              </div>
-            )}
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            {zorgtaken.length} zorgtaken
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            <div
+              className="rounded-xl p-2.5 text-center"
+              style={{ backgroundColor: "var(--accent-green-bg)" }}
+            >
+              <span className="text-lg font-bold block" style={{ color: "var(--accent-green)" }}>
+                {goedCount}
+              </span>
+              <p className="text-xs font-medium text-foreground mt-0.5">Licht</p>
+              <span
+                className="text-[10px] font-bold px-1.5 py-0.5 rounded-full inline-block mt-1"
+                style={{ backgroundColor: "rgba(34,197,94,0.15)", color: "var(--accent-green)" }}
+              >
+                💚 Goed
+              </span>
+            </div>
+            <div
+              className="rounded-xl p-2.5 text-center"
+              style={{ backgroundColor: "var(--accent-amber-bg)" }}
+            >
+              <span className="text-lg font-bold block" style={{ color: "var(--accent-amber)" }}>
+                {matigCount}
+              </span>
+              <p className="text-xs font-medium text-foreground mt-0.5">Matig</p>
+              <span
+                className="text-[10px] font-bold px-1.5 py-0.5 rounded-full inline-block mt-1"
+                style={{ backgroundColor: "rgba(245,158,11,0.15)", color: "var(--accent-amber)" }}
+              >
+                🧡 Matig
+              </span>
+            </div>
+            <div
+              className="rounded-xl p-2.5 text-center"
+              style={{ backgroundColor: "var(--accent-red-bg)" }}
+            >
+              <span className="text-lg font-bold block" style={{ color: "var(--accent-red)" }}>
+                {zwaarCount}
+              </span>
+              <p className="text-xs font-medium text-foreground mt-0.5">Zwaar</p>
+              <span
+                className="text-[10px] font-bold px-1.5 py-0.5 rounded-full inline-block mt-1"
+                style={{ backgroundColor: "rgba(239,68,68,0.15)", color: "var(--accent-red)" }}
+              >
+                ❤️ Zwaar
+              </span>
+            </div>
           </div>
         </div>
       )}
