@@ -308,8 +308,8 @@ export function FloatingGerChat() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Stel je vraag..."
-            className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+            placeholder="Typ je vraag aan Ger..."
+            className="flex-1 px-3 py-2 bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none text-sm"
             disabled={isLoading}
             autoComplete="off"
           />
@@ -317,14 +317,15 @@ export function FloatingGerChat() {
             type="submit"
             disabled={isLoading || !input.trim()}
             className={cn(
-              "p-2 rounded-lg transition-all flex-shrink-0",
+              "flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all flex-shrink-0",
               input.trim() && !isLoading
-                ? "bg-primary text-primary-foreground"
+                ? "bg-primary text-primary-foreground hover:opacity-90"
                 : "bg-muted text-muted-foreground"
             )}
           >
+            Verstuur
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
           </button>
         </form>
