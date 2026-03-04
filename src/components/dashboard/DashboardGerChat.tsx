@@ -38,7 +38,7 @@ function parseButtons(text: string): { cleanText: string; buttons: ParsedButton[
     }
     return ""
   })
-  return { cleanText: cleanText.trimEnd(), buttons }
+  return { cleanText: cleanText.replace(/\n{3,}/g, "\n\n").trim(), buttons }
 }
 
 export interface GerChatContext {
@@ -66,19 +66,19 @@ function buildProactiveActions(ctx: GerChatContext): { label: string; emoji: str
   // PRIORITEIT 1: Heeft een test → help ze verder (ongeacht profielstatus)
   if (ctx.hasTest) {
     if (ctx.zwareTaken && ctx.zwareTaken > 0) {
-      actions.push({ label: "Help bij zware taken", emoji: "🤝", action: "vraag", color: "amber" })
+      actions.push({ label: "Help me met mijn zware taken", emoji: "🤝", action: "vraag", color: "amber" })
     }
     if (!ctx.checkInDone) {
       actions.push({ label: "Hoe gaat het vandaag?", emoji: "💬", action: "vraag", color: "blue" })
     }
     if (ctx.needsNewTest) {
-      actions.push({ label: "Nieuwe balanstest", emoji: "📊", action: "/belastbaarheidstest", color: "purple" })
+      actions.push({ label: "Doe een nieuwe balanstest", emoji: "📊", action: "/belastbaarheidstest", color: "purple" })
     }
     if (ctx.niveau === "HOOG") {
-      actions.push({ label: "Ik heb direct hulp nodig", emoji: "❤️", action: "vraag", color: "rose" })
+      actions.push({ label: "Ik heb hulp nodig", emoji: "❤️", action: "vraag", color: "rose" })
     }
     if (actions.length < 3) {
-      actions.push({ label: "Bekijk hulp in de buurt", emoji: "🏘️", action: "vraag", color: "sky" })
+      actions.push({ label: "Welke hulp is er bij mij in de buurt?", emoji: "🏘️", action: "vraag", color: "sky" })
     }
     if (actions.length < 3) {
       actions.push({ label: "Geef me een tip", emoji: "💡", action: "vraag", color: "amber" })
@@ -159,6 +159,14 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
 
   const isLoading = status === "submitted" || status === "streaming"
   const hasMessages = messages.length > 0
+
+  // Toon laad-bolletjes alleen als er nog geen tekst in het laatste assistant-bericht staat.
+  // Dit voorkomt dat de bolletjes blijven draaien terwijl de AI tools aanroept NA de tekst.
+  const lastAssistantMsg = [...messages].reverse().find(m => m.role === "assistant")
+  const lastAssistantHasText = lastAssistantMsg?.parts?.some(
+    (p): p is { type: "text"; text: string } => p.type === "text" && !!p.text.trim()
+  ) ?? false
+  const showTypingIndicator = isLoading && !lastAssistantHasText
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -329,11 +337,11 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
                         <button
                           key={i}
                           onClick={() => handleButtonClick(btn)}
-                          disabled={isLoading}
+                          disabled={showTypingIndicator}
                           className={cn(
                             "flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-sm transition-all text-left",
                             "border-2 border-border bg-card hover:bg-primary/5 hover:border-primary/30",
-                            isLoading && "opacity-50 cursor-not-allowed"
+                            showTypingIndicator && "opacity-50 cursor-not-allowed"
                           )}
                         >
                           <span className="w-6 h-6 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">
@@ -352,7 +360,7 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
             )
           })}
 
-          {isLoading && (
+          {showTypingIndicator && (
             <div className="flex gap-2 items-start">
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <GerAvatar size="xs" className="!w-8 !h-8" />
