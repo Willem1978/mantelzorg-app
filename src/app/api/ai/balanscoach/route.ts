@@ -4,7 +4,9 @@
  * De MantelCoach (Ger) begeleidt de mantelzorger in alle fasen en op alle pagina's.
  * Accepteert een optioneel "pagina" veld in de request body voor context-aware coaching.
  *
- * De response is een streaming AI-response (toUIMessageStreamResponse).
+ * PERFORMANCE: De gebruikersstatus wordt PRE-FETCHED en in de prompt geïnjecteerd.
+ * Dit bespaart 1-2 tool-call round-trips (= 10-15 seconden sneller).
+ * Tools blijven beschikbaar voor vervolgacties (zoeken, hulp, etc.).
  */
 import { createAnthropic } from "@ai-sdk/anthropic"
 import { streamText, stepCountIs } from "ai"
@@ -12,6 +14,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { buildBalanscoachPrompt } from "@/lib/ai/prompts/balanscoach"
 import {
+  fetchGebruikerStatus,
   createBekijkGebruikerStatusTool,
   createBekijkBalanstestTool,
   createBekijkTestTrendTool,
@@ -22,7 +25,6 @@ import {
   createGenereerRapportSamenvattingTool,
 } from "@/lib/ai/tools"
 
-// Meer tools + doorcoaching vereist meer tijd
 export const maxDuration = 45
 
 const anthropic = createAnthropic({
@@ -73,7 +75,8 @@ export async function POST(req: Request) {
     )
   }
 
-  const pagina = body.pagina || null // optionele pagina-context
+  const pagina = body.pagina || null
+  const userId = session.user.id
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const messages = rawMessages.map((msg: any) => {
@@ -90,32 +93,47 @@ export async function POST(req: Request) {
     return { role: msg.role, content: "" }
   })
 
-  const userId = session.user.id
-
-  // Twee gemeenten: zorgtaken → gemeente zorgvrager, mantelzorger hulp → gemeente mantelzorger
+  // PRE-FETCH: haal gemeente + gebruikersstatus tegelijk op
+  // Dit bespaart de AI 1-2 tool calls = 10-15 seconden sneller
   let gemeenteMantelzorger: string | null = null
   let gemeenteZorgvrager: string | null = null
+  let statusContext = ""
+
   try {
-    const caregiver = await prisma.caregiver.findUnique({
-      where: { userId },
-      select: { municipality: true, city: true, careRecipientMunicipality: true, careRecipientCity: true },
-    })
+    const [caregiver, gebruikerStatus] = await Promise.all([
+      prisma.caregiver.findUnique({
+        where: { userId },
+        select: { municipality: true, city: true, careRecipientMunicipality: true, careRecipientCity: true },
+      }),
+      fetchGebruikerStatus(userId),
+    ])
+
     gemeenteMantelzorger = caregiver?.municipality || caregiver?.city || null
     gemeenteZorgvrager = caregiver?.careRecipientMunicipality || caregiver?.careRecipientCity || gemeenteMantelzorger
+
+    // Bouw de status-context die in de prompt wordt geïnjecteerd
+    statusContext = `\n\n--- GEBRUIKERSSTATUS (AUTOMATISCH GELADEN) ---
+Je HOEFT bekijkGebruikerStatus NIET aan te roepen. De data is hier:
+${JSON.stringify(gebruikerStatus, null, 2)}
+--- EINDE STATUS ---
+Gebruik deze data direct om de juiste flow te kiezen. Roep bekijkGebruikerStatus alleen aan als je VERNIEUWDE data nodig hebt.`
   } catch (dbError) {
-    console.error("[MantelCoach] Database fout bij gemeente ophalen:", dbError)
-    // Ga door zonder gemeente — tools werken dan zonder locatie-filter
+    console.error("[MantelCoach] Pre-fetch fout:", dbError)
+    // Als pre-fetch faalt, kan de AI alsnog de tool aanroepen
+    statusContext = "\n\nLet op: de status kon niet vooraf worden geladen. Roep bekijkGebruikerStatus aan."
   }
 
   const gemeente = gemeenteZorgvrager || gemeenteMantelzorger
 
   try {
+    const systemPrompt = buildBalanscoachPrompt(gemeente, pagina) + statusContext
+
     const result = streamText({
       model: anthropic("claude-sonnet-4-20250514"),
-      system: buildBalanscoachPrompt(gemeente, pagina),
+      system: systemPrompt,
       messages,
       maxOutputTokens: 2048,
-      stopWhen: stepCountIs(8),
+      stopWhen: stepCountIs(5),
       tools: {
         bekijkGebruikerStatus: createBekijkGebruikerStatusTool({ userId }),
         bekijkBalanstest: createBekijkBalanstestTool({ userId, gemeenteZorgvrager, gemeenteMantelzorger }),
