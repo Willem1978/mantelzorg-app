@@ -1277,6 +1277,9 @@ function HulpbronCard({ hulp, favorieten, categorie }: {
         website={hulp.website}
         kosten={hulp.kosten}
         openingstijden={hulp.openingstijden}
+        soortHulp={hulp.soortHulp}
+        bronLabel={hulp.bronLabel}
+        doelgroep={hulp.doelgroep}
       />
     </>
   )
@@ -1343,6 +1346,8 @@ function LandelijkeHulpCard({ hulp, favorieten, categorie }: {
         website={hulp.website}
         kosten={hulp.kosten}
         openingstijden={hulp.openingstijden}
+        soortHulp={hulp.soortHulp}
+        bronLabel={hulp.bronLabel}
       />
     </>
   )
