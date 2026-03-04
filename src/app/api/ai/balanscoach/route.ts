@@ -27,7 +27,7 @@ import {
 } from "@/lib/ai/tools"
 import { resolveGemeenteContact } from "@/lib/ai/gemeente-resolver"
 
-export const maxDuration = 45
+export const maxDuration = 60
 
 const anthropic = createAnthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -154,8 +154,8 @@ Gebruik deze data direct om de juiste flow te kiezen. Roep bekijkGebruikerStatus
       model: anthropic("claude-sonnet-4-20250514"),
       system: systemPrompt,
       messages,
-      maxOutputTokens: 2048,
-      stopWhen: stepCountIs(7),
+      maxOutputTokens: 1500,
+      stopWhen: stepCountIs(4),
       tools: {
         bekijkGebruikerStatus: createBekijkGebruikerStatusTool({ userId }),
         bekijkBalanstest: createBekijkBalanstestTool({ userId, gemeenteZorgvrager, gemeenteMantelzorger }),
