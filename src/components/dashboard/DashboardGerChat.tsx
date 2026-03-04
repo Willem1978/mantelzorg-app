@@ -60,44 +60,44 @@ function getGreetingText(): string {
   return "Goedenavond"
 }
 
-function buildProactiveActions(ctx: GerChatContext): { label: string; emoji: string; action: string }[] {
-  const actions: { label: string; emoji: string; action: string }[] = []
+function buildProactiveActions(ctx: GerChatContext): { label: string; emoji: string; action: string; color: string }[] {
+  const actions: { label: string; emoji: string; action: string; color: string }[] = []
 
   // PRIORITEIT 1: Heeft een test → help ze verder (ongeacht profielstatus)
   if (ctx.hasTest) {
     if (ctx.zwareTaken && ctx.zwareTaken > 0) {
-      actions.push({ label: "Help me met mijn zware taken", emoji: "🤝", action: "vraag" })
+      actions.push({ label: "Help bij zware taken", emoji: "🤝", action: "vraag", color: "amber" })
     }
     if (!ctx.checkInDone) {
-      actions.push({ label: "Hoe gaat het vandaag?", emoji: "💬", action: "vraag" })
+      actions.push({ label: "Hoe gaat het vandaag?", emoji: "💬", action: "vraag", color: "blue" })
     }
     if (ctx.needsNewTest) {
-      actions.push({ label: "Doe een nieuwe balanstest", emoji: "📊", action: "/belastbaarheidstest" })
+      actions.push({ label: "Nieuwe balanstest", emoji: "📊", action: "/belastbaarheidstest", color: "purple" })
     }
     if (ctx.niveau === "HOOG") {
-      actions.push({ label: "Ik heb hulp nodig", emoji: "❤️", action: "vraag" })
+      actions.push({ label: "Ik heb direct hulp nodig", emoji: "❤️", action: "vraag", color: "rose" })
     }
     if (actions.length < 3) {
-      actions.push({ label: "Welke hulp is er bij mij in de buurt?", emoji: "🏘️", action: "vraag" })
+      actions.push({ label: "Bekijk hulp in de buurt", emoji: "🏘️", action: "vraag", color: "sky" })
     }
     if (actions.length < 3) {
-      actions.push({ label: "Geef me een tip", emoji: "💡", action: "vraag" })
+      actions.push({ label: "Geef me een tip", emoji: "💡", action: "vraag", color: "amber" })
     }
     return actions.slice(0, 3)
   }
 
   // PRIORITEIT 2: Geen test maar wel een profiel → stuur aan op test
   if (ctx.hasProfile) {
-    actions.push({ label: "Start de balanstest", emoji: "📊", action: "/belastbaarheidstest" })
-    actions.push({ label: "Wat is de balanstest?", emoji: "❓", action: "vraag" })
-    actions.push({ label: "Geef me een tip", emoji: "💡", action: "vraag" })
+    actions.push({ label: "Start de balanstest", emoji: "📊", action: "/belastbaarheidstest", color: "purple" })
+    actions.push({ label: "Wat is de balanstest?", emoji: "❓", action: "vraag", color: "sky" })
+    actions.push({ label: "Geef me een tip", emoji: "💡", action: "vraag", color: "amber" })
     return actions
   }
 
   // PRIORITEIT 3: Helemaal nieuw → welkom
-  actions.push({ label: "Wat kan ik hier doen?", emoji: "💡", action: "vraag" })
-  actions.push({ label: "Maak mijn profiel aan", emoji: "👤", action: "/profiel" })
-  actions.push({ label: "Start de balanstest", emoji: "📊", action: "/belastbaarheidstest" })
+  actions.push({ label: "Wat kan ik hier doen?", emoji: "💡", action: "vraag", color: "amber" })
+  actions.push({ label: "Maak mijn profiel aan", emoji: "👤", action: "/profiel", color: "sky" })
+  actions.push({ label: "Start de balanstest", emoji: "📊", action: "/belastbaarheidstest", color: "purple" })
   return actions
 }
 
@@ -212,30 +212,40 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
         </div>
       </div>
 
-      {/* Snelkeuze opties — duidelijk en groot */}
+      {/* Snelkeuze opties — gekleurde kaarten */}
       {!hasMessages && proactiveActions.length > 0 && (
         <div className="ml-15 pl-[3.75rem] mb-4">
-          <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Kies een optie of typ je vraag</p>
+          <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Kies een optie of type jouw vraag:</p>
           <div className="grid gap-2">
-            {proactiveActions.map((action, i) => (
-              <button
-                key={i}
-                onClick={() => {
-                  if (action.action.startsWith("/")) {
-                    router.push(action.action)
-                  } else {
-                    handleSend(action.label)
-                  }
-                }}
-                className="flex items-center gap-3 w-full p-3 rounded-xl border-2 border-border bg-card hover:bg-primary/5 hover:border-primary/30 transition-all text-left group"
-              >
-                <span className="text-xl flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">{action.emoji}</span>
-                <span className="text-sm font-medium text-foreground flex-1">{action.label}</span>
-                <svg className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            ))}
+            {proactiveActions.map((action, i) => {
+              const colorMap: Record<string, string> = {
+                amber: "bg-amber-50 border-amber-200 hover:bg-amber-100 dark:bg-amber-950/30 dark:border-amber-800 dark:hover:bg-amber-950/50",
+                rose: "bg-rose-50 border-rose-200 hover:bg-rose-100 dark:bg-rose-950/30 dark:border-rose-800 dark:hover:bg-rose-950/50",
+                sky: "bg-sky-50 border-sky-200 hover:bg-sky-100 dark:bg-sky-950/30 dark:border-sky-800 dark:hover:bg-sky-950/50",
+                purple: "bg-purple-50 border-purple-200 hover:bg-purple-100 dark:bg-purple-950/30 dark:border-purple-800 dark:hover:bg-purple-950/50",
+                blue: "bg-blue-50 border-blue-200 hover:bg-blue-100 dark:bg-blue-950/30 dark:border-blue-800 dark:hover:bg-blue-950/50",
+              }
+              const cardColor = colorMap[action.color] || colorMap.amber
+              return (
+                <button
+                  key={i}
+                  onClick={() => {
+                    if (action.action.startsWith("/")) {
+                      router.push(action.action)
+                    } else {
+                      handleSend(action.label)
+                    }
+                  }}
+                  className={cn(
+                    "flex items-center gap-3 w-full p-3 rounded-xl border-2 transition-all text-left group",
+                    cardColor
+                  )}
+                >
+                  <span className="text-xl flex-shrink-0">{action.emoji}</span>
+                  <span className="text-sm font-medium text-foreground flex-1">{action.label}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
       )}
@@ -390,7 +400,7 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Typ je vraag aan Ger..."
+            placeholder="Of stel je vraag hier..."
             className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none text-sm py-1"
             disabled={isLoading}
             autoComplete="off"
