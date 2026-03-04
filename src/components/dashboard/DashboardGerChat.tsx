@@ -66,19 +66,19 @@ function buildProactiveActions(ctx: GerChatContext): { label: string; emoji: str
   // PRIORITEIT 1: Heeft een test → help ze verder (ongeacht profielstatus)
   if (ctx.hasTest) {
     if (ctx.zwareTaken && ctx.zwareTaken > 0) {
-      actions.push({ label: "Help bij zware taken", emoji: "🤝", action: "vraag", color: "amber" })
+      actions.push({ label: "Help me met mijn zware taken", emoji: "🤝", action: "vraag", color: "amber" })
     }
     if (!ctx.checkInDone) {
       actions.push({ label: "Hoe gaat het vandaag?", emoji: "💬", action: "vraag", color: "blue" })
     }
     if (ctx.needsNewTest) {
-      actions.push({ label: "Nieuwe balanstest", emoji: "📊", action: "/belastbaarheidstest", color: "purple" })
+      actions.push({ label: "Doe een nieuwe balanstest", emoji: "📊", action: "/belastbaarheidstest", color: "purple" })
     }
     if (ctx.niveau === "HOOG") {
-      actions.push({ label: "Ik heb direct hulp nodig", emoji: "❤️", action: "vraag", color: "rose" })
+      actions.push({ label: "Ik heb hulp nodig", emoji: "❤️", action: "vraag", color: "rose" })
     }
     if (actions.length < 3) {
-      actions.push({ label: "Bekijk hulp in de buurt", emoji: "🏘️", action: "vraag", color: "sky" })
+      actions.push({ label: "Welke hulp is er bij mij in de buurt?", emoji: "🏘️", action: "vraag", color: "sky" })
     }
     if (actions.length < 3) {
       actions.push({ label: "Geef me een tip", emoji: "💡", action: "vraag", color: "amber" })
