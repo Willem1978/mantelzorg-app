@@ -129,9 +129,14 @@ export async function prefetchUserContext(
       ? await resolveGemeenteContact(gemeenteVoorContact, test.belastingNiveau)
       : null
 
-  // 5) Zware taken
-  const zwareTaken = test.taakSelecties.filter(
+  // 5) Alle geselecteerde taken + zware taken apart
+  const alleTaken = test.taakSelecties
+  const zwareTaken = alleTaken.filter(
     (t) => t.moeilijkheid === "MOEILIJK" || t.moeilijkheid === "ZEER_MOEILIJK"
+  )
+  // Overige taken (niet-zwaar maar wel geselecteerd — vaak frequente taken)
+  const overigeTaken = alleTaken.filter(
+    (t) => t.moeilijkheid !== "MOEILIJK" && t.moeilijkheid !== "ZEER_MOEILIJK"
   )
 
   // 6) Hulpbronnen per zware taak — gemeente ZORGVRAGER (daar vindt de zorg plaats)
@@ -151,7 +156,13 @@ export async function prefetchUserContext(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const hulpVoorNaaste: Record<string, any[]> = {}
 
-  const taakQueries = zwareTaken.slice(0, 5).map(async (taak) => {
+  // Haal hulp op voor zware taken + top frequente overige taken
+  const takenVoorHulp = [
+    ...zwareTaken.slice(0, 5),
+    ...overigeTaken.slice(0, 3), // ook top 3 frequente taken (gesorteerd op uren)
+  ]
+
+  const taakQueries = takenVoorHulp.map(async (taak) => {
     const varianten = getOnderdeelVarianten(taak.taakNaam)
 
     const resultaten = await prisma.zorgorganisatie.findMany({
@@ -233,6 +244,11 @@ export async function prefetchUserContext(
         advies: niveauAdvies || generiekAdvies,
       }
     }),
+    overigeTaken: overigeTaken.map((t) => ({
+      taak: t.taakNaam,
+      urenPerWeek: t.urenPerWeek,
+      moeilijkheid: t.moeilijkheid,
+    })),
     hulpVoorNaaste,
     hulpVoorMantelzorger,
     alleHulpPerCategorie,
@@ -401,6 +417,14 @@ BALANSTEST (${ctx.testDatum}):
       block += `\n- ${t.taak} (${t.urenPerWeek}u/week, ${t.moeilijkheid})`
       if (t.advies) block += `\n  Advies: ${t.advies}`
     }
+  }
+
+  if (ctx.overigeTaken && ctx.overigeTaken.length > 0) {
+    block += `\n\nOVERIGE ZORGTAKEN (voor de naaste — niet als zwaar aangegeven, maar wel geselecteerd):`
+    for (const t of ctx.overigeTaken) {
+      block += `\n- ${t.taak} (${t.urenPerWeek}u/week${t.moeilijkheid ? `, ${t.moeilijkheid}` : ""})`
+    }
+    block += `\nDeze taken kosten ook tijd en energie. Bied PROACTIEF hulp aan bij taken met veel uren, ook als ze niet als "zwaar" zijn gemarkeerd.`
   }
 
   // Hulp per zware taak
