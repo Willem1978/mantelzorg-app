@@ -117,22 +117,28 @@ export function BalansThermometer({
           <div className="grid grid-cols-3 gap-2">
             {topDeelgebieden.map((dg) => {
               const dgConfig = NIVEAU_CONFIG[dg.niveau]
+              const isGoed = dg.niveau === "LAAG"
               return (
                 <div
                   key={dg.naam}
-                  className="rounded-xl p-3 flex items-center gap-2 border"
-                  style={{ backgroundColor: dgConfig.bgColor, borderColor: dgConfig.color }}
+                  className="rounded-xl p-3 text-center border"
+                  style={{
+                    backgroundColor: dgConfig.bgColor,
+                    borderColor: isGoed ? "transparent" : dgConfig.color,
+                  }}
                 >
-                  <span className="text-xl flex-shrink-0">{dg.emoji}</span>
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-foreground leading-tight">{dg.naam}</p>
-                    <span
-                      className="text-xs font-bold px-2 py-0.5 rounded-full inline-block mt-1 border"
-                      style={{ backgroundColor: dgConfig.bgColor, color: dgConfig.color, borderColor: dgConfig.color }}
-                    >
-                      {dgConfig.label}
-                    </span>
-                  </div>
+                  <span className="text-xl block">{dg.emoji}</span>
+                  <p className="text-xs font-semibold text-foreground leading-tight mt-1">{dg.naam}</p>
+                  <span
+                    className="text-xs font-bold px-2 py-0.5 rounded-full inline-block mt-1 border"
+                    style={{
+                      backgroundColor: dgConfig.bgColor,
+                      color: dgConfig.color,
+                      borderColor: isGoed ? "transparent" : dgConfig.color,
+                    }}
+                  >
+                    {dgConfig.label}
+                  </span>
                 </div>
               )
             })}
@@ -148,8 +154,8 @@ export function BalansThermometer({
           </p>
           <div className="grid grid-cols-3 gap-2">
             <div
-              className="rounded-xl p-3 text-center border"
-              style={{ backgroundColor: "var(--accent-green-bg)", borderColor: "var(--accent-green)" }}
+              className="rounded-xl p-3 text-center"
+              style={{ backgroundColor: "var(--accent-green-bg)" }}
             >
               <span className="text-2xl font-bold block" style={{ color: "var(--accent-green)" }}>
                 {goedCount}
