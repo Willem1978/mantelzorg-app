@@ -252,9 +252,15 @@ function DashboardContentView() {
     niveau: data?.test?.niveau,
     score: data?.test?.score,
     zwareTaken: zwareTaken.length,
+    zwareTaakNaam: zwareTaken[0]?.naam || null,
     needsNewTest: data?.test?.needsNewTest || false,
     checkInDone: data?.checkIns?.weeklyDone || false,
     isFirstVisit: !data?.user?.profileCompleted && !data?.test?.hasTest,
+    trend: data?.test?.trend || null,
+    wellbeingTrend: data?.checkIns?.wellbeingTrend || null,
+    daysSinceTest: data?.test?.daysSinceTest || null,
+    openTasks: data?.tasks?.open || 0,
+    overdueTasks: data?.tasks?.overdue || 0,
   }
 
   const adviezenActions = buildAdviezenActions(data)
