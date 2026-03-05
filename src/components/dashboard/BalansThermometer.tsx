@@ -76,23 +76,23 @@ export function BalansThermometer({
     <div className="ker-card space-y-5">
       {/* Header met persoonlijk bericht */}
       <div
-        className="rounded-xl px-4 py-3 flex items-center gap-3"
-        style={{ backgroundColor: config.bgColor }}
+        className="rounded-xl px-4 py-4 flex items-center gap-3 border-2"
+        style={{ backgroundColor: config.bgColor, borderColor: config.color }}
       >
-        <span className="text-2xl">{config.emoji}</span>
+        <span className="text-3xl">{config.emoji}</span>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground">Mijn balans</p>
-          <p className="text-xs text-muted-foreground">{config.bericht}</p>
+          <p className="text-base font-semibold text-foreground">Mijn balans</p>
+          <p className="text-sm text-muted-foreground">{config.bericht}</p>
         </div>
         <div className="text-right flex-shrink-0">
-          <span className="text-2xl font-bold" style={{ color: config.color }}>{score}</span>
-          <span className="text-xs text-muted-foreground">/{maxScore}</span>
+          <span className="text-3xl font-bold" style={{ color: config.color }}>{score}</span>
+          <span className="text-sm text-muted-foreground">/{maxScore}</span>
         </div>
       </div>
 
       {/* Thermometer balk met zones */}
       <div>
-        <div className="h-3 rounded-full overflow-hidden bg-muted/30">
+        <div className="h-3.5 rounded-full overflow-hidden bg-muted">
           <div
             className="h-full rounded-full transition-all duration-700"
             style={{
@@ -101,7 +101,7 @@ export function BalansThermometer({
             }}
           />
         </div>
-        <div className="flex justify-between text-[10px] text-muted-foreground mt-1.5 px-0.5">
+        <div className="flex justify-between text-xs text-muted-foreground mt-1.5 px-0.5 font-medium">
           <span>Goed</span>
           <span>Matig</span>
           <span>Zwaar</span>
@@ -111,7 +111,7 @@ export function BalansThermometer({
       {/* Deelgebieden: Energie, Gevoel, Tijd */}
       {topDeelgebieden.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+          <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
             Hoe gaat het met jou?
           </p>
           <div className="grid grid-cols-3 gap-2">
@@ -120,15 +120,15 @@ export function BalansThermometer({
               return (
                 <div
                   key={dg.naam}
-                  className="rounded-xl p-3 flex items-center gap-2"
-                  style={{ backgroundColor: dgConfig.bgColor }}
+                  className="rounded-xl p-3 flex items-center gap-2 border"
+                  style={{ backgroundColor: dgConfig.bgColor, borderColor: dgConfig.color }}
                 >
                   <span className="text-xl flex-shrink-0">{dg.emoji}</span>
                   <div className="min-w-0">
-                    <p className="text-[11px] font-medium text-foreground leading-tight">{dg.naam}</p>
+                    <p className="text-xs font-semibold text-foreground leading-tight">{dg.naam}</p>
                     <span
-                      className="text-[10px] font-bold px-2 py-0.5 rounded-full inline-block mt-1"
-                      style={{ backgroundColor: `${dgConfig.color}20`, color: dgConfig.color }}
+                      className="text-xs font-bold px-2 py-0.5 rounded-full inline-block mt-1 border"
+                      style={{ backgroundColor: dgConfig.bgColor, color: dgConfig.color, borderColor: dgConfig.color }}
                     >
                       {dgConfig.label}
                     </span>
@@ -143,54 +143,54 @@ export function BalansThermometer({
       {/* Zorgtaken */}
       {zorgtaken.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+          <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
             Jouw zorgtaken
           </p>
           <div className="grid grid-cols-3 gap-2">
             <div
-              className="rounded-xl p-3 text-center"
-              style={{ backgroundColor: "var(--accent-green-bg)" }}
+              className="rounded-xl p-3 text-center border"
+              style={{ backgroundColor: "var(--accent-green-bg)", borderColor: "var(--accent-green)" }}
             >
-              <span className="text-xl font-bold block" style={{ color: "var(--accent-green)" }}>
+              <span className="text-2xl font-bold block" style={{ color: "var(--accent-green)" }}>
                 {goedCount}
               </span>
-              <p className="text-[11px] font-medium text-foreground mt-1">Goed</p>
+              <p className="text-xs font-semibold text-foreground mt-1">Goed</p>
             </div>
             <div
-              className="rounded-xl p-3 text-center"
-              style={{ backgroundColor: "var(--accent-amber-bg)" }}
+              className="rounded-xl p-3 text-center border"
+              style={{ backgroundColor: "var(--accent-amber-bg)", borderColor: "var(--accent-amber)" }}
             >
-              <span className="text-xl font-bold block" style={{ color: "var(--accent-amber)" }}>
+              <span className="text-2xl font-bold block" style={{ color: "var(--accent-amber)" }}>
                 {matigCount}
               </span>
-              <p className="text-[11px] font-medium text-foreground mt-1">Matig</p>
+              <p className="text-xs font-semibold text-foreground mt-1">Matig</p>
             </div>
             <div
-              className="rounded-xl p-3 text-center"
-              style={{ backgroundColor: "var(--accent-red-bg)" }}
+              className="rounded-xl p-3 text-center border"
+              style={{ backgroundColor: "var(--accent-red-bg)", borderColor: "var(--accent-red)" }}
             >
-              <span className="text-xl font-bold block" style={{ color: "var(--accent-red)" }}>
+              <span className="text-2xl font-bold block" style={{ color: "var(--accent-red)" }}>
                 {zwaarCount}
               </span>
-              <p className="text-[11px] font-medium text-foreground mt-1">Zwaar</p>
+              <p className="text-xs font-semibold text-foreground mt-1">Zwaar</p>
             </div>
           </div>
         </div>
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-3 border-t border-border/30">
+      <div className="flex items-center justify-between pt-3 border-t border-border">
         <Link
           href="/rapport"
-          className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1"
+          className="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1 min-h-[44px]"
         >
           Bekijk volledig rapport
-          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </Link>
         {daysSinceTest != null && (
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-xs text-muted-foreground font-medium">
             {daysSinceTest === 0 ? "Vandaag getest" : `${daysSinceTest} dagen geleden`}
           </span>
         )}

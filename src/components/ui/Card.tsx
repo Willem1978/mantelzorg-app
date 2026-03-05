@@ -3,16 +3,17 @@ import { cn } from "@/lib/utils"
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {}
 
-// Card component met dark mode ondersteuning
+// Card component — warm & uitnodigend met zachte schaduw
 const Card = forwardRef<HTMLDivElement, CardProps>(
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
       className={cn(
-        // Basis stijlen met dark mode
-        "bg-card rounded-2xl shadow-sm border border-border",
-        // Responsive padding
-        "p-4 sm:p-6",
+        // Warme basis stijlen
+        "bg-card rounded-2xl border border-border",
+        "shadow-[0_2px_12px_rgba(45,35,25,0.05),0_1px_3px_rgba(45,35,25,0.08)]",
+        // Ruime padding voor leesbaarheid
+        "p-5 sm:p-6",
         className
       )}
       {...props}
@@ -36,7 +37,7 @@ const CardTitle = forwardRef<HTMLHeadingElement, HTMLAttributes<HTMLHeadingEleme
   ({ className, ...props }, ref) => (
     <h3
       ref={ref}
-      className={cn("text-base sm:text-lg font-semibold text-foreground", className)}
+      className={cn("text-lg sm:text-xl font-semibold text-foreground", className)}
       {...props}
     />
   )
@@ -47,7 +48,7 @@ const CardDescription = forwardRef<HTMLParagraphElement, HTMLAttributes<HTMLPara
   ({ className, ...props }, ref) => (
     <p
       ref={ref}
-      className={cn("text-sm text-muted-foreground mt-1", className)}
+      className={cn("text-base text-muted-foreground mt-1", className)}
       {...props}
     />
   )

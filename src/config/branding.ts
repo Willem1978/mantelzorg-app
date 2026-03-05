@@ -38,13 +38,13 @@ export const branding = {
 
   // Logo SVG kleuren (voor LogoIcon component)
   logoColors: {
-    left: "#2C7A7B",
-    right: "#319795",
+    left: "#2E6B4F",
+    right: "#3D8B68",
   },
 
   // Thema kleur (voor manifest, viewport, etc.)
-  themeColor: "#2C7A7B",
-  backgroundColor: "#F7FAFC",
+  themeColor: "#2E6B4F",
+  backgroundColor: "#FDF8F3",
 
   // Privacy
   privacy: {
