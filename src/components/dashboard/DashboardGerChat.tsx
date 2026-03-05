@@ -58,10 +58,21 @@ function buildProactiveActions(ctx: GerChatContext): { label: string; emoji: str
 
   // PRIORITEIT 1: Heeft een test → help ze verder (ongeacht profielstatus)
   if (ctx.hasTest) {
-    // Altijd tonen: hulp voor mij + hulp voor naaste + tip
+    // Contextgevoelige knop op basis van situatie
+    if (ctx.niveau === "HOOG") {
+      actions.push({ label: "Ik heb hulp nodig", emoji: "❤️", action: "vraag", color: "rose" })
+    } else if (ctx.zwareTaken && ctx.zwareTaken > 0) {
+      actions.push({ label: "Help me met mijn zware taken", emoji: "🤝", action: "vraag", color: "amber" })
+    } else if (!ctx.checkInDone) {
+      actions.push({ label: "Hoe gaat het vandaag?", emoji: "💬", action: "vraag", color: "blue" })
+    } else if (ctx.needsNewTest) {
+      actions.push({ label: "Doe een nieuwe balanstest", emoji: "📊", action: "/belastbaarheidstest", color: "purple" })
+    } else {
+      actions.push({ label: "Geef me informatie of een tip", emoji: "💡", action: "vraag", color: "purple" })
+    }
+    // Altijd: hulp voor mij + hulp voor naaste
     actions.push({ label: "Welke hulp is er voor mij?", emoji: "🙋", action: "vraag", color: "sky" })
     actions.push({ label: "Welke hulp is er voor mijn naaste?", emoji: "🏘️", action: "vraag", color: "amber" })
-    actions.push({ label: "Geef me informatie of een tip", emoji: "💡", action: "vraag", color: "purple" })
     return actions
   }
 
