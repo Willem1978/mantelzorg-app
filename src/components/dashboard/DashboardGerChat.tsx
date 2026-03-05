@@ -48,9 +48,15 @@ export interface GerChatContext {
   niveau?: "LAAG" | "GEMIDDELD" | "HOOG" | null
   score?: number | null
   zwareTaken?: number
+  zwareTaakNaam?: string | null
   needsNewTest?: boolean
   checkInDone?: boolean
   isFirstVisit?: boolean
+  trend?: "improved" | "same" | "worse" | null
+  wellbeingTrend?: "up" | "down" | "stable" | null
+  daysSinceTest?: number | null
+  openTasks?: number
+  overdueTasks?: number
 }
 
 function buildProactiveActions(ctx: GerChatContext): { label: string; emoji: string; action: string; color: string }[] {
@@ -58,10 +64,36 @@ function buildProactiveActions(ctx: GerChatContext): { label: string; emoji: str
 
   // PRIORITEIT 1: Heeft een test → help ze verder (ongeacht profielstatus)
   if (ctx.hasTest) {
-    // Altijd tonen: hulp voor mij + hulp voor naaste + tip
-    actions.push({ label: "Welke hulp is er voor mij?", emoji: "🙋", action: "vraag", color: "sky" })
-    actions.push({ label: "Welke hulp is er voor mijn naaste?", emoji: "🏘️", action: "vraag", color: "amber" })
-    actions.push({ label: "Geef me informatie of een tip", emoji: "💡", action: "vraag", color: "purple" })
+    // Knop 1: contextgevoelig op basis van situatie
+    if (ctx.niveau === "HOOG") {
+      actions.push({ label: "Ik heb hulp nodig", emoji: "❤️", action: "vraag", color: "rose" })
+    } else if (ctx.trend === "worse" || ctx.wellbeingTrend === "down") {
+      actions.push({ label: "Het gaat niet zo goed", emoji: "💬", action: "vraag", color: "blue" })
+    } else if (ctx.overdueTasks && ctx.overdueTasks > 0) {
+      actions.push({ label: "Bekijk mijn openstaande acties", emoji: "📋", action: "vraag", color: "blue" })
+    } else if (ctx.zwareTaken && ctx.zwareTaken > 0) {
+      actions.push({ label: "Help me met mijn zware taken", emoji: "🤝", action: "vraag", color: "amber" })
+    } else if (!ctx.checkInDone) {
+      actions.push({ label: "Hoe gaat het vandaag?", emoji: "💬", action: "vraag", color: "blue" })
+    } else if (ctx.needsNewTest) {
+      actions.push({ label: "Doe een nieuwe balanstest", emoji: "📊", action: "/belastbaarheidstest", color: "purple" })
+    } else {
+      actions.push({ label: "Geef me informatie of een tip", emoji: "💡", action: "vraag", color: "purple" })
+    }
+
+    // Knop 2: hulp voor mij — wisselt als trend positief is
+    if (ctx.trend === "improved" || ctx.wellbeingTrend === "up") {
+      actions.push({ label: "Hoe houd ik dit vast?", emoji: "🌱", action: "vraag", color: "green" })
+    } else {
+      actions.push({ label: "Welke hulp is er voor mij?", emoji: "🙋", action: "vraag", color: "sky" })
+    }
+
+    // Knop 3: hulp voor naaste — wisselt als er specifieke zware taak is
+    if (ctx.zwareTaakNaam) {
+      actions.push({ label: `Hulp bij ${ctx.zwareTaakNaam}`, emoji: "🏘️", action: "vraag", color: "amber" })
+    } else {
+      actions.push({ label: "Welke hulp is er voor mijn naaste?", emoji: "🏘️", action: "vraag", color: "amber" })
+    }
     return actions
   }
 
@@ -90,7 +122,37 @@ function getGreetingText(): string {
 function buildGreetingMessage(ctx: GerChatContext): string {
   const greeting = getGreetingText()
   const naam = ctx.userName || "daar"
-  return `${greeting} ${naam}, fijn dat je er bent! Hoe kan ik jou helpen?`
+
+  // Terugkerende gebruiker met test — verwijs naar situatie
+  if (ctx.hasTest) {
+    if (ctx.trend === "worse" || ctx.wellbeingTrend === "down") {
+      return `${greeting} ${naam}, ik zie dat het de laatste tijd zwaarder is geworden. Laten we kijken wat ik voor je kan doen.`
+    }
+    if (ctx.trend === "improved" || ctx.wellbeingTrend === "up") {
+      return `${greeting} ${naam}, fijn je weer te zien! Het gaat de goede kant op. Waar kan ik je mee helpen?`
+    }
+    if (ctx.overdueTasks && ctx.overdueTasks > 0) {
+      return `${greeting} ${naam}, je hebt nog een paar dingen openstaan. Zullen we daar even naar kijken?`
+    }
+    if (ctx.needsNewTest && ctx.daysSinceTest && ctx.daysSinceTest > 30) {
+      return `${greeting} ${naam}, je laatste test is alweer een tijdje geleden. Hoe gaat het nu met je?`
+    }
+    if (ctx.niveau === "HOOG") {
+      return `${greeting} ${naam}, goed dat je er bent. Ik weet dat het zwaar is. Wat kan ik voor je doen?`
+    }
+    if (ctx.zwareTaakNaam) {
+      return `${greeting} ${naam}, fijn dat je er bent! Vorige keer hadden we het over ${ctx.zwareTaakNaam}. Hoe gaat het daarmee?`
+    }
+    return `${greeting} ${naam}, leuk dat je er weer bent! Waar kan ik je mee helpen?`
+  }
+
+  // Profiel maar geen test
+  if (ctx.hasProfile) {
+    return `${greeting} ${naam}, fijn dat je terug bent! Met een balanstest kan ik je veel beter helpen.`
+  }
+
+  // Helemaal nieuw
+  return `${greeting}! Welkom bij MantelBuddy. Ik ben Ger, je persoonlijke coach. Wat wil je weten?`
 }
 
 export function DashboardGerChat({ context }: { context?: GerChatContext }) {
