@@ -7,39 +7,39 @@
  * plekken waar je hex-codes nodig hebt (PDF, images, canvas, etc.)
  */
 
-// Score/belasting niveau kleuren
+// Score/belasting niveau kleuren — verhoogd contrast, warmer palet
 export const scoreColors = {
   laag: {
-    hex: "#2E7D32",
-    hexBg: "#E8F5E9",
+    hex: "#1B7A3D",
+    hexBg: "#E5F5EA",
     tailwind: "text-accent-green",
     tailwindBg: "bg-accent-green-bg",
     cssVar: "var(--accent-green)",
     cssVarBg: "var(--accent-green-bg)",
-    rgb: [46, 125, 50] as const,
-    rgbBg: [232, 245, 233] as const,
+    rgb: [27, 122, 61] as const,
+    rgbBg: [229, 245, 234] as const,
     label: "Laag",
   },
   gemiddeld: {
-    hex: "#C86800",
+    hex: "#A85E00",
     hexBg: "#FFF3E0",
     tailwind: "text-accent-amber",
     tailwindBg: "bg-accent-amber-bg",
     cssVar: "var(--accent-amber)",
     cssVarBg: "var(--accent-amber-bg)",
-    rgb: [200, 104, 0] as const,
+    rgb: [168, 94, 0] as const,
     rgbBg: [255, 243, 224] as const,
     label: "Gemiddeld",
   },
   hoog: {
-    hex: "#B71C1C",
-    hexBg: "#FFEBEE",
+    hex: "#A52019",
+    hexBg: "#FDECEB",
     tailwind: "text-accent-red",
     tailwindBg: "bg-accent-red-bg",
     cssVar: "var(--accent-red)",
     cssVarBg: "var(--accent-red-bg)",
-    rgb: [183, 28, 28] as const,
-    rgbBg: [255, 235, 238] as const,
+    rgb: [165, 32, 25] as const,
+    rgbBg: [253, 236, 235] as const,
     label: "Hoog",
   },
 } as const
@@ -80,11 +80,11 @@ export const urgentieLabels: Record<string, string> = {
   CRITICAL: "Kritiek",
 }
 
-// Wellbeing chart kleuren
+// Wellbeing chart kleuren — warmer palet
 export const wellbeingChartColors = {
-  algemeen: "#0d9488",
-  fysiek: "#3b82f6",
-  emotioneel: "#8b5cf6",
+  algemeen: "#2E6B4F",
+  fysiek: "#3476A8",
+  emotioneel: "#7E5CA8",
 } as const
 
 // Niveau Tailwind klassen (voor badges etc.)
@@ -94,20 +94,20 @@ export const niveauBadgeClasses: Record<string, string> = {
   HOOG: "bg-accent-red-bg text-accent-red",
 }
 
-// PDF rapport kleuren (consistent met app)
+// PDF rapport kleuren (consistent met warm app-palet)
 export const pdfColors = {
-  primary: [44, 122, 123] as const,   // #2C7A7B - consistent met app
-  primaryBg: [230, 255, 250] as const, // #E6FFFA
+  primary: [46, 107, 79] as const,   // #2E6B4F - consistent met app
+  primaryBg: [232, 242, 236] as const, // #E8F2EC
   groen: scoreColors.laag.rgb,
   groenBg: scoreColors.laag.rgbBg,
   oranje: scoreColors.gemiddeld.rgb,
   oranjeBg: scoreColors.gemiddeld.rgbBg,
   rood: scoreColors.hoog.rgb,
   roodBg: scoreColors.hoog.rgbBg,
-  donker: [45, 55, 72] as const,    // #2D3748 - consistent met --foreground
-  tekst: [74, 85, 104] as const,    // #4A5568 - consistent met --muted-foreground
-  grijs: [128, 128, 128] as const,
-  lichtgrijs: [245, 245, 245] as const,
-  wit: [255, 255, 255] as const,
-  rand: [203, 213, 224] as const,   // #CBD5E0 - consistent met --border
+  donker: [45, 35, 25] as const,    // #2D2319 - consistent met --foreground
+  tekst: [92, 79, 66] as const,     // #5C4F42 - consistent met --muted-foreground
+  grijs: [128, 120, 110] as const,
+  lichtgrijs: [243, 235, 226] as const, // warm lichtgrijs
+  wit: [255, 251, 247] as const,
+  rand: [212, 200, 187] as const,   // #D4C8BB - consistent met --border
 } as const

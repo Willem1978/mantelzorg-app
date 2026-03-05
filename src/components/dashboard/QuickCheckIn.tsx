@@ -79,24 +79,24 @@ export function QuickCheckIn({ onSubmit }: QuickCheckInProps) {
 
   if (isSubmitted) {
     return (
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+      <div className="bg-card rounded-2xl p-6 shadow-[0_2px_12px_rgba(45,35,25,0.05)] border border-border">
         <div className="text-center py-4">
-          <div className="w-16 h-16 mx-auto mb-3 text-green-500">
+          <div className="w-16 h-16 mx-auto mb-3 text-accent-green">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <p className="font-medium text-gray-900">{c.bedankt}</p>
-          <p className="text-sm text-gray-500 mt-1">{c.opgeslagen}</p>
+          <p className="font-medium text-foreground text-lg">{c.bedankt}</p>
+          <p className="text-base text-muted-foreground mt-1">{c.opgeslagen}</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-      <h2 className="text-lg font-semibold text-gray-900 mb-2">{c.title}</h2>
-      <p className="text-sm text-gray-500 mb-4">{c.subtitle}</p>
+    <div className="bg-card rounded-2xl p-6 shadow-[0_2px_12px_rgba(45,35,25,0.05)] border border-border">
+      <h2 className="text-lg font-semibold text-foreground mb-2">{c.title}</h2>
+      <p className="text-base text-muted-foreground mb-4">{c.subtitle}</p>
 
       <div className="flex justify-between gap-2">
         {feelings.map((feeling) => (
@@ -104,7 +104,7 @@ export function QuickCheckIn({ onSubmit }: QuickCheckInProps) {
             key={feeling.value}
             onClick={() => handleSelect(feeling.value)}
             className={cn(
-              "flex-1 flex flex-col items-center p-3 rounded-xl transition-all",
+              "flex-1 flex flex-col items-center p-3 rounded-xl transition-all min-h-[48px]",
               "hover:scale-105 active:scale-95",
               selectedFeeling === feeling.value ? "ring-2 ring-primary" : ""
             )}
@@ -112,7 +112,7 @@ export function QuickCheckIn({ onSubmit }: QuickCheckInProps) {
             <div className={cn("w-12 h-12 rounded-full mb-2", feeling.color)}>
               {getEmoticon(feeling.emoji)}
             </div>
-            <span className="text-xs font-medium text-gray-600">{feeling.label}</span>
+            <span className="text-sm font-medium text-foreground">{feeling.label}</span>
           </button>
         ))}
       </div>

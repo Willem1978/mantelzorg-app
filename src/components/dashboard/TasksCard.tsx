@@ -19,9 +19,9 @@ interface TasksCardProps {
 
 export function TasksCard({ tasks }: TasksCardProps) {
   const priorityColors = {
-    LOW: "bg-gray-100 text-gray-600",
-    MEDIUM: "bg-amber-100 text-amber-700",
-    HIGH: "bg-red-100 text-red-700",
+    LOW: "bg-secondary text-foreground border border-border",
+    MEDIUM: "bg-accent-amber-bg text-accent-amber border border-accent-amber",
+    HIGH: "bg-accent-red-bg text-accent-red border border-accent-red",
   }
 
   const categoryIcons: Record<string, string> = {
@@ -49,27 +49,27 @@ export function TasksCard({ tasks }: TasksCardProps) {
       </CardHeader>
       <CardContent>
         {activeTasks.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <p>Geen openstaande taken</p>
+          <div className="text-center py-8 text-muted-foreground">
+            <p className="text-base">Geen openstaande taken</p>
           </div>
         ) : (
           <div className="space-y-3">
             {activeTasks.map((task) => (
               <div
                 key={task.id}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                className="flex items-center justify-between p-4 bg-secondary rounded-xl hover:bg-muted transition-colors border border-border min-h-[48px]"
               >
                 <div className="flex items-center space-x-3">
                   <span className="text-xl">{categoryIcons[task.category] || "📌"}</span>
                   <div>
-                    <p className="font-medium text-gray-900">{task.title}</p>
+                    <p className="font-medium text-foreground">{task.title}</p>
                     {task.dueDate && (
-                      <p className="text-xs text-gray-500">Deadline: {task.dueDate}</p>
+                      <p className="text-sm text-muted-foreground">Deadline: {task.dueDate}</p>
                     )}
                   </div>
                 </div>
                 <span className={cn(
-                  "px-2 py-1 rounded-full text-xs font-medium",
+                  "px-3 py-1 rounded-full text-sm font-semibold",
                   priorityColors[task.priority]
                 )}>
                   {task.priority === "HIGH" && "Hoog"}

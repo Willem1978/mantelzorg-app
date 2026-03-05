@@ -1,89 +1,89 @@
 @import "tailwindcss";
 
 :root {
-  /* MantelBuddy Huisstijl v1.0 */
-  /* Oceaanblauw, Koraal, Off-White, Diepgrijs */
+  /* MantelBuddy Huisstijl v2.0 — Warm & Toegankelijk */
+  /* Warm Groen, Terracotta, Crème, Warm Bruin */
 
-  /* Basis kleuren */
-  --background: #F7FAFC;
-  --foreground: #2D3748;
-  --card: #FFFFFF;
-  --card-foreground: #2D3748;
+  /* Basis kleuren — warme crèmetinten i.p.v. koud grijs/wit */
+  --background: #FDF8F3;
+  --foreground: #2D2319;
+  --card: #FFFBF7;
+  --card-foreground: #2D2319;
 
-  /* Primary - Oceaanblauw */
-  --primary: #2C7A7B;
+  /* Primary - Diep Warm Groen (betrouwbaar, kalm) */
+  --primary: #2E6B4F;
   --primary-foreground: #FFFFFF;
-  --primary-light: #E6FFFA;
+  --primary-light: #E8F2EC;
 
-  /* Accent - Zacht Koraal (CTA knoppen, meldingen) */
-  --accent: #ED8936;
-  --accent-foreground: #2D3748;
+  /* Accent - Zacht Terracotta (CTA knoppen, warmte) */
+  --accent: #B85636;
+  --accent-foreground: #FFFFFF;
 
-  /* Secondary */
-  --secondary: #EDF2F7;
-  --secondary-foreground: #2D3748;
+  /* Secondary — warm zand */
+  --secondary: #F3EBE2;
+  --secondary-foreground: #2D2319;
 
-  /* Muted */
-  --muted: #E2E8F0;
-  --muted-foreground: #4A5568;
+  /* Muted — warm beige, hoog contrast tekst */
+  --muted: #E8DFD5;
+  --muted-foreground: #5C4F42;
 
-  /* Border */
-  --border: #CBD5E0;
-  --border-strong: #A0AEC0;
+  /* Border — warme randkleuren */
+  --border: #D4C8BB;
+  --border-strong: #A89888;
 
   /* Input */
-  --input: #FFFFFF;
-  --ring: #2C7A7B;
+  --input: #FFFBF7;
+  --ring: #2E6B4F;
 
   /* Emoticon kleuren - Helder en duidelijk */
   --emoticon-green: #4CAF50;
   --emoticon-yellow: #FFB300;
   --emoticon-red: #E53935;
 
-  /* Accent kleuren voor scores */
-  --accent-green: #2E7D32;
-  --accent-green-bg: #E8F5E9;
-  --accent-amber: #C86800;
+  /* Accent kleuren voor scores — versterkt contrast + borders */
+  --accent-green: #1B7A3D;
+  --accent-green-bg: #E5F5EA;
+  --accent-amber: #A85E00;
   --accent-amber-bg: #FFF3E0;
-  --accent-red: #B71C1C;
-  --accent-red-bg: #FFEBEE;
+  --accent-red: #A52019;
+  --accent-red-bg: #FDECEB;
 
-  /* Uitlegblokken */
-  --uitlegblok-bg: #E6FFFA;
+  /* Uitlegblokken — warm groen tint */
+  --uitlegblok-bg: #E8F2EC;
 }
 
 .dark {
-  /* Dark mode - MantelBuddy palette */
-  --background: #1A202C;
-  --foreground: #F7FAFC;
-  --card: #2D3748;
-  --card-foreground: #F7FAFC;
-  --primary: #4FD1C5;
-  --primary-foreground: #1A202C;
-  --primary-light: #234E52;
-  --accent: #ED8936;
-  --accent-foreground: #F7FAFC;
-  --secondary: #2D3748;
-  --secondary-foreground: #F7FAFC;
-  --muted: #4A5568;
-  --muted-foreground: #A0AEC0;
-  --border: #4A5568;
-  --border-strong: #718096;
-  --input: #2D3748;
-  --ring: #4FD1C5;
+  /* Dark mode - Warm MantelBuddy palette */
+  --background: #1E1A16;
+  --foreground: #F5EDE4;
+  --card: #2A2420;
+  --card-foreground: #F5EDE4;
+  --primary: #5DB88A;
+  --primary-foreground: #1E1A16;
+  --primary-light: #2A3D32;
+  --accent: #D97B5A;
+  --accent-foreground: #1E1A16;
+  --secondary: #332D27;
+  --secondary-foreground: #F5EDE4;
+  --muted: #4A4238;
+  --muted-foreground: #B8ADA0;
+  --border: #4A4238;
+  --border-strong: #6B6054;
+  --input: #2A2420;
+  --ring: #5DB88A;
 
   --emoticon-green: #66BB6A;
   --emoticon-yellow: #FFCA28;
   --emoticon-red: #EF5350;
 
   --accent-green: #81C784;
-  --accent-green-bg: #1B3D1E;
+  --accent-green-bg: #1F3324;
   --accent-amber: #FFB74D;
   --accent-amber-bg: #3D2A10;
   --accent-red: #EF5350;
   --accent-red-bg: #3D1A1A;
 
-  --uitlegblok-bg: #234E52;
+  --uitlegblok-bg: #2A3D32;
 }
 
 @theme inline {
@@ -151,38 +151,40 @@ html.text-xl-mode body {
 
 /* Hoog contrast modus */
 html.high-contrast {
-  --muted-foreground: #2A2A2A;
-  --border: #888888;
-  --border-strong: #555555;
+  --foreground: #1A1108;
+  --muted-foreground: #2A2218;
+  --border: #7A6E60;
+  --border-strong: #4A4035;
 }
 
 html.high-contrast.dark {
-  --muted-foreground: #E0E0E0;
-  --border: #888888;
-  --border-strong: #AAAAAA;
+  --foreground: #F5F0EB;
+  --muted-foreground: #E0D8CE;
+  --border: #888078;
+  --border-strong: #AAA298;
 }
 
 /* ============================================
    KER DESIGN SYSTEM - COMPONENTEN
    ============================================ */
 
-/* KER Card - Basis card styling */
+/* KER Card - Basis card styling — warm & uitnodigend */
 .ker-card {
   background: var(--card);
   border-radius: 1.25rem;
-  padding: 1.25rem;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
+  padding: 1.5rem;
+  box-shadow: 0 2px 12px rgba(45, 35, 25, 0.05), 0 1px 3px rgba(45, 35, 25, 0.08);
   border: 1px solid var(--border);
   transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
 .ker-card:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 16px rgba(45, 35, 25, 0.10), 0 2px 6px rgba(45, 35, 25, 0.06);
 }
 
 /* Card variant - elevated */
 .ker-card-elevated {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 20px rgba(45, 35, 25, 0.10), 0 2px 8px rgba(45, 35, 25, 0.06);
 }
 
 /* Card variant - interactive */
@@ -209,29 +211,33 @@ html.high-contrast.dark {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-/* Pill variants */
+/* Pill variants — met duidelijke borders voor toegankelijkheid */
 .ker-pill-primary {
   background: var(--primary-light);
   border-color: var(--primary);
   color: var(--primary);
+  font-weight: 600;
 }
 
 .ker-pill-success {
   background: var(--accent-green-bg);
   border-color: var(--accent-green);
   color: var(--accent-green);
+  font-weight: 600;
 }
 
 .ker-pill-warning {
   background: var(--accent-amber-bg);
   border-color: var(--accent-amber);
   color: var(--accent-amber);
+  font-weight: 600;
 }
 
 .ker-pill-danger {
   background: var(--accent-red-bg);
   border-color: var(--accent-red);
   color: var(--accent-red);
+  font-weight: 600;
 }
 
 /* KER Button - Basis */
@@ -259,31 +265,31 @@ html.high-contrast.dark {
 .ker-btn-primary {
   background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary), black 15%) 100%);
   color: var(--primary-foreground);
-  box-shadow: 0 4px 12px rgba(44, 122, 123, 0.25);
+  box-shadow: 0 4px 12px rgba(46, 107, 79, 0.25);
 }
 
 .ker-btn-primary:hover:not(:disabled) {
   background: linear-gradient(135deg, color-mix(in srgb, var(--primary), white 10%) 0%, var(--primary) 100%);
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(44, 122, 123, 0.3);
+  box-shadow: 0 6px 16px rgba(46, 107, 79, 0.3);
 }
 
 .ker-btn-primary:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(44, 122, 123, 0.2);
+  box-shadow: 0 2px 8px rgba(46, 107, 79, 0.2);
 }
 
-/* CTA / Accent button - Zacht Koraal */
+/* CTA / Accent button - Warm Terracotta */
 .ker-btn-accent {
   background: var(--accent);
   color: var(--accent-foreground);
-  box-shadow: 0 4px 12px rgba(237, 137, 54, 0.25);
+  box-shadow: 0 4px 12px rgba(184, 86, 54, 0.25);
 }
 
 .ker-btn-accent:hover:not(:disabled) {
   background: color-mix(in srgb, var(--accent), black 10%);
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(237, 137, 54, 0.3);
+  box-shadow: 0 6px 16px rgba(184, 86, 54, 0.3);
 }
 
 .ker-btn-secondary {
@@ -335,8 +341,8 @@ html.high-contrast.dark {
 .ker-input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(44, 122, 123, 0.1);
-  background: white;
+  box-shadow: 0 0 0 4px rgba(46, 107, 79, 0.12);
+  background: var(--card);
 }
 
 .ker-input::placeholder {
@@ -622,25 +628,29 @@ html.high-contrast.dark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.25rem 0.75rem;
+  padding: 0.375rem 1rem;
   border-radius: 9999px;
-  font-weight: 600;
-  font-size: 1rem;
+  font-weight: 700;
+  font-size: 1.0625rem;
+  border: 2px solid transparent;
 }
 
 .score-badge.green {
   background: var(--accent-green-bg);
   color: var(--accent-green);
+  border-color: var(--accent-green);
 }
 
 .score-badge.amber {
   background: var(--accent-amber-bg);
   color: var(--accent-amber);
+  border-color: var(--accent-amber);
 }
 
 .score-badge.red {
   background: var(--accent-red-bg);
   color: var(--accent-red);
+  border-color: var(--accent-red);
 }
 
 /* ============================================
@@ -729,21 +739,23 @@ html {
 
 .ker-stat {
   text-align: center;
-  padding: 0.75rem;
+  padding: 1rem;
   border-radius: 0.75rem;
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 251, 247, 0.6);
 }
 
 .ker-stat-value {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
   line-height: 1.2;
+  color: var(--foreground);
 }
 
 .ker-stat-label {
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   color: var(--muted-foreground);
   margin-top: 0.25rem;
+  font-weight: 500;
 }
 
 /* ============================================
@@ -785,6 +797,7 @@ html {
   font-size: 1rem;
   color: var(--muted-foreground);
   margin-top: 0.125rem;
+  line-height: 1.5;
 }
 
 /* ============================================
@@ -808,30 +821,35 @@ html {
 .ker-badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.625rem;
+  padding: 0.3125rem 0.75rem;
   border-radius: 9999px;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 600;
+  border: 1.5px solid transparent;
 }
 
 .ker-badge-green {
   background: var(--accent-green-bg);
   color: var(--accent-green);
+  border-color: var(--accent-green);
 }
 
 .ker-badge-amber {
   background: var(--accent-amber-bg);
   color: var(--accent-amber);
+  border-color: var(--accent-amber);
 }
 
 .ker-badge-red {
   background: var(--accent-red-bg);
   color: var(--accent-red);
+  border-color: var(--accent-red);
 }
 
 .ker-badge-primary {
   background: var(--primary-light);
   color: var(--primary);
+  border-color: var(--primary);
 }
 
 /* ============================================
@@ -916,14 +934,14 @@ html {
   font-size: 0.9375rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(44, 122, 123, 0.3);
+  box-shadow: 0 4px 16px rgba(46, 107, 79, 0.3);
   transition: all 0.2s ease;
   min-height: 48px;
 }
 
 .ker-help-float-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(44, 122, 123, 0.4);
+  box-shadow: 0 6px 20px rgba(46, 107, 79, 0.4);
 }
 
 /* ============================================

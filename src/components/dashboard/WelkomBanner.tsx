@@ -67,7 +67,7 @@ export function WelkomBanner({ userName }: WelkomBannerProps) {
     <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl p-5 border border-primary/20 relative">
       <button
         onClick={dismiss}
-        className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-lg leading-none"
+        className="absolute top-3 right-3 text-muted-foreground hover:text-foreground text-lg leading-none min-w-[44px] min-h-[44px] flex items-center justify-center"
         aria-label="Sluiten"
       >
         &times;
@@ -76,10 +76,10 @@ export function WelkomBanner({ userName }: WelkomBannerProps) {
       <div className="flex items-start gap-3 mb-4">
         <GerAvatar size="sm" />
         <div>
-          <h2 className="font-bold text-foreground">
+          <h2 className="font-bold text-foreground text-lg">
             Welkom {voornaam}!
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             Fijn dat je er bent. Hier zijn 3 dingen om mee te beginnen:
           </p>
         </div>
@@ -90,14 +90,14 @@ export function WelkomBanner({ userName }: WelkomBannerProps) {
           <Link
             key={s.href}
             href={s.href}
-            className="flex items-start gap-2 p-3 bg-white rounded-lg border hover:shadow-md transition-shadow group"
+            className="flex items-start gap-3 p-4 bg-card rounded-xl border border-border hover:shadow-md hover:border-primary/30 transition-all group min-h-[48px]"
           >
             <span className="text-xl">{s.emoji}</span>
             <div>
-              <p className="font-medium text-sm text-foreground group-hover:text-primary transition-colors">
+              <p className="font-medium text-base text-foreground group-hover:text-primary transition-colors">
                 {s.titel}
               </p>
-              <p className="text-xs text-muted-foreground">{s.tekst}</p>
+              <p className="text-sm text-muted-foreground">{s.tekst}</p>
             </div>
           </Link>
         ))}
