@@ -2,32 +2,15 @@ import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { prisma } from "./prisma"
-import { logAudit } from "./audit"
-
-// AUTH_SECRET is vereist door NextAuth v5. Detecteer uit environment variabelen.
-// Fallback voorkomt crashes als de env var niet beschikbaar is op Vercel runtime.
-const authSecret = process.env.AUTH_SECRET
-  || process.env.NEXTAUTH_SECRET
-  || process.env.SECRET
-  || (() => {
-    console.warn("[AUTH] WAARSCHUWING: Geen AUTH_SECRET gevonden in environment! " +
-      "Stel AUTH_SECRET in via Vercel Dashboard → Settings → Environment Variables. " +
-      "Gebruik als fallback een gegenereerde waarde.")
-    // Deterministische fallback op basis van beschikbare config
-    // Dit is NIET veilig voor productie - stel altijd AUTH_SECRET in!
-    return "mantelzorg-app-fallback-secret-stel-auth-secret-in-op-vercel"
-  })()
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  secret: authSecret,
   // Don't use adapter with credentials provider + JWT
   session: {
     strategy: "jwt",
-    maxAge: 7 * 24 * 60 * 60, // 7 dagen — zorgapplicatie: korte sessieduur
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
     signIn: "/login",
-    error: "/login",
   },
   trustHost: true,
   providers: [
@@ -56,14 +39,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           })
 
           if (!user || !user.password) {
-            console.error("[AUTH] Login mislukt: gebruiker niet gevonden of geen wachtwoord")
+            console.error("[AUTH] Gebruiker niet gevonden of geen wachtwoord:", credentials.email)
             throw new Error("Onjuist e-mailadres of wachtwoord")
-          }
-
-          // Blokkeer inactieve accounts
-          if (!user.isActive) {
-            console.error("[AUTH] Login mislukt: account niet actief")
-            throw new Error("Dit account is niet meer actief. Neem contact op met de beheerder.")
           }
 
           const isPasswordValid = await bcrypt.compare(
@@ -72,7 +49,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           )
 
           if (!isPasswordValid) {
-            console.error("[AUTH] Login mislukt: onjuist wachtwoord")
+            console.error("[AUTH] Wachtwoord onjuist voor:", credentials.email)
             throw new Error("Onjuist e-mailadres of wachtwoord")
           }
 
@@ -97,19 +74,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
 
           // Incrementeer sessionVersion om oude sessies te invalideren (single-session login)
+          // Dit zorgt ervoor dat bij een nieuwe login, alle andere browser sessies uitgelogd worden
           const updatedUser = await prisma.user.update({
             where: { id: user.id },
             data: { sessionVersion: { increment: 1 } },
           })
-
-          // Audit log: succesvolle login
-          logAudit({
-            userId: user.id,
-            actie: "LOGIN",
-            entiteit: "User",
-            entiteitId: user.id,
-            details: { methode: "credentials" },
-          }).catch(() => {}) // fire-and-forget, niet blokkeren
 
           return {
             id: user.id,
@@ -126,8 +95,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           // Gooi auth-fouten direct door (onjuiste credentials)
           if (error instanceof Error && (
             error.message.includes("Onjuist") ||
-            error.message.includes("verplicht") ||
-            error.message.includes("niet meer actief")
+            error.message.includes("verplicht")
           )) {
             throw error
           }
@@ -140,34 +108,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user }) {
-      try {
-        if (user) {
-          token.id = user.id!
-          token.role = user.role
-          token.caregiverId = user.caregiverId
-          token.buddyId = user.buddyId
-          token.gemeenteNaam = user.gemeenteNaam
-          token.gemeenteRollen = user.gemeenteRollen || []
-          token.sessionVersion = user.sessionVersion
-        }
-      } catch (e) {
-        console.error("[AUTH] JWT callback fout:", e)
+      if (user) {
+        token.id = user.id!
+        token.role = user.role
+        token.caregiverId = user.caregiverId
+        token.buddyId = user.buddyId
+        token.gemeenteNaam = user.gemeenteNaam
+        token.gemeenteRollen = user.gemeenteRollen || []
+        token.sessionVersion = user.sessionVersion
       }
       return token
     },
     async session({ session, token }) {
-      try {
-        if (session.user && token) {
-          session.user.id = (token.id as string) || ""
-          session.user.role = (token.role as string) || "USER"
-          session.user.caregiverId = (token.caregiverId as string) || null
-          session.user.buddyId = (token.buddyId as string) || null
-          session.user.gemeenteNaam = (token.gemeenteNaam as string) || null
-          session.user.gemeenteRollen = (token.gemeenteRollen as string[]) || []
-          session.user.sessionVersion = (token.sessionVersion as number) || 0
-        }
-      } catch (e) {
-        console.error("[AUTH] Session callback fout:", e)
+      if (session.user) {
+        session.user.id = token.id as string
+        session.user.role = token.role as string
+        session.user.caregiverId = token.caregiverId as string | null
+        session.user.buddyId = token.buddyId as string | null
+        session.user.gemeenteNaam = token.gemeenteNaam as string | null
+        session.user.gemeenteRollen = (token.gemeenteRollen as string[]) || []
+        session.user.sessionVersion = token.sessionVersion as number
       }
       return session
     },
