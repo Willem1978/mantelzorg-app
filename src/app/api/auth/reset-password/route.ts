@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { resetPasswordSchema, validateBody } from "@/lib/validations"
+import { logAudit } from "@/lib/audit"
 
 export const dynamic = 'force-dynamic'
 
@@ -79,6 +80,15 @@ export async function POST(request: NextRequest) {
     // Delete used token
     await prisma.passwordResetToken.delete({
       where: { token }
+    })
+
+    // Audit log: wachtwoord reset
+    await logAudit({
+      userId: user.id,
+      actie: "PASSWORD_RESET",
+      entiteit: "User",
+      entiteitId: user.id,
+      ipAdres: ip,
     })
 
     // Create notification

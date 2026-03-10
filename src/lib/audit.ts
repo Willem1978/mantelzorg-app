@@ -6,12 +6,14 @@ export async function logAudit({
   entiteit,
   entiteitId,
   details,
+  ipAdres,
 }: {
   userId: string
   actie: string
   entiteit: string
   entiteitId?: string
   details?: Record<string, any>
+  ipAdres?: string
 }) {
   try {
     await prisma.auditLog.create({
@@ -21,6 +23,7 @@ export async function logAudit({
         entiteit,
         entiteitId: entiteitId || null,
         details: details || undefined,
+        ipAdres: ipAdres || null,
       },
     })
   } catch (error) {

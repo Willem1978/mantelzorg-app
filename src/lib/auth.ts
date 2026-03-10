@@ -2,6 +2,7 @@ import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { prisma } from "./prisma"
+import { logAudit } from "./audit"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   // Don't use adapter with credentials provider + JWT
@@ -84,6 +85,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             where: { id: user.id },
             data: { sessionVersion: { increment: 1 } },
           })
+
+          // Audit log: succesvolle login (async, blokkeert niet)
+          logAudit({
+            userId: user.id,
+            actie: "LOGIN",
+            entiteit: "User",
+            entiteitId: user.id,
+            details: { rol: user.role },
+          }).catch(() => {})
 
           return {
             id: user.id,
