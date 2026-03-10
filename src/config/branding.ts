@@ -7,9 +7,9 @@
 export const branding = {
   // App identiteit
   appName: "MantelBuddy",
-  tagline: "Samen lokaal sterk",
-  description: "MantelBuddy verbindt mantelzorgers met vrijwilligers uit de buurt",
-  heroTitle: "Samen zorgen, samen sterk",
+  tagline: "Je staat er niet alleen voor",
+  description: "MantelBuddy helpt mantelzorgers met rust, inzicht en steun van dichtbij",
+  heroTitle: "Je staat er niet alleen voor",
 
   // Contact
   contact: {

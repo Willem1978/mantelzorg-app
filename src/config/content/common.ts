@@ -6,9 +6,9 @@ export const common = {
   // Algemene knoppen
   buttons: {
     opslaan: "Opslaan",
-    annuleren: "Annuleren",
+    annuleren: "Niet nu",
     verwijderen: "Verwijderen",
-    bewerken: "Bewerken",
+    bewerken: "Aanpassen",
     sluiten: "Sluiten",
     terug: "Terug",
     verder: "Ga verder",
@@ -25,47 +25,47 @@ export const common = {
 
   // Hulp knop (floating)
   help: {
-    buttonLabel: "Hulp nodig?",
-    title: "Hulp & Veelgestelde vragen",
+    buttonLabel: "Wil je hulp?",
+    title: "Hulp & veelgestelde vragen",
     sluiten: "Sluiten",
     meerHulp: {
-      title: "Meer hulp nodig?",
-      tekst: "Bel de gratis Mantelzorglijn voor persoonlijk advies.",
+      title: "Wil je met iemand praten?",
+      tekst: "Bel de gratis Mantelzorglijn. Ze luisteren en helpen je verder.",
     },
   },
 
   // Toegankelijkheid / weergave-instellingen
   accessibility: {
     title: "Weergave-instellingen",
-    subtitle: "Pas de app aan zodat het prettig is om te gebruiken.",
+    subtitle: "Pas de app aan zodat het prettig is voor jou.",
     opties: [
-      { label: "Grotere tekst", beschrijving: "Maakt alle tekst iets groter", emoji: "🔤" },
-      { label: "Hoog contrast", beschrijving: "Maakt tekst en randen scherper", emoji: "🔲" },
-      { label: "Minder beweging", beschrijving: "Schakelt animaties uit", emoji: "🎯" },
+      { label: "Grotere tekst", beschrijving: "Maakt alle tekst iets groter", emoji: "\uD83D\uDD24" },
+      { label: "Hoog contrast", beschrijving: "Maakt tekst en randen scherper", emoji: "\uD83D\uDD32" },
+      { label: "Minder beweging", beschrijving: "Schakelt animaties uit", emoji: "\uD83C\uDFAF" },
     ],
   },
 
   // Veelgestelde vragen
   faq: [
     {
-      vraag: "Hoe doe ik de balanstest?",
-      antwoord: "Ga naar 'Balanstest' in het menu. Je beantwoordt korte vragen over hoe het met je gaat. Aan het einde zie je je score en tips.",
+      vraag: "Hoe doe ik de Balanscheck?",
+      antwoord: "Ga naar 'Balanstest' in het menu. Je beantwoordt korte vragen over hoe het met je gaat. Daarna zie je meteen je resultaten en tips die bij je passen.",
     },
     {
       vraag: "Wat is een check-in?",
-      antwoord: "Een check-in is een kort momentje om bij te houden hoe het met je gaat. Je beantwoordt een paar vragen en krijgt persoonlijke tips.",
+      antwoord: "Een check-in is een kort momentje om even stil te staan bij hoe het met je gaat. Je beantwoordt een paar vragen en krijgt tips die bij je passen.",
     },
     {
       vraag: "Hoe vind ik hulp bij mij in de buurt?",
-      antwoord: "Ga naar 'Hulp' in het menu. Daar vind je organisaties en hulpverleners bij jou in de buurt.",
+      antwoord: "Ga naar 'Hulp' in het menu. Daar vind je organisaties en hulpverleners dichtbij.",
     },
     {
       vraag: "Kan ik mijn gegevens aanpassen?",
-      antwoord: "Ja! Ga naar je profiel via het icoontje rechtsboven of via 'Profiel' in het menu onderaan.",
+      antwoord: "Ja! Ga naar je profiel via het icoontje rechtsboven. Daar kun je alles wijzigen.",
     },
     {
       vraag: "Is mijn informatie veilig?",
-      antwoord: "Ja. Je gegevens worden veilig opgeslagen en niet gedeeld met derden. Bekijk onze privacyverklaring voor meer informatie.",
+      antwoord: "Absoluut. Je gegevens worden veilig opgeslagen en nooit gedeeld met anderen. Bekijk onze privacyverklaring voor meer informatie.",
     },
   ],
 } as const

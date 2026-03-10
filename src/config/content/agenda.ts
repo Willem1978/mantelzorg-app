@@ -4,7 +4,7 @@
 
 export const agendaContent = {
   title: "Mijn Agenda",
-  subtitle: "Hier zie je wat je moet doen.",
+  subtitle: "Hier zie je wat er op de planning staat.",
 
   addButton: "Iets toevoegen",
 
@@ -44,7 +44,7 @@ export const agendaContent = {
   // Statussen
   laden: "Even laden...",
   leeg: {
-    title: "Je agenda is leeg",
-    subtitle: "Voeg toe wat je moet doen.",
+    title: "Je agenda is nog leeg",
+    subtitle: "Voeg toe wat er op de planning staat.",
   },
 } as const

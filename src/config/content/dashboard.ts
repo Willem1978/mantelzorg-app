@@ -5,14 +5,14 @@
 export const dashboardContent = {
   // Welkomst
   loggedOut: {
-    title: "Welkom bij MantelBuddy!",
-    subtitle: "Log in om je dashboard te zien. Hier vind je je resultaten, tips en hulp bij jou in de buurt.",
+    title: "Fijn dat je er bent",
+    subtitle: "Log in om je persoonlijke overzicht te bekijken. Hier vind je je resultaten, tips en hulp dichtbij.",
     loginButton: "Inloggen",
   },
 
   // Begroeting header
-  greeting: (name: string) => `Hoi ${name}!`,
-  pageIntro: "Hier zie je hoe het met je gaat. Scrol naar beneden voor tips en hulp.",
+  greeting: (name: string) => `Hoi ${name}, fijn dat je er bent`,
+  pageIntro: "Fijn dat je even de tijd neemt voor jezelf. Hier zie je in \u00E9\u00E9n oogopslag hoe het gaat en wat je kunt doen.",
 
   // Begroetingen op basis van tijdstip
   greetings: {
@@ -24,19 +24,19 @@ export const dashboardContent = {
   // Score niveau feedback
   scoreMessages: {
     LAAG: {
-      emoji: "💚",
+      emoji: "\uD83D\uDC9A",
       kort: "Je houdt het goed vol",
-      uitleg: "Je balans is goed. Zorg ook goed voor jezelf. Neem af en toe rust. Zo hou je het vol.",
+      uitleg: "Fijn om te zien! Je balans is goed. Blijf ook goed voor jezelf zorgen. Neem af en toe even rust \u2014 zo hou je het vol.",
     },
     GEMIDDELD: {
-      emoji: "🧡",
-      kort: "Je doet heel veel",
-      uitleg: "Je hebt veel te doen. Het is goed om hulp te vragen. Denk aan familie, buren of hulp uit je gemeente. Kleine stappen helpen al veel.",
+      emoji: "\uD83E\uDDE1",
+      kort: "Je draagt veel op je schouders",
+      uitleg: "Je hebt veel te doen. Dat is niet niks. Het is slim om hulp te vragen \u2014 aan familie, buren of je gemeente. Kleine stappen helpen al.",
     },
     HOOG: {
-      emoji: "❤️",
-      kort: "Je doet te veel",
-      uitleg: "Je hebt te veel op je bordje. Ga hier niet alleen mee door. Bel de Mantelzorglijn: 030 - 205 90 59 (gratis). Of neem contact op met je gemeente. Zij helpen je verder.",
+      emoji: "\u2764\uFE0F",
+      kort: "Je draagt te veel alleen",
+      uitleg: "Het is te veel wat je doet. Ga hier niet alleen mee door. Bel de Mantelzorglijn: 030 - 205 90 59 (gratis). Of neem contact op met je gemeente. Ze helpen je graag verder.",
     },
   },
 
@@ -49,16 +49,16 @@ export const dashboardContent = {
   // Zorgtaken sectie
   zorgtaken: {
     sectionTitle: "Je zorgtaken",
-    sectionEmoji: "📋",
+    sectionEmoji: "\uD83D\uDCCB",
     title: "Jouw zorgtaken",
-    subtitle: "Dit zijn je taken. Rode en oranje taken zijn zwaar. Druk op een taak om hulp te vinden.",
+    subtitle: "Dit zijn de taken die je doet. Rode en oranje taken zijn zwaar voor je. Tik op een taak om te zien welke hulp er is.",
     niveaus: {
       licht: "Goed",
       matig: "Matig",
       zwaar: "Zwaar",
     },
     hulpbronCount: (count: number) => `${count} hulpbron${count !== 1 ? "nen" : ""} beschikbaar`,
-    zoekHulp: "Vind hulp",
+    zoekHulp: "Bekijk hulp",
     goedeTaken: "Taken die goed gaan",
     urenPerWeek: (uren: number) => `(${uren}u/week)`,
   },
@@ -71,38 +71,38 @@ export const dashboardContent = {
 
   // Aanbevolen artikelen
   artikelen: {
-    title: "Aanbevolen voor jou",
-    emoji: "💡",
+    title: "Aangeraden voor jou",
+    emoji: "\uD83D\uDCA1",
     perNiveau: {
       LAAG: "Tips om het goed te blijven doen.",
-      GEMIDDELD: "Artikelen die je nu kunnen helpen.",
-      HOOG: "Belangrijke informatie voor jou.",
+      GEMIDDELD: "Dit kan je nu helpen.",
+      HOOG: "Belangrijk om te lezen.",
     },
-    default: "Artikelen die voor jou interessant kunnen zijn.",
+    default: "Artikelen die bij jouw situatie passen.",
     meerBekijken: "Bekijk meer informatie",
   },
 
   // WhatsApp sectie
   whatsapp: {
     title: "Gebruik MantelBuddy ook via WhatsApp",
-    subtitle: "Scan de QR code met je telefoon. Of druk op de knop hieronder.",
+    subtitle: "Scan de QR code met je telefoon. Of tik op de knop hieronder.",
     qrAlt: "Scan QR code om WhatsApp te starten",
     openButton: "Open WhatsApp",
   },
 
   // Geen test gedaan
   geenTest: {
-    emoji: "📊",
-    title: "Nog geen test gedaan",
-    subtitle: "Ontdek hoe het met je gaat en waar je hulp bij kunt krijgen",
-    button: "Start de balanstest",
+    emoji: "\uD83D\uDCCA",
+    title: "Hoe gaat het eigenlijk met je?",
+    subtitle: "Doe de Balanscheck en ontdek in 5 minuten hoe het met je gaat en waar je hulp bij kunt krijgen.",
+    button: "Start de Balanscheck",
   },
 
   // Nieuwe test nodig
   nieuweTest: {
-    title: "Tijd voor een nieuwe balanstest",
-    tekst: (dagen: number) => `Je laatste test was ${dagen} dagen geleden. Het is goed om elke 3 maanden te checken hoe het gaat.`,
-    button: "Doe de balanstest",
+    title: "Tijd voor een nieuwe Balanscheck",
+    tekst: (dagen: number) => `Je laatste check was ${dagen} dagen geleden. Het is fijn om elke 3 maanden even te kijken hoe het gaat.`,
+    button: "Doe de Balanscheck",
   },
 
   // Laden
@@ -115,7 +115,7 @@ export const dashboardContent = {
     feelings: [
       { value: "great", label: "Super" },
       { value: "good", label: "Goed" },
-      { value: "okay", label: "Oké" },
+      { value: "okay", label: "Ok\u00E9" },
       { value: "tired", label: "Moe" },
       { value: "struggling", label: "Zwaar" },
     ],

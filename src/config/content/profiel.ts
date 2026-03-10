@@ -6,8 +6,8 @@ export const profielContent = {
   // Header
   header: {
     greeting: (naam: string) => `Hoi ${naam || "daar"}!`,
-    subtitle: "Hier kun je je gegevens bekijken en wijzigen.",
-    intro: "Hier kun je je gegevens bekijken en aanpassen. Met je adresgegevens zoeken we hulp bij jou in de buurt. Klik op 'Bewerken' om iets te veranderen.",
+    subtitle: "Hier kun je je gegevens bekijken en aanpassen.",
+    intro: "Hier kun je je gegevens bekijken en aanpassen. Met je adresgegevens zoeken we hulp dichtbij. Tik op 'Aanpassen' om iets te wijzigen.",
   },
 
   // Adres zoeken component
@@ -55,7 +55,7 @@ export const profielContent = {
   // Mijn gegevens sectie
   mijnGegevens: {
     title: "Mijn gegevens",
-    emoji: "👤",
+    emoji: "\uD83D\uDC64",
     naamPlaceholder: "Je volledige naam",
     emailPlaceholder: "je@email.nl",
     adresLabel: "Waar woon je?",
@@ -65,7 +65,7 @@ export const profielContent = {
   // Naaste sectie
   naaste: {
     title: "Voor wie zorg ik",
-    emoji: "❤️",
+    emoji: "\u2764\uFE0F",
     naamLabel: "Naam van je naaste",
     naamPlaceholder: "Naam van degene voor wie je zorgt",
     adresLabel: "Waar woont je naaste?",
@@ -79,7 +79,7 @@ export const profielContent = {
     opslaanBezig: "Even geduld...",
     opgeslagen: "Gegevens opgeslagen!",
     fout: "Oeps, dat lukte niet. Probeer het opnieuw.",
-    bewerken: "Bewerken",
+    bewerken: "Aanpassen",
   },
 
   // Telefoonnummer wijzigen
@@ -119,19 +119,19 @@ export const profielContent = {
 
   // Test resultaat
   testResultaat: {
-    title: "Laatste Balanstest",
-    emoji: "📊",
+    title: "Laatste Balanscheck",
+    emoji: "\uD83D\uDCCA",
     niveaus: {
       laag: "Goed vol te houden",
-      gemiddeld: "Matig belastend",
-      hoog: "Te zwaar",
+      gemiddeld: "Het wordt zwaar",
+      hoog: "Te veel op je bordje",
     } as Record<string, string>,
   },
 
   // Jouw reis (mijlpalen)
   reis: {
     title: "Jouw reis",
-    emoji: "🗺️",
+    emoji: "\uD83D\uDDFA\uFE0F",
   },
 
   // WhatsApp sectie
@@ -151,11 +151,11 @@ export const profielContent = {
   // Account sectie
   account: {
     title: "Account",
-    emoji: "⚙️",
+    emoji: "\u2699\uFE0F",
     tutorial: {
-      label: "Bekijk tutorial opnieuw",
+      label: "Bekijk uitleg opnieuw",
       beschrijving: "Uitleg over hoe MantelBuddy werkt",
-      emoji: "📖",
+      emoji: "\uD83D\uDCD6",
     },
     wachtwoord: "Wachtwoord wijzigen",
     privacy: {
@@ -171,19 +171,19 @@ export const profielContent = {
   // Account verwijderen bevestiging
   verwijderBevestiging: {
     title: "Account permanent verwijderen",
-    emoji: "⚠️",
+    emoji: "\u26A0\uFE0F",
     letOp: "Let op:",
     waarschuwing: "dit kan niet ongedaan gemaakt worden. Alle gegevens worden permanent verwijderd:",
     items: [
       "Je profiel en accountgegevens",
-      "Alle Balanstest resultaten en rapporten",
+      "Alle Balanscheck resultaten en rapporten",
       "Je agenda, taken en hulpvragen",
       "Opgeslagen favorieten",
       "WhatsApp koppeling",
     ],
     typInstructie: "om te bevestigen:",
     typWoord: "VERWIJDEREN",
-    annuleren: "Annuleren",
+    annuleren: "Niet nu",
     verwijderenBezig: "Verwijderen...",
     definitief: "Definitief verwijderen",
     fout: "Oeps, dat lukte niet. Probeer het opnieuw.",
@@ -192,9 +192,9 @@ export const profielContent = {
 
   // Hulp sectie
   hulp: {
-    title: "Hulp nodig?",
-    emoji: "🆘",
-    tekst: "Wil je met iemand praten over mantelzorg? Bel de Mantelzorglijn. Zij luisteren en geven advies. Gratis en anoniem.",
+    title: "Wil je met iemand praten?",
+    emoji: "\uD83C\uDD98",
+    tekst: "Bel de Mantelzorglijn. Ze luisteren en geven advies. Gratis en anoniem.",
     telefoon: "030 - 205 90 59",
   },
 

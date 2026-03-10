@@ -30,11 +30,11 @@ export default function RootLayout({
     <html lang="nl" suppressHydrationWarning>
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-        {/* Google Fonts via CDN - faalt gracefully naar system fonts */}
+        {/* Nunito via Google Fonts CDN - faalt gracefully naar system fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Open+Sans:wght@400;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap"
           rel="stylesheet"
         />
       </head>

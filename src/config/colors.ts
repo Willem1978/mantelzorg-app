@@ -55,14 +55,14 @@ export function getScoreColors(niveau: string) {
 
 // Emoticon kleuren (voor SmileyButton etc.)
 export const emoticonColors = {
-  nee: { bg: "#7CB342", face: "#558B2F", label: "Goed" },
-  soms: { bg: "#FFD54F", face: "#F9A825", label: "Gaat wel" },
-  ja: { bg: "#EF5350", face: "#C62828", label: "Niet goed" },
+  nee: { bg: "#8DB793", face: "#1B7A3D", label: "Goed" },
+  soms: { bg: "#E8C96A", face: "#A85E00", label: "Gaat wel" },
+  ja: { bg: "#D49A7A", face: "#A52019", label: "Niet goed" },
 } as const
 
 // Agenda event kleur
 export const eventTypeColors = {
-  CARE_TASK: "#ef4444",
+  CARE_TASK: "#B85636",
 } as const
 
 // Urgentie kleuren (voor alarmen)

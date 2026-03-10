@@ -5,7 +5,7 @@
 export const authContent = {
   login: {
     title: "Welkom terug!",
-    subtitle: "Vul je gegevens in om in te loggen. Na het inloggen ga je naar je dashboard.",
+    subtitle: "Fijn dat je er weer bent. Vul je gegevens in om naar je dashboard te gaan.",
     sessionInvalidated: {
       title: "Je bent uitgelogd",
       tekst: "Je bent op een ander apparaat ingelogd. Log opnieuw in om door te gaan.",
@@ -16,7 +16,7 @@ export const authContent = {
     },
     error: {
       title: "Dat lukte niet",
-      tekst: "Je e-mail of wachtwoord is niet goed. Kijk het na en probeer opnieuw.",
+      tekst: "Je e-mail of wachtwoord klopt niet. Kijk het even na en probeer het opnieuw.",
       generic: "Oeps, dat lukte niet",
       invalidCredentials: "Ongeldige inloggegevens",
     },
@@ -25,7 +25,7 @@ export const authContent = {
       emailPlaceholder: "naam@voorbeeld.nl",
       emailHelp: "Het adres waarmee je bent aangemeld",
       passwordLabel: "Je wachtwoord",
-      passwordPlaceholder: "••••••••",
+      passwordPlaceholder: "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022",
       forgotPassword: "Wachtwoord vergeten?",
       submitButton: "Inloggen",
       submitting: "Inloggen...",
@@ -33,8 +33,8 @@ export const authContent = {
     footer: {
       noAccount: "Nog geen account? Maak er gratis een aan.",
       createAccount: "Account aanmaken",
-      backToHome: "← Terug naar home",
-      doTestFirst: "Doe eerst de Balanstest",
+      backToHome: "\u2190 Terug naar home",
+      doTestFirst: "Doe eerst de Balanscheck",
     },
     success: "Je bent ingelogd!",
   },
@@ -43,15 +43,15 @@ export const authContent = {
     steps: {
       account: {
         title: "Maak een account",
-        subtitle: "Vul je e-mail en wachtwoord in. Zo kun je later weer inloggen.",
+        subtitle: "Vul je e-mail en wachtwoord in. Zo kun je later altijd weer inloggen.",
       },
       overJou: {
         title: "Over jou",
-        subtitle: "Vul je naam en adres in. Met je adres zoeken we hulp bij jou in de buurt.",
+        subtitle: "Vertel iets over jezelf. Met je adres zoeken we hulp dichtbij.",
       },
       overNaaste: {
         title: "Over je naaste",
-        subtitle: "Bijna klaar! Vul de gegevens van je naaste in.",
+        subtitle: "Bijna klaar! Vertel iets over degene voor wie je zorgt.",
       },
     },
     progress: (stap: number) => `stap ${stap} van 3`,
@@ -82,14 +82,14 @@ export const authContent = {
       namePlaceholder: "Je voornaam",
       addressLabel: "Waar woon je?",
       addressPlaceholder: "Begin met typen, bijv. Kerkstraat of 1234AB",
-      addressHelp: "Dit hebben we nodig om hulp bij jou in de buurt te vinden",
+      addressHelp: "Dit hebben we nodig om hulp dichtbij te vinden",
       careNameLabel: "Hoe heet degene voor wie je zorgt?",
       careNamePlaceholder: "Voornaam",
       careRelationLabel: "Wie is dat voor jou?",
       careRelationHelp: "Tik op wat van toepassing is",
       careAddressLabel: "Waar woont je naaste?",
       careAddressPlaceholder: "Begin met typen, bijv. Kerkstraat of 1234AB",
-      careAddressHelp: "Zo vinden we hulp bij je naaste in de buurt",
+      careAddressHelp: "Zo vinden we hulp dichtbij je naaste",
     },
     privacy: {
       akkoordPrefix: "Ik ga akkoord met de",
@@ -113,7 +113,7 @@ export const authContent = {
     },
     buttons: {
       verder: "Ga verder",
-      terug: "← Terug",
+      terug: "\u2190 Terug",
       klaar: "Klaar!",
       bezig: "Even geduld...",
     },
@@ -131,7 +131,7 @@ export const authContent = {
     success: {
       title: "Kijk in je e-mail",
       tekst: "We hebben je een link gestuurd. Klik erop om een nieuw wachtwoord te kiezen.",
-      spamHint: "Geen mail? Kijk bij ongewenste e-mail (spam).",
+      spamHint: "Geen mail? Kijk even bij ongewenste e-mail (spam).",
     },
     buttons: {
       nogEenKeer: "Nog een keer proberen",
