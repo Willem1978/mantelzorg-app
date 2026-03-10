@@ -208,7 +208,8 @@ export const VALID_ROLES = Object.keys(ROLLEN) as UserRole[]
 // BELASTING NIVEAUS
 // ============================================
 
-export type BelastingNiveau = "LAAG" | "GEMIDDELD" | "HOOG"
+import type { BelastingNiveau } from "@prisma/client"
+export type { BelastingNiveau }
 
 export function getScoreLevel(score: number): BelastingNiveau {
   if (score < 7) return "LAAG"

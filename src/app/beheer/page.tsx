@@ -168,24 +168,26 @@ export default function BeheerDashboard() {
       {/* KPI kaarten */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {kpiCards.map((card) => {
-          const Wrapper = card.link ? Link : "div"
-          const wrapperProps = card.link ? { href: card.link } : {}
-
-          return (
-            <Wrapper
-              key={card.label}
-              {...(wrapperProps as any)}
-              className={`p-4 rounded-xl border ${kleurMap[card.kleur]} ${card.link ? "hover:shadow-md transition-shadow cursor-pointer" : ""}`}
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">{card.label}</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">{card.waarde}</p>
-                  <p className="text-xs text-gray-500 mt-1">{card.sub}</p>
-                </div>
-                <span className="text-2xl">{card.icon}</span>
+          const baseClass = `p-4 rounded-xl border ${kleurMap[card.kleur]} ${card.link ? "hover:shadow-md transition-shadow cursor-pointer" : ""}`
+          const inner = (
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-gray-600">{card.label}</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{card.waarde}</p>
+                <p className="text-xs text-gray-500 mt-1">{card.sub}</p>
               </div>
-            </Wrapper>
+              <span className="text-2xl">{card.icon}</span>
+            </div>
+          )
+
+          return card.link ? (
+            <Link key={card.label} href={card.link} className={baseClass}>
+              {inner}
+            </Link>
+          ) : (
+            <div key={card.label} className={baseClass}>
+              {inner}
+            </div>
           )
         })}
       </div>

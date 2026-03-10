@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { prisma } from "./prisma"
 import { logAudit } from "./audit"
+import { checkRateLimit } from "./rate-limit"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   // Don't use adapter with credentials provider + JWT
@@ -26,6 +27,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!credentials?.email || !credentials?.password) {
           console.error("[AUTH] Geen email of wachtwoord meegegeven")
           throw new Error("Email en wachtwoord zijn verplicht")
+        }
+
+        // Rate limiting op login (per email adres)
+        const limit = checkRateLimit(credentials.email as string, "login")
+        if (!limit.allowed) {
+          throw new Error("Te veel inlogpogingen. Probeer het over enkele minuten opnieuw.")
         }
 
         try {

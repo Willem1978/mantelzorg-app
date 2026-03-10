@@ -1,5 +1,6 @@
 import prisma from '@/lib/prisma'
 import { checkAlarmindicatoren } from '@/lib/alarm-indicatoren'
+import type { BelastingNiveau } from "@prisma/client"
 import {
   sendWhatsAppMessageWithImage,
   getScoreImageUrl,
@@ -400,7 +401,7 @@ async function saveTestResults(
         postcode: caregiver?.postalCode || '0000XX',
         huisnummer: '0',
         totaleBelastingScore: score,
-        belastingNiveau: level as any,
+        belastingNiveau: level as BelastingNiveau,
         totaleZorguren,
         isCompleted: true,
         completedAt: new Date(),
@@ -413,9 +414,9 @@ async function saveTestResults(
       await prisma.alarmLog.createMany({
         data: alarmen.map((alarm) => ({
           testId: testResult.id,
-          type: alarm.type as any,
+          type: alarm.type,
           beschrijving: alarm.beschrijving,
-          urgentie: alarm.urgentie as any,
+          urgentie: alarm.urgentie,
         })),
       })
     }
