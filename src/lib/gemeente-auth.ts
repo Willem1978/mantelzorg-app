@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth"
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import type { Prisma } from "@prisma/client"
 
 // Helper: haal gemeente naam op uit sessie en valideer autorisatie
 export async function getGemeenteSession() {
@@ -51,7 +52,7 @@ export async function logGemeenteAudit(
   if (!userId) return
   try {
     await prisma.auditLog.create({
-      data: { userId, actie, entiteit, details: (details || {}) as any },
+      data: { userId, actie, entiteit, details: (details || {}) as Prisma.InputJsonValue },
     })
   } catch {
     // Silently fail - audit logging mag de hoofdflow niet blokkeren

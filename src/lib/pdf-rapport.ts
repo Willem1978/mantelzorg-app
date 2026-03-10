@@ -3,6 +3,11 @@ import autoTable, { type CellHookData } from "jspdf-autotable"
 import { pdfColors } from "@/config/colors"
 import { branding } from "@/config/branding"
 
+// jspdf-autotable voegt lastAutoTable toe aan het doc object
+interface JsPDFWithAutoTable extends jsPDF {
+  lastAutoTable: { finalY: number }
+}
+
 // ==========================================
 // INTERFACES
 // ==========================================
@@ -477,7 +482,7 @@ export function generatePdfRapport(data: PdfRapportData): void {
       margin: { left: 20, right: 20 },
     })
 
-    y = (doc as any).lastAutoTable.finalY + 10
+    y = (doc as JsPDFWithAutoTable).lastAutoTable.finalY + 10
   }
 
   // ==========================================
@@ -527,7 +532,7 @@ export function generatePdfRapport(data: PdfRapportData): void {
     margin: { left: 20, right: 20 },
   })
 
-  y = (doc as any).lastAutoTable.finalY + 10
+  y = (doc as JsPDFWithAutoTable).lastAutoTable.finalY + 10
 
   // ==========================================
   // BELANGRIJKE CONTACTEN

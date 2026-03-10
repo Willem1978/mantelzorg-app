@@ -3,10 +3,12 @@
  * Gedeeld tussen web API en WhatsApp handler.
  */
 
+import type { AlarmType, AlarmUrgentie } from "@prisma/client"
+
 export interface AlarmIndicator {
-  type: string
+  type: AlarmType
   beschrijving: string
-  urgentie: string
+  urgentie: AlarmUrgentie
 }
 
 export function checkAlarmindicatoren(

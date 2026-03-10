@@ -32,7 +32,7 @@ export default function GemeenteLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [redirecting, setRedirecting] = useState(false)
 
-  const userRole = (session?.user as any)?.role
+  const userRole = session?.user?.role
 
   // Client-side auth redirect als fallback (via useEffect om render loop te voorkomen)
   useEffect(() => {
@@ -85,9 +85,9 @@ export default function GemeenteLayout({
     )
   }
 
-  const gemeenteNaam = (session?.user as any)?.gemeenteNaam || "Gemeente"
-  const gemeenteRollen: string[] = Array.isArray((session?.user as any)?.gemeenteRollen)
-    ? (session?.user as any).gemeenteRollen
+  const gemeenteNaam = session?.user?.gemeenteNaam || "Gemeente"
+  const gemeenteRollen: string[] = Array.isArray(session?.user?.gemeenteRollen)
+    ? session.user.gemeenteRollen
     : []
 
   // Hoofdadmin (geen subrollen of ADMIN) ziet alles, anders filteren op rollen
