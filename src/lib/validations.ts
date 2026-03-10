@@ -217,8 +217,8 @@ export const notificatieSchema = z.object({
 
 export const buddyMatchSchema = z.object({
   zorgtaken: z.array(z.string()).optional().default([]),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
+  latitude: z.number().nullable().default(null),
+  longitude: z.number().nullable().default(null),
   beschikbaarheid: z.string().optional(),
   maxAfstandKm: z.number().min(1).max(100).optional().default(25),
 })
