@@ -25,6 +25,7 @@ function LoginForm() {
   const phoneNumber = searchParams.get("phone") // WhatsApp telefoonnummer
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard" // Redirect na login
   const sessionInvalidated = searchParams.get("reason") === "session_invalidated"
+  const authError = searchParams.get("error") // NextAuth error redirect
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -83,6 +84,13 @@ function LoginForm() {
         <main className="px-4 pb-8 lg:px-0 lg:w-full lg:max-w-md">
           <div className="max-w-md mx-auto lg:mx-0 lg:max-w-none">
             <div className="ker-card lg:shadow-lg">
+            {authError && (
+              <div className="bg-[#FFEBEE] border-2 border-[#F44336] text-[#C62828] px-4 py-3 rounded-xl mb-6 text-sm">
+                <p className="font-medium">Inloggen mislukt</p>
+                <p>Er ging iets mis bij het inloggen. Probeer het opnieuw. (Code: {authError})</p>
+              </div>
+            )}
+
             {sessionInvalidated && (
               <div className="bg-amber-50 border-2 border-amber-300 text-amber-800 px-4 py-3 rounded-xl mb-6 text-sm">
                 <p className="font-medium">{c.sessionInvalidated.title}</p>
