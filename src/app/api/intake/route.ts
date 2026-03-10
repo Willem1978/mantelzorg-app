@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { validateBody, intakeSchema } from "@/lib/validations"
 
 export const dynamic = 'force-dynamic'
 
@@ -26,9 +27,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const body: IntakeBody = await request.json()
+    const raw = await request.json()
+    const validated = validateBody(raw, intakeSchema)
+    if (!validated.success) {
+      return NextResponse.json({ error: validated.error }, { status: 400 })
+    }
+    const body = validated.data
 
-    if (!body.answers || Object.keys(body.answers).length === 0) {
+    if (Object.keys(body.answers).length === 0) {
       return NextResponse.json(
         { error: "Geen antwoorden ontvangen" },
         { status: 400 }

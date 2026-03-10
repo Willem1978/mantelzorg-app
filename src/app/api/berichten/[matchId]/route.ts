@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { sendNieuwBerichtEmail } from "@/lib/email"
+import { sanitizeText } from "@/lib/sanitize"
 
 export const dynamic = "force-dynamic"
 
@@ -110,8 +111,9 @@ export async function POST(
 
     const { matchId } = await params
     const body = await request.json()
+    const inhoud = sanitizeText(body.inhoud || "").trim()
 
-    if (!body.inhoud?.trim()) {
+    if (!inhoud) {
       return NextResponse.json(
         { error: "Bericht mag niet leeg zijn" },
         { status: 400 }
@@ -157,7 +159,7 @@ export async function POST(
         data: {
           matchId,
           afzenderId: session.user.id,
-          inhoud: body.inhoud.trim(),
+          inhoud: inhoud,
         },
       })
 
@@ -171,7 +173,7 @@ export async function POST(
             userId: ontvangerId,
             type: "BUDDY_BERICHT",
             title: "Nieuw bericht",
-            message: `${afzenderNaam}: ${body.inhoud.trim().substring(0, 80)}${body.inhoud.trim().length > 80 ? "..." : ""}`,
+            message: `${afzenderNaam}: ${inhoud.substring(0, 80)}${inhoud.length > 80 ? "..." : ""}`,
             link: isBuddy ? `/buddys` : `/buddy/dashboard`,
           },
         })
@@ -199,7 +201,7 @@ export async function POST(
         const ontvangerNaam = isBuddy
           ? (match.caregiver.user?.name?.split(" ")[0] || "Mantelzorger")
           : match.buddy.voornaam
-        const preview = body.inhoud.trim().substring(0, 100)
+        const preview = inhoud.substring(0, 100)
 
         if (ontvangerEmail) {
           sendNieuwBerichtEmail(ontvangerEmail, ontvangerNaam, afzenderNaam, preview).catch(() => {})
