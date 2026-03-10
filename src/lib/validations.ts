@@ -103,6 +103,168 @@ export const checkInSchema = z.object({
   notitie: z.string().optional().default(""),
 })
 
+// --- Hulpvragen schema ---
+
+export const hulpvraagSchema = z.object({
+  titel: z.string().min(1, "Titel is verplicht").max(200),
+  categorie: z.string().min(1, "Categorie is verplicht"),
+  beschrijving: z.string().min(1, "Beschrijving is verplicht").max(2000),
+  datum: z.string().optional(),
+  tijdstip: z.string().optional(),
+  isFlexibel: z.boolean().optional().default(false),
+})
+
+export const hulpvraagReactieSchema = z.object({
+  bericht: z.string().min(1, "Bericht is verplicht").max(2000),
+})
+
+// --- Profiel schema ---
+
+export const profielSchema = z.object({
+  naam: z.string().min(1, "Naam is verplicht").max(100).optional(),
+  straat: z.string().max(200).optional(),
+  woonplaats: z.string().max(100).optional(),
+  postcode: z.string().max(10).optional(),
+  gemeente: z.string().max(100).optional(),
+  wijk: z.string().max(100).optional(),
+  naasteNaam: z.string().max(100).optional(),
+  naasteRelatie: z.string().max(100).optional(),
+  naasteStraat: z.string().max(200).optional(),
+  naasteWoonplaats: z.string().max(100).optional(),
+  naasteGemeente: z.string().max(100).optional(),
+  telefoon: z.string().max(20).optional(),
+})
+
+// --- Favorieten schema ---
+
+export const favorietSchema = z.object({
+  type: z.string().min(1),
+  itemId: z.string().min(1),
+  titel: z.string().max(200).optional().default(""),
+  beschrijving: z.string().max(500).optional().default(""),
+  categorie: z.string().optional().default(""),
+  url: z.string().optional().default(""),
+  telefoon: z.string().optional().default(""),
+  icon: z.string().optional().default(""),
+})
+
+// --- Kalender schema ---
+
+export const calendarEventSchema = z.object({
+  title: z.string().min(1, "Titel is verplicht").max(200),
+  description: z.string().max(2000).optional().default(""),
+  location: z.string().max(200).optional().default(""),
+  startTime: z.string().min(1, "Starttijd is verplicht"),
+  endTime: z.string().min(1, "Eindtijd is verplicht"),
+  isAllDay: z.boolean().optional().default(false),
+  eventType: z.string().optional().default("GENERAL"),
+  reminderMinutes: z.number().int().min(0).optional(),
+  color: z.string().optional(),
+})
+
+// --- Belastbaarheidstest schema ---
+
+export const belastbaarheidstestSchema = z.object({
+  registratie: z.object({
+    voornaam: z.string().min(1).max(100),
+    email: z.string().email().optional().or(z.literal("")),
+    postcode: z.string().max(10),
+    huisnummer: z.string().max(10),
+    straat: z.string().max(200).optional().default(""),
+    woonplaats: z.string().max(100).optional().default(""),
+    gemeente: z.string().max(100).optional().default(""),
+  }).optional(),
+  antwoorden: z.record(z.string(), z.enum(["ja", "soms", "nee"])),
+  taken: z.array(z.object({
+    taakId: z.string(),
+    taakNaam: z.string(),
+    isGeselecteerd: z.boolean(),
+    urenPerWeek: z.number().optional().nullable(),
+    moeilijkheid: z.string().optional().nullable(),
+  })).optional().default([]),
+})
+
+// --- Voorkeuren schema ---
+
+export const voorkeurenSchema = z.object({
+  voorkeuren: z.array(z.object({
+    type: z.string(),
+    slug: z.string(),
+  })),
+  aandoening: z.string().optional(),
+})
+
+// --- Onboarding profiel schema ---
+
+export const onboardingProfielSchema = z.object({
+  gemeente: z.string().optional(),
+  careRecipient: z.string().optional(),
+  careHoursPerWeek: z.string().optional(),
+  careSinceDuration: z.string().optional(),
+})
+
+// --- Notificatie schema ---
+
+export const notificatieSchema = z.object({
+  type: z.string().min(1),
+  title: z.string().min(1).max(200),
+  message: z.string().min(1).max(2000),
+  link: z.string().optional(),
+  scheduledFor: z.string().optional(),
+})
+
+// --- Buddy match schema ---
+
+export const buddyMatchSchema = z.object({
+  zorgtaken: z.array(z.string()).optional().default([]),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  beschikbaarheid: z.string().optional(),
+  maxAfstandKm: z.number().min(1).max(100).optional().default(25),
+})
+
+// --- Intake schema ---
+
+export const intakeSchema = z.object({
+  answers: z.record(z.string(), z.string()),
+})
+
+// --- AI Chat schema ---
+
+export const aiChatSchema = z.object({
+  messages: z.array(z.object({
+    role: z.enum(["user", "assistant", "system"]),
+    content: z.string().max(10000).optional(),
+    parts: z.array(z.any()).optional(),
+  })).min(1),
+})
+
+// --- Beheer schema's (admin) ---
+
+export const gemeenteSchema = z.object({
+  naam: z.string().min(1, "Naam is verplicht"),
+  code: z.string().optional(),
+  isActief: z.boolean().optional().default(true),
+  contactEmail: z.string().email().optional().or(z.literal("")),
+  contactTelefoon: z.string().optional().default(""),
+  websiteUrl: z.string().url().optional().or(z.literal("")),
+  wmoLoketUrl: z.string().url().optional().or(z.literal("")),
+  adviesLaag: z.string().optional().default(""),
+  adviesGemiddeld: z.string().optional().default(""),
+  adviesHoog: z.string().optional().default(""),
+  mantelzorgSteunpunt: z.string().optional().default(""),
+  mantelzorgSteunpuntNaam: z.string().optional().default(""),
+  respijtzorgUrl: z.string().url().optional().or(z.literal("")),
+  dagopvangUrl: z.string().url().optional().or(z.literal("")),
+  notities: z.string().optional().default(""),
+})
+
+export const inviteSchema = z.object({
+  token: z.string().min(1, "Token is verplicht"),
+  name: z.string().min(1, "Naam is verplicht"),
+  password: passwordSchema,
+})
+
 // --- Helper om Zod errors naar een leesbare string te converteren ---
 
 export function formatZodErrors(error: z.ZodError): string {
