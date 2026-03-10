@@ -107,8 +107,8 @@ export const checkInSchema = z.object({
 
 export const hulpvraagSchema = z.object({
   titel: z.string().min(1, "Titel is verplicht").max(200),
-  categorie: z.string().min(1, "Categorie is verplicht"),
-  beschrijving: z.string().min(1, "Beschrijving is verplicht").max(2000),
+  categorie: z.enum(["GESPREK", "BOODSCHAPPEN", "VERVOER", "KLUSJES", "OPPAS", "ADMINISTRATIE", "OVERIG"]),
+  beschrijving: z.string().max(2000).optional().default(""),
   datum: z.string().optional(),
   tijdstip: z.string().optional(),
   isFlexibel: z.boolean().optional().default(false),
@@ -132,13 +132,14 @@ export const profielSchema = z.object({
   naasteStraat: z.string().max(200).optional(),
   naasteWoonplaats: z.string().max(100).optional(),
   naasteGemeente: z.string().max(100).optional(),
+  naasteWijk: z.string().max(100).optional(),
   telefoon: z.string().max(20).optional(),
 })
 
 // --- Favorieten schema ---
 
 export const favorietSchema = z.object({
-  type: z.string().min(1),
+  type: z.enum(["HULP", "INFORMATIE"]),
   itemId: z.string().min(1),
   titel: z.string().max(200).optional().default(""),
   beschrijving: z.string().max(500).optional().default(""),
@@ -155,9 +156,9 @@ export const calendarEventSchema = z.object({
   description: z.string().max(2000).optional().default(""),
   location: z.string().max(200).optional().default(""),
   startTime: z.string().min(1, "Starttijd is verplicht"),
-  endTime: z.string().min(1, "Eindtijd is verplicht"),
+  endTime: z.string().optional().default(""),
   isAllDay: z.boolean().optional().default(false),
-  eventType: z.string().optional().default("GENERAL"),
+  eventType: z.enum(["CARE_TASK", "APPOINTMENT", "SELF_CARE", "SOCIAL", "WORK", "OTHER"]).optional().default("OTHER"),
   reminderMinutes: z.number().int().min(0).optional(),
   color: z.string().optional(),
 })
@@ -206,7 +207,7 @@ export const onboardingProfielSchema = z.object({
 // --- Notificatie schema ---
 
 export const notificatieSchema = z.object({
-  type: z.string().min(1),
+  type: z.enum(["CHECK_IN_REMINDER", "TASK_REMINDER", "HELP_REQUEST_UPDATE", "TIP", "SYSTEM", "BUDDY_REACTIE", "REACTIE_GEACCEPTEERD", "REACTIE_AFGEWEZEN", "BUDDY_BERICHT"]),
   title: z.string().min(1).max(200),
   message: z.string().min(1).max(2000),
   link: z.string().optional(),
@@ -219,7 +220,7 @@ export const buddyMatchSchema = z.object({
   zorgtaken: z.array(z.string()).optional().default([]),
   latitude: z.number().nullable().default(null),
   longitude: z.number().nullable().default(null),
-  beschikbaarheid: z.string().optional(),
+  beschikbaarheid: z.enum(["EENMALIG", "VAST", "BEIDE"]).optional(),
   maxAfstandKm: z.number().min(1).max(100).optional().default(25),
 })
 
