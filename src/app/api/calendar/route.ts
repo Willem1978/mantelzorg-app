@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { calendarEventSchema, validateBody } from "@/lib/validations"
 
 export const dynamic = 'force-dynamic'
 
@@ -81,38 +80,40 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const validation = validateBody(body, calendarEventSchema)
-    if (!validation.success) {
-      return NextResponse.json({ error: validation.error }, { status: 400 })
+
+    if (!body.title || !body.startTime) {
+      return NextResponse.json(
+        { error: "Titel en starttijd zijn verplicht" },
+        { status: 400 }
+      )
     }
-    const data = validation.data
 
     const event = await prisma.calendarEvent.create({
       data: {
         caregiverId: caregiver.id,
-        title: data.title,
-        description: data.description || null,
-        location: data.location || null,
-        startTime: new Date(data.startTime),
-        endTime: data.endTime ? new Date(data.endTime) : null,
-        isAllDay: data.isAllDay,
-        eventType: data.eventType || "OTHER",
-        reminderMinutes: data.reminderMinutes || null,
-        color: data.color || null,
+        title: body.title,
+        description: body.description || null,
+        location: body.location || null,
+        startTime: new Date(body.startTime),
+        endTime: body.endTime ? new Date(body.endTime) : null,
+        isAllDay: body.isAllDay || false,
+        eventType: body.eventType || "OTHER",
+        reminderMinutes: body.reminderMinutes || null,
+        color: body.color || null,
       }
     })
 
     // Create reminder notification if set
-    if (data.reminderMinutes) {
-      const reminderTime = new Date(new Date(data.startTime).getTime() - data.reminderMinutes * 60 * 1000)
+    if (body.reminderMinutes) {
+      const reminderTime = new Date(new Date(body.startTime).getTime() - body.reminderMinutes * 60 * 1000)
 
       if (reminderTime > new Date()) {
         await prisma.notification.create({
           data: {
             userId: session.user.id,
             type: "TASK_REMINDER",
-            title: `Herinnering: ${data.title}`,
-            message: `Over ${data.reminderMinutes} minuten: ${data.title}`,
+            title: `Herinnering: ${body.title}`,
+            message: `Over ${body.reminderMinutes} minuten: ${body.title}`,
             link: "/agenda",
             scheduledFor: reminderTime,
           }

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { sanitizeText } from "@/lib/sanitize"
 
 export const dynamic = 'force-dynamic'
 
@@ -83,8 +82,8 @@ export async function POST(request: NextRequest) {
     const helpRequest = await prisma.helpRequest.create({
       data: {
         caregiverId: caregiver.id,
-        title: sanitizeText(body.title),
-        description: sanitizeText(body.description),
+        title: body.title,
+        description: body.description,
         category: body.category,
         urgency: body.urgency || "NORMAL",
         organisationId: body.organisationId || null,

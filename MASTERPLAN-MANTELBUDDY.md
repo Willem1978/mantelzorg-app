@@ -250,21 +250,20 @@ Alleen `logAudit()` in cleanup route gevonden. Ontbreekt bij: wachtwoord resets,
 ---
 
 ### Deliverables Iteratie 1
-- [x] isActief check bij login actief — `src/lib/auth.ts`
-- [x] XSS in chat componenten gefixed — `sanitizeHtml()` op alle 24 `dangerouslySetInnerHTML` calls + nieuwe `src/lib/sanitize.ts`
-- [x] Geen PII in logs — e-mailadressen verwijderd uit console.error in auth.ts
-- [x] CSP aangescherpt — `unsafe-eval` verwijderd, COOP/COEP headers toegevoegd
-- [x] Telefoon-enumeratie gefixed — rate limiting + timing-safe response op `/api/auth/check-phone`
-- [x] Rate limiting verbeterd — betere IP-extractie (Vercel x-real-ip), admin endpoint config (nog in-memory, Redis TODO iter.6)
-- [x] CORS headers geconfigureerd — API routes beperkt tot eigen domein via `next.config.ts`
-- [x] WhatsApp alarm-detectie actief — `checkAlarmindicatoren()` + `saveAlarmLogs()` na test, nieuwe `src/lib/alarm-indicatoren.ts`
-- [x] WhatsApp mapping uit centrale config — hardcoded mapping vervangen door `TAAK_NAAR_ONDERDEEL` uit `config/options.ts`
-- [x] Sessie max age naar 7 dagen — JWT 30d→7d + sessie-invalidatie bij wachtwoord reset (`sessionVersion` increment)
-- [x] Sterkere wachtwoord-eisen — hoofdletter + cijfer + speciaal teken vereist via `passwordSchema` in validations.ts
-- [x] Audit logging uitgebreid — login en wachtwoord reset gelogd via `logAudit()`
+- [ ] isActief check bij login actief
+- [ ] XSS in chat componenten gefixed (DOMPurify)
+- [ ] Geen PII in logs
+- [ ] CSP aangescherpt (geen unsafe-eval/inline)
+- [ ] Telefoon-enumeratie gefixed
+- [ ] Rate limiting met Redis backing
+- [ ] CORS headers geconfigureerd
+- [ ] WhatsApp alarm-detectie actief
+- [ ] WhatsApp mapping uit centrale config
+- [ ] Sessie max age naar 7 dagen + CSRF
+- [ ] Sterkere wachtwoord-eisen
+- [ ] Audit logging op alle gevoelige operaties
 
-**Status:** AFGEROND (10 maart 2026)
-**Openstaand:** Rate limiting is nog in-memory (niet Redis-backed) — gepland voor Iteratie 6. CSRF middleware nog niet geïmplementeerd — vereist NextAuth middleware configuratie.
+**Geschatte doorlooptijd:** 2 weken (~32 uur)
 
 ---
 
@@ -273,11 +272,8 @@ Alleen `logAudit()` in cleanup route gevonden. Ontbreekt bij: wachtwoord resets,
 > **Doel:** Alle API routes valideren, type safety verhogen, tests uitbreiden.
 > **Motto:** "Vertrouw niets wat binnenkomt."
 
-### 2.1 Zod validatie op alle publieke API routes ✅
-**Prioriteit: HOOG — AFGEROND**
-
-15 Zod schemas toegevoegd aan `src/lib/validations.ts` en toegepast op 12 P0 user-facing routes:
-`hulpvragen`, `profiel`, `calendar`, `favorieten`, `berichten`, `intake`, `notifications`, `voorkeuren`, `onboarding-profiel`, `buddy match`, `invite`, `hulpvraag-reactie`.
+### 2.1 Zod validatie op alle publieke API routes
+**Prioriteit: HOOG**
 
 45+ routes missen input validatie. Uitbreiden van `src/lib/validations.ts` en toepassen op:
 
@@ -297,44 +293,45 @@ Alleen `logAudit()` in cleanup route gevonden. Ontbreekt bij: wachtwoord resets,
 
 ---
 
-### 2.2 DOMPurify consistent toepassen ✅
-**Prioriteit: HOOG — AFGEROND**
+### 2.2 DOMPurify consistent toepassen
+**Prioriteit: HOOG**
 
-`sanitizeText()` toegevoegd aan `src/lib/sanitize.ts` (strip alle HTML tags voor plain-text velden).
-Toegepast op: hulpvragen (titel/beschrijving), berichten (inhoud), help-requests (title/description), profiel (naam), artikelen (titel/beschrijving/inhoud met `sanitizeHtml`).
+DOMPurify wordt alleen in `/api/beheer/hulpbronnen/zoeken` gebruikt. Alle user-generated content (hulpvragen, berichten, profiel-velden) mist sanitization.
 
----
-
-### 2.3 Type safety verbeteren (16 → 6 `as any`) ✅
-**Prioriteit: GEMIDDELD — GROTENDEELS AFGEROND**
-
-12 `as any` casts verwijderd:
-- gemeente/layout.tsx: 4x → session.user is nu correct getypeerd via next-auth.d.ts
-- WellbeingChart.tsx: MetricKey type toegevoegd
-- beheer/page.tsx: conditionele Link/div rendering herschreven
-- gemeente-auth.ts: `Record<string, unknown>` type
-- alarm-indicatoren.ts: Prisma enum types (AlarmType, AlarmUrgentie)
-- belastbaarheidstest + whatsapp handler: enum casts verwijderd
-- buddys/match: nu via Zod getypeerd
-
-Resterende 6 `as any` in scripts/seed/pdf (lage prioriteit):
-- pdf-rapport.ts (2x jsPDF plugin)
-- seed.ts (4x loose JSON data)
-- seed content routes (3x seed data)
+**Actie:** Centrale `sanitize()` helper in `src/lib/sanitize.ts` en toepassen op alle tekstvelden bij opslaan.
 
 ---
 
-### 2.4 Cascade deletes configureren ✅
-**Prioriteit: GEMIDDELD — AFGEROND**
+### 2.3 Type safety verbeteren (16 → 0 `as any`)
+**Prioriteit: GEMIDDELD**
 
-7 ontbrekende onDelete configuraties toegevoegd aan `prisma/schema.prisma`:
-- Notification.user → onDelete: Cascade
-- MantelBuddy.user → onDelete: Cascade
-- Bericht.afzender → onDelete: Cascade
-- BuddyBeoordeling.beoordeeldDoor → onDelete: SetNull
-- BuddyBeoordeling.caregiver → onDelete: SetNull
-- HelpRequest.organisation → onDelete: SetNull
-- ContentCategorie.parent → onDelete: SetNull
+Resterende locaties:
+- belastbaarheidstest (4x)
+- content/route seed (3x)
+- gemeente/layout (4x)
+- WellbeingChart (1x)
+- gemeente-auth (1x)
+- pdf-rapport (2x)
+- AI prefetch-context (1x eslint-disable)
+
+**Actie:** Elk bestand doorlopen en propere typering toevoegen.
+
+---
+
+### 2.4 Cascade deletes configureren
+**Prioriteit: GEMIDDELD**
+
+Prisma schema mist cascade deletes. Als een User verwijderd wordt, blijven orphaned records achter.
+
+**Actie:** `onDelete: Cascade` toevoegen aan:
+- Caregiver → User
+- BelastbaarheidTest → Caregiver
+- MonthlyCheckIn → Caregiver
+- Task → Caregiver
+- AlarmLog → BelastbaarheidTest
+- Alle child-relaties
+
+**Bestand:** `prisma/schema.prisma`
 
 ---
 
@@ -354,26 +351,20 @@ Huidige tests (10 bestanden) dekken alleen lib utilities. Ontbreken:
 
 ---
 
-### 2.6 Error boundary component ✅
-**Prioriteit: LAAG — AFGEROND**
+### 2.6 Error boundary component
+**Prioriteit: LAAG**
 
-Error boundaries toegevoegd voor alle hoofdsecties:
-- `src/app/(dashboard)/error.tsx` — dashboard foutafhandeling
-- `src/app/beheer/error.tsx` — beheerpaneel foutafhandeling
-- `src/app/gemeente/error.tsx` — gemeenteportaal (bestond al)
-- `src/app/global-error.tsx` — root-level fallback (bestond al)
-- `src/components/ErrorBoundary.tsx` — herbruikbare class component (bestond al)
+`ErrorBoundary.tsx` bestaat maar mist fallback UI. Voeg vriendelijke foutmelding toe met "Probeer opnieuw" knop.
 
 ---
 
 ### Deliverables Iteratie 2
-- [x] Zod validatie op 12 P0 user-facing routes (15 schemas)
-- [x] DOMPurify op user-generated content bij opslaan (6 routes)
-- [x] `as any` van 16 → 6 (resterende in scripts/seed/pdf)
-- [x] Cascade deletes in Prisma schema (7 relaties)
+- [ ] Zod validatie op alle 45+ routes
+- [ ] DOMPurify op alle user-generated content
+- [ ] 0x `as any` in codebase
+- [ ] Cascade deletes in Prisma schema
 - [ ] 30+ testbestanden met 80+ tests
-- [x] Error boundary met fallback UI (dashboard + beheer)
-- [ ] Zod validatie op resterende 33+ routes (P1/P2)
+- [ ] Error boundary met fallback UI
 
 **Geschatte doorlooptijd:** 2 weken (~32 uur)
 
@@ -934,13 +925,13 @@ Iteratie 1 (Security) ──→ Iteratie 2 (Validatie) ──→ Iteratie 3 (Kla
 ⚠️  BLOKKERENDE ITEMS (MAG NIET VERGETEN):
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-SECURITY (Iteratie 1 — AFGEROND 10 maart 2026):
-- ✅ XSS in chat componenten:    DOMPurify sanitization op alle 24 calls
-- ✅ isActief login check:        Inactieve accounts geblokkeerd
-- ✅ PII in logs:                 E-mailadressen verwijderd
-- ✅ CSP aangescherpt:            unsafe-eval verwijderd, COOP/COEP toegevoegd
-- ✅ Telefoon-enumeratie:         Rate limiting + timing-safe response
-- ⚠️ Rate limiting in-memory:     Verbeterd maar nog geen Redis (gepland iter.6)
+SECURITY (Iteratie 1):
+- XSS in chat componenten:    dangerouslySetInnerHTML ZONDER DOMPurify in AiChat, AgentChat, FloatingGerChat
+- isActief login check:        Inactieve gebruikers kunnen inloggen
+- PII in logs:                 E-mailadressen worden gelogd bij auth fouten
+- CSP te permissief:           unsafe-eval en unsafe-inline in Content Security Policy
+- Telefoon-enumeratie:         /api/auth/check-phone onthult of nummer bestaat
+- Rate limiting in-memory:     Overleeft geen Vercel serverless restart
 
 COMPLIANCE (Iteratie 8):
 - 2FA voor admin:              Geblokkeerd door ontbrekende mailserver
@@ -948,8 +939,8 @@ COMPLIANCE (Iteratie 8):
 - DPIA:                        Vereist voor Art. 9 gezondheidsdata
 
 FUNCTIONALITEIT:
-- ✅ WhatsApp alarm-detectie:     Actief via gedeelde alarm-indicatoren module
-- ✅ WhatsApp mapping:            Nu uit centrale config (TAAK_NAAR_ONDERDEEL)
+- WhatsApp alarm-detectie:     Ontbreekt volledig
+- WhatsApp mapping hardcoded:  Niet uit centrale config
 - E-mail service:              SMTP niet geconfigureerd
 ```
 

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { onboardingProfielSchema, validateBody } from "@/lib/validations"
 
 // POST: Sla onboarding profieldata op
 export async function POST(request: Request) {
@@ -13,11 +12,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const validation = validateBody(body, onboardingProfielSchema)
-    if (!validation.success) {
-      return NextResponse.json({ error: validation.error }, { status: 400 })
-    }
-    const { gemeente, careRecipient, careHoursPerWeek, careSinceDuration } = validation.data
+    const { gemeente, careRecipient, careHoursPerWeek, careSinceDuration } = body
 
     // Bereken careHoursPerWeek als gemiddeld getal
     const hoursMap: Record<string, number> = {
@@ -27,7 +22,7 @@ export async function POST(request: Request) {
       "20-40": 30,
       "40+": 45,
     }
-    const hours = (careHoursPerWeek && hoursMap[careHoursPerWeek]) || null
+    const hours = hoursMap[careHoursPerWeek] || null
 
     // Bereken careSince als datum
     const durationMap: Record<string, number> = {

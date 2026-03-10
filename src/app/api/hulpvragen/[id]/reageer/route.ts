@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { sendBuddyReactieEmail } from "@/lib/email"
-import { hulpvraagReactieSchema, validateBody } from "@/lib/validations"
-import { sanitizeText } from "@/lib/sanitize"
 
 // POST - Buddy reageert op een hulpvraag
 export async function POST(
@@ -78,11 +76,6 @@ export async function POST(
     }
 
     const body = await request.json()
-    const validation = validateBody(body, hulpvraagReactieSchema)
-    if (!validation.success) {
-      return NextResponse.json({ error: validation.error }, { status: 400 })
-    }
-    const data = validation.data
 
     // Maak reactie + update taak status in een transactie
     const reactie = await prisma.$transaction(async (tx) => {
@@ -91,7 +84,7 @@ export async function POST(
         data: {
           taakId,
           buddyId: buddy.id,
-          bericht: sanitizeText(data.bericht),
+          bericht: body.bericht || null,
           status: "INTERESSE",
         },
       })

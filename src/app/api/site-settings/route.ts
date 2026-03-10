@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-
-export const dynamic = "force-dynamic"
+import { prisma } from "@/lib/prisma"
 
 /**
  * Publieke API route om site-instellingen op te halen.
@@ -9,8 +8,6 @@ export const dynamic = "force-dynamic"
  */
 export async function GET() {
   try {
-    const { prisma } = await import("@/lib/prisma")
-
     const settings = await prisma.siteSettings.findMany({
       select: {
         sleutel: true,
@@ -30,9 +27,8 @@ export async function GET() {
         "Cache-Control": "public, s-maxage=300, stale-while-revalidate=3600",
       },
     })
-  } catch (e) {
-    // Als de tabel nog niet bestaat of DB niet bereikbaar, return leeg object
-    console.error("[site-settings] Fout bij ophalen:", e instanceof Error ? e.message : e)
-    return NextResponse.json({}, { status: 200 })
+  } catch {
+    // Als de tabel nog niet bestaat, return leeg object
+    return NextResponse.json({})
   }
 }

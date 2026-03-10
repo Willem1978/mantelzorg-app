@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { voorkeurenSchema, validateBody } from "@/lib/validations"
 
 export async function GET() {
   const session = await auth()
@@ -42,11 +41,10 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const validation = validateBody(body, voorkeurenSchema)
-    if (!validation.success) {
-      return NextResponse.json({ error: validation.error }, { status: 400 })
+    const { voorkeuren, aandoening } = body as {
+      voorkeuren?: { type: "CATEGORIE" | "TAG"; slug: string }[]
+      aandoening?: string | null
     }
-    const { voorkeuren, aandoening } = validation.data
 
     const caregiver = await prisma.caregiver.findUnique({
       where: { userId: session.user.id },
