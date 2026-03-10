@@ -24,6 +24,7 @@ import {
   startOnboardingSession,
 } from '@/lib/whatsapp-session'
 import { TAAK_NAAR_ONDERDEEL } from '@/config/options'
+import type { BelastingNiveau } from '@prisma/client'
 import { checkAlarmindicatoren, saveAlarmLogs } from '@/lib/alarm-indicatoren'
 import type { HandlerResult } from './types'
 import { TEST_ANSWER_BUTTONS, DIFFICULTY_BUTTONS, ONBOARDING_CHOICE_BUTTONS } from './types'
@@ -399,7 +400,7 @@ async function saveTestResults(
         postcode: caregiver?.postalCode || '0000XX',
         huisnummer: '0',
         totaleBelastingScore: score,
-        belastingNiveau: level,
+        belastingNiveau: level as BelastingNiveau,
         totaleZorguren,
         isCompleted: true,
         completedAt: new Date(),

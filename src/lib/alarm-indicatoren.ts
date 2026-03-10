@@ -74,7 +74,6 @@ export async function saveAlarmLogs(
         type: alarm.type,
         beschrijving: alarm.beschrijving,
         urgentie: alarm.urgentie,
-        status: "OPEN",
       },
     })
   }
