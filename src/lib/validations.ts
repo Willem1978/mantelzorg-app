@@ -189,7 +189,7 @@ export const belastbaarheidstestSchema = z.object({
 
 export const voorkeurenSchema = z.object({
   voorkeuren: z.array(z.object({
-    type: z.string(),
+    type: z.enum(["CATEGORIE", "TAG"]),
     slug: z.string(),
   })),
   aandoening: z.string().optional(),
