@@ -140,26 +140,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id!
-        token.role = user.role
-        token.caregiverId = user.caregiverId
-        token.buddyId = user.buddyId
-        token.gemeenteNaam = user.gemeenteNaam
-        token.gemeenteRollen = user.gemeenteRollen || []
-        token.sessionVersion = user.sessionVersion
+      try {
+        if (user) {
+          token.id = user.id!
+          token.role = user.role
+          token.caregiverId = user.caregiverId
+          token.buddyId = user.buddyId
+          token.gemeenteNaam = user.gemeenteNaam
+          token.gemeenteRollen = user.gemeenteRollen || []
+          token.sessionVersion = user.sessionVersion
+        }
+      } catch (e) {
+        console.error("[AUTH] JWT callback fout:", e)
       }
       return token
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string
-        session.user.role = token.role as string
-        session.user.caregiverId = token.caregiverId as string | null
-        session.user.buddyId = token.buddyId as string | null
-        session.user.gemeenteNaam = token.gemeenteNaam as string | null
-        session.user.gemeenteRollen = (token.gemeenteRollen as string[]) || []
-        session.user.sessionVersion = token.sessionVersion as number
+      try {
+        if (session.user && token) {
+          session.user.id = (token.id as string) || ""
+          session.user.role = (token.role as string) || "USER"
+          session.user.caregiverId = (token.caregiverId as string) || null
+          session.user.buddyId = (token.buddyId as string) || null
+          session.user.gemeenteNaam = (token.gemeenteNaam as string) || null
+          session.user.gemeenteRollen = (token.gemeenteRollen as string[]) || []
+          session.user.sessionVersion = (token.sessionVersion as number) || 0
+        }
+      } catch (e) {
+        console.error("[AUTH] Session callback fout:", e)
       }
       return session
     },
