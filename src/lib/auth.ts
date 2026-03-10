@@ -43,6 +43,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             throw new Error("Onjuist e-mailadres of wachtwoord")
           }
 
+          if (!user.isActive) {
+            console.error("[AUTH] Inactief account login poging:", credentials.email)
+            throw new Error("Account is niet actief")
+          }
+
           const isPasswordValid = await bcrypt.compare(
             credentials.password as string,
             user.password
@@ -95,7 +100,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           // Gooi auth-fouten direct door (onjuiste credentials)
           if (error instanceof Error && (
             error.message.includes("Onjuist") ||
-            error.message.includes("verplicht")
+            error.message.includes("verplicht") ||
+            error.message.includes("niet actief")
           )) {
             throw error
           }
