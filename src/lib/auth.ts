@@ -39,12 +39,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           })
 
           if (!user || !user.password) {
-            console.error("[AUTH] Gebruiker niet gevonden of geen wachtwoord:", credentials.email)
+            console.error("[AUTH] Gebruiker niet gevonden of geen wachtwoord")
             throw new Error("Onjuist e-mailadres of wachtwoord")
           }
 
           if (!user.isActive) {
-            console.error("[AUTH] Inactief account login poging:", credentials.email)
+            console.error("[AUTH] Inactief account login poging")
             throw new Error("Account is niet actief")
           }
 
@@ -54,7 +54,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           )
 
           if (!isPasswordValid) {
-            console.error("[AUTH] Wachtwoord onjuist voor:", credentials.email)
+            console.error("[AUTH] Wachtwoord onjuist voor gebruiker")
             throw new Error("Onjuist e-mailadres of wachtwoord")
           }
 
