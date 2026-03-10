@@ -4,8 +4,15 @@ import bcrypt from "bcryptjs"
 import { prisma } from "./prisma"
 import { logAudit } from "./audit"
 
+const authSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET
+if (!authSecret) {
+  console.error("[AUTH] KRITIEK: Geen AUTH_SECRET gevonden! Beschikbare env vars:",
+    Object.keys(process.env).filter(k => k.includes("AUTH") || k.includes("SECRET") || k.includes("NEXT")).join(", ")
+  )
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+  secret: authSecret,
   // Don't use adapter with credentials provider + JWT
   session: {
     strategy: "jwt",
