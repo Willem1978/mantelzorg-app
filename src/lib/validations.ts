@@ -181,7 +181,7 @@ export const belastbaarheidstestSchema = z.object({
     taakNaam: z.string(),
     isGeselecteerd: z.boolean(),
     urenPerWeek: z.number().optional().nullable(),
-    moeilijkheid: z.string().optional().nullable(),
+    moeilijkheid: z.enum(["MAKKELIJK", "GEMIDDELD", "MOEILIJK", "ZEER_MOEILIJK"]).optional().nullable(),
   })).optional().default([]),
 })
 
