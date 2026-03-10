@@ -15,13 +15,19 @@ export const loginSchema = z.object({
     .min(1, "Wachtwoord is verplicht"),
 })
 
+// Wachtwoord-eisen: minimaal 8 tekens, 1 hoofdletter, 1 cijfer, 1 speciaal teken
+const passwordSchema = z.string()
+  .min(8, "Wachtwoord moet minimaal 8 tekens bevatten")
+  .regex(/[A-Z]/, "Wachtwoord moet minimaal 1 hoofdletter bevatten")
+  .regex(/[0-9]/, "Wachtwoord moet minimaal 1 cijfer bevatten")
+  .regex(/[^A-Za-z0-9]/, "Wachtwoord moet minimaal 1 speciaal teken bevatten (!@#$%&*)")
+
 export const registerSchema = z.object({
   name: z.string().optional(),
   email: z.string()
     .min(1, "E-mailadres is verplicht")
     .email("Vul een geldig e-mailadres in"),
-  password: z.string()
-    .min(8, "Wachtwoord moet minimaal 8 tekens bevatten"),
+  password: passwordSchema,
   phoneNumber: z.string()
     .regex(/^06\d{8}$/, "Vul een geldig telefoonnummer in (06 + 8 cijfers)")
     .optional()
@@ -56,8 +62,7 @@ export const forgotPasswordSchema = z.object({
 
 export const resetPasswordSchema = z.object({
   token: z.string().min(1, "Token is verplicht"),
-  password: z.string()
-    .min(8, "Wachtwoord moet minimaal 8 tekens bevatten"),
+  password: passwordSchema,
 })
 
 // --- Beheer schema's ---

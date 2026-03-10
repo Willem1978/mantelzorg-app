@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 import { resetPasswordSchema, validateBody } from "@/lib/validations"
+import { logAudit } from "@/lib/audit"
 
 export const dynamic = 'force-dynamic'
 
@@ -70,15 +71,26 @@ export async function POST(request: NextRequest) {
     // Hash new password
     const hashedPassword = await bcrypt.hash(password, 12)
 
-    // Update password
+    // Update password + invalideer alle sessies
     await prisma.user.update({
       where: { id: user.id },
-      data: { password: hashedPassword }
+      data: {
+        password: hashedPassword,
+        sessionVersion: { increment: 1 }, // Invalideer alle bestaande sessies
+      },
     })
 
     // Delete used token
     await prisma.passwordResetToken.delete({
       where: { token }
+    })
+
+    // Audit log
+    await logAudit({
+      userId: user.id,
+      actie: "WACHTWOORD_RESET",
+      entiteit: "User",
+      entiteitId: user.id,
     })
 
     // Create notification

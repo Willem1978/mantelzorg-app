@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react"
 import { GerAvatar } from "@/components/GerAvatar"
 import { cn } from "@/lib/utils"
+import { sanitizeHtml } from "@/lib/sanitize"
 
 const TUTORIAL_VERSION = "3"
 export const TUTORIAL_STORAGE_KEY = `tutorial-seen-v${TUTORIAL_VERSION}`
@@ -209,7 +210,7 @@ function StapWelkom({ naam, content }: { naam: string; content?: TutorialStep })
         {content?.subtitle || "Welkom bij MantelBuddy."}
       </p>
       <div className="ker-card p-5 text-left w-full">
-        <p className="text-base leading-relaxed" dangerouslySetInnerHTML={{ __html: content?.body || 'Ik ben <strong>Ger</strong>, en ik ga je stap voor stap uitleggen hoe MantelBuddy jou kan helpen.' }} />
+        <p className="text-base leading-relaxed" dangerouslySetInnerHTML={{ __html: sanitizeHtml(content?.body || 'Ik ben <strong>Ger</strong>, en ik ga je stap voor stap uitleggen hoe MantelBuddy jou kan helpen.') }} />
         {content?.tip && (
           <p className="text-base text-muted-foreground mt-3">{content.tip}</p>
         )}
@@ -231,7 +232,7 @@ function StapTest({ content }: { content?: TutorialStep }) {
         <h2 className="text-xl font-bold mt-3">{content?.title || "De Balanstest"}</h2>
       </div>
 
-      <p className="text-base leading-relaxed mb-6" dangerouslySetInnerHTML={{ __html: content?.body || 'Met een <strong>korte test</strong> van 2 minuten kijken we hoe het met je gaat. Je krijgt een score die laat zien of je het goed volhoudt.' }} />
+      <p className="text-base leading-relaxed mb-6" dangerouslySetInnerHTML={{ __html: sanitizeHtml(content?.body || 'Met een <strong>korte test</strong> van 2 minuten kijken we hoe het met je gaat. Je krijgt een score die laat zien of je het goed volhoudt.') }} />
 
       {/* Thermometer preview -- vereenvoudigd voor mobiel */}
       <div className="ker-card overflow-hidden">
@@ -296,7 +297,7 @@ function StapHulpMantelzorger({ content }: { content?: TutorialStep }) {
         <h2 className="text-xl font-bold mt-3">{content?.title || "Hulp voor jou"}</h2>
       </div>
 
-      <p className="text-base leading-relaxed mb-5" dangerouslySetInnerHTML={{ __html: content?.body || 'Je hoeft het niet alleen te doen. MantelBuddy zoekt hulp <strong>bij jou in de buurt</strong>.' }} />
+      <p className="text-base leading-relaxed mb-5" dangerouslySetInnerHTML={{ __html: sanitizeHtml(content?.body || 'Je hoeft het niet alleen te doen. MantelBuddy zoekt hulp <strong>bij jou in de buurt</strong>.') }} />
 
       {/* Categorie knoppen -- 2x2 grid, ruimer opgezet */}
       <div className="grid grid-cols-2 gap-4 mb-5">
@@ -334,7 +335,7 @@ function StapHulpNaaste({ content }: { content?: TutorialStep }) {
         <h2 className="text-xl font-bold mt-3">{content?.title || "Hulp voor je naaste"}</h2>
       </div>
 
-      <p className="text-base leading-relaxed mb-5" dangerouslySetInnerHTML={{ __html: content?.body || 'Er is ook hulp voor de persoon waar je voor zorgt. De kleuren laten zien wat het zwaarst is.' }} />
+      <p className="text-base leading-relaxed mb-5" dangerouslySetInnerHTML={{ __html: sanitizeHtml(content?.body || 'Er is ook hulp voor de persoon waar je voor zorgt. De kleuren laten zien wat het zwaarst is.') }} />
 
       {/* Categorie knoppen met taakstatus kleuren */}
       <div className="grid grid-cols-2 gap-4 mb-5">
@@ -387,7 +388,7 @@ function StapMantelBuddies({ content }: { content?: TutorialStep }) {
         <h2 className="text-xl font-bold mt-3">{content?.title || "MantelBuddies"}</h2>
       </div>
 
-      <p className="text-base leading-relaxed mb-5" dangerouslySetInnerHTML={{ __html: content?.body || 'Een <strong>MantelBuddy</strong> is een vrijwilliger bij jou in de buurt. Die helpt je graag met kleine taken.' }} />
+      <p className="text-base leading-relaxed mb-5" dangerouslySetInnerHTML={{ __html: sanitizeHtml(content?.body || 'Een <strong>MantelBuddy</strong> is een vrijwilliger bij jou in de buurt. Die helpt je graag met kleine taken.') }} />
 
       {/* Lijst met taken -- eenvoudig en ruim */}
       <div className="ker-card bg-gradient-to-r from-primary/5 to-primary/10">
@@ -401,7 +402,7 @@ function StapMantelBuddies({ content }: { content?: TutorialStep }) {
         </div>
       </div>
 
-      <p className="text-base text-muted-foreground mt-5" dangerouslySetInnerHTML={{ __html: content?.tip || 'Eenmalig of vaker -- jij kiest. Je vindt ze bij <strong>Hulp</strong>.' }} />
+      <p className="text-base text-muted-foreground mt-5" dangerouslySetInnerHTML={{ __html: sanitizeHtml(content?.tip || 'Eenmalig of vaker -- jij kiest. Je vindt ze bij <strong>Hulp</strong>.') }} />
     </div>
   )
 }
@@ -422,7 +423,7 @@ function StapInformatie({ content }: { content?: TutorialStep }) {
         <h2 className="text-xl font-bold mt-3">{content?.title || "Informatie en tips"}</h2>
       </div>
 
-      <p className="text-base leading-relaxed mb-5" dangerouslySetInnerHTML={{ __html: content?.body || 'Bij <strong>Informatie</strong> vind je handige artikelen en nieuws uit jouw gemeente.' }} />
+      <p className="text-base leading-relaxed mb-5" dangerouslySetInnerHTML={{ __html: sanitizeHtml(content?.body || 'Bij <strong>Informatie</strong> vind je handige artikelen en nieuws uit jouw gemeente.') }} />
 
       {/* Categorie grid -- vereenvoudigd */}
       <div className="grid grid-cols-2 gap-4 mb-5">
@@ -459,7 +460,7 @@ function StapFavorieten({ content }: { content?: TutorialStep }) {
         <h2 className="text-xl font-bold mt-3">{content?.title || "Bewaar je favorieten"}</h2>
       </div>
 
-      <p className="text-base leading-relaxed mb-5" dangerouslySetInnerHTML={{ __html: content?.body || 'Kom je iets tegen dat je wilt onthouden? Tik op het <strong class="text-primary">hartje ❤️</strong> om het te bewaren.' }} />
+      <p className="text-base leading-relaxed mb-5" dangerouslySetInnerHTML={{ __html: sanitizeHtml(content?.body || 'Kom je iets tegen dat je wilt onthouden? Tik op het <strong class="text-primary">hartje ❤️</strong> om het te bewaren.') }} />
 
       {/* Voorbeeld kaart met hartje */}
       <div className="ker-card py-4 mb-5">
@@ -483,7 +484,7 @@ function StapFavorieten({ content }: { content?: TutorialStep }) {
         </div>
       </div>
 
-      <p className="text-base leading-relaxed" dangerouslySetInnerHTML={{ __html: content?.tip || 'Je favorieten vind je terug op een eigen pagina. Daar kun je ze ook <strong>afvinken</strong> als je ze hebt gedaan. ✅' }} />
+      <p className="text-base leading-relaxed" dangerouslySetInnerHTML={{ __html: sanitizeHtml(content?.tip || 'Je favorieten vind je terug op een eigen pagina. Daar kun je ze ook <strong>afvinken</strong> als je ze hebt gedaan. ✅') }} />
     </div>
   )
 }
@@ -503,7 +504,7 @@ function StapKlaar({ naam, content }: { naam: string; content?: TutorialStep }) 
         </p>
       </div>
 
-      <p className="text-base text-muted-foreground" dangerouslySetInnerHTML={{ __html: content?.tip || 'Je kunt deze uitleg altijd teruglezen via je <strong>Profiel</strong>. 👤' }} />
+      <p className="text-base text-muted-foreground" dangerouslySetInnerHTML={{ __html: sanitizeHtml(content?.tip || 'Je kunt deze uitleg altijd teruglezen via je <strong>Profiel</strong>. 👤') }} />
     </div>
   )
 }

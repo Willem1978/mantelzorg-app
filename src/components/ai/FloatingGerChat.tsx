@@ -7,6 +7,7 @@ import { DefaultChatTransport } from "ai"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
 import { parseHulpkaarten, HulpKaart } from "@/components/ai/HulpKaart"
+import { sanitizeHtml } from "@/lib/sanitize"
 
 /**
  * Button syntax parsing:
@@ -45,12 +46,12 @@ function formatMessage(content: string): React.ReactNode {
       return (
         <div key={i} className="flex gap-2 ml-1">
           <span className="text-primary">•</span>
-          <span dangerouslySetInnerHTML={{ __html: formatted.slice(2) }} />
+          <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(formatted.slice(2)) }} />
         </div>
       )
     }
     if (formatted !== line) {
-      return <p key={i} dangerouslySetInnerHTML={{ __html: formatted }} />
+      return <p key={i} dangerouslySetInnerHTML={{ __html: sanitizeHtml(formatted) }} />
     }
     return line ? <p key={i}>{line}</p> : <br key={i} />
   })
