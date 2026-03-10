@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
+import { passwordSchema } from "@/lib/validations"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -40,8 +41,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Token en wachtwoord zijn verplicht" }, { status: 400 })
     }
 
-    if (password.length < 8) {
-      return NextResponse.json({ error: "Wachtwoord moet minimaal 8 tekens bevatten" }, { status: 400 })
+    const pwResult = passwordSchema.safeParse(password)
+    if (!pwResult.success) {
+      return NextResponse.json({ error: pwResult.error.issues[0].message }, { status: 400 })
     }
 
     const invite = await prisma.inviteToken.findUnique({ where: { token } })
