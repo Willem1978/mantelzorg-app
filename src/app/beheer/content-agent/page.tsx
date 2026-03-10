@@ -1,5 +1,6 @@
 "use client"
 
+import DOMPurify from "isomorphic-dompurify"
 import { useState, useEffect, useCallback } from "react"
 import { AdminSpinner } from "@/components/admin"
 import { useToast } from "@/components/ui/Toast"
@@ -778,7 +779,7 @@ export default function ContentAgentPage() {
                   {preview.verrijking.inhoud && (
                     <div
                       className="prose prose-sm max-w-none text-gray-700 border border-gray-200 rounded-lg p-4 max-h-96 overflow-auto"
-                      dangerouslySetInnerHTML={{ __html: preview.verrijking.inhoud }}
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(preview.verrijking.inhoud) }}
                     />
                   )}
                 </div>

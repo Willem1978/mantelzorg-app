@@ -1,5 +1,6 @@
 "use client"
 
+import DOMPurify from "isomorphic-dompurify"
 import { useState, useRef, useEffect, useCallback } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { useChat } from "@ai-sdk/react"
@@ -45,12 +46,12 @@ function formatMessage(content: string): React.ReactNode {
       return (
         <div key={i} className="flex gap-2 ml-1">
           <span className="text-primary">•</span>
-          <span dangerouslySetInnerHTML={{ __html: formatted.slice(2) }} />
+          <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatted.slice(2)) }} />
         </div>
       )
     }
     if (formatted !== line) {
-      return <p key={i} dangerouslySetInnerHTML={{ __html: formatted }} />
+      return <p key={i} dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(formatted) }} />
     }
     return line ? <p key={i}>{line}</p> : <br key={i} />
   })
