@@ -3,22 +3,22 @@
  */
 
 export const mantelzorgerContent = {
-  title: "Welkom, mantelzorger",
+  title: "Fijn dat je er bent",
   subtitle:
-    "Fijn dat je er bent. MantelBuddy helpt je met inzicht in je belasting, lokale hulpbronnen en praktisch advies.",
+    "MantelBuddy helpt je met rust, inzicht en steun van dichtbij. Kies hieronder wat je wilt doen.",
 
   opties: {
     balanstest: {
-      title: "Doe de Balanstest",
+      title: "Doe de Balanscheck",
       beschrijving: "Ontdek in 5 minuten hoe het met je gaat. Geen account nodig.",
     },
     inloggen: {
       title: "Ik heb al een account",
-      beschrijving: "Log in om je dashboard, resultaten en hulpbronnen te zien.",
+      beschrijving: "Log in om je overzicht, resultaten en hulp te bekijken.",
     },
     registreren: {
       title: "Maak een account aan",
-      beschrijving: "Bewaar je resultaten, vind lokale hulp en krijg persoonlijk advies.",
+      beschrijving: "Bewaar je resultaten, vind hulp dichtbij en krijg persoonlijke tips.",
     },
   },
 

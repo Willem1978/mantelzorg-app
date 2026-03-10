@@ -12,24 +12,24 @@ export const rapportContent = {
 
   fouten: {
     geenResultaten: "Geen resultaten",
-    geenTest: "Je hebt nog geen test gedaan.",
+    geenTest: "Je hebt nog geen check gedaan.",
     nietIngelogd: "Log eerst in om je resultaten te bekijken.",
     algemeenFout: "Oeps, dat lukte niet. Probeer het later opnieuw.",
     laadFout: "Oeps, dat lukte niet. Probeer het later opnieuw.",
   },
 
   geenTest: {
-    title: "Doe eerst de balanstest.",
+    title: "Doe eerst de Balanscheck.",
     subtitle: "Dan zie je hier je resultaten en tips die bij je passen.",
-    button: "Start de Balanstest",
+    button: "Start de Balanscheck",
   },
 
   niveaus: {
     HOOG: {
-      title: "Het is te zwaar",
-      subtitle: "Dit is niet vol te houden. Je hebt nu hulp nodig.",
+      title: "Je draagt te veel alleen",
+      subtitle: "Dit is niet vol te houden. Je verdient nu hulp.",
       acties: {
-        title: "Dit moet je nu doen",
+        title: "Dit kun je nu doen",
         huisarts: {
           title: "Bel je huisarts",
           beschrijving: "Maak een afspraak om je situatie te bespreken",
@@ -44,20 +44,20 @@ export const rapportContent = {
           beschrijving: "030 - 205 90 59 (ma-vr, gratis)",
         },
       },
-      takenTitle: "Deze taken moet je loslaten",
+      takenTitle: "Deze taken kun je loslaten",
       takenSubtitleFn: (uren: number) =>
-        `Je besteedt ${uren} uur per week aan zorgtaken. Dat is te veel.`,
-      takenHint: "Klik op een taak om hulpbronnen te bekijken",
+        `Je besteedt ${uren} uur per week aan zorgtaken. Dat is heel veel.`,
+      takenHint: "Tik op een taak om te zien welke hulp er is",
     },
 
     GEMIDDELD: {
-      title: "Je balans staat onder druk",
-      subtitle: "Zo doorgaan is niet houdbaar. Kijk welke taken je kunt overdragen.",
+      title: "Het wordt zwaar voor je",
+      subtitle: "Je doet heel veel. Kijk welke taken je kunt delen met anderen.",
       zorgtijdFn: (uren: number) => `${uren} uur per week`,
       zorgtijdSuffix: " is veel. Probeer taken te delen met anderen.",
       takenTitle: "Hier kun je hulp bij krijgen",
-      takenHint: "Klik op een taak om hulpbronnen te bekijken →",
-      vindHulp: "Vind hulp",
+      takenHint: "Tik op een taak om te zien welke hulp er is \u2192",
+      vindHulp: "Bekijk hulp",
       steunpunt: {
         title: "Steunpunt Mantelzorg",
         beschrijving: "Gratis advies en ondersteuning",
@@ -75,14 +75,14 @@ export const rapportContent = {
       zorgtaken: "Jouw zorgtaken",
       balansTitle: "Houd je balans vast",
       tips: [
-        { emoji: "💚", tekst: "Plan elke dag iets leuks voor jezelf" },
-        { emoji: "🔄", tekst: "Doe deze test elke 3 maanden om je balans te checken" },
-        { emoji: "🤝", tekst: "Vraag hulp voordat je het nodig hebt" },
+        { emoji: "\uD83D\uDC9A", tekst: "Plan elke dag iets leuks voor jezelf" },
+        { emoji: "\uD83D\uDD04", tekst: "Doe deze check elke 3 maanden om je balans te checken" },
+        { emoji: "\uD83E\uDD1D", tekst: "Vraag hulp v\u00F3\u00F3rdat je het nodig hebt" },
       ],
     },
   },
 
-  opnieuw: "Doe de test opnieuw",
+  opnieuw: "Doe de check opnieuw",
 
   // Hulptips per taak
   hulpTips: {

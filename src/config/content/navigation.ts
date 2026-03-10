@@ -9,7 +9,7 @@ export const navigation = {
     { href: "/leren", label: "Info & Tips" },
     { href: "/hulpvragen", label: "Hulp" },
     { href: "/buddys", label: "Mantelbuddy's" },
-    { href: "/check-in", label: "Balanstest & Check-In" },
+    { href: "/check-in", label: "Balanscheck & Check-In" },
   ],
 
   // Organisatie links

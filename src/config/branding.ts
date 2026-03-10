@@ -7,9 +7,9 @@
 export const branding = {
   // App identiteit
   appName: "MantelBuddy",
-  tagline: "Samen lokaal sterk",
-  description: "MantelBuddy verbindt mantelzorgers met vrijwilligers uit de buurt",
-  heroTitle: "Samen zorgen, samen sterk",
+  tagline: "Je staat er niet alleen voor",
+  description: "MantelBuddy helpt mantelzorgers met rust, inzicht en steun van dichtbij",
+  heroTitle: "Je staat er niet alleen voor",
 
   // Contact
   contact: {
@@ -38,13 +38,13 @@ export const branding = {
 
   // Logo SVG kleuren (voor LogoIcon component)
   logoColors: {
-    left: "#2C7A7B",
-    right: "#319795",
+    left: "#6B8F71",
+    right: "#8DB793",
   },
 
   // Thema kleur (voor manifest, viewport, etc.)
-  themeColor: "#2C7A7B",
-  backgroundColor: "#F7FAFC",
+  themeColor: "#6B8F71",
+  backgroundColor: "#FAF6F1",
 
   // Privacy
   privacy: {

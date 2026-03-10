@@ -10,30 +10,30 @@ export const hulpvragenContent = {
 
   tabs: {
     voorJou: {
-      emoji: "💜",
+      emoji: "\uD83D\uDC9C",
       label: "Voor jou",
-      introTitle: "💜 Hulp voor jou als mantelzorger.",
+      introTitle: "\uD83D\uDC9C Hulp voor jou als mantelzorger.",
       beschrijving:
-        "Mantelzorgen is zwaar werk. Ook je hebt soms hulp nodig. Hier vind je organisaties die je kunnen helpen.",
+        "Je doet heel veel voor een ander. Maar ook jij mag hulp krijgen. Hier vind je wat er voor jou is.",
     },
     voorNaaste: {
-      emoji: "💝",
+      emoji: "\uD83D\uDC9D",
       label: "Voor naaste",
-      introTitle: "💝 Hulp voor je naaste.",
+      introTitle: "\uD83D\uDC9D Hulp voor je naaste.",
       beschrijving: "Hier vind je hulp voor de taken die je voor je naaste doet.",
       zwareTakenHint: " De kleuren laten zien hoe zwaar een taak voor jou is.",
     },
   },
 
   balanstest: {
-    doe: "Doe de balanstest",
+    doe: "Doe de Balanscheck",
     uitleg: "Dan kleuren we de tegels op basis van wat je zwaar vindt.",
   },
 
   locatie: {
-    vulWoonplaatsIn: "Vul je woonplaats in voor lokale hulp →",
+    vulWoonplaatsIn: "Vul je woonplaats in voor hulp dichtbij \u2192",
     vulNaasteWoonplaatsIn:
-      "Vul de woonplaats van je naaste in voor lokale hulp →",
+      "Vul de woonplaats van je naaste in voor hulp dichtbij \u2192",
   },
 
   hulpbronnenCount: (n: number) => `${n} hulpbron${n > 1 ? "nen" : ""}`,
@@ -57,43 +57,43 @@ export const hulpvragenContent = {
   } as Record<string, string>,
 
   leeg: {
-    title: "Geen hulpbronnen gevonden",
+    title: "Nog geen hulpbronnen gevonden",
     metLocatie: (locatie: string) =>
       `Er zijn nog geen hulpbronnen voor deze categorie bij ${locatie}.`,
     zonderLocatieMantelzorger:
-      "Vul je woonplaats in bij je profiel zodat we lokale hulp kunnen tonen.",
+      "Vul je woonplaats in bij je profiel zodat we hulp dichtbij kunnen tonen.",
     zonderLocatieNaaste:
-      "Vul de woonplaats van je naaste in bij je profiel zodat we lokale hulp kunnen tonen.",
+      "Vul de woonplaats van je naaste in bij je profiel zodat we hulp dichtbij kunnen tonen.",
   },
 
   kaart: {
     landelijk: "Landelijk",
-    meerInfo: "Meer info →",
+    meerInfo: "Meer info \u2192",
   },
 
   buddy: {
     title: "Hulp van een vrijwilliger?",
     beschrijving:
-      "Een MantelBuddy helpt met kleine taken bij jou in de buurt",
+      "Een MantelBuddy springt bij met kleine taken dichtbij",
   },
 
   mijnVragen: {
     title: "Mijn vragen",
     beschrijving:
-      "Hier zie je de vragen die je hebt gesteld. Wij zoeken hulp voor je en laten je weten als er een antwoord is.",
+      "Hier zie je de vragen die je hebt gesteld. We zoeken hulp voor je en laten het je weten als er een reactie is.",
     nieuweVraag: "+ Nieuwe vraag stellen",
   },
 
   nieuweHulpvraag: {
     title: "Nieuwe hulpvraag",
     beschrijving:
-      "Vertel ons waar je hulp bij nodig hebt. Wij zoeken dan iemand die je kan helpen.",
+      "Vertel waar je hulp bij nodig hebt. Wij zoeken dan iemand die je kan helpen.",
     onderwerp: "Waar gaat het over?",
     korteVraag: "Korte vraag",
     korteVraagPlaceholder: "Bijv: Ik zoek hulp bij boodschappen",
     meerUitleg: "Meer uitleg",
     meerUitlegPlaceholder: "Vertel meer over wat je nodig hebt...",
-    annuleren: "Annuleren",
+    annuleren: "Niet nu",
     verstuur: "Verstuur",
     bezig: "Versturen...",
   },

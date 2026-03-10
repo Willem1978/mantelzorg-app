@@ -3,12 +3,12 @@
  */
 
 export const hulpvragenPageContent = {
-  title: "Hulpaanvragen",
-  subtitle: "Vraag hulp bij een zorgtaak. Vrijwilligers bij jou in de buurt kunnen helpen.",
+  title: "Hulpvragen",
+  subtitle: "Vraag hulp bij een zorgtaak. Vrijwilligers dichtbij kunnen bijspringen.",
 
   // Intro blok
   intro: {
-    title: "🤝 Hulp van een MantelBuddy",
+    title: "\uD83E\uDD1D Hulp van een MantelBuddy",
     beschrijving:
       "Kies een taak waarvoor je hulp nodig hebt. Vertel wat je nodig hebt. Een vrijwilliger kan dan reageren.",
   },
@@ -30,7 +30,7 @@ export const hulpvragenPageContent = {
     extraInfoPlaceholder: "Bijv: Mijn naaste woont op de 2e verdieping zonder lift",
     verstuur: "Plaats hulpvraag",
     bezig: "Versturen...",
-    annuleren: "Annuleren",
+    annuleren: "Niet nu",
   },
 
   // Succes
@@ -72,7 +72,7 @@ export const hulpvragenPageContent = {
 
   // Lege staat
   leeg: {
-    title: "Geen hulpvragen",
+    title: "Nog geen hulpvragen",
     tekst: "Plaats een hulpvraag om te beginnen.",
   },
 
@@ -86,7 +86,7 @@ export const hulpvragenPageContent = {
   // Breadcrumbs
   breadcrumb: {
     home: "Home",
-    hulpvragen: "Hulpaanvragen",
+    hulpvragen: "Hulpvragen",
   },
 
   // Taak zwaarte badges
