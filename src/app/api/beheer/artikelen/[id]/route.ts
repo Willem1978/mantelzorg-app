@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
-import { sanitizeText, sanitizeHtml } from "@/lib/sanitize"
 
 export async function PUT(
   request: NextRequest,
@@ -21,9 +20,9 @@ export async function PUT(
     const artikel = await prisma.artikel.update({
       where: { id },
       data: {
-        titel: sanitizeText(body.titel),
-        beschrijving: sanitizeText(body.beschrijving),
-        inhoud: body.inhoud ? sanitizeHtml(body.inhoud) : null,
+        titel: body.titel,
+        beschrijving: body.beschrijving,
+        inhoud: body.inhoud || null,
         url: body.url || null,
         bron: body.bron || null,
         emoji: body.emoji || null,

@@ -32,7 +32,6 @@ model User {
   orgMember      OrganisationMember?
   sessions       Session[]
   berichten      Bericht[]
-  notifications  Notification[]
 
   @@index([gemeenteNaam])
   @@index([role])
@@ -293,7 +292,6 @@ model Notification {
   scheduledFor DateTime?
   sentAt       DateTime?
   createdAt    DateTime         @default(now())
-  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([userId, isRead])
@@ -315,7 +313,7 @@ model HelpRequest {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   caregiver      Caregiver     @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
-  organisation   Organisation? @relation(fields: [organisationId], references: [id], onDelete: SetNull)
+  organisation   Organisation? @relation(fields: [organisationId], references: [id])
 
   @@index([caregiverId])
 }
@@ -595,7 +593,7 @@ model MantelBuddy {
 
   // Relaties
   userId            String?             @unique
-  user              User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User?               @relation(fields: [userId], references: [id])
   matches           BuddyMatch[]
   taakReacties      BuddyTaakReactie[]
   ontvangenBeoordelingen BuddyBeoordeling[] @relation("BeoordeeldeBuddy")
@@ -706,8 +704,8 @@ model BuddyBeoordeling {
 
   // Relaties
   buddy             MantelBuddy         @relation("BeoordeeldeBuddy", fields: [buddyId], references: [id], onDelete: Cascade)
-  beoordeeldDoor    MantelBuddy?        @relation("BeoordelendePersoon", fields: [beoordeeldDoorId], references: [id], onDelete: SetNull)
-  caregiver         Caregiver?          @relation(fields: [caregiverId], references: [id], onDelete: SetNull)
+  beoordeeldDoor    MantelBuddy?        @relation("BeoordelendePersoon", fields: [beoordeeldDoorId], references: [id])
+  caregiver         Caregiver?          @relation(fields: [caregiverId], references: [id])
 
   createdAt         DateTime            @default(now())
 
@@ -724,7 +722,7 @@ model Bericht {
   gelezenOp         DateTime?
 
   match             BuddyMatch          @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  afzender          User                @relation(fields: [afzenderId], references: [id], onDelete: Cascade)
+  afzender          User                @relation(fields: [afzenderId], references: [id])
 
   createdAt         DateTime            @default(now())
 
@@ -1074,7 +1072,7 @@ model ContentCategorie {
   icon         String?            // Icoon naam
   hint         String?            // Extra hint tekst
   parentId     String?
-  parent       ContentCategorie?  @relation("CategorieHierarchie", fields: [parentId], references: [id], onDelete: SetNull)
+  parent       ContentCategorie?  @relation("CategorieHierarchie", fields: [parentId], references: [id])
   children     ContentCategorie[] @relation("CategorieHierarchie")
   metadata     Json?              // Extra data (bronLabelKleur, routeLabel, etc.)
   volgorde     Int                @default(0)

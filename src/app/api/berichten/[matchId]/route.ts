@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { sendNieuwBerichtEmail } from "@/lib/email"
-import { sanitizeText } from "@/lib/sanitize"
 
 export const dynamic = "force-dynamic"
 
@@ -158,7 +157,7 @@ export async function POST(
         data: {
           matchId,
           afzenderId: session.user.id,
-          inhoud: sanitizeText(body.inhoud.trim()),
+          inhoud: body.inhoud.trim(),
         },
       })
 

@@ -3,7 +3,6 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { BALANSTEST_VRAGEN, UREN_MAP, TAAK_NAAR_ONDERDEEL } from "@/config/options"
 import { sendBalanstestResultEmail, sendAlarmNotificationEmail } from "@/lib/email"
-import { checkAlarmindicatoren } from "@/lib/alarm-indicatoren"
 
 export const dynamic = 'force-dynamic'
 
@@ -145,9 +144,9 @@ export async function POST(request: Request) {
       await prisma.alarmLog.createMany({
         data: alarmen.map((alarm) => ({
           testId: test.id,
-          type: alarm.type,
+          type: alarm.type as any,
           beschrijving: alarm.beschrijving,
-          urgentie: alarm.urgentie,
+          urgentie: alarm.urgentie as any,
         })),
       })
     }
@@ -229,6 +228,55 @@ function getAntwoordScore(antwoord: string): number {
   if (antwoord === "ja") return 2
   if (antwoord === "soms") return 1
   return 0
+}
+
+function checkAlarmindicatoren(
+  antwoorden: Record<string, string>,
+  totalScore: number
+): Array<{ type: string; beschrijving: string; urgentie: string }> {
+  const alarmen: Array<{ type: string; beschrijving: string; urgentie: string }> = []
+
+  // Hoge belasting alarm
+  if (totalScore >= 13) {
+    alarmen.push({
+      type: "HOGE_BELASTING",
+      beschrijving: `Belastingsscore is ${totalScore} (hoog)`,
+      urgentie: "HIGH",
+    })
+  }
+
+  // Burn-out risico: slaap + fysiek + emotie allemaal "ja"
+  if (
+    antwoorden.q1 === "ja" &&
+    antwoorden.q2 === "ja" &&
+    antwoorden.q4 === "ja"
+  ) {
+    alarmen.push({
+      type: "KRITIEKE_COMBINATIE",
+      beschrijving: "Slaapproblemen, fysieke klachten én emotionele verandering",
+      urgentie: "CRITICAL",
+    })
+  }
+
+  // Energie uitputting: energie op + te veel tijd
+  if (antwoorden.q7 === "ja" && antwoorden.q11 === "ja") {
+    alarmen.push({
+      type: "EMOTIONELE_NOOD",
+      beschrijving: "Zorg slokt alle energie op en kost evenveel tijd als werk",
+      urgentie: "HIGH",
+    })
+  }
+
+  // Sociaal isolement: geen hobby's + verdriet
+  if (antwoorden.q10 === "ja" && antwoorden.q6 === "ja") {
+    alarmen.push({
+      type: "SOCIAAL_ISOLEMENT",
+      beschrijving: "Komt niet meer toe aan leuke dingen en heeft verdriet",
+      urgentie: "MEDIUM",
+    })
+  }
+
+  return alarmen
 }
 
 export async function GET() {

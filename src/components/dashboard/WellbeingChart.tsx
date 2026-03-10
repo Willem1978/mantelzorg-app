@@ -38,8 +38,7 @@ export function WellbeingChart({ className }: WellbeingChartProps) {
     }
   }
 
-  type MetricKey = "overall" | "physical" | "emotional"
-  const metrics: { key: MetricKey; label: string; color: string }[] = [
+  const metrics = [
     { key: "overall", label: "Algemeen", color: wellbeingChartColors.algemeen },
     { key: "physical", label: "Fysiek", color: wellbeingChartColors.fysiek },
     { key: "emotional", label: "Emotioneel", color: wellbeingChartColors.emotioneel },
@@ -139,7 +138,7 @@ export function WellbeingChart({ className }: WellbeingChartProps) {
         {metrics.map((metric) => (
           <button
             key={metric.key}
-            onClick={() => setActiveMetric(metric.key)}
+            onClick={() => setActiveMetric(metric.key as any)}
             className={cn(
               "px-3 py-1.5 rounded-full text-sm font-medium transition-all",
               activeMetric === metric.key
