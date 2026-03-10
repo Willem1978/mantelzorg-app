@@ -23,6 +23,8 @@ import {
   createPendingTestResults,
   startOnboardingSession,
 } from '@/lib/whatsapp-session'
+import { TAAK_NAAR_ONDERDEEL } from '@/config/options'
+import { checkAlarmindicatoren, saveAlarmLogs } from '@/lib/alarm-indicatoren'
 import type { HandlerResult } from './types'
 import { TEST_ANSWER_BUTTONS, DIFFICULTY_BUTTONS, ONBOARDING_CHOICE_BUTTONS } from './types'
 
@@ -233,7 +235,16 @@ async function finishTestAndRespond(
 
   // Als ingelogd: sla op en toon resultaat
   if (caregiver) {
-    await saveTestResults(caregiver.id, session, score, level)
+    const testResult = await saveTestResults(caregiver.id, session, score, level)
+
+    // Alarm-detectie na test-voltooiing
+    if (testResult) {
+      const alarmen = checkAlarmindicatoren(session.answers || {}, score)
+      if (alarmen.length > 0) {
+        await saveAlarmLogs(testResult.id, alarmen)
+      }
+    }
+
     clearTestSession(phoneNumber)
 
     const response = await buildTestCompletionMessage(session, score, level, true)
@@ -314,21 +325,10 @@ async function buildTestCompletionMessage(
     }
   }
 
-  // Haal hulpbronnen op voor zware taken
-  const taakIdNaarOnderdeel: Record<string, string> = {
-    t1: 'Persoonlijke verzorging',
-    t2: 'Huishoudelijke taken',
-    t3: 'Persoonlijke verzorging',
-    t4: 'Vervoer',
-    t5: 'Administratie en aanvragen',
-    t6: 'Sociaal contact en activiteiten',
-    t7: 'Persoonlijke verzorging',
-    t8: 'Persoonlijke verzorging',
-  }
-
+  // Haal hulpbronnen op voor zware taken (centrale mapping uit config/options.ts)
   if (zwareTaakIds.length > 0) {
     try {
-      const onderdeelWaarden = [...new Set(zwareTaakIds.map((id) => taakIdNaarOnderdeel[id]).filter(Boolean))]
+      const onderdeelWaarden = [...new Set(zwareTaakIds.map((id) => TAAK_NAAR_ONDERDEEL[id]).filter(Boolean))]
 
       if (onderdeelWaarden.length > 0) {
         const hulpbronnen = await prisma.zorgorganisatie.findMany({
