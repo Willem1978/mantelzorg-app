@@ -17,31 +17,31 @@ interface TipsCardProps {
 }
 
 const priorityColors = {
-  high: "border-l-red-500 bg-red-50",
-  medium: "border-l-yellow-500 bg-yellow-50",
-  low: "border-l-green-500 bg-green-50",
+  high: "border-l-accent-red bg-accent-red-bg",
+  medium: "border-l-accent-amber bg-accent-amber-bg",
+  low: "border-l-accent-green bg-accent-green-bg",
 }
 
 export function TipsCard({ tips, title = "Persoonlijke tips" }: TipsCardProps) {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">{title}</h2>
+    <div className="bg-card rounded-2xl p-6 shadow-[0_2px_12px_rgba(45,35,25,0.05)] border border-border">
+      <h2 className="text-lg font-semibold text-foreground mb-4">{title}</h2>
 
       <div className="space-y-3">
         {tips.map((tip) => (
           <div
             key={tip.id}
             className={cn(
-              "p-4 rounded-xl border-l-4 cursor-pointer hover:shadow-md transition-shadow",
+              "p-4 rounded-xl border-l-4 cursor-pointer hover:shadow-md transition-shadow min-h-[48px]",
               priorityColors[tip.priority]
             )}
           >
             <div className="flex items-start gap-3">
               <span className="text-2xl">{tip.icon}</span>
               <div className="flex-1">
-                <h3 className="font-medium text-gray-900">{tip.title}</h3>
-                <p className="text-sm text-gray-600 mt-1">{tip.description}</p>
-                <span className="inline-block mt-2 text-xs text-gray-500 bg-white px-2 py-1 rounded-full">
+                <h3 className="font-medium text-foreground">{tip.title}</h3>
+                <p className="text-base text-muted-foreground mt-1">{tip.description}</p>
+                <span className="inline-block mt-2 text-sm text-muted-foreground bg-card px-3 py-1 rounded-full border border-border">
                   {tip.category}
                 </span>
               </div>
@@ -50,7 +50,7 @@ export function TipsCard({ tips, title = "Persoonlijke tips" }: TipsCardProps) {
         ))}
       </div>
 
-      <button className="w-full mt-4 py-3 text-primary hover:text-primary/80 font-medium">
+      <button className="w-full mt-4 py-3 text-primary hover:text-primary/80 font-medium min-h-[48px] text-base">
         Meer tips bekijken →
       </button>
     </div>

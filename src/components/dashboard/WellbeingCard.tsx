@@ -17,9 +17,9 @@ interface WellbeingCardProps {
 
 export function WellbeingCard({ scores, lastCheckIn }: WellbeingCardProps) {
   const getScoreColor = (value: number) => {
-    if (value >= 7) return "text-green-600"
-    if (value >= 5) return "text-amber-600"
-    return "text-red-600"
+    if (value >= 7) return "text-accent-green"
+    if (value >= 5) return "text-accent-amber"
+    return "text-accent-red"
   }
 
   const getTrend = (current: number, previous?: number) => {
@@ -35,7 +35,7 @@ export function WellbeingCard({ scores, lastCheckIn }: WellbeingCardProps) {
         <div className="flex justify-between items-start">
           <CardTitle>Hoe gaat het met je?</CardTitle>
           {lastCheckIn && (
-            <span className="text-xs text-gray-500">
+            <span className="text-sm text-muted-foreground">
               Laatste check-in: {lastCheckIn}
             </span>
           )}
@@ -48,16 +48,16 @@ export function WellbeingCard({ scores, lastCheckIn }: WellbeingCardProps) {
             return (
               <div
                 key={score.label}
-                className="bg-gray-50 rounded-lg p-4"
+                className="bg-secondary rounded-xl p-4 border border-border"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-600">{score.label}</span>
+                  <span className="text-base text-foreground font-medium">{score.label}</span>
                   {trend && (
                     <span className={cn(
-                      "text-xs",
-                      trend === "up" && "text-green-600",
-                      trend === "down" && "text-red-600",
-                      trend === "stable" && "text-gray-400"
+                      "text-sm font-bold",
+                      trend === "up" && "text-accent-green",
+                      trend === "down" && "text-accent-red",
+                      trend === "stable" && "text-muted-foreground"
                     )}>
                       {trend === "up" && "↑"}
                       {trend === "down" && "↓"}
@@ -69,16 +69,16 @@ export function WellbeingCard({ scores, lastCheckIn }: WellbeingCardProps) {
                   <span className={cn("text-3xl font-bold", getScoreColor(score.value))}>
                     {score.value}
                   </span>
-                  <span className="text-gray-400 text-sm mb-1">/10</span>
+                  <span className="text-muted-foreground text-base mb-1">/10</span>
                 </div>
                 {/* Progress bar */}
-                <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                <div className="mt-2 w-full bg-muted rounded-full h-2.5">
                   <div
                     className={cn(
-                      "h-2 rounded-full transition-all duration-500",
-                      score.value >= 7 && "bg-green-500",
-                      score.value >= 5 && score.value < 7 && "bg-amber-500",
-                      score.value < 5 && "bg-red-500"
+                      "h-2.5 rounded-full transition-all duration-500",
+                      score.value >= 7 && "bg-accent-green",
+                      score.value >= 5 && score.value < 7 && "bg-accent-amber",
+                      score.value < 5 && "bg-accent-red"
                     )}
                     style={{ width: `${score.value * 10}%` }}
                   />

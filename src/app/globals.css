@@ -1,89 +1,89 @@
 @import "tailwindcss";
 
 :root {
-  /* MantelBuddy Huisstijl v2.0 — Warm & Kalmerend */
-  /* Saliegroen, Warm Terracotta, Zandtint, Zacht Grijs */
+  /* MantelBuddy Huisstijl v2.0 — Warm & Toegankelijk */
+  /* Warm Groen, Terracotta, Crème, Warm Bruin */
 
-  /* Basis kleuren — warm gebroken wit, zacht donkergrijs */
-  --background: #FAF6F1;
-  --foreground: #3D3835;
-  --card: #FFFCF8;
-  --card-foreground: #3D3835;
+  /* Basis kleuren — warme crèmetinten i.p.v. koud grijs/wit */
+  --background: #FDF8F3;
+  --foreground: #2D2319;
+  --card: #FFFBF7;
+  --card-foreground: #2D2319;
 
-  /* Primary — Zacht saliegroen */
-  --primary: #6B8F71;
-  --primary-foreground: #FFFCF8;
-  --primary-light: #EEF4EF;
+  /* Primary - Diep Warm Groen (betrouwbaar, kalm) */
+  --primary: #2E6B4F;
+  --primary-foreground: #FFFFFF;
+  --primary-light: #E8F2EC;
 
-  /* Accent — Warm terracotta (CTA knoppen, meldingen) */
-  --accent: #C47D5A;
-  --accent-foreground: #FFFCF8;
+  /* Accent - Zacht Terracotta (CTA knoppen, warmte) */
+  --accent: #B85636;
+  --accent-foreground: #FFFFFF;
 
-  /* Secondary — Zacht zand */
-  --secondary: #F0EBE3;
-  --secondary-foreground: #3D3835;
+  /* Secondary — warm zand */
+  --secondary: #F3EBE2;
+  --secondary-foreground: #2D2319;
 
-  /* Muted — Gedempt warm grijs */
-  --muted: #E8E2D9;
-  --muted-foreground: #6B6560;
+  /* Muted — warm beige, hoog contrast tekst */
+  --muted: #E8DFD5;
+  --muted-foreground: #5C4F42;
 
-  /* Border — Zachte randen, bijna onzichtbaar */
-  --border: #E0D8CE;
-  --border-strong: #C8BFB3;
+  /* Border — warme randkleuren */
+  --border: #D4C8BB;
+  --border-strong: #A89888;
 
   /* Input */
-  --input: #FFFCF8;
-  --ring: #6B8F71;
+  --input: #FFFBF7;
+  --ring: #2E6B4F;
 
   /* Emoticon kleuren - Helder en duidelijk */
   --emoticon-green: #6B8F71;
   --emoticon-yellow: #D4A054;
   --emoticon-red: #C47D5A;
 
-  /* Accent kleuren voor scores */
-  --accent-green: #4A7A50;
-  --accent-green-bg: #EEF4EF;
-  --accent-amber: #B8862B;
-  --accent-amber-bg: #FDF6EC;
-  --accent-red: #A65050;
-  --accent-red-bg: #F9EFEF;
+  /* Accent kleuren voor scores — versterkt contrast + borders */
+  --accent-green: #1B7A3D;
+  --accent-green-bg: #E5F5EA;
+  --accent-amber: #A85E00;
+  --accent-amber-bg: #FFF3E0;
+  --accent-red: #A52019;
+  --accent-red-bg: #FDECEB;
 
-  /* Uitlegblokken */
-  --uitlegblok-bg: #EEF4EF;
+  /* Uitlegblokken — warm groen tint */
+  --uitlegblok-bg: #E8F2EC;
 }
 
 .dark {
-  /* Dark mode - Warm & kalmerend */
-  --background: #2A2622;
-  --foreground: #F0EBE3;
-  --card: #35302B;
-  --card-foreground: #F0EBE3;
-  --primary: #8DB793;
-  --primary-foreground: #2A2622;
-  --primary-light: #3A4A3C;
-  --accent: #D49A7A;
-  --accent-foreground: #2A2622;
-  --secondary: #35302B;
-  --secondary-foreground: #F0EBE3;
-  --muted: #4A4540;
-  --muted-foreground: #B8B0A5;
-  --border: #4A4540;
-  --border-strong: #6B6560;
-  --input: #35302B;
-  --ring: #8DB793;
+  /* Dark mode - Warm MantelBuddy palette */
+  --background: #1E1A16;
+  --foreground: #F5EDE4;
+  --card: #2A2420;
+  --card-foreground: #F5EDE4;
+  --primary: #5DB88A;
+  --primary-foreground: #1E1A16;
+  --primary-light: #2A3D32;
+  --accent: #D97B5A;
+  --accent-foreground: #1E1A16;
+  --secondary: #332D27;
+  --secondary-foreground: #F5EDE4;
+  --muted: #4A4238;
+  --muted-foreground: #B8ADA0;
+  --border: #4A4238;
+  --border-strong: #6B6054;
+  --input: #2A2420;
+  --ring: #5DB88A;
 
   --emoticon-green: #8DB793;
   --emoticon-yellow: #D4A054;
   --emoticon-red: #D49A7A;
 
-  --accent-green: #8DB793;
-  --accent-green-bg: #2E3D30;
-  --accent-amber: #D4A054;
-  --accent-amber-bg: #3D3425;
-  --accent-red: #D49A7A;
-  --accent-red-bg: #3D2E2A;
+  --accent-green: #81C784;
+  --accent-green-bg: #1F3324;
+  --accent-amber: #FFB74D;
+  --accent-amber-bg: #3D2A10;
+  --accent-red: #EF5350;
+  --accent-red-bg: #3D1A1A;
 
-  --uitlegblok-bg: #3A4A3C;
+  --uitlegblok-bg: #2A3D32;
 }
 
 @theme inline {
@@ -151,15 +151,17 @@ html.text-xl-mode body {
 
 /* Hoog contrast modus */
 html.high-contrast {
-  --muted-foreground: #2A2A2A;
-  --border: #888888;
-  --border-strong: #555555;
+  --foreground: #1A1108;
+  --muted-foreground: #2A2218;
+  --border: #7A6E60;
+  --border-strong: #4A4035;
 }
 
 html.high-contrast.dark {
-  --muted-foreground: #E0E0E0;
-  --border: #888888;
-  --border-strong: #AAAAAA;
+  --foreground: #F5F0EB;
+  --muted-foreground: #E0D8CE;
+  --border: #888078;
+  --border-strong: #AAA298;
 }
 
 /* ============================================
@@ -171,18 +173,18 @@ html.high-contrast.dark {
   background: var(--card);
   border-radius: 1.5rem;
   padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(80, 60, 40, 0.06), 0 1px 6px rgba(80, 60, 40, 0.04);
+  box-shadow: 0 4px 20px rgba(45, 35, 25, 0.06), 0 1px 6px rgba(45, 35, 25, 0.04);
   border: none;
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .ker-card:hover {
-  box-shadow: 0 8px 30px rgba(80, 60, 40, 0.10), 0 2px 10px rgba(80, 60, 40, 0.05);
+  box-shadow: 0 8px 30px rgba(45, 35, 25, 0.10), 0 2px 10px rgba(45, 35, 25, 0.05);
 }
 
 /* Card variant - elevated */
 .ker-card-elevated {
-  box-shadow: 0 8px 32px rgba(80, 60, 40, 0.10), 0 2px 12px rgba(80, 60, 40, 0.05);
+  box-shadow: 0 8px 32px rgba(45, 35, 25, 0.10), 0 2px 12px rgba(45, 35, 25, 0.05);
 }
 
 /* Card variant - interactive */
@@ -192,7 +194,7 @@ html.high-contrast.dark {
 
 .ker-card-interactive:hover {
   transform: translateY(-3px);
-  box-shadow: 0 10px 36px rgba(80, 60, 40, 0.12), 0 3px 12px rgba(80, 60, 40, 0.06);
+  box-shadow: 0 10px 36px rgba(45, 35, 25, 0.12), 0 3px 12px rgba(45, 35, 25, 0.06);
 }
 
 /* KER Pill badge */
@@ -206,32 +208,36 @@ html.high-contrast.dark {
   font-size: 0.9375rem;
   font-weight: 500;
   color: var(--foreground);
-  box-shadow: 0 2px 10px rgba(80, 60, 40, 0.06);
+  box-shadow: 0 2px 10px rgba(45, 35, 25, 0.06);
 }
 
-/* Pill variants */
+/* Pill variants — met duidelijke borders voor toegankelijkheid */
 .ker-pill-primary {
   background: var(--primary-light);
   border-color: var(--primary);
   color: var(--primary);
+  font-weight: 600;
 }
 
 .ker-pill-success {
   background: var(--accent-green-bg);
   border-color: var(--accent-green);
   color: var(--accent-green);
+  font-weight: 600;
 }
 
 .ker-pill-warning {
   background: var(--accent-amber-bg);
   border-color: var(--accent-amber);
   color: var(--accent-amber);
+  font-weight: 600;
 }
 
 .ker-pill-danger {
   background: var(--accent-red-bg);
   border-color: var(--accent-red);
   color: var(--accent-red);
+  font-weight: 600;
 }
 
 /* KER Button - Basis — warm en uitnodigend */
@@ -248,7 +254,7 @@ html.high-contrast.dark {
   cursor: pointer;
   border: none;
   min-height: 52px;
-  box-shadow: 0 2px 8px rgba(80, 60, 40, 0.08);
+  box-shadow: 0 2px 8px rgba(45, 35, 25, 0.08);
 }
 
 .ker-btn:disabled {
@@ -259,45 +265,45 @@ html.high-contrast.dark {
 .ker-btn-primary {
   background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary), black 10%) 100%);
   color: var(--primary-foreground);
-  box-shadow: 0 4px 16px rgba(107, 143, 113, 0.25);
+  box-shadow: 0 4px 16px rgba(46, 107, 79, 0.25);
 }
 
 .ker-btn-primary:hover:not(:disabled) {
   background: linear-gradient(135deg, color-mix(in srgb, var(--primary), white 10%) 0%, var(--primary) 100%);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(107, 143, 113, 0.30);
+  box-shadow: 0 6px 20px rgba(46, 107, 79, 0.30);
 }
 
 .ker-btn-primary:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: 0 2px 10px rgba(107, 143, 113, 0.20);
+  box-shadow: 0 2px 10px rgba(46, 107, 79, 0.20);
 }
 
-/* CTA / Accent button - Warm terracotta */
+/* CTA / Accent button - Warm Terracotta */
 .ker-btn-accent {
   background: var(--accent);
   color: var(--accent-foreground);
-  box-shadow: 0 4px 16px rgba(196, 125, 90, 0.25);
+  box-shadow: 0 4px 16px rgba(184, 86, 54, 0.25);
 }
 
 .ker-btn-accent:hover:not(:disabled) {
   background: color-mix(in srgb, var(--accent), black 8%);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(196, 125, 90, 0.30);
+  box-shadow: 0 6px 20px rgba(184, 86, 54, 0.30);
 }
 
 .ker-btn-secondary {
   background: var(--card);
   color: var(--foreground);
   border: 2px solid var(--border);
-  box-shadow: 0 2px 8px rgba(80, 60, 40, 0.06);
+  box-shadow: 0 2px 8px rgba(45, 35, 25, 0.06);
 }
 
 .ker-btn-secondary:hover:not(:disabled) {
   border-color: var(--primary);
   background: var(--primary-light);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(80, 60, 40, 0.10);
+  box-shadow: 0 4px 12px rgba(45, 35, 25, 0.10);
 }
 
 /* Button sizes */
@@ -335,7 +341,7 @@ html.high-contrast.dark {
 .ker-input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(107, 143, 113, 0.12);
+  box-shadow: 0 0 0 4px rgba(46, 107, 79, 0.12);
   background: var(--card);
 }
 
@@ -414,7 +420,7 @@ html.high-contrast.dark {
 .ker-header {
   background: var(--card);
   border-bottom: none;
-  box-shadow: 0 2px 12px rgba(80, 60, 40, 0.05);
+  box-shadow: 0 2px 12px rgba(45, 35, 25, 0.05);
   padding: 1rem;
   position: sticky;
   top: 0;
@@ -440,7 +446,7 @@ html.high-contrast.dark {
   right: 0;
   background: var(--card);
   border-top: none;
-  box-shadow: 0 -2px 16px rgba(80, 60, 40, 0.06);
+  box-shadow: 0 -2px 16px rgba(45, 35, 25, 0.06);
   padding: 0.5rem 1rem;
   padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 }
@@ -514,13 +520,13 @@ html.high-contrast.dark {
 .ker-option:hover {
   border-color: var(--primary);
   background: var(--primary-light);
-  box-shadow: 0 2px 12px rgba(107, 143, 113, 0.10);
+  box-shadow: 0 2px 12px rgba(46, 107, 79, 0.10);
 }
 
 .ker-option.selected {
   border-color: var(--primary);
   background: var(--primary-light);
-  box-shadow: 0 2px 12px rgba(107, 143, 113, 0.10);
+  box-shadow: 0 2px 12px rgba(46, 107, 79, 0.10);
 }
 
 /* ============================================
@@ -626,25 +632,29 @@ html.high-contrast.dark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.25rem 0.75rem;
+  padding: 0.375rem 1rem;
   border-radius: 9999px;
-  font-weight: 600;
-  font-size: 1rem;
+  font-weight: 700;
+  font-size: 1.0625rem;
+  border: 2px solid transparent;
 }
 
 .score-badge.green {
   background: var(--accent-green-bg);
   color: var(--accent-green);
+  border-color: var(--accent-green);
 }
 
 .score-badge.amber {
   background: var(--accent-amber-bg);
   color: var(--accent-amber);
+  border-color: var(--accent-amber);
 }
 
 .score-badge.red {
   background: var(--accent-red-bg);
   color: var(--accent-red);
+  border-color: var(--accent-red);
 }
 
 /* ============================================
@@ -733,21 +743,23 @@ html {
 
 .ker-stat {
   text-align: center;
-  padding: 0.75rem;
+  padding: 1rem;
   border-radius: 0.75rem;
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 251, 247, 0.6);
 }
 
 .ker-stat-value {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
   line-height: 1.2;
+  color: var(--foreground);
 }
 
 .ker-stat-label {
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   color: var(--muted-foreground);
   margin-top: 0.25rem;
+  font-weight: 500;
 }
 
 /* ============================================
@@ -789,6 +801,7 @@ html {
   font-size: 1rem;
   color: var(--muted-foreground);
   margin-top: 0.125rem;
+  line-height: 1.5;
 }
 
 /* ============================================
@@ -812,30 +825,35 @@ html {
 .ker-badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.25rem 0.625rem;
+  padding: 0.3125rem 0.75rem;
   border-radius: 9999px;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 600;
+  border: 1.5px solid transparent;
 }
 
 .ker-badge-green {
   background: var(--accent-green-bg);
   color: var(--accent-green);
+  border-color: var(--accent-green);
 }
 
 .ker-badge-amber {
   background: var(--accent-amber-bg);
   color: var(--accent-amber);
+  border-color: var(--accent-amber);
 }
 
 .ker-badge-red {
   background: var(--accent-red-bg);
   color: var(--accent-red);
+  border-color: var(--accent-red);
 }
 
 .ker-badge-primary {
   background: var(--primary-light);
   color: var(--primary);
+  border-color: var(--primary);
 }
 
 /* ============================================
@@ -849,7 +867,7 @@ html {
   border-radius: 1.25rem;
   padding: 1.5rem 1.75rem;
   margin-bottom: 2rem;
-  box-shadow: 0 2px 12px rgba(80, 60, 40, 0.04);
+  box-shadow: 0 2px 12px rgba(45, 35, 25, 0.04);
 }
 
 .ker-page-intro p {
@@ -921,14 +939,14 @@ html {
   font-size: 0.9375rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 4px 20px rgba(107, 143, 113, 0.30);
+  box-shadow: 0 4px 16px rgba(46, 107, 79, 0.3);
   transition: all 0.2s ease;
   min-height: 48px;
 }
 
 .ker-help-float-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(107, 143, 113, 0.38);
+  box-shadow: 0 6px 24px rgba(46, 107, 79, 0.38);
 }
 
 /* ============================================
@@ -989,7 +1007,7 @@ html {
   padding: 2rem;
   max-width: 24rem;
   width: 100%;
-  box-shadow: 0 8px 40px rgba(80, 60, 40, 0.18);
+  box-shadow: 0 8px 40px rgba(45, 35, 25, 0.18);
   animation: slide-up 0.2s ease-out;
 }
 
@@ -1082,7 +1100,7 @@ html {
   font-size: 0.9375rem;
   line-height: 1.6;
   margin-top: 0.5rem;
-  box-shadow: 0 2px 8px rgba(166, 80, 80, 0.08);
+  box-shadow: 0 2px 8px rgba(165, 32, 25, 0.08);
 }
 
 .ker-success-message {
@@ -1097,7 +1115,7 @@ html {
   font-size: 0.9375rem;
   line-height: 1.6;
   margin-top: 0.5rem;
-  box-shadow: 0 2px 8px rgba(74, 122, 80, 0.08);
+  box-shadow: 0 2px 8px rgba(27, 122, 61, 0.08);
 }
 
 /* ============================================

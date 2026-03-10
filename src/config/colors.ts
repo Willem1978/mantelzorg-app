@@ -7,39 +7,39 @@
  * plekken waar je hex-codes nodig hebt (PDF, images, canvas, etc.)
  */
 
-// Score/belasting niveau kleuren — warm & kalmerend
+// Score/belasting niveau kleuren — verhoogd contrast, warmer palet
 export const scoreColors = {
   laag: {
-    hex: "#4A7A50",
-    hexBg: "#EEF4EF",
+    hex: "#1B7A3D",
+    hexBg: "#E5F5EA",
     tailwind: "text-accent-green",
     tailwindBg: "bg-accent-green-bg",
     cssVar: "var(--accent-green)",
     cssVarBg: "var(--accent-green-bg)",
-    rgb: [74, 122, 80] as const,
-    rgbBg: [238, 244, 239] as const,
+    rgb: [27, 122, 61] as const,
+    rgbBg: [229, 245, 234] as const,
     label: "Laag",
   },
   gemiddeld: {
-    hex: "#B8862B",
-    hexBg: "#FDF6EC",
+    hex: "#A85E00",
+    hexBg: "#FFF3E0",
     tailwind: "text-accent-amber",
     tailwindBg: "bg-accent-amber-bg",
     cssVar: "var(--accent-amber)",
     cssVarBg: "var(--accent-amber-bg)",
-    rgb: [184, 134, 43] as const,
-    rgbBg: [253, 246, 236] as const,
+    rgb: [168, 94, 0] as const,
+    rgbBg: [255, 243, 224] as const,
     label: "Gemiddeld",
   },
   hoog: {
-    hex: "#A65050",
-    hexBg: "#F9EFEF",
+    hex: "#A52019",
+    hexBg: "#FDECEB",
     tailwind: "text-accent-red",
     tailwindBg: "bg-accent-red-bg",
     cssVar: "var(--accent-red)",
     cssVarBg: "var(--accent-red-bg)",
-    rgb: [166, 80, 80] as const,
-    rgbBg: [249, 239, 239] as const,
+    rgb: [165, 32, 25] as const,
+    rgbBg: [253, 236, 235] as const,
     label: "Hoog",
   },
 } as const
@@ -55,14 +55,14 @@ export function getScoreColors(niveau: string) {
 
 // Emoticon kleuren (voor SmileyButton etc.)
 export const emoticonColors = {
-  nee: { bg: "#8DB793", face: "#4A7A50", label: "Goed" },
-  soms: { bg: "#E8C96A", face: "#B8862B", label: "Gaat wel" },
-  ja: { bg: "#D49A7A", face: "#A65050", label: "Niet goed" },
+  nee: { bg: "#8DB793", face: "#1B7A3D", label: "Goed" },
+  soms: { bg: "#E8C96A", face: "#A85E00", label: "Gaat wel" },
+  ja: { bg: "#D49A7A", face: "#A52019", label: "Niet goed" },
 } as const
 
 // Agenda event kleur
 export const eventTypeColors = {
-  CARE_TASK: "#C47D5A",
+  CARE_TASK: "#B85636",
 } as const
 
 // Urgentie kleuren (voor alarmen)
@@ -80,11 +80,11 @@ export const urgentieLabels: Record<string, string> = {
   CRITICAL: "Kritiek",
 }
 
-// Wellbeing chart kleuren — warm palet
+// Wellbeing chart kleuren — warmer palet
 export const wellbeingChartColors = {
-  algemeen: "#6B8F71",
-  fysiek: "#5B8FB9",
-  emotioneel: "#9B7BB5",
+  algemeen: "#2E6B4F",
+  fysiek: "#3476A8",
+  emotioneel: "#7E5CA8",
 } as const
 
 // Niveau Tailwind klassen (voor badges etc.)
@@ -94,20 +94,20 @@ export const niveauBadgeClasses: Record<string, string> = {
   HOOG: "bg-accent-red-bg text-accent-red",
 }
 
-// PDF rapport kleuren (consistent met app)
+// PDF rapport kleuren (consistent met warm app-palet)
 export const pdfColors = {
-  primary: [107, 143, 113] as const,   // #6B8F71 - consistent met app
-  primaryBg: [238, 244, 239] as const, // #EEF4EF
+  primary: [46, 107, 79] as const,   // #2E6B4F - consistent met app
+  primaryBg: [232, 242, 236] as const, // #E8F2EC
   groen: scoreColors.laag.rgb,
   groenBg: scoreColors.laag.rgbBg,
   oranje: scoreColors.gemiddeld.rgb,
   oranjeBg: scoreColors.gemiddeld.rgbBg,
   rood: scoreColors.hoog.rgb,
   roodBg: scoreColors.hoog.rgbBg,
-  donker: [61, 56, 53] as const,    // #3D3835 - consistent met --foreground
-  tekst: [107, 101, 96] as const,   // #6B6560 - consistent met --muted-foreground
-  grijs: [128, 128, 128] as const,
-  lichtgrijs: [245, 243, 240] as const,
-  wit: [255, 252, 248] as const,
-  rand: [224, 216, 206] as const,   // #E0D8CE - consistent met --border
+  donker: [45, 35, 25] as const,    // #2D2319 - consistent met --foreground
+  tekst: [92, 79, 66] as const,     // #5C4F42 - consistent met --muted-foreground
+  grijs: [128, 120, 110] as const,
+  lichtgrijs: [243, 235, 226] as const, // warm lichtgrijs
+  wit: [255, 251, 247] as const,
+  rand: [212, 200, 187] as const,   // #D4C8BB - consistent met --border
 } as const
