@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { validateBody, calendarEventSchema } from "@/lib/validations"
+import type { EventType } from "@prisma/client"
 
 export const dynamic = 'force-dynamic'
 
@@ -79,14 +81,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const body = await request.json()
-
-    if (!body.title || !body.startTime) {
-      return NextResponse.json(
-        { error: "Titel en starttijd zijn verplicht" },
-        { status: 400 }
-      )
+    const raw = await request.json()
+    const validated = validateBody(raw, calendarEventSchema)
+    if (!validated.success) {
+      return NextResponse.json({ error: validated.error }, { status: 400 })
     }
+    const body = validated.data
 
     const event = await prisma.calendarEvent.create({
       data: {
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
         startTime: new Date(body.startTime),
         endTime: body.endTime ? new Date(body.endTime) : null,
         isAllDay: body.isAllDay || false,
-        eventType: body.eventType || "OTHER",
+        eventType: (body.eventType || "OTHER") as EventType,
         reminderMinutes: body.reminderMinutes || null,
         color: body.color || null,
       }

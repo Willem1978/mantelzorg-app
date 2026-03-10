@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { BALANSTEST_VRAGEN, UREN_MAP, TAAK_NAAR_ONDERDEEL } from "@/config/options"
 import { sendBalanstestResultEmail, sendAlarmNotificationEmail } from "@/lib/email"
 import { checkAlarmindicatoren } from "@/lib/alarm-indicatoren"
+import { validateBody, belastbaarheidstestSchema } from "@/lib/validations"
 
 export const dynamic = 'force-dynamic'
 
@@ -38,14 +39,14 @@ export async function POST(request: Request) {
     const data = await request.json()
     const session = await auth()
 
-    const {
-      registratie,
-      antwoorden,
-      taken,
-      score,
-      niveau,
-      totaleUren,
-    } = data
+    // Valideer de kern-input (registratie, antwoorden, taken)
+    const validated = validateBody(data, belastbaarheidstestSchema)
+    if (!validated.success) {
+      return NextResponse.json({ error: validated.error }, { status: 400 })
+    }
+
+    const { registratie, antwoorden, taken } = validated.data
+    const { score, totaleUren } = data as { score: number; totaleUren: number }
 
     // Laad vragen en taken uit database (met config fallback)
     const { vragenMap, takenMap } = await loadVragenEnTaken()
@@ -63,7 +64,7 @@ export async function POST(request: Request) {
 
         // Registratie gegevens
         voornaam: registratie.voornaam,
-        email: registratie.email,
+        email: registratie.email || "",
         postcode: registratie.postcode || null,
         huisnummer: registratie.huisnummer || null,
         straat: registratie.straat || null,

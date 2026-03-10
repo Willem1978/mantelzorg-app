@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { validateBody, voorkeurenSchema } from "@/lib/validations"
+import type { VoorkeurType } from "@prisma/client"
 
 export async function GET() {
   const session = await auth()
@@ -40,11 +42,12 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json()
-    const { voorkeuren, aandoening } = body as {
-      voorkeuren?: { type: "CATEGORIE" | "TAG"; slug: string }[]
-      aandoening?: string | null
+    const raw = await request.json()
+    const validated = validateBody(raw, voorkeurenSchema)
+    if (!validated.success) {
+      return NextResponse.json({ error: validated.error }, { status: 400 })
     }
+    const { voorkeuren, aandoening } = validated.data
 
     const caregiver = await prisma.caregiver.findUnique({
       where: { userId: session.user.id },
@@ -73,7 +76,7 @@ export async function POST(request: NextRequest) {
         await prisma.gebruikerVoorkeur.createMany({
           data: voorkeuren.map((v) => ({
             caregiverId: caregiver.id,
-            type: v.type,
+            type: v.type as VoorkeurType,
             slug: v.slug,
           })),
         })

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { validateBody, favorietSchema } from "@/lib/validations"
+import type { FavorietType } from "@prisma/client"
 
 export const dynamic = 'force-dynamic'
 
@@ -42,20 +44,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const body = await request.json()
+    const raw = await request.json()
+    const validated = validateBody(raw, favorietSchema)
+    if (!validated.success) {
+      return NextResponse.json({ error: validated.error }, { status: 400 })
+    }
+    const body = validated.data
 
     const favoriet = await prisma.favoriet.upsert({
       where: {
         caregiverId_type_itemId: {
           caregiverId: session.user.caregiverId,
-          type: body.type,
+          type: body.type as FavorietType,
           itemId: body.itemId,
         }
       },
       update: {},
       create: {
         caregiverId: session.user.caregiverId,
-        type: body.type,
+        type: body.type as FavorietType,
         itemId: body.itemId,
         titel: body.titel,
         beschrijving: body.beschrijving || null,

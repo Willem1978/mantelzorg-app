@@ -313,7 +313,7 @@ model HelpRequest {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   caregiver      Caregiver     @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
-  organisation   Organisation? @relation(fields: [organisationId], references: [id])
+  organisation   Organisation? @relation(fields: [organisationId], references: [id], onDelete: SetNull)
 
   @@index([caregiverId])
 }
@@ -704,8 +704,8 @@ model BuddyBeoordeling {
 
   // Relaties
   buddy             MantelBuddy         @relation("BeoordeeldeBuddy", fields: [buddyId], references: [id], onDelete: Cascade)
-  beoordeeldDoor    MantelBuddy?        @relation("BeoordelendePersoon", fields: [beoordeeldDoorId], references: [id])
-  caregiver         Caregiver?          @relation(fields: [caregiverId], references: [id])
+  beoordeeldDoor    MantelBuddy?        @relation("BeoordelendePersoon", fields: [beoordeeldDoorId], references: [id], onDelete: SetNull)
+  caregiver         Caregiver?          @relation(fields: [caregiverId], references: [id], onDelete: SetNull)
 
   createdAt         DateTime            @default(now())
 
@@ -722,7 +722,7 @@ model Bericht {
   gelezenOp         DateTime?
 
   match             BuddyMatch          @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  afzender          User                @relation(fields: [afzenderId], references: [id])
+  afzender          User                @relation(fields: [afzenderId], references: [id], onDelete: Cascade)
 
   createdAt         DateTime            @default(now())
 
@@ -1072,7 +1072,7 @@ model ContentCategorie {
   icon         String?            // Icoon naam
   hint         String?            // Extra hint tekst
   parentId     String?
-  parent       ContentCategorie?  @relation("CategorieHierarchie", fields: [parentId], references: [id])
+  parent       ContentCategorie?  @relation("CategorieHierarchie", fields: [parentId], references: [id], onDelete: SetNull)
   children     ContentCategorie[] @relation("CategorieHierarchie")
   metadata     Json?              // Extra data (bronLabelKleur, routeLabel, etc.)
   volgorde     Int                @default(0)

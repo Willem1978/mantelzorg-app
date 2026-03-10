@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { matchBuddys, type BuddyForMatching, type MatchRequest } from "@/lib/matching"
+import { validateBody, buddyMatchSchema } from "@/lib/validations"
 
 /**
  * POST /api/buddys/match
@@ -18,15 +19,18 @@ import { matchBuddys, type BuddyForMatching, type MatchRequest } from "@/lib/mat
  */
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
+    const raw = await request.json()
+    const validated = validateBody(raw, buddyMatchSchema)
+    if (!validated.success) {
+      return NextResponse.json({ error: validated.error }, { status: 400 })
+    }
 
-    const {
-      zorgtaken = [],
-      latitude = null,
-      longitude = null,
-      beschikbaarheid,
-      maxAfstandKm = 20,
-    } = body
+    const vd = validated.data
+    const zorgtaken = vd.zorgtaken ?? []
+    const latitude = vd.latitude ?? null
+    const longitude = vd.longitude ?? null
+    const beschikbaarheid = vd.beschikbaarheid as "EENMALIG" | "VAST" | "BEIDE" | undefined
+    const maxAfstandKm = vd.maxAfstandKm ?? 20
 
     // Haal actieve, goedgekeurde buddys op
     const buddys = await prisma.mantelBuddy.findMany({
