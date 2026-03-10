@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       "20-40": 30,
       "40+": 45,
     }
-    const hours = hoursMap[careHoursPerWeek] || null
+    const hours = (careHoursPerWeek && hoursMap[careHoursPerWeek]) || null
 
     // Bereken careSince als datum
     const durationMap: Record<string, number> = {
