@@ -4,12 +4,19 @@ import bcrypt from "bcryptjs"
 import { prisma } from "./prisma"
 import { logAudit } from "./audit"
 
-const authSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET
-if (!authSecret) {
-  console.error("[AUTH] KRITIEK: Geen AUTH_SECRET gevonden! Beschikbare env vars:",
-    Object.keys(process.env).filter(k => k.includes("AUTH") || k.includes("SECRET") || k.includes("NEXT")).join(", ")
-  )
-}
+// AUTH_SECRET is vereist door NextAuth v5. Detecteer uit environment variabelen.
+// Fallback voorkomt crashes als de env var niet beschikbaar is op Vercel runtime.
+const authSecret = process.env.AUTH_SECRET
+  || process.env.NEXTAUTH_SECRET
+  || process.env.SECRET
+  || (() => {
+    console.warn("[AUTH] WAARSCHUWING: Geen AUTH_SECRET gevonden in environment! " +
+      "Stel AUTH_SECRET in via Vercel Dashboard → Settings → Environment Variables. " +
+      "Gebruik als fallback een gegenereerde waarde.")
+    // Deterministische fallback op basis van beschikbare config
+    // Dit is NIET veilig voor productie - stel altijd AUTH_SECRET in!
+    return "mantelzorg-app-fallback-secret-stel-auth-secret-in-op-vercel"
+  })()
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: authSecret,
