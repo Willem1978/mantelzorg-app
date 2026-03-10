@@ -2,12 +2,13 @@ import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { prisma } from "./prisma"
+import { logAudit } from "./audit"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   // Don't use adapter with credentials provider + JWT
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 7 * 24 * 60 * 60, // 7 days
   },
   pages: {
     signIn: "/login",
@@ -39,8 +40,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           })
 
           if (!user || !user.password) {
-            console.error("[AUTH] Gebruiker niet gevonden of geen wachtwoord:", credentials.email)
+            console.error("[AUTH] Gebruiker niet gevonden of geen wachtwoord")
             throw new Error("Onjuist e-mailadres of wachtwoord")
+          }
+
+          if (!user.isActive) {
+            console.error("[AUTH] Inactief account login poging")
+            throw new Error("Account is niet actief")
           }
 
           const isPasswordValid = await bcrypt.compare(
@@ -49,7 +55,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           )
 
           if (!isPasswordValid) {
-            console.error("[AUTH] Wachtwoord onjuist voor:", credentials.email)
+            console.error("[AUTH] Wachtwoord onjuist voor gebruiker")
             throw new Error("Onjuist e-mailadres of wachtwoord")
           }
 
@@ -80,6 +86,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             data: { sessionVersion: { increment: 1 } },
           })
 
+          // Audit log: succesvolle login (async, blokkeert niet)
+          logAudit({
+            userId: user.id,
+            actie: "LOGIN",
+            entiteit: "User",
+            entiteitId: user.id,
+            details: { rol: user.role },
+          }).catch(() => {})
+
           return {
             id: user.id,
             email: user.email,
@@ -95,7 +110,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           // Gooi auth-fouten direct door (onjuiste credentials)
           if (error instanceof Error && (
             error.message.includes("Onjuist") ||
-            error.message.includes("verplicht")
+            error.message.includes("verplicht") ||
+            error.message.includes("niet actief")
           )) {
             throw error
           }

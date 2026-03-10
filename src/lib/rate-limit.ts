@@ -79,10 +79,18 @@ export function checkRateLimit(
 }
 
 /**
- * Haal het IP-adres op uit een NextRequest.
+ * Haal het IP-adres op uit een Request.
+ * Vercel zet het echte client IP als eerste waarde in x-forwarded-for.
  */
 export function getClientIp(request: Request): string {
-  const forwarded = (request.headers.get("x-forwarded-for") || "").split(",")[0].trim()
+  const forwarded = request.headers.get("x-forwarded-for")
+  if (forwarded) {
+    const firstIp = forwarded.split(",")[0].trim()
+    if (firstIp && firstIp !== "unknown") return firstIp
+  }
+
   const real = request.headers.get("x-real-ip")
-  return forwarded || real || "unknown"
+  if (real && real !== "unknown") return real
+
+  return "unknown"
 }

@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma'
+import { checkAlarmindicatoren } from '@/lib/alarm-indicatoren'
 import {
   sendWhatsAppMessageWithImage,
   getScoreImageUrl,
@@ -405,6 +406,19 @@ async function saveTestResults(
         completedAt: new Date(),
       },
     })
+
+    // Check op alarmindicatoren en sla ze op
+    const alarmen = checkAlarmindicatoren(session.answers || {}, score)
+    if (alarmen.length > 0) {
+      await prisma.alarmLog.createMany({
+        data: alarmen.map((alarm) => ({
+          testId: testResult.id,
+          type: alarm.type as any,
+          beschrijving: alarm.beschrijving,
+          urgentie: alarm.urgentie as any,
+        })),
+      })
+    }
 
     // Sla antwoorden op
     for (const [vraagId, antwoord] of Object.entries(session.answers || {})) {
