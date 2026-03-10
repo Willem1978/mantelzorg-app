@@ -399,7 +399,7 @@ async function saveTestResults(
         postcode: caregiver?.postalCode || '0000XX',
         huisnummer: '0',
         totaleBelastingScore: score,
-        belastingNiveau: level as any,
+        belastingNiveau: level,
         totaleZorguren,
         isCompleted: true,
         completedAt: new Date(),

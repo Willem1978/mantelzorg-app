@@ -145,9 +145,9 @@ export async function POST(request: Request) {
       await prisma.alarmLog.createMany({
         data: alarmen.map((alarm) => ({
           testId: test.id,
-          type: alarm.type as any,
+          type: alarm.type,
           beschrijving: alarm.beschrijving,
-          urgentie: alarm.urgentie as any,
+          urgentie: alarm.urgentie,
         })),
       })
     }

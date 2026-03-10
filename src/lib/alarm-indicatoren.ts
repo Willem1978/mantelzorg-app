@@ -1,9 +1,10 @@
 import { prisma } from "@/lib/prisma"
+import type { AlarmType, AlarmUrgentie } from "@prisma/client"
 
 export interface AlarmIndicator {
-  type: string
+  type: AlarmType
   beschrijving: string
-  urgentie: string
+  urgentie: AlarmUrgentie
 }
 
 /**

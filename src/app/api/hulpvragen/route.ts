@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { hulpvraagSchema, validateBody } from "@/lib/validations"
+import { sanitizeText } from "@/lib/sanitize"
 
 export const dynamic = "force-dynamic"
 
@@ -103,23 +105,21 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-
-    if (!body.titel || !body.categorie) {
-      return NextResponse.json(
-        { error: "Titel en categorie zijn verplicht" },
-        { status: 400 }
-      )
+    const validation = validateBody(body, hulpvraagSchema)
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 })
     }
+    const data = validation.data
 
     const taak = await prisma.buddyTaak.create({
       data: {
         caregiverId: caregiver.id,
-        titel: body.titel,
-        beschrijving: body.beschrijving || null,
-        categorie: body.categorie,
-        datum: body.datum ? new Date(body.datum) : null,
-        tijdstip: body.tijdstip || null,
-        isFlexibel: body.isFlexibel ?? true,
+        titel: sanitizeText(data.titel),
+        beschrijving: data.beschrijving ? sanitizeText(data.beschrijving) : null,
+        categorie: data.categorie,
+        datum: data.datum ? new Date(data.datum) : null,
+        tijdstip: data.tijdstip || null,
+        isFlexibel: data.isFlexibel,
       },
     })
 
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
         userId: session.user.id,
         type: "HELP_REQUEST_UPDATE",
         title: "Hulpvraag geplaatst",
-        message: `Je hulpvraag "${body.titel}" is geplaatst.`,
+        message: `Je hulpvraag "${data.titel}" is geplaatst.`,
         link: "/buddys",
       },
     })

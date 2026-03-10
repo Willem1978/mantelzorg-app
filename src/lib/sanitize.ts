@@ -13,3 +13,11 @@ export function sanitizeHtml(html: string): string {
     ALLOWED_ATTR,
   })
 }
+
+/**
+ * Strip alle HTML uit een string — voor plain-text velden (titels, namen, berichten).
+ * Voorkomt stored XSS bij user-input die later in de UI getoond wordt.
+ */
+export function sanitizeText(input: string): string {
+  return DOMPurify.sanitize(input, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
+}

@@ -51,7 +51,7 @@ export async function logGemeenteAudit(
   if (!userId) return
   try {
     await prisma.auditLog.create({
-      data: { userId, actie, entiteit, details: (details || {}) as any },
+      data: { userId, actie, entiteit, details: (details || {}) as Record<string, unknown> },
     })
   } catch {
     // Silently fail - audit logging mag de hoofdflow niet blokkeren

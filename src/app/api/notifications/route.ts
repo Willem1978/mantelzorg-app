@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { notificatieSchema, validateBody } from "@/lib/validations"
 
 export const dynamic = 'force-dynamic'
 
@@ -45,15 +46,20 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    const validation = validateBody(body, notificatieSchema)
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 })
+    }
+    const data = validation.data
 
     const notification = await prisma.notification.create({
       data: {
         userId: session.user.id,
-        type: body.type || "SYSTEM",
-        title: body.title,
-        message: body.message,
-        link: body.link,
-        scheduledFor: body.scheduledFor ? new Date(body.scheduledFor) : null,
+        type: data.type,
+        title: data.title,
+        message: data.message,
+        link: data.link,
+        scheduledFor: data.scheduledFor ? new Date(data.scheduledFor) : null,
       }
     })
 
