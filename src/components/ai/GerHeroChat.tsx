@@ -207,79 +207,75 @@ export function GerHeroChat() {
                 </div>
 
                 <div className={cn(
-                  "max-w-[85%] flex flex-col gap-2",
+                  "max-w-[85%]",
                   message.role === "user" && "items-end"
                 )}>
-                  {cleanText && (
-                    <div
-                      className={cn(
-                        "rounded-2xl p-3 shadow-sm",
-                        message.role === "user"
-                          ? "bg-primary text-primary-foreground rounded-tr-md"
-                          : "bg-primary/5 border border-primary/10 rounded-tl-md"
-                      )}
-                    >
-                      <div className={cn(
-                        "text-sm leading-relaxed whitespace-pre-wrap",
-                        message.role === "user" ? "text-primary-foreground" : "text-foreground"
-                      )}>
-                        {formatMessage(cleanText)}
+                  {message.role === "user" ? (
+                    cleanText && (
+                      <div className="rounded-2xl p-3 shadow-sm bg-primary text-primary-foreground rounded-tr-md">
+                        <div className="text-sm leading-relaxed whitespace-pre-wrap text-primary-foreground">
+                          {formatMessage(cleanText)}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )
+                  ) : (
+                    <div className="rounded-2xl shadow-sm bg-primary/5 border border-primary/10 rounded-tl-md overflow-hidden">
+                      {cleanText && (
+                        <div className="p-3">
+                          <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
+                            {formatMessage(cleanText)}
+                          </div>
+                        </div>
+                      )}
 
-                  {/* Actieknop — max 1 */}
-                  {actieKnoppen.length > 0 && (
-                    <div className="flex flex-col gap-1 w-full">
-                      {actieKnoppen.map((btn, i) => (
-                        <button
-                          key={i}
-                          onClick={() => handleButtonClick(btn)}
-                          disabled={isLoading}
-                          className={cn(
-                            "flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs transition-all text-left",
-                            "bg-[var(--accent-green-bg)]/60 border border-[var(--accent-green)]/15 text-foreground hover:border-[var(--accent-green)]/30 hover:bg-[var(--accent-green-bg)]",
-                            isLoading && "opacity-50 cursor-not-allowed"
+                      {(actieKnoppen.length > 0 || kaarten.length > 0 || vraagKnoppen.length > 0) && (
+                        <div className={cn("px-2.5 pb-2.5 flex flex-col gap-1.5", cleanText && "pt-0")}>
+                          {actieKnoppen.map((btn, i) => (
+                            <button
+                              key={`a-${i}`}
+                              onClick={() => handleButtonClick(btn)}
+                              disabled={isLoading}
+                              className={cn(
+                                "flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs transition-all text-left",
+                                "bg-[var(--accent-green-bg)]/60 border border-[var(--accent-green)]/15 text-foreground hover:border-[var(--accent-green)]/30",
+                                isLoading && "opacity-50 cursor-not-allowed"
+                              )}
+                            >
+                              <svg className="w-3.5 h-3.5 text-[var(--accent-green)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                              </svg>
+                              <span className="flex-1 truncate font-medium">{btn.label}</span>
+                            </button>
+                          ))}
+
+                          {kaarten.slice(0, 2).map((kaart, i) => (
+                            <HulpKaart key={`h-${i}`} kaart={kaart} />
+                          ))}
+
+                          {vraagKnoppen.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mt-0.5">
+                              {vraagKnoppen.map((btn, i) => (
+                                <button
+                                  key={`v-${i}`}
+                                  onClick={() => handleButtonClick(btn)}
+                                  disabled={isLoading}
+                                  className={cn(
+                                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                                    "bg-white/60 dark:bg-card/60 border border-primary/15 text-foreground",
+                                    "hover:bg-white dark:hover:bg-card hover:border-primary/30",
+                                    isLoading && "opacity-50 cursor-not-allowed"
+                                  )}
+                                >
+                                  <span>{btn.label}</span>
+                                  <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                </button>
+                              ))}
+                            </div>
                           )}
-                        >
-                          <svg className="w-3.5 h-3.5 text-[var(--accent-green)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                          </svg>
-                          <span className="flex-1 truncate font-medium">{btn.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Hulpkaarten — max 2 */}
-                  {kaarten.length > 0 && (
-                    <div className="flex flex-col gap-1 w-full">
-                      {kaarten.slice(0, 2).map((kaart, i) => (
-                        <HulpKaart key={i} kaart={kaart} />
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Vraagknoppen — max 2 */}
-                  {vraagKnoppen.length > 0 && (
-                    <div className="flex flex-col gap-1 w-full">
-                      {vraagKnoppen.map((btn, i) => (
-                        <button
-                          key={i}
-                          onClick={() => handleButtonClick(btn)}
-                          disabled={isLoading}
-                          className={cn(
-                            "flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs transition-all text-left",
-                            "bg-muted/60 border border-border/50 text-foreground hover:border-border hover:bg-muted",
-                            isLoading && "opacity-50 cursor-not-allowed"
-                          )}
-                        >
-                          <svg className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                          </svg>
-                          <span className="flex-1 truncate">{btn.label}</span>
-                        </button>
-                      ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
