@@ -4,22 +4,21 @@ import { prisma } from "@/lib/prisma"
 import { geocodeLocation } from "@/lib/pdok"
 import { z } from "zod"
 import { validateBody } from "@/lib/validations"
-import { sanitizeText } from "@/lib/sanitize"
 
 const profileUpdateSchema = z.object({
-  naam: z.string().max(200).transform(sanitizeText).optional(),
+  naam: z.string().max(200).optional(),
   telefoon: z.string().max(20).nullable().optional(),
-  straat: z.string().max(200).transform(sanitizeText).optional(),
-  woonplaats: z.string().max(100).transform(sanitizeText).optional(),
+  straat: z.string().max(200).optional(),
+  woonplaats: z.string().max(100).optional(),
   postcode: z.string().max(7).optional(),
-  gemeente: z.string().max(100).transform(sanitizeText).optional(),
-  wijk: z.string().max(100).transform(sanitizeText).optional(),
-  naasteNaam: z.string().max(200).transform(sanitizeText).optional(),
-  naasteRelatie: z.string().max(100).transform(sanitizeText).optional(),
-  naasteStraat: z.string().max(200).transform(sanitizeText).optional(),
-  naasteWoonplaats: z.string().max(100).transform(sanitizeText).optional(),
-  naasteGemeente: z.string().max(100).transform(sanitizeText).optional(),
-  naasteWijk: z.string().max(100).transform(sanitizeText).optional(),
+  gemeente: z.string().max(100).optional(),
+  wijk: z.string().max(100).optional(),
+  naasteNaam: z.string().max(200).optional(),
+  naasteRelatie: z.string().max(100).optional(),
+  naasteStraat: z.string().max(200).optional(),
+  naasteWoonplaats: z.string().max(100).optional(),
+  naasteGemeente: z.string().max(100).optional(),
+  naasteWijk: z.string().max(100).optional(),
 })
 
 // GET: Profiel ophalen

@@ -3,20 +3,19 @@ import { prisma } from "@/lib/prisma"
 import { geocodePostcode } from "@/lib/geocode"
 import { z } from "zod"
 import { validateBody } from "@/lib/validations"
-import { sanitizeText } from "@/lib/sanitize"
 import { sendBuddyBevestigingsEmail, sendBuddyAdminNotificatie } from "@/lib/email"
 
 const aanmeldSchema = z.object({
-  voornaam: z.string().min(1, "Voornaam is verplicht").max(100).transform(sanitizeText),
-  achternaam: z.string().max(100).transform(sanitizeText).optional().default(""),
+  voornaam: z.string().min(1, "Voornaam is verplicht").max(100),
+  achternaam: z.string().max(100).optional().default(""),
   email: z.string().email("Ongeldig e-mailadres").max(255),
   telefoon: z.string().min(1, "Telefoonnummer is verplicht").max(20),
   postcode: z.string().min(4, "Ongeldige postcode").max(7),
-  woonplaats: z.string().max(100).transform(sanitizeText).optional().default(""),
+  woonplaats: z.string().max(100).optional().default(""),
   hulpvormen: z.array(z.string().max(50)).max(20).optional().default([]),
   beschikbaarheid: z.enum(["eenmalig", "vast", "beide"]).optional().default("beide"),
-  motivatie: z.string().max(2000).transform(sanitizeText).optional(),
-  ervaring: z.string().max(2000).transform(sanitizeText).optional(),
+  motivatie: z.string().max(2000).optional(),
+  ervaring: z.string().max(2000).optional(),
 })
 
 export async function POST(request: Request) {
