@@ -124,6 +124,18 @@ export function AiChat() {
       .join("")
   }
 
+  // Haal vraagknoppen uit het LAATSTE assistant-bericht (voor boven de input)
+  const lastSuggesties = (() => {
+    const lastAssistant = [...messages].reverse().find(m => m.role === "assistant")
+    if (!lastAssistant) return []
+    const raw = getMessageText(lastAssistant)
+    if (!raw) return []
+    const { cleanText: t1 } = parseHulpkaarten(raw)
+    const { cleanText: t2 } = parseArtikelkaarten(t1)
+    const { buttons } = parseButtons(t2)
+    return buttons.filter(b => b.type === "vraag").slice(0, 2)
+  })()
+
   return (
     <div className="flex flex-col h-[calc(100vh-12rem)] md:h-[calc(100vh-10rem)]">
       {/* Chat berichten */}
@@ -165,7 +177,7 @@ export function AiChat() {
           if (!rawText) return null
 
           const isAssistant = message.role === "assistant"
-          // Parse hulpkaarten, artikelkaarten, dan knoppen uit de resterende tekst
+          // Parse hulpkaarten, artikelkaarten, dan knoppen
           const { cleanText: textWithoutCards, kaarten } = isAssistant
             ? parseHulpkaarten(rawText)
             : { cleanText: rawText, kaarten: [] }
@@ -175,11 +187,10 @@ export function AiChat() {
           const { cleanText, buttons } = isAssistant
             ? parseButtons(textWithoutArticles)
             : { cleanText: textWithoutArticles, buttons: [] }
-          // Splits in actieknoppen (navigatie, max 1) en vraagknoppen (chat, max 2)
           const actieKnoppen = buttons.filter(b => b.type === "knop").slice(0, 1)
-          const vraagKnoppen = buttons.filter(b => b.type === "vraag").slice(0, 2)
+          const hasCards = kaarten.length > 0 || artikelen.length > 0 || actieKnoppen.length > 0
 
-          // Gebruikersbericht — rechts uitgelijnd, geen avatar
+          // Gebruikersbericht
           if (message.role === "user") {
             return (
               <div key={message.id} className="flex justify-end pl-12">
@@ -190,82 +201,49 @@ export function AiChat() {
             )
           }
 
-          // Ger-bericht — links uitgelijnd met GerAvatar
-          const hasExtras = actieKnoppen.length > 0 || kaarten.length > 0 || artikelen.length > 0 || vraagKnoppen.length > 0
+          // Ger-bericht: bubble = alleen tekst, kaarten = eronder
           return (
             <div key={message.id} className="flex gap-3 items-start pr-8">
               <GerAvatar size="xs" className="!w-8 !h-8 flex-shrink-0 mt-0.5" />
 
-              <div className="flex-1 min-w-0">
-                {/* Één samenhangende bubble: tekst + hulpkaarten + knoppen */}
-                <div className="bg-[var(--accent-amber-bg)]/40 border border-[var(--accent-amber)]/10 rounded-2xl rounded-tl-sm shadow-sm overflow-hidden">
-                  {/* Tekst */}
-                  {cleanText && (
-                    <div className="px-4 py-3">
-                      <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
-                        {formatMessage(cleanText)}
-                      </div>
+              <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                {/* Tekstbubble */}
+                {cleanText && (
+                  <div className="bg-[var(--accent-amber-bg)]/40 border border-[var(--accent-amber)]/10 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+                    <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
+                      {formatMessage(cleanText)}
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {/* Hulpkaarten + actieknoppen + vraagknoppen — in de bubble */}
-                  {hasExtras && (
-                    <div className={cn("px-3 pb-3 flex flex-col gap-1.5", cleanText && "pt-0")}>
-                      {/* Actieknop — max 1 */}
-                      {actieKnoppen.map((btn, i) => (
-                        <button
-                          key={`a-${i}`}
-                          onClick={() => handleButtonClick(btn)}
-                          disabled={isLoading}
-                          className={cn(
-                            "flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm transition-all text-left",
-                            "bg-[var(--accent-green-bg)]/60 border border-[var(--accent-green)]/15 text-foreground hover:border-[var(--accent-green)]/30 hover:bg-[var(--accent-green-bg)]",
-                            isLoading && "opacity-50 cursor-not-allowed"
-                          )}
-                        >
-                          <svg className="w-4 h-4 text-[var(--accent-green)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                          </svg>
-                          <span className="flex-1 truncate text-sm font-medium">{btn.label}</span>
-                        </button>
-                      ))}
-
-                      {/* Hulpkaarten — max 2, compact inline */}
-                      {kaarten.slice(0, 2).map((kaart, i) => (
-                        <HulpKaart key={`h-${i}`} kaart={kaart} />
-                      ))}
-
-                      {/* Artikelkaarten — max 3, compact inline */}
-                      {artikelen.slice(0, 3).map((artikel, i) => (
-                        <ArtikelKaart key={`art-${i}`} artikel={artikel} />
-                      ))}
-
-                      {/* Vraagknoppen — horizontal chips */}
-                      {vraagKnoppen.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mt-0.5">
-                          {vraagKnoppen.map((btn, i) => (
-                            <button
-                              key={`v-${i}`}
-                              onClick={() => handleButtonClick(btn)}
-                              disabled={isLoading}
-                              className={cn(
-                                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
-                                "bg-white/60 dark:bg-card/60 border border-[var(--accent-amber)]/15 text-foreground",
-                                "hover:bg-white dark:hover:bg-card hover:border-[var(--accent-amber)]/30",
-                                isLoading && "opacity-50 cursor-not-allowed"
-                              )}
-                            >
-                              <span>{btn.label}</span>
-                              <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                              </svg>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                {/* Kaarten als bijlagen onder de bubble */}
+                {hasCards && (
+                  <div className="flex flex-col gap-1.5 max-w-[90%]">
+                    {actieKnoppen.map((btn, i) => (
+                      <button
+                        key={`a-${i}`}
+                        onClick={() => handleButtonClick(btn)}
+                        disabled={isLoading}
+                        className={cn(
+                          "flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm transition-all text-left",
+                          "bg-[var(--accent-green-bg)]/60 border border-[var(--accent-green)]/15 text-foreground hover:border-[var(--accent-green)]/30 hover:bg-[var(--accent-green-bg)]",
+                          isLoading && "opacity-50 cursor-not-allowed"
+                        )}
+                      >
+                        <svg className="w-4 h-4 text-[var(--accent-green)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                        <span className="flex-1 truncate text-sm font-medium">{btn.label}</span>
+                      </button>
+                    ))}
+                    {kaarten.slice(0, 2).map((kaart, i) => (
+                      <HulpKaart key={`h-${i}`} kaart={kaart} />
+                    ))}
+                    {artikelen.slice(0, 3).map((artikel, i) => (
+                      <ArtikelKaart key={`art-${i}`} artikel={artikel} />
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )
@@ -320,6 +298,24 @@ export function AiChat() {
 
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Suggestie-chips boven input — van het laatste Ger-bericht */}
+      {lastSuggesties.length > 0 && !isLoading && (
+        <div className="px-3 pt-2 flex flex-wrap gap-1.5">
+          {lastSuggesties.map((btn, i) => (
+            <button
+              key={`s-${i}`}
+              onClick={() => handleButtonClick(btn)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all bg-primary/5 border border-primary/15 text-foreground hover:bg-primary/10 hover:border-primary/30"
+            >
+              <span>{btn.label}</span>
+              <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Input */}
       <div className="border-t border-border bg-card p-3">

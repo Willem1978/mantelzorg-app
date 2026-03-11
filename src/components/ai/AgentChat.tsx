@@ -195,9 +195,7 @@ export function AgentChat({
             const { cleanText: textWithoutArticles, artikelen } = parseArtikelkaarten(textWithoutCards)
             const { cleanText, buttons } = parseButtons(textWithoutArticles)
             const actieKnoppen = buttons.filter(b => b.type === "knop").slice(0, 1)
-            const vraagKnoppen = buttons.filter(b => b.type === "vraag").slice(0, 2)
-
-            const hasExtras = actieKnoppen.length > 0 || kaarten.length > 0 || artikelen.length > 0 || vraagKnoppen.length > 0
+            const hasCards = actieKnoppen.length > 0 || kaarten.length > 0 || artikelen.length > 0
             return (
               <div key={message.id}>
                 {cleanText && (
@@ -206,7 +204,7 @@ export function AgentChat({
                   </div>
                 )}
 
-                {hasExtras && (
+                {hasCards && (
                   <div className="flex flex-col gap-1.5 mt-2">
                     {actieKnoppen.map((btn, i) => (
                       <button
@@ -233,28 +231,6 @@ export function AgentChat({
                     {artikelen.slice(0, 3).map((artikel, i) => (
                       <ArtikelKaart key={`art-${i}`} artikel={artikel} />
                     ))}
-
-                    {vraagKnoppen.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {vraagKnoppen.map((btn, i) => (
-                          <button
-                            key={`v-${i}`}
-                            onClick={() => handleButtonClick(btn)}
-                            disabled={isLoading}
-                            className={cn(
-                              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
-                              "bg-muted/60 border border-border/50 text-foreground hover:border-border hover:bg-muted",
-                              isLoading && "opacity-50 cursor-not-allowed"
-                            )}
-                          >
-                            <span>{btn.label}</span>
-                            <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                          </button>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
@@ -284,6 +260,35 @@ export function AgentChat({
 
         <div ref={messagesEndRef} />
       </div>
+
+      {/* Suggestie-chips boven input — van het laatste Ger-bericht */}
+      {(() => {
+        const lastAssistant = [...messages].reverse().find(m => m.role === "assistant")
+        if (!lastAssistant || isLoading) return null
+        const raw = getMessageText(lastAssistant)
+        if (!raw) return null
+        const { cleanText: t1 } = parseHulpkaarten(raw)
+        const { cleanText: t2 } = parseArtikelkaarten(t1)
+        const { buttons: btns } = parseButtons(t2)
+        const sugChips = btns.filter(b => b.type === "vraag").slice(0, 2)
+        if (sugChips.length === 0) return null
+        return (
+          <div className="flex flex-wrap gap-1.5 pt-2">
+            {sugChips.map((btn, i) => (
+              <button
+                key={`s-${i}`}
+                onClick={() => handleButtonClick(btn)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all bg-primary/5 border border-primary/15 text-foreground hover:bg-primary/10 hover:border-primary/30"
+              >
+                <span>{btn.label}</span>
+                <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            ))}
+          </div>
+        )
+      })()}
 
       {/* Input voor vervolgvragen */}
       <form
