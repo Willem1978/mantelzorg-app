@@ -232,27 +232,30 @@ export default function ProfielPage() {
         const res = await fetch("/api/profile")
         if (res.ok) {
           const data = await res.json()
+          const hasAdres = data.straat || data.woonplaats || data.gemeente
+          const hasNaasteAdres = data.naasteStraat || data.naasteWoonplaats || data.naasteGemeente
+
           setProfile((prev) => ({
             ...prev,
             naam: data.naam || prev.naam,
             email: data.email || prev.email,
             telefoon: data.telefoon || prev.telefoon,
-            adres: data.straat ? {
-              weergavenaam: `${data.straat}, ${data.woonplaats}`,
-              straat: data.straat,
-              woonplaats: data.woonplaats,
-              gemeente: data.gemeente,
-              postcode: data.postcode,
-              wijknaam: data.wijk,
+            adres: hasAdres ? {
+              weergavenaam: [data.straat, data.woonplaats].filter(Boolean).join(", "),
+              straat: data.straat || "",
+              woonplaats: data.woonplaats || "",
+              gemeente: data.gemeente || "",
+              postcode: data.postcode || "",
+              wijknaam: data.wijk || "",
             } : prev.adres,
             naasteNaam: data.naasteNaam || prev.naasteNaam,
             naasteRelatie: data.naasteRelatie || prev.naasteRelatie,
-            naasteAdres: data.naasteStraat ? {
-              weergavenaam: `${data.naasteStraat}, ${data.naasteWoonplaats}`,
-              straat: data.naasteStraat,
-              woonplaats: data.naasteWoonplaats,
-              gemeente: data.naasteGemeente,
-              wijknaam: data.naasteWijk,
+            naasteAdres: hasNaasteAdres ? {
+              weergavenaam: [data.naasteStraat, data.naasteWoonplaats].filter(Boolean).join(", "),
+              straat: data.naasteStraat || "",
+              woonplaats: data.naasteWoonplaats || "",
+              gemeente: data.naasteGemeente || "",
+              wijknaam: data.naasteWijk || "",
             } : prev.naasteAdres,
           }))
         }
