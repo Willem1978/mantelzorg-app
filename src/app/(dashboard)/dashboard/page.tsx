@@ -286,8 +286,8 @@ function DashboardContentView() {
 
       {/* 3. JOUW STAPPENPLAN */}
       <section>
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          Jouw stappen
+        <h2 className="text-sm font-bold text-foreground uppercase tracking-wider mb-3">
+          Jouw volgende stappen
         </h2>
         {data?.stappen && data.stappen.length > 0 ? (
           <div className="space-y-3">
@@ -329,11 +329,11 @@ function DashboardContentView() {
           <div className="space-y-2">
             {adviezenActions.map((action, i) => (
               <Link key={i} href={action.href}>
-                <div className="flex items-center gap-3 p-3.5 rounded-xl border-2 border-border bg-card hover:bg-primary/5 hover:border-primary/30 transition-all group">
-                  <span className="text-xl w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">{action.emoji}</span>
-                  <span className="text-sm font-medium text-foreground flex-1">{action.label}</span>
-                  <svg className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <div className="flex items-center gap-3 p-3.5 rounded-xl border-2 border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 transition-all group">
+                  <span className="text-xl w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">{action.emoji}</span>
+                  <span className="text-sm font-bold text-foreground flex-1">{action.label}</span>
+                  <svg className="w-5 h-5 text-primary/60 group-hover:text-primary transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
               </Link>
@@ -420,7 +420,7 @@ function StapCard({ stap, linkLabel }: {
   ]
 
   return (
-    <div className="flex items-start gap-3.5 p-4 rounded-2xl border-2 border-border bg-card hover:bg-primary/5 hover:border-primary/30 transition-all group">
+    <div className="flex items-start gap-3.5 p-4 rounded-2xl border-2 border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 transition-all group">
       {/* Stapnummer badge */}
       <div className={`w-9 h-9 rounded-xl ${stepColors[stap.stapNummer - 1] || stepColors[0]} flex items-center justify-center flex-shrink-0 font-bold text-sm shadow-sm`}>
         {stap.stapNummer}
@@ -430,19 +430,19 @@ function StapCard({ stap, linkLabel }: {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
           {stap.emoji && <span className="text-base">{stap.emoji}</span>}
-          <h3 className="text-sm font-semibold text-foreground">{stap.titel}</h3>
+          <h3 className="text-sm font-bold text-foreground">{stap.titel}</h3>
         </div>
         {stap.beschrijving && (
           <p className="text-xs text-muted-foreground line-clamp-2 mb-1">{stap.beschrijving}</p>
         )}
         {linkLabel && (
-          <span className="text-xs text-primary font-medium group-hover:underline">{linkLabel}</span>
+          <span className="text-xs text-primary font-semibold group-hover:underline">{linkLabel} &rarr;</span>
         )}
       </div>
 
       {/* Arrow */}
-      <svg className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+      <svg className="w-5 h-5 text-primary/60 group-hover:text-primary transition-colors flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
       </svg>
     </div>
   )
