@@ -61,8 +61,15 @@ export async function POST(_request: NextRequest) {
   try {
     const provincieExists = await hasProvincieColumn()
 
-    // 1. Get all records
-    const records = await prisma.zorgorganisatie.findMany()
+    // 1. Get all records (alleen basiskolommen om fouten te voorkomen bij ontbrekende kolommen)
+    const baseSelect: Record<string, boolean> = {
+      id: true, naam: true, woonplaats: true, gemeente: true, dekkingNiveau: true,
+    }
+    if (provincieExists) baseSelect.provincie = true
+    const records = await prisma.zorgorganisatie.findMany({ select: baseSelect }) as unknown as Array<{
+      id: string; naam: string; woonplaats: string | null; gemeente: string | null;
+      dekkingNiveau: string; provincie?: string | null;
+    }>
 
     // 2. Collect unique values to look up (avoid duplicate PDOK calls)
     const uniqueWoonplaatsen = new Set<string>()

@@ -154,8 +154,7 @@ export async function POST(request: NextRequest) {
       const categorie = mapCategorie(row.categorie)
 
       try {
-        await prisma.zorgorganisatie.create({
-          data: {
+        const data: Record<string, unknown> = {
             naam,
             beschrijving: row.beschrijving || null,
             type: mapType(row.type),
@@ -169,14 +168,20 @@ export async function POST(request: NextRequest) {
             openingstijden: row.openingstijden || null,
             kosten: row.kosten || null,
             gemeente,
-            bronLabel: row.bronLabel || (gemeente ? 'Gemeente' : 'Landelijk'),
             dekkingNiveau: gemeente ? 'GEMEENTE' : 'LANDELIJK',
             isActief: true,
             zichtbaarBijLaag: false,
             zichtbaarBijGemiddeld: false,
             zichtbaarBijHoog: true,
-          },
-        })
+        }
+        // bronLabel kan ontbreken in de database — voeg toe als de kolom bestaat
+        try {
+          await prisma.zorgorganisatie.findFirst({ select: { bronLabel: true } })
+          data.bronLabel = row.bronLabel || (gemeente ? 'Gemeente' : 'Landelijk')
+        } catch {
+          // bronLabel column not yet in database
+        }
+        await (prisma.zorgorganisatie.create as Function)({ data })
         toegevoegd++
       } catch (err) {
         fouten++
