@@ -1,9 +1,80 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import prisma from '@/lib/prisma'
-import { Prisma } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
+
+// Basiskolommen die altijd in de database bestaan
+const BASE_SELECT = {
+  id: true,
+  naam: true,
+  beschrijving: true,
+  type: true,
+  dienst: true,
+  telefoon: true,
+  email: true,
+  website: true,
+  adres: true,
+  postcode: true,
+  woonplaats: true,
+  gemeente: true,
+  dekkingNiveau: true,
+  dekkingWoonplaatsen: true,
+  dekkingWijken: true,
+  isActief: true,
+  onderdeelTest: true,
+  soortHulp: true,
+  openingstijden: true,
+  zichtbaarBijLaag: true,
+  zichtbaarBijGemiddeld: true,
+  zichtbaarBijHoog: true,
+  kosten: true,
+  doelgroep: true,
+  aanmeldprocedure: true,
+  createdAt: true,
+  updatedAt: true,
+} as const
+
+// Nieuwere kolommen die mogelijk nog niet in de productie-database staan
+const EXTRA_COLUMNS = [
+  'eersteStap',
+  'verwachtingTekst',
+  'verschijntIn',
+  'routeLabel',
+  'bronLabel',
+  'zorgverzekeraar',
+  'provincie',
+] as const
+
+// Detecteer welke extra kolommen beschikbaar zijn in de database
+let _extraColumnsCache: Record<string, boolean> | null = null
+async function getAvailableExtraColumns(): Promise<Record<string, boolean>> {
+  if (_extraColumnsCache) return _extraColumnsCache
+
+  const result: Record<string, boolean> = {}
+  for (const col of EXTRA_COLUMNS) {
+    try {
+      await prisma.zorgorganisatie.findFirst({ select: { [col]: true } })
+      result[col] = true
+    } catch {
+      result[col] = false
+    }
+  }
+  _extraColumnsCache = result
+  // Cache 5 minuten, daarna opnieuw detecteren
+  setTimeout(() => { _extraColumnsCache = null }, 5 * 60 * 1000)
+  return result
+}
+
+// Bouw een select-object dat alleen bestaande kolommen bevat
+async function buildSafeSelect() {
+  const extra = await getAvailableExtraColumns()
+  const select: Record<string, boolean> = { ...BASE_SELECT }
+  for (const col of EXTRA_COLUMNS) {
+    if (extra[col]) select[col] = true
+  }
+  return select
+}
 
 // GET /api/beheer/hulpbronnen - List all hulpbronnen with filters (public endpoint)
 export async function GET(request: NextRequest) {
@@ -91,8 +162,11 @@ export async function GET(request: NextRequest) {
       where.AND = andConditions
     }
 
+    const select = await buildSafeSelect()
+
     const hulpbronnen = await prisma.zorgorganisatie.findMany({
       where,
+      select,
       orderBy: [{ gemeente: 'asc' }, { naam: 'asc' }],
     })
 
@@ -112,17 +186,20 @@ export async function GET(request: NextRequest) {
     })
 
     // Provincie column may not exist yet in DB - fetch safely
+    const extra = await getAvailableExtraColumns()
     let provinciesList: string[] = []
-    try {
-      const provincies = await prisma.zorgorganisatie.findMany({
-        where: { provincie: { not: null } },
-        select: { provincie: true },
-        distinct: ['provincie'],
-        orderBy: { provincie: 'asc' },
-      })
-      provinciesList = provincies.map((p) => p.provincie).filter(Boolean) as string[]
-    } catch {
-      // provincie column not yet in database - will be added on next deploy
+    if (extra.provincie) {
+      try {
+        const provincies = await prisma.zorgorganisatie.findMany({
+          where: { provincie: { not: null } },
+          select: { provincie: true },
+          distinct: ['provincie'],
+          orderBy: { provincie: 'asc' },
+        })
+        provinciesList = provincies.map((p) => p.provincie).filter(Boolean) as string[]
+      } catch {
+        // provincie column not yet in database
+      }
     }
 
     const response: Record<string, unknown> = {
@@ -142,6 +219,7 @@ export async function GET(request: NextRequest) {
         resultCount: hulpbronnen.length,
         totalInDb: totalCount,
         allGemeenten: gemeenten.map((g) => g.gemeente),
+        availableColumns: extra,
       }
     }
 
@@ -161,8 +239,10 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json()
+  const extra = await getAvailableExtraColumns()
 
-  const data: Prisma.ZorgorganisatieCreateInput = {
+  // Bouw data-object met alleen bestaande kolommen
+  const data: Record<string, unknown> = {
     naam: body.naam,
     beschrijving: body.beschrijving || null,
     type: body.type || 'OVERIG',
@@ -174,7 +254,6 @@ export async function POST(request: NextRequest) {
     postcode: body.postcode || null,
     woonplaats: body.woonplaats || null,
     gemeente: body.gemeente || null,
-    provincie: body.provincie || null,
     dekkingNiveau: body.dekkingNiveau || 'GEMEENTE',
     dekkingWoonplaatsen: body.dekkingWoonplaatsen || undefined,
     dekkingWijken: body.dekkingWijken || undefined,
@@ -186,28 +265,26 @@ export async function POST(request: NextRequest) {
     zichtbaarBijGemiddeld: body.zichtbaarBijGemiddeld ?? false,
     zichtbaarBijHoog: body.zichtbaarBijHoog ?? true,
     kosten: body.kosten || null,
-    doelgroep: body.doelgroep || null, // MANTELZORGER or ZORGVRAGER
+    doelgroep: body.doelgroep || null,
     aanmeldprocedure: body.aanmeldprocedure || null,
-    eersteStap: body.eersteStap || null,
-    verwachtingTekst: body.verwachtingTekst || null,
-    verschijntIn: body.verschijntIn || [],
-    routeLabel: body.routeLabel || null,
-    bronLabel: body.bronLabel || null,
-    zorgverzekeraar: body.zorgverzekeraar ?? false,
   }
 
+  // Voeg extra kolommen toe alleen als ze in de database bestaan
+  if (extra.provincie) data.provincie = body.provincie || null
+  if (extra.eersteStap) data.eersteStap = body.eersteStap || null
+  if (extra.verwachtingTekst) data.verwachtingTekst = body.verwachtingTekst || null
+  if (extra.verschijntIn) data.verschijntIn = body.verschijntIn || []
+  if (extra.routeLabel) data.routeLabel = body.routeLabel || null
+  if (extra.bronLabel) data.bronLabel = body.bronLabel || null
+  if (extra.zorgverzekeraar) data.zorgverzekeraar = body.zorgverzekeraar ?? false
+
   try {
-    const hulpbron = await prisma.zorgorganisatie.create({ data })
+    const hulpbron = await (prisma.zorgorganisatie.create as Function)({ data })
     return NextResponse.json(hulpbron, { status: 201 })
   } catch (error: unknown) {
-    // If provincie column doesn't exist yet, retry without it
-    if (error instanceof Error && error.message?.includes('provincie')) {
-      const { provincie: _unused, ...dataWithoutProvincie } = data
-      void _unused
-      const hulpbron = await prisma.zorgorganisatie.create({ data: dataWithoutProvincie })
-      return NextResponse.json(hulpbron, { status: 201 })
-    }
-    throw error
+    console.error('Hulpbron create error:', error)
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
 

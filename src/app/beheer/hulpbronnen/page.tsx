@@ -237,7 +237,6 @@ export default function BeheerHulpbronnenPage() {
   const [loadingLocatie, setLoadingLocatie] = useState(false)
 
   const fetchData = useCallback(async () => {
-    if (!beheerModus) return
     // For gemeentelijk, require a gemeente to be selected
     if (beheerModus === "gemeentelijk" && !beheerGemeente) {
       setHulpbronnen([])
@@ -246,7 +245,7 @@ export default function BeheerHulpbronnenPage() {
     }
     setLoading(true)
     const params = new URLSearchParams()
-    params.set("modus", beheerModus)
+    if (beheerModus) params.set("modus", beheerModus)
     if (beheerModus === "gemeentelijk" && beheerGemeente) params.set("gemeente", beheerGemeente)
     if (beheerModus === "landelijk" && beheerProvincie) params.set("provincie", beheerProvincie)
     if (zoek) params.set("zoek", zoek)
@@ -268,7 +267,7 @@ export default function BeheerHulpbronnenPage() {
   }, [beheerModus, beheerGemeente, beheerProvincie, zoek, filterOnderdeel, filterActief, filterDoelgroep])
 
   useEffect(() => {
-    if (status !== "loading" && beheerModus) {
+    if (status !== "loading") {
       fetchData()
     }
   }, [status, fetchData, beheerModus])
@@ -1856,13 +1855,6 @@ export default function BeheerHulpbronnenPage() {
         </div>
       )}
 
-      {/* Geen modus geselecteerd */}
-      {!beheerModus && (
-        <div className="ker-card text-center py-12">
-          <p className="text-muted-foreground">Kies hierboven of je landelijke of gemeentelijke hulpbronnen wilt beheren.</p>
-        </div>
-      )}
-
       {/* Gemeentelijk maar nog geen gemeente */}
       {beheerModus === "gemeentelijk" && !beheerGemeente && (
         <div className="ker-card text-center py-12">
@@ -1870,8 +1862,8 @@ export default function BeheerHulpbronnenPage() {
         </div>
       )}
 
-      {/* Table */}
-      {beheerModus && (beheerModus === "landelijk" || beheerGemeente) && (loading ? (
+      {/* Table — toon altijd behalve wanneer gemeentelijk zonder gemeente */}
+      {!(beheerModus === "gemeentelijk" && !beheerGemeente) && (loading ? (
         <div className="text-center py-12 text-muted-foreground">Laden...</div>
       ) : gefilterdeHulpbronnen.length === 0 ? (
         <div className="ker-card text-center py-12">

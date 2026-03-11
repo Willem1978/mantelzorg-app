@@ -479,6 +479,82 @@ Automatisch na test-voltooiing:
 
 ---
 
+### 3.7 Wekelijkse Hulpkaarten
+**Prioriteit: HOOG — NOG OPEN**
+
+Elke week 3 gepersonaliseerde hulpkaarten op het dashboard: concrete, haalbare acties afgestemd op de situatie van de mantelzorger.
+
+**Drie kaart-typen:**
+
+| Type | Kleur | Voorbeeld |
+|------|-------|-----------|
+| ZELFZORG | Groen | "Plan woensdag een dagdeel zonder zorgtaken" |
+| PRAKTISCH | Blauw | "Bel Thuiszorg Dichtbij voor hulp bij boodschappen" |
+| LEREN | Paars | "Lees: Hoe vraag je respijtzorg aan via de WMO?" |
+
+**Personalisatie op basis van:**
+- Belastingscore + niveau (LAAG/GEMIDDELD/HOOG)
+- Zware zorgtaken (ZorgtaakSelectie met moeilijkheid MOEILIJK/ZEER_MOEILIJK)
+- Check-in trend (gaat het beter of slechter?)
+- Eerder voltooide kaarten (geen herhaling)
+- Beschikbare gemeente-hulpbronnen (eersteStap, kosten)
+- Gelezen artikelen (GebruikerVoorkeur)
+
+**Generatie-aanpak: Hybride**
+1. **Regelgebaseerd** — Algoritme selecteert kaart-categorie en type op basis van data
+2. **AI-verrijkt** — Ger vult de tekst persoonlijk in (eenmalig per week, gecached)
+3. **Fallback** — Vaste teksten per categorie als AI niet beschikbaar is
+
+**Timing:**
+- Nieuwe kaarten elke maandag (via Vercel Cron of bij eerste dashboard-bezoek van de week)
+- Niet-voltooide kaarten blijven staan tot volgende week
+- Na 2 weken niet-voltooid: kaart verdwijnt, geen nag-berichten
+
+**Ger-integratie:**
+- Ger kent de weekkaarten en vraagt ernaar: "Vorige week stelde ik voor om te bellen — is dat gelukt?"
+- Bij check-in: "Je hebt 2 van 3 kaarten voltooid deze week. Goed bezig!"
+- Voltooide kaarten tellen mee als actiepunt-opvolging
+
+**Database model:**
+```prisma
+model WeekKaart {
+  id            String         @id @default(cuid())
+  caregiverId   String
+  weekNummer    String         // ISO week: "2026-W11"
+  type          WeekKaartType  // ZELFZORG, PRAKTISCH, LEREN
+  titel         String
+  beschrijving  String
+  linkUrl       String?        // Optioneel: artikel of hulpbron
+  linkLabel     String?        // "Lees artikel" of "Bel nu"
+  isVoltooid    Boolean        @default(false)
+  voltooitOp    DateTime?
+  bron          String         @default("REGEL") // REGEL, AI, ADMIN
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  caregiver     Caregiver      @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  @@unique([caregiverId, weekNummer, type])
+  @@index([caregiverId, weekNummer])
+}
+
+enum WeekKaartType {
+  ZELFZORG
+  PRAKTISCH
+  LEREN
+}
+```
+
+**Bestanden:**
+- Nieuw: `prisma/schema.prisma` — WeekKaart model + enum
+- Nieuw: `src/lib/weekkaarten/genereer-weekkaarten.ts` — Generatie-logica
+- Nieuw: `src/components/dashboard/WeekKaartenKaart.tsx` — Dashboard component
+- Nieuw: `src/app/api/weekkaarten/route.ts` — GET + PATCH (voltooid markeren)
+- Nieuw: `src/app/api/cron/weekkaarten/route.ts` — Wekelijkse generatie (Vercel Cron)
+- Wijzig: `src/lib/ai/prefetch-context.ts` — WeekKaarten meenemen in Ger-context
+- Wijzig: `src/app/(dashboard)/dashboard/page.tsx` — Sectie "Deze week voor jou"
+
+---
+
 ### Deliverables Iteratie 3 — GROTENDEELS AFGEROND
 - [x] Persoonlijk advies pagina na balanstest (`/rapport/persoonlijk`)
 - [x] "Eerste stap" veld per hulpbron + in AI prompt + beheerportaal (eersteStap + verwachtingTekst velden)
@@ -486,8 +562,9 @@ Automatisch na test-voltooiing:
 - [x] Gastgebruiker flow met sessionStorage + automatische koppeling na registratie
 - [x] Actiepunten zichtbaar op dashboard (`ActiepuntenKaart.tsx` + `/api/actiepunten`)
 - [x] E-mail na balanstest (`sendBalanstestResultEmail` in email.ts)
+- [ ] Wekelijkse hulpkaarten op dashboard (WeekKaart model, hybride generatie, Ger-integratie)
 
-**Status:** 6/6 afgerond.
+**Status:** 6/7 afgerond. Wekelijkse hulpkaarten nog te bouwen.
 **Geschatte doorlooptijd:** 3 weken (~48 uur)
 
 ---
@@ -897,7 +974,7 @@ Iteratie  Naam                                Week    Uren    Focus             
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 1         Beveiliging Dichtmaken              1-2     32u     11 security items                        AFGEROND (11/12)
 2         Input Validatie & Stabiliteit       3-4     32u     45+ routes + tests                       AFGEROND (6/6)
-3         Mantelzorger Klantreis              5-7     48u     Persoonlijk advies, SOS, actiepunten     AFGEROND (6/6)
+3         Mantelzorger Klantreis              5-7     48u     Persoonlijk advies, SOS, actiepunten     6/7 (weekkaarten open)
 4         Gemeente Onboarding & Auto.         8-10    48u     Wizard, reminders, alarmen               OPEN
 5         Content uit Code naar Database      11-13   48u     170+ items migreren                      OPEN
 6         Performance, Caching & Monitoring   14-16   48u     Sentry, caching, N+1                     OPEN
