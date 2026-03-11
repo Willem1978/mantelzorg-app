@@ -217,6 +217,7 @@ export default function ProfielPage() {
   })
   const [passwordError, setPasswordError] = useState("")
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [profileLoadError, setProfileLoadError] = useState("")
   const [deleteConfirmText, setDeleteConfirmText] = useState("")
   const [isDeleting, setIsDeleting] = useState(false)
   const [mijlpalen, setMijlpalen] = useState<Mijlpaal[]>([])
@@ -258,9 +259,18 @@ export default function ProfielPage() {
               wijknaam: data.naasteWijk || "",
             } : prev.naasteAdres,
           }))
+        } else {
+          const errorData = await res.json().catch(() => ({ error: "Onbekende fout" }))
+          console.error("Profiel laden mislukt:", res.status, errorData)
+          setProfileLoadError(
+            res.status === 404
+              ? "Er is nog geen profiel aangemaakt. Klik op 'Bewerken' om je gegevens in te vullen."
+              : `Kon profiel niet laden (${errorData.error || res.status})`
+          )
         }
-      } catch {
-        // Fall back to sessionStorage
+      } catch (err) {
+        console.error("Profiel laden netwerk fout:", err)
+        setProfileLoadError("Kon geen verbinding maken met de server")
       }
     }
     loadProfile()
@@ -846,6 +856,13 @@ export default function ProfielPage() {
           {c.header.subtitle}
         </p>
       </div>
+
+      {/* Profile load error */}
+      {profileLoadError && (
+        <div className="mb-4 p-3 bg-[var(--accent-amber-bg)] text-[var(--accent-amber)] rounded-xl text-sm font-medium">
+          {profileLoadError}
+        </div>
+      )}
 
       {/* Save message */}
       {saveMessage && (

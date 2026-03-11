@@ -27,29 +27,34 @@ export async function GET() {
   try {
     const session = await auth()
 
-    if (!session?.user?.caregiverId) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 })
     }
 
-    const caregiver = await prisma.caregiver.findUnique({
-      where: { id: session.user.caregiverId },
-      include: {
-        user: {
-          select: {
-            name: true,
-            email: true,
-          }
-        }
-      }
-    })
+    // Zoek caregiver via caregiverId (snel) of via userId (fallback als session verouderd is)
+    let caregiver = session.user.caregiverId
+      ? await prisma.caregiver.findUnique({
+          where: { id: session.user.caregiverId },
+          include: { user: { select: { name: true, email: true } } },
+        })
+      : null
+
+    if (!caregiver) {
+      caregiver = await prisma.caregiver.findUnique({
+        where: { userId: session.user.id },
+        include: { user: { select: { name: true, email: true } } },
+      })
+    }
 
     if (!caregiver) {
       return NextResponse.json({ error: "Profiel niet gevonden" }, { status: 404 })
     }
 
+    const caregiverId = caregiver.id
+
     // Haal zorgtaken op uit de meest recente balanstest
     const latestTest = await prisma.belastbaarheidTest.findFirst({
-      where: { caregiverId: session.user.caregiverId, isCompleted: true },
+      where: { caregiverId, isCompleted: true },
       orderBy: { completedAt: "desc" },
       select: {
         taakSelecties: {
@@ -98,8 +103,22 @@ export async function PUT(request: Request) {
   try {
     const session = await auth()
 
-    if (!session?.user?.caregiverId) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 })
+    }
+
+    // Zoek caregiverId met fallback op userId
+    let caregiverId = session.user.caregiverId
+    if (!caregiverId) {
+      const found = await prisma.caregiver.findUnique({
+        where: { userId: session.user.id },
+        select: { id: true },
+      })
+      caregiverId = found?.id || null
+    }
+
+    if (!caregiverId) {
+      return NextResponse.json({ error: "Profiel niet gevonden" }, { status: 404 })
     }
 
     const rawBody = await request.json()
@@ -152,7 +171,7 @@ export async function PUT(request: Request) {
 
     // Update caregiver
     const caregiver = await prisma.caregiver.update({
-      where: { id: session.user.caregiverId },
+      where: { id: caregiverId },
       data: {
         ...phoneUpdate,
         // Locatie mantelzorger
