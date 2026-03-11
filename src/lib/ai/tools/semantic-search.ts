@@ -22,7 +22,7 @@ interface SemanticResult {
 export function createSemantischZoekenTool(gemeente?: string | null) {
   return tool({
     description:
-      "Zoek semantisch naar relevante artikelen en hulpbronnen. Gebruik dit als de gebruiker een open vraag stelt die niet past bij een specifieke categorie, of als je betere resultaten wilt dan trefwoordzoek.",
+      "Zoek semantisch naar relevante artikelen en hulpbronnen. Gebruik dit als de gebruiker een open vraag stelt die niet past bij een specifieke categorie, of als je betere resultaten wilt dan trefwoordzoek. BELANGRIJK: toon gevonden artikelen als {{artikelkaart:titel|beschrijving|emoji|categorie|inhoud}} zodat de gebruiker ze kan lezen, opslaan en mailen.",
     inputSchema: z.object({
       vraag: z
         .string()
