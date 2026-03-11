@@ -260,12 +260,19 @@ export default function ProfielPage() {
             } : prev.naasteAdres,
           }))
         } else {
-          const errorData = await res.json().catch(() => ({ error: "Onbekende fout" }))
-          console.error("Profiel laden mislukt:", res.status, errorData)
+          const errorText = await res.text()
+          let errorMsg: string
+          try {
+            const errorData = JSON.parse(errorText)
+            errorMsg = errorData.error || `Status ${res.status}`
+          } catch {
+            errorMsg = `Status ${res.status}`
+          }
+          console.error("Profiel laden mislukt:", res.status, errorText)
           setProfileLoadError(
             res.status === 404
               ? "Er is nog geen profiel aangemaakt. Klik op 'Bewerken' om je gegevens in te vullen."
-              : `Kon profiel niet laden (${errorData.error || res.status})`
+              : `Kon profiel niet laden (${errorMsg})`
           )
         }
       } catch (err) {
