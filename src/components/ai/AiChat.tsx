@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import { cn } from "@/lib/utils"
+import { GerAvatar } from "@/components/GerAvatar"
 import { parseHulpkaarten, HulpKaart } from "@/components/ai/HulpKaart"
 
 /**
@@ -129,15 +130,12 @@ export function AiChat() {
         {/* Welkomstbericht */}
         {messages.length === 0 && (
           <div className="flex gap-3 items-start">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <span className="text-sm">🤖</span>
-            </div>
+            <GerAvatar size="xs" className="!w-8 !h-8 flex-shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
-              <div className="bg-card rounded-2xl rounded-tl-md p-3 border border-border shadow-sm">
+              <div className="bg-[var(--accent-amber-bg)]/40 border border-[var(--accent-amber)]/10 rounded-2xl rounded-tl-sm p-3.5 shadow-sm">
                 <p className="font-semibold text-foreground mb-1">Hoi! Ik ben Ger</p>
                 <p className="text-sm text-muted-foreground">
-                  Ik help je graag met vragen over mantelzorg. Vraag me bijvoorbeeld
-                  over hulp in de buurt, tips voor jezelf, of hoe de app werkt.
+                  Fijn dat je er bent. Vertel me wat je bezighoudt, dan kijken we samen wat er mogelijk is.
                 </p>
               </div>
             </div>
@@ -177,51 +175,27 @@ export function AiChat() {
           const actieKnoppen = buttons.filter(b => b.type === "knop").slice(0, 1)
           const vraagKnoppen = buttons.filter(b => b.type === "vraag").slice(0, 2)
 
-          return (
-            <div
-              key={message.id}
-              className={cn(
-                "flex gap-3 items-start",
-                message.role === "user" && "flex-row-reverse"
-              )}
-            >
-              {/* Avatar */}
-              <div
-                className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
-                  message.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-primary/10"
-                )}
-              >
-                {message.role === "user" ? (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                ) : (
-                  <span className="text-sm">🤖</span>
-                )}
+          // Gebruikersbericht — rechts uitgelijnd, geen avatar
+          if (message.role === "user") {
+            return (
+              <div key={message.id} className="flex justify-end pl-12">
+                <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm px-4 py-3 shadow-sm max-w-[85%]">
+                  <p className="text-sm leading-relaxed">{cleanText}</p>
+                </div>
               </div>
+            )
+          }
 
-              {/* Bericht + Knoppen */}
-              <div className={cn(
-                "flex-1 min-w-0 flex flex-col gap-2",
-                message.role === "user" && "items-end"
-              )}>
+          // Ger-bericht — links uitgelijnd met GerAvatar
+          return (
+            <div key={message.id} className="flex gap-3 items-start pr-8">
+              <GerAvatar size="xs" className="!w-8 !h-8 flex-shrink-0 mt-0.5" />
+
+              <div className="flex-1 min-w-0 flex flex-col gap-2">
                 {/* Tekst bubble */}
                 {cleanText && (
-                  <div
-                    className={cn(
-                      "rounded-2xl p-3 shadow-sm",
-                      message.role === "user"
-                        ? "bg-primary text-primary-foreground rounded-tr-md"
-                        : "bg-card border border-border rounded-tl-md"
-                    )}
-                  >
-                    <div className={cn(
-                      "text-sm leading-relaxed whitespace-pre-wrap",
-                      message.role === "user" ? "text-primary-foreground" : "text-foreground"
-                    )}>
+                  <div className="bg-[var(--accent-amber-bg)]/40 border border-[var(--accent-amber)]/10 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+                    <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
                       {formatMessage(cleanText)}
                     </div>
                   </div>
@@ -236,7 +210,7 @@ export function AiChat() {
                         onClick={() => handleButtonClick(btn)}
                         disabled={isLoading}
                         className={cn(
-                          "flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm transition-all text-left",
+                          "flex items-center gap-2 w-full px-3 py-2.5 rounded-xl text-sm transition-all text-left",
                           "bg-[var(--accent-green-bg)]/60 border border-[var(--accent-green)]/15 text-foreground hover:border-[var(--accent-green)]/30 hover:bg-[var(--accent-green-bg)]",
                           isLoading && "opacity-50 cursor-not-allowed"
                         )}
@@ -252,7 +226,7 @@ export function AiChat() {
 
                 {/* Hulpkaarten — max 2 */}
                 {kaarten.length > 0 && (
-                  <div className="flex flex-col gap-1 w-full">
+                  <div className="flex flex-col gap-1.5 w-full">
                     {kaarten.slice(0, 2).map((kaart, i) => (
                       <HulpKaart key={i} kaart={kaart} />
                     ))}
@@ -268,7 +242,7 @@ export function AiChat() {
                         onClick={() => handleButtonClick(btn)}
                         disabled={isLoading}
                         className={cn(
-                          "flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm transition-all text-left",
+                          "flex items-center gap-2 w-full px-3 py-2.5 rounded-xl text-sm transition-all text-left",
                           "bg-muted/60 border border-border/50 text-foreground hover:border-border hover:bg-muted",
                           isLoading && "opacity-50 cursor-not-allowed"
                         )}
@@ -288,15 +262,16 @@ export function AiChat() {
 
         {/* Laden */}
         {isLoading && (
-          <div className="flex gap-3 items-start">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <span className="text-sm">🤖</span>
-            </div>
-            <div className="bg-card border border-border rounded-2xl rounded-tl-md p-3 shadow-sm">
-              <div className="flex gap-1.5">
-                <div className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:0ms]" />
-                <div className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:150ms]" />
-                <div className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:300ms]" />
+          <div className="flex gap-3 items-start pr-8">
+            <GerAvatar size="xs" className="!w-8 !h-8 flex-shrink-0 mt-0.5" />
+            <div className="bg-[var(--accent-amber-bg)]/40 border border-[var(--accent-amber)]/10 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1.5">
+                  <div className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:0ms]" />
+                  <div className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:150ms]" />
+                  <div className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:300ms]" />
+                </div>
+                <span className="text-xs text-muted-foreground">Ger typt...</span>
               </div>
             </div>
           </div>
@@ -304,11 +279,9 @@ export function AiChat() {
 
         {/* Error */}
         {error && (
-          <div className="flex gap-3 items-start">
-            <div className="w-8 h-8 rounded-full bg-[var(--accent-red-bg)] flex items-center justify-center flex-shrink-0">
-              <span className="text-sm">⚠️</span>
-            </div>
-            <div className="bg-[var(--accent-red-bg)] border border-[var(--accent-red)]/20 rounded-2xl rounded-tl-md p-3">
+          <div className="flex gap-3 items-start pr-8">
+            <GerAvatar size="xs" className="!w-8 !h-8 flex-shrink-0 mt-0.5 opacity-50" />
+            <div className="bg-[var(--accent-red-bg)] border border-[var(--accent-red)]/20 rounded-2xl rounded-tl-sm p-3.5">
               <p className="text-sm text-foreground">
                 {error.message?.includes("503") || error.message?.includes("niet beschikbaar")
                   ? "De AI-assistent is tijdelijk niet beschikbaar. Neem contact op met de beheerder."
