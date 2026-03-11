@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { getErrorMessage } from "@/lib/utils"
 import { AdminSpinner, AdminEmptyState } from "@/components/admin"
 
 interface Evenement {
@@ -93,8 +94,8 @@ export default function GemeenteEvenementen() {
       fetchEvenementen()
 
       setTimeout(() => setSubmitSuccess(false), 3000)
-    } catch (err: any) {
-      setSubmitError(err.message)
+    } catch (err: unknown) {
+      setSubmitError(getErrorMessage(err))
     } finally {
       setSubmitting(false)
     }

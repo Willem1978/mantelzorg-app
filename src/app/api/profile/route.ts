@@ -2,6 +2,25 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { geocodeLocation } from "@/lib/pdok"
+import { z } from "zod"
+import { validateBody } from "@/lib/validations"
+import { sanitizeText } from "@/lib/sanitize"
+
+const profileUpdateSchema = z.object({
+  naam: z.string().max(200).transform(sanitizeText).optional(),
+  telefoon: z.string().max(20).nullable().optional(),
+  straat: z.string().max(200).transform(sanitizeText).optional(),
+  woonplaats: z.string().max(100).transform(sanitizeText).optional(),
+  postcode: z.string().max(7).optional(),
+  gemeente: z.string().max(100).transform(sanitizeText).optional(),
+  wijk: z.string().max(100).transform(sanitizeText).optional(),
+  naasteNaam: z.string().max(200).transform(sanitizeText).optional(),
+  naasteRelatie: z.string().max(100).transform(sanitizeText).optional(),
+  naasteStraat: z.string().max(200).transform(sanitizeText).optional(),
+  naasteWoonplaats: z.string().max(100).transform(sanitizeText).optional(),
+  naasteGemeente: z.string().max(100).transform(sanitizeText).optional(),
+  naasteWijk: z.string().max(100).transform(sanitizeText).optional(),
+})
 
 // GET: Profiel ophalen
 export async function GET() {
@@ -83,7 +102,12 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 })
     }
 
-    const body = await request.json()
+    const rawBody = await request.json()
+    const validation = validateBody(rawBody, profileUpdateSchema)
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 })
+    }
+    const body = validation.data
 
     // Update user name if provided
     if (body.naam) {

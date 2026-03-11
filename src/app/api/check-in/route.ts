@@ -2,12 +2,17 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { ANTWOORD_SCORES, CHECKIN_FREQUENTIES } from "@/config/options"
+import { z } from "zod"
+import { validateBody } from "@/lib/validations"
 
 export const dynamic = 'force-dynamic'
 
-interface CheckInBody {
-  answers: Record<string, string>
-}
+const checkInSchema = z.object({
+  answers: z.record(z.string().max(10), z.string().max(100)).refine(
+    (answers) => Object.keys(answers).length > 0,
+    { message: "Geen antwoorden ontvangen" }
+  ),
+})
 
 // POST - Save monthly check-in
 export async function POST(request: NextRequest) {
@@ -21,14 +26,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const body: CheckInBody = await request.json()
-
-    if (!body.answers || Object.keys(body.answers).length === 0) {
-      return NextResponse.json(
-        { error: "Geen antwoorden ontvangen" },
-        { status: 400 }
-      )
+    const validation = validateBody(await request.json(), checkInSchema)
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 })
     }
+    const body = validation.data
 
     // Get caregiver profile
     const caregiver = await prisma.caregiver.findUnique({

@@ -38,7 +38,7 @@ describe("loginSchema", () => {
 describe("registerSchema", () => {
   const geldige_data = {
     email: "test@example.com",
-    password: "wachtwoord123",
+    password: "Wachtwoord1!",
     municipality: {
       code: "0301",
       name: "Zutphen",
@@ -103,7 +103,7 @@ describe("resetPasswordSchema", () => {
   it("accepteert geldig token en wachtwoord", () => {
     const result = resetPasswordSchema.safeParse({
       token: "abc123",
-      password: "nieuwwachtwoord",
+      password: "NieuwWachtwoord1!",
     })
     expect(result.success).toBe(true)
   })

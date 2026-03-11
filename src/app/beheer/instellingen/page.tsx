@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { getErrorMessage } from "@/lib/utils"
 import { AdminSpinner } from "@/components/admin"
 import { useToast } from "@/components/ui/Toast"
 
@@ -81,10 +82,11 @@ export default function InstellingenPage() {
       if (data.zorgorganisaties !== undefined) parts.push(`${data.zorgorganisaties} organisaties`)
       setEmbeddingResult(`Embeddings gegenereerd: ${parts.join(", ")}`)
       showSuccess("Embeddings succesvol gegenereerd")
-    } catch (err: any) {
+    } catch (err: unknown) {
       setEmbeddingStatus("error")
-      setEmbeddingResult(err.message || "Er ging iets mis")
-      showError(err.message || "Er ging iets mis bij het genereren van embeddings")
+      const msg = getErrorMessage(err)
+      setEmbeddingResult(msg)
+      showError(msg)
     }
   }
 
