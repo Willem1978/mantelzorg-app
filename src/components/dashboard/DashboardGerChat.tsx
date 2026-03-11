@@ -8,6 +8,7 @@ import { DefaultChatTransport } from "ai"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
 import { parseHulpkaarten, HulpKaart } from "@/components/ai/HulpKaart"
+import { parseArtikelkaarten, ArtikelKaart } from "@/components/ai/ArtikelKaart"
 import Link from "next/link"
 
 const BUTTON_REGEX = /\{\{(knop|vraag):([^}]+)\}\}/g
@@ -305,11 +306,14 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
           const { cleanText: textWithoutCards, kaarten } = isAssistant
             ? parseHulpkaarten(rawText)
             : { cleanText: rawText, kaarten: [] }
+          const { cleanText: textWithoutArticles, artikelen } = isAssistant
+            ? parseArtikelkaarten(textWithoutCards)
+            : { cleanText: textWithoutCards, artikelen: [] }
           const { cleanText, buttons } = isAssistant
-            ? parseButtons(textWithoutCards)
-            : { cleanText: textWithoutCards, buttons: [] }
+            ? parseButtons(textWithoutArticles)
+            : { cleanText: textWithoutArticles, buttons: [] }
 
-          const hasExtras = isAssistant && (kaarten.length > 0 || buttons.length > 0)
+          const hasExtras = isAssistant && (kaarten.length > 0 || artikelen.length > 0 || buttons.length > 0)
           return (
             <div key={message.id}>
               {/* Bericht bubble */}
@@ -344,6 +348,11 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
                           {/* Hulpkaarten — compact, in de bubble */}
                           {kaarten.slice(0, 2).map((kaart, i) => (
                             <HulpKaart key={`h-${i}`} kaart={kaart} />
+                          ))}
+
+                          {/* Artikelkaarten — max 3, compact inline */}
+                          {artikelen.slice(0, 3).map((artikel, i) => (
+                            <ArtikelKaart key={`art-${i}`} artikel={artikel} />
                           ))}
 
                           {/* Vraag/actie chips — horizontal in de bubble */}

@@ -8,6 +8,7 @@ import { DefaultChatTransport } from "ai"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
 import { parseHulpkaarten, HulpKaart } from "@/components/ai/HulpKaart"
+import { parseArtikelkaarten, ArtikelKaart } from "@/components/ai/ArtikelKaart"
 
 /**
  * Button syntax parsing:
@@ -221,9 +222,12 @@ export function FloatingGerChat() {
               const { cleanText: textWithoutCards, kaarten } = isAssistant
                 ? parseHulpkaarten(rawText)
                 : { cleanText: rawText, kaarten: [] }
+              const { cleanText: textWithoutArticles, artikelen } = isAssistant
+                ? parseArtikelkaarten(textWithoutCards)
+                : { cleanText: textWithoutCards, artikelen: [] }
               const { cleanText, buttons } = isAssistant
-                ? parseButtons(textWithoutCards)
-                : { cleanText: textWithoutCards, buttons: [] }
+                ? parseButtons(textWithoutArticles)
+                : { cleanText: textWithoutArticles, buttons: [] }
               const actieKnoppen = buttons.filter(b => b.type === "knop").slice(0, 1)
               const vraagKnoppen = buttons.filter(b => b.type === "vraag").slice(0, 2)
 
@@ -239,7 +243,7 @@ export function FloatingGerChat() {
               }
 
               // Ger-bericht — links uitgelijnd met avatar, alles in één bubble
-              const hasExtras = actieKnoppen.length > 0 || kaarten.length > 0 || vraagKnoppen.length > 0
+              const hasExtras = actieKnoppen.length > 0 || kaarten.length > 0 || artikelen.length > 0 || vraagKnoppen.length > 0
               return (
                 <div key={message.id} className="flex gap-2.5 items-start">
                   <GerAvatar size="xs" className="!w-7 !h-7 flex-shrink-0 mt-0.5" />
@@ -277,6 +281,11 @@ export function FloatingGerChat() {
                           {/* Hulpkaarten — compact inline */}
                           {kaarten.slice(0, 2).map((kaart, i) => (
                             <HulpKaart key={`h-${i}`} kaart={kaart} />
+                          ))}
+
+                          {/* Artikelkaarten — max 3, compact inline */}
+                          {artikelen.slice(0, 3).map((artikel, i) => (
+                            <ArtikelKaart key={`art-${i}`} artikel={artikel} />
                           ))}
 
                           {/* Vraagknoppen — horizontal chips */}

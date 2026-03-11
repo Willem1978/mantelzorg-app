@@ -8,6 +8,7 @@ import { DefaultChatTransport } from "ai"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
 import { parseHulpkaarten, HulpKaart } from "@/components/ai/HulpKaart"
+import { parseArtikelkaarten, ArtikelKaart } from "@/components/ai/ArtikelKaart"
 
 /**
  * Publieke Ger chat widget voor de homepage.
@@ -206,9 +207,12 @@ export function PublicGerChat() {
           const { cleanText: textWithoutCards, kaarten } = isAssistant
             ? parseHulpkaarten(rawText)
             : { cleanText: rawText, kaarten: [] }
+          const { cleanText: textWithoutArticles, artikelen } = isAssistant
+            ? parseArtikelkaarten(textWithoutCards)
+            : { cleanText: textWithoutCards, artikelen: [] }
           const { cleanText, buttons } = isAssistant
-            ? parseButtons(textWithoutCards)
-            : { cleanText: textWithoutCards, buttons: [] }
+            ? parseButtons(textWithoutArticles)
+            : { cleanText: textWithoutArticles, buttons: [] }
           const actieKnoppen = isAssistant ? buttons.filter(b => b.type === "knop").slice(0, 1) : []
           const vraagKnoppen = isAssistant ? buttons.filter(b => b.type === "vraag").slice(0, 2) : []
 
@@ -259,7 +263,7 @@ export function PublicGerChat() {
                       </div>
                     )}
 
-                    {(actieKnoppen.length > 0 || kaarten.length > 0 || vraagKnoppen.length > 0) && (
+                    {(actieKnoppen.length > 0 || kaarten.length > 0 || artikelen.length > 0 || vraagKnoppen.length > 0) && (
                       <div className={cn("px-2.5 pb-2.5 flex flex-col gap-1.5", cleanText && "pt-0")}>
                         {actieKnoppen.map((btn, i) => (
                           <button
@@ -281,6 +285,10 @@ export function PublicGerChat() {
 
                         {kaarten.slice(0, 2).map((kaart, i) => (
                           <HulpKaart key={`h-${i}`} kaart={kaart} />
+                        ))}
+
+                        {artikelen.slice(0, 3).map((artikel, i) => (
+                          <ArtikelKaart key={`art-${i}`} artikel={artikel} />
                         ))}
 
                         {vraagKnoppen.length > 0 && (

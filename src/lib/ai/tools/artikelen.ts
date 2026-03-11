@@ -30,7 +30,7 @@ function stripHtmlAndTrim(html: string | null, maxLengte = 1500): string | null 
 export function createZoekArtikelenTool() {
   return tool({
     description:
-      "Zoek informatie-artikelen en tips over mantelzorg. Gebruik dit voor advies en informatie over specifieke onderwerpen (slaap, energie, zelfzorg, rechten, financieel). Geeft ook de artikelinhoud mee zodat je concrete tips en informatie kunt delen.",
+      "Zoek informatie-artikelen en tips over mantelzorg. Gebruik dit voor advies en informatie over specifieke onderwerpen (slaap, energie, zelfzorg, rechten, financieel). Geeft artikelinhoud mee. BELANGRIJK: toon gevonden artikelen als {{artikelkaart:titel|beschrijving|emoji|categorie|inhoud}} zodat de gebruiker ze kan lezen, opslaan en mailen.",
     inputSchema: z.object({
       categorie: z
         .string()
