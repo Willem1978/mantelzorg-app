@@ -33,22 +33,118 @@ const NIVEAU_CONFIG = {
     emoji: "💚",
     color: "var(--accent-green)",
     bgColor: "var(--accent-green-bg)",
+    ringColor: "#1B7A3D",
+    ringTrack: "#E5F5EA",
     bericht: "Je balans ziet er goed uit!",
+    sub: "Je doet het fantastisch.",
   },
   GEMIDDELD: {
     label: "Matig",
     emoji: "🧡",
     color: "var(--accent-amber)",
     bgColor: "var(--accent-amber-bg)",
-    bericht: "Let goed op jezelf, je hebt veel op je bordje.",
+    ringColor: "#A85E00",
+    ringTrack: "#FFF3E0",
+    bericht: "Let goed op jezelf.",
+    sub: "Je hebt best veel op je bordje.",
   },
   HOOG: {
     label: "Zwaar",
     emoji: "❤️",
     color: "var(--accent-red)",
     bgColor: "var(--accent-red-bg)",
-    bericht: "Het is zwaar. Vergeet niet om hulp te vragen.",
+    ringColor: "#A52019",
+    ringTrack: "#FDECEB",
+    bericht: "Het is zwaar, dat mag er zijn.",
+    sub: "Vergeet niet om hulp te vragen.",
   },
+}
+
+const DEELGEBIED_CONFIG = {
+  LAAG: {
+    label: "Goed",
+    pastelBg: "bg-emerald-50 dark:bg-emerald-950/20",
+    pastelBorder: "border-emerald-200/60 dark:border-emerald-800/40",
+    textColor: "text-emerald-700 dark:text-emerald-400",
+  },
+  GEMIDDELD: {
+    label: "Matig",
+    pastelBg: "bg-amber-50 dark:bg-amber-950/20",
+    pastelBorder: "border-amber-200/60 dark:border-amber-800/40",
+    textColor: "text-amber-700 dark:text-amber-400",
+  },
+  HOOG: {
+    label: "Zwaar",
+    pastelBg: "bg-rose-50 dark:bg-rose-950/20",
+    pastelBorder: "border-rose-200/60 dark:border-rose-800/40",
+    textColor: "text-rose-700 dark:text-rose-400",
+  },
+}
+
+const DEELGEBIED_ICONS: Record<string, React.ReactNode> = {
+  "Jouw energie": (
+    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="6" y="10" width="12" height="10" rx="2" />
+      <rect x="9" y="6" width="6" height="4" rx="1" />
+      <rect x="10" y="13" width="4" height="4" rx="0.5" fill="currentColor" opacity={0.3} />
+    </svg>
+  ),
+  "Jouw gevoel": (
+    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z" fill="currentColor" opacity={0.15} />
+      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z" />
+    </svg>
+  ),
+  "Jouw tijd": (
+    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" fill="currentColor" opacity={0.1} />
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  ),
+}
+
+/** SVG Donut Chart — zachte, organische uitstraling */
+function BalansDonut({ percentage, config }: { percentage: number; config: typeof NIVEAU_CONFIG.LAAG }) {
+  const size = 100
+  const strokeWidth = 10
+  const radius = (size - strokeWidth) / 2
+  const circumference = 2 * Math.PI * radius
+  const offset = circumference - (percentage / 100) * circumference
+
+  return (
+    <div className="relative w-[100px] h-[100px] flex-shrink-0">
+      <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full -rotate-90">
+        {/* Track */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={config.ringTrack}
+          strokeWidth={strokeWidth}
+          opacity={0.6}
+        />
+        {/* Filled arc */}
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={config.ringColor}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          className="transition-all duration-1000 ease-out"
+        />
+      </svg>
+      {/* Center emoji */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-2xl">{config.emoji}</span>
+      </div>
+    </div>
+  )
 }
 
 export function BalansThermometer({
@@ -69,74 +165,45 @@ export function BalansThermometer({
   const matigCount = zorgtaken.filter(t => isMatig(t.moeilijkheid)).length
   const goedCount = zorgtaken.length - zwaarCount - matigCount
 
-  // Neem max 3 deelgebieden: Energie, Gevoel, Tijd
   const topDeelgebieden = deelgebieden.slice(0, 3)
+
+  // Bouw vriendelijke zorgtaken-samenvatting
+  const zorgtakenText = buildZorgtakenText(zorgtaken.length, goedCount, matigCount, zwaarCount)
 
   return (
     <div className="ker-card space-y-5">
-      {/* Header met persoonlijk bericht */}
-      <div
-        className="rounded-xl px-4 py-4 flex items-center gap-3 border-2"
-        style={{ backgroundColor: config.bgColor, borderColor: config.color }}
-      >
-        <span className="text-3xl">{config.emoji}</span>
+      {/* Balans Cirkel — donut met warme tekst */}
+      <div className="flex items-center gap-5">
+        <BalansDonut percentage={percentage} config={config} />
         <div className="flex-1 min-w-0">
-          <p className="text-base font-semibold text-foreground">Mijn balans</p>
-          <p className="text-sm text-muted-foreground">{config.bericht}</p>
-        </div>
-        <div className="text-right flex-shrink-0">
-          <span className="text-3xl font-bold" style={{ color: config.color }}>{score}</span>
-          <span className="text-sm text-muted-foreground">/{maxScore}</span>
-        </div>
-      </div>
-
-      {/* Thermometer balk met zones */}
-      <div>
-        <div className="h-3.5 rounded-full overflow-hidden bg-muted">
-          <div
-            className="h-full rounded-full transition-all duration-700"
-            style={{
-              width: `${Math.max(6, percentage)}%`,
-              backgroundColor: config.color,
-            }}
-          />
-        </div>
-        <div className="flex justify-between text-xs text-muted-foreground mt-1.5 px-0.5 font-medium">
-          <span>Goed</span>
-          <span>Matig</span>
-          <span>Zwaar</span>
+          <h3 className="text-lg font-bold text-foreground leading-tight">Balans Cirkel</h3>
+          <p className="text-base font-semibold mt-0.5" style={{ color: config.color }}>
+            {config.bericht}
+          </p>
+          <p className="text-sm text-muted-foreground mt-0.5">{config.sub}</p>
         </div>
       </div>
 
-      {/* Deelgebieden: Energie, Gevoel, Tijd */}
+      {/* Deelgebieden: Energie, Gevoel, Tijd — zachte pastelkaarten */}
       {topDeelgebieden.length > 0 && (
         <div>
-          <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">
             Hoe gaat het met jou?
           </p>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2.5">
             {topDeelgebieden.map((dg) => {
-              const dgConfig = NIVEAU_CONFIG[dg.niveau]
-              const isGoed = dg.niveau === "LAAG"
+              const dgConfig = DEELGEBIED_CONFIG[dg.niveau]
+              const icon = DEELGEBIED_ICONS[dg.naam]
               return (
                 <div
                   key={dg.naam}
-                  className="rounded-xl p-3 text-center border"
-                  style={{
-                    backgroundColor: dgConfig.bgColor,
-                    borderColor: isGoed ? "transparent" : dgConfig.color,
-                  }}
+                  className={`rounded-2xl p-3 text-center border ${dgConfig.pastelBg} ${dgConfig.pastelBorder}`}
                 >
-                  <span className="text-xl block">{dg.emoji}</span>
-                  <p className="text-xs font-semibold text-foreground leading-tight mt-1">{dg.naam}</p>
-                  <span
-                    className="text-xs font-bold px-2 py-0.5 rounded-full inline-block mt-1 border"
-                    style={{
-                      backgroundColor: dgConfig.bgColor,
-                      color: dgConfig.color,
-                      borderColor: isGoed ? "transparent" : dgConfig.color,
-                    }}
-                  >
+                  <div className={`flex justify-center mb-1.5 ${dgConfig.textColor}`}>
+                    {icon || <span className="text-xl">{dg.emoji}</span>}
+                  </div>
+                  <p className="text-xs font-semibold text-foreground leading-tight">{dg.naam}</p>
+                  <span className={`text-xs font-bold mt-1 inline-block ${dgConfig.textColor}`}>
                     {dgConfig.label}
                   </span>
                 </div>
@@ -146,39 +213,39 @@ export function BalansThermometer({
         </div>
       )}
 
-      {/* Zorgtaken */}
+      {/* Zorgtaken — vriendelijke samenvatting in kaart */}
       {zorgtaken.length > 0 && (
         <div>
-          <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">
             Jouw zorgtaken
           </p>
-          <div className="grid grid-cols-3 gap-2">
-            <div
-              className="rounded-xl p-3 text-center"
-              style={{ backgroundColor: "var(--accent-green-bg)" }}
-            >
-              <span className="text-2xl font-bold block" style={{ color: "var(--accent-green)" }}>
-                {goedCount}
-              </span>
-              <p className="text-xs font-semibold text-foreground mt-1">Goed</p>
+          <div
+            className="rounded-2xl px-4 py-3.5 flex items-center gap-3 border"
+            style={{ backgroundColor: "var(--accent-green-bg)", borderColor: "transparent" }}
+          >
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-foreground leading-relaxed">{zorgtakenText}</p>
             </div>
-            <div
-              className="rounded-xl p-3 text-center border"
-              style={{ backgroundColor: "var(--accent-amber-bg)", borderColor: "var(--accent-amber)" }}
-            >
-              <span className="text-2xl font-bold block" style={{ color: "var(--accent-amber)" }}>
-                {matigCount}
-              </span>
-              <p className="text-xs font-semibold text-foreground mt-1">Matig</p>
-            </div>
-            <div
-              className="rounded-xl p-3 text-center border"
-              style={{ backgroundColor: "var(--accent-red-bg)", borderColor: "var(--accent-red)" }}
-            >
-              <span className="text-2xl font-bold block" style={{ color: "var(--accent-red)" }}>
-                {zwaarCount}
-              </span>
-              <p className="text-xs font-semibold text-foreground mt-1">Zwaar</p>
+            {/* Compacte status badges */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {goedCount > 0 && (
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  Goed
+                </span>
+              )}
+              {matigCount > 0 && (
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L1 21h22L12 2zm0 4l7.53 13H4.47L12 6z" opacity={0.6}/><path d="M11 10h2v5h-2zm0 6h2v2h-2z"/></svg>
+                  Matig
+                </span>
+              )}
+              {zwaarCount > 0 && (
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-rose-700 dark:text-rose-400">
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" opacity={0.15}/><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth={2}/><path d="M12 8v5M12 16h.01"/></svg>
+                  Zwaar
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -203,4 +270,23 @@ export function BalansThermometer({
       </div>
     </div>
   )
+}
+
+function buildZorgtakenText(total: number, goed: number, matig: number, zwaar: number): string {
+  if (total === 0) return "Je hebt nog geen zorgtaken ingevuld."
+
+  const parts: string[] = []
+  parts.push(`Je hebt momenteel ${total} lopende ${total === 1 ? "zorgtaak" : "zorgtaken"}.`)
+
+  if (zwaar > 0 && matig > 0) {
+    parts.push(`${zwaar === 1 ? "Eén daarvan" : `${zwaar} daarvan`} ${zwaar === 1 ? "vraagt" : "vragen"} wat extra aandacht.`)
+  } else if (zwaar > 0) {
+    parts.push(`${zwaar === 1 ? "Eén daarvan" : `${zwaar} daarvan`} ${zwaar === 1 ? "is" : "zijn"} best zwaar.`)
+  } else if (matig > 0) {
+    parts.push(`${matig === 1 ? "Eén" : `${matig}`} ${matig === 1 ? "vraagt" : "vragen"} wat aandacht.`)
+  } else {
+    parts.push("Alles gaat lekker!")
+  }
+
+  return parts.join("\n")
 }
