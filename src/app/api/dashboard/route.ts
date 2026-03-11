@@ -81,11 +81,23 @@ export async function GET() {
   try {
     const session = await auth()
 
-    if (!session?.user?.caregiverId) {
+    if (!session?.user?.id) {
       return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 })
     }
 
-    const caregiverId = session.user.caregiverId
+    // Zoek caregiverId met fallback op userId (voor verouderde sessies)
+    let caregiverId = session.user.caregiverId
+    if (!caregiverId) {
+      const found = await prisma.caregiver.findUnique({
+        where: { userId: session.user.id },
+        select: { id: true },
+      })
+      caregiverId = found?.id || null
+    }
+
+    if (!caregiverId) {
+      return NextResponse.json({ error: "Geen profiel gevonden" }, { status: 404 })
+    }
 
     // Haal alle data parallel op
     const [
