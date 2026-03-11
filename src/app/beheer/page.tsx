@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { getErrorMessage } from "@/lib/utils"
 import Link from "next/link"
 import { AdminSpinner } from "@/components/admin"
 
@@ -120,9 +121,9 @@ export default function BeheerDashboard() {
       if (!res.ok) throw new Error(data.error || "Onbekende fout")
       setSeedStatus("success")
       setSeedResult(`${data.created} nieuwe keys aangemaakt, ${data.skipped} al aanwezig.`)
-    } catch (err: any) {
+    } catch (err: unknown) {
       setSeedStatus("error")
-      setSeedResult(err.message || "Er ging iets mis")
+      setSeedResult(getErrorMessage(err))
     }
   }
 
@@ -142,9 +143,9 @@ export default function BeheerDashboard() {
       if (data.artikelen !== undefined) parts.push(`${data.artikelen} artikelen`)
       if (data.zorgorganisaties !== undefined) parts.push(`${data.zorgorganisaties} organisaties`)
       setEmbeddingResult(`Embeddings gegenereerd: ${parts.join(", ")}`)
-    } catch (err: any) {
+    } catch (err: unknown) {
       setEmbeddingStatus("error")
-      setEmbeddingResult(err.message || "Er ging iets mis")
+      setEmbeddingResult(getErrorMessage(err))
     }
   }
 

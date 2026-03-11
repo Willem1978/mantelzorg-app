@@ -1,31 +1,33 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { geocodePostcode } from "@/lib/geocode"
+import { z } from "zod"
+import { validateBody } from "@/lib/validations"
+import { sanitizeText } from "@/lib/sanitize"
+import { sendBuddyBevestigingsEmail, sendBuddyAdminNotificatie } from "@/lib/email"
+
+const aanmeldSchema = z.object({
+  voornaam: z.string().min(1, "Voornaam is verplicht").max(100).transform(sanitizeText),
+  achternaam: z.string().max(100).transform(sanitizeText).optional().default(""),
+  email: z.string().email("Ongeldig e-mailadres").max(255),
+  telefoon: z.string().min(1, "Telefoonnummer is verplicht").max(20),
+  postcode: z.string().min(4, "Ongeldige postcode").max(7),
+  woonplaats: z.string().max(100).transform(sanitizeText).optional().default(""),
+  hulpvormen: z.array(z.string().max(50)).max(20).optional().default([]),
+  beschikbaarheid: z.enum(["eenmalig", "vast", "beide"]).optional().default("beide"),
+  motivatie: z.string().max(2000).transform(sanitizeText).optional(),
+  ervaring: z.string().max(2000).transform(sanitizeText).optional(),
+})
 
 export async function POST(request: Request) {
   try {
-    const data = await request.json()
+    const body = await request.json()
 
-    const {
-      voornaam,
-      achternaam,
-      email,
-      telefoon,
-      postcode,
-      woonplaats,
-      hulpvormen,
-      beschikbaarheid,
-      motivatie,
-      ervaring,
-    } = data
-
-    // Validatie
-    if (!voornaam || !email || !telefoon || !postcode) {
-      return NextResponse.json(
-        { error: "Vul alle verplichte velden in" },
-        { status: 400 }
-      )
+    const validation = validateBody(body, aanmeldSchema)
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 })
     }
+    const { voornaam, achternaam, email, telefoon, postcode, woonplaats, hulpvormen, beschikbaarheid, motivatie, ervaring } = validation.data
 
     // Check of email al bestaat
     const bestaandeBuddy = await prisma.mantelBuddy.findUnique({
@@ -40,9 +42,8 @@ export async function POST(request: Request) {
     }
 
     // Converteer beschikbaarheid naar enum
-    let beschikbaarheidEnum: "EENMALIG" | "VAST" | "BEIDE" = "BEIDE"
-    if (beschikbaarheid === "eenmalig") beschikbaarheidEnum = "EENMALIG"
-    if (beschikbaarheid === "vast") beschikbaarheidEnum = "VAST"
+    const beschikbaarheidMap = { eenmalig: "EENMALIG", vast: "VAST", beide: "BEIDE" } as const
+    const beschikbaarheidEnum = beschikbaarheidMap[beschikbaarheid]
 
     // Geocodeer postcode naar lat/lng voor afstandsmatching
     const coords = await geocodePostcode(postcode)
@@ -66,8 +67,9 @@ export async function POST(request: Request) {
       },
     })
 
-    // TODO: Stuur bevestigingsmail naar de nieuwe MantelBuddy
-    // TODO: Stuur notificatie naar admin
+    // Emails versturen (niet-blokkerend — fouten worden gelogd maar breken de aanmelding niet)
+    sendBuddyBevestigingsEmail(email, voornaam).catch(() => {})
+    sendBuddyAdminNotificatie(voornaam, woonplaats).catch(() => {})
 
     return NextResponse.json({
       success: true,

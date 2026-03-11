@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { ensureAbsoluteUrl } from "@/lib/utils"
+import { ensureAbsoluteUrl, getErrorMessage } from "@/lib/utils"
 import { AdminSpinner, AdminEmptyState } from "@/components/admin"
 
 interface Hulpbron {
@@ -185,8 +185,8 @@ export default function GemeenteHulpbronnen() {
       setNieuwsSuccess(true)
       fetchInformatie()
       setTimeout(() => setNieuwsSuccess(false), 3000)
-    } catch (err: any) {
-      setNieuwsError(err.message)
+    } catch (err: unknown) {
+      setNieuwsError(getErrorMessage(err))
     } finally {
       setNieuwsSubmitting(false)
     }
@@ -227,8 +227,8 @@ export default function GemeenteHulpbronnen() {
       setHulpSubmitSuccess(true)
       fetchHulp()
       setTimeout(() => setHulpSubmitSuccess(false), 3000)
-    } catch (err: any) {
-      setHulpSubmitError(err.message)
+    } catch (err: unknown) {
+      setHulpSubmitError(getErrorMessage(err))
     } finally {
       setHulpSubmitting(false)
     }
@@ -254,8 +254,8 @@ export default function GemeenteHulpbronnen() {
       setFeedbackMsg("Hulpbron bijgewerkt")
       fetchHulp()
       setTimeout(() => setFeedbackMsg(null), 3000)
-    } catch (err: any) {
-      setEditError(err.message)
+    } catch (err: unknown) {
+      setEditError(getErrorMessage(err))
     } finally {
       setEditSubmitting(false)
     }
@@ -275,8 +275,8 @@ export default function GemeenteHulpbronnen() {
       setFeedbackMsg("Hulpbron verwijderd")
       fetchHulp()
       setTimeout(() => setFeedbackMsg(null), 3000)
-    } catch (err: any) {
-      setFeedbackMsg(err.message)
+    } catch (err: unknown) {
+      setFeedbackMsg(getErrorMessage(err))
     } finally {
       setDeleteSubmitting(false)
     }

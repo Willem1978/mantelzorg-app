@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { getErrorMessage } from "@/lib/utils"
 
 interface Report {
   id: string
@@ -95,8 +96,8 @@ export default function GemeenteRapportages() {
         document.body.removeChild(a)
         URL.revokeObjectURL(url)
       }
-    } catch (err: any) {
-      alert(`Fout bij downloaden: ${err.message}`)
+    } catch (err: unknown) {
+      alert(`Fout bij downloaden: ${getErrorMessage(err)}`)
     } finally {
       setDownloading(null)
     }

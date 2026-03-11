@@ -494,3 +494,51 @@ export async function sendAlarmNotificationEmail(
     text: `[${urgentie}] Nieuw alarm in ${gemeenteNaam}: ${beschrijving}`,
   })
 }
+
+/**
+ * Bevestigingsmail naar een nieuwe MantelBuddy na aanmelding.
+ */
+export async function sendBuddyBevestigingsEmail(email: string, voornaam: string): Promise<boolean> {
+  return sendEmail({
+    to: email,
+    subject: `Welkom als MantelBuddy - ${APP_NAME}`,
+    html: emailWrapper(`
+      <h1 style="font-size:20px; color:#111827; margin:0 0 8px;">Bedankt voor je aanmelding, ${voornaam}!</h1>
+      <p style="font-size:15px; color:#4b5563; line-height:1.6; margin:0 0 24px;">
+        Super dat je je hebt aangemeld als MantelBuddy. We gaan je aanmelding bekijken en nemen zo snel mogelijk contact met je op.
+      </p>
+      <p style="font-size:14px; color:#6b7280; line-height:1.6;">
+        Heb je vragen? Neem gerust contact op via ${BASE_URL}.
+      </p>
+    `),
+    text: `Bedankt voor je aanmelding als MantelBuddy, ${voornaam}! We nemen zo snel mogelijk contact met je op.`,
+  })
+}
+
+/**
+ * Notificatie naar admin dat er een nieuwe MantelBuddy aanmelding is.
+ */
+export async function sendBuddyAdminNotificatie(voornaam: string, woonplaats: string): Promise<boolean> {
+  const adminEmail = process.env.ADMIN_EMAIL || process.env.SMTP_USER
+  if (!adminEmail) {
+    console.log("[Email] Geen ADMIN_EMAIL geconfigureerd, admin notificatie overgeslagen")
+    return false
+  }
+
+  return sendEmail({
+    to: adminEmail,
+    subject: `Nieuwe MantelBuddy aanmelding: ${voornaam} - ${APP_NAME}`,
+    html: emailWrapper(`
+      <h1 style="font-size:20px; color:#111827; margin:0 0 8px;">Nieuwe MantelBuddy aanmelding</h1>
+      <p style="font-size:15px; color:#4b5563; line-height:1.6; margin:0 0 16px;">
+        <strong>${voornaam}</strong> uit <strong>${woonplaats || "onbekend"}</strong> heeft zich aangemeld als MantelBuddy.
+      </p>
+      <div style="text-align:center; margin:24px 0;">
+        <a href="${BASE_URL}/beheer/mantelbuddies" style="display:inline-block; padding:14px 32px; background:#2C7A7B; color:white; text-decoration:none; border-radius:12px; font-weight:600; font-size:16px;">
+          Bekijk aanmelding
+        </a>
+      </div>
+    `),
+    text: `Nieuwe MantelBuddy aanmelding: ${voornaam} uit ${woonplaats || "onbekend"}. Bekijk in het beheerpaneel.`,
+  })
+}
