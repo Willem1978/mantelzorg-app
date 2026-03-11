@@ -183,107 +183,62 @@ export function GerHeroChat() {
               ? parseButtons(textWithoutArticles)
               : { cleanText: textWithoutArticles, buttons: [] }
             const actieKnoppen = isAssistant ? buttons.filter(b => b.type === "knop").slice(0, 1) : []
-            const vraagKnoppen = isAssistant ? buttons.filter(b => b.type === "vraag").slice(0, 2) : []
 
+            // Gebruikersbericht
+            if (message.role === "user") {
+              return (
+                <div key={message.id} className="flex justify-end pl-8">
+                  <div className="rounded-2xl p-3 shadow-sm bg-primary text-primary-foreground rounded-tr-md max-w-[85%]">
+                    <p className="text-sm leading-relaxed">{cleanText}</p>
+                  </div>
+                </div>
+              )
+            }
+
+            // Ger-bericht — bubble = alleen tekst, kaarten eronder
+            const hasCards = actieKnoppen.length > 0 || kaarten.length > 0 || artikelen.length > 0
             return (
-              <div
-                key={message.id}
-                className={cn(
-                  "flex gap-3 items-start",
-                  message.role === "user" && "flex-row-reverse"
-                )}
-              >
-                <div
-                  className={cn(
-                    "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
-                    message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-primary/10"
-                  )}
-                >
-                  {message.role === "user" ? (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  ) : (
-                    <span className="text-sm">💚</span>
-                  )}
+              <div key={message.id} className="flex gap-3 items-start pr-8">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm">💚</span>
                 </div>
 
-                <div className={cn(
-                  "max-w-[85%]",
-                  message.role === "user" && "items-end"
-                )}>
-                  {message.role === "user" ? (
-                    cleanText && (
-                      <div className="rounded-2xl p-3 shadow-sm bg-primary text-primary-foreground rounded-tr-md">
-                        <div className="text-sm leading-relaxed whitespace-pre-wrap text-primary-foreground">
-                          {formatMessage(cleanText)}
-                        </div>
+                <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                  {/* Tekstbubble */}
+                  {cleanText && (
+                    <div className="rounded-2xl shadow-sm bg-primary/5 border border-primary/10 rounded-tl-md p-3">
+                      <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
+                        {formatMessage(cleanText)}
                       </div>
-                    )
-                  ) : (
-                    <div className="rounded-2xl shadow-sm bg-primary/5 border border-primary/10 rounded-tl-md overflow-hidden">
-                      {cleanText && (
-                        <div className="p-3">
-                          <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
-                            {formatMessage(cleanText)}
-                          </div>
-                        </div>
-                      )}
+                    </div>
+                  )}
 
-                      {(actieKnoppen.length > 0 || kaarten.length > 0 || artikelen.length > 0 || vraagKnoppen.length > 0) && (
-                        <div className={cn("px-2.5 pb-2.5 flex flex-col gap-1.5", cleanText && "pt-0")}>
-                          {actieKnoppen.map((btn, i) => (
-                            <button
-                              key={`a-${i}`}
-                              onClick={() => handleButtonClick(btn)}
-                              disabled={isLoading}
-                              className={cn(
-                                "flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs transition-all text-left",
-                                "bg-[var(--accent-green-bg)]/60 border border-[var(--accent-green)]/15 text-foreground hover:border-[var(--accent-green)]/30",
-                                isLoading && "opacity-50 cursor-not-allowed"
-                              )}
-                            >
-                              <svg className="w-3.5 h-3.5 text-[var(--accent-green)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                              </svg>
-                              <span className="flex-1 truncate font-medium">{btn.label}</span>
-                            </button>
-                          ))}
-
-                          {kaarten.slice(0, 2).map((kaart, i) => (
-                            <HulpKaart key={`h-${i}`} kaart={kaart} />
-                          ))}
-
-                          {artikelen.slice(0, 3).map((artikel, i) => (
-                            <ArtikelKaart key={`art-${i}`} artikel={artikel} />
-                          ))}
-
-                          {vraagKnoppen.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mt-0.5">
-                              {vraagKnoppen.map((btn, i) => (
-                                <button
-                                  key={`v-${i}`}
-                                  onClick={() => handleButtonClick(btn)}
-                                  disabled={isLoading}
-                                  className={cn(
-                                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
-                                    "bg-white/60 dark:bg-card/60 border border-primary/15 text-foreground",
-                                    "hover:bg-white dark:hover:bg-card hover:border-primary/30",
-                                    isLoading && "opacity-50 cursor-not-allowed"
-                                  )}
-                                >
-                                  <span>{btn.label}</span>
-                                  <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                  </svg>
-                                </button>
-                              ))}
-                            </div>
+                  {/* Kaarten als bijlagen onder de bubble */}
+                  {hasCards && (
+                    <div className="flex flex-col gap-1.5 max-w-[90%]">
+                      {actieKnoppen.map((btn, i) => (
+                        <button
+                          key={`a-${i}`}
+                          onClick={() => handleButtonClick(btn)}
+                          disabled={isLoading}
+                          className={cn(
+                            "flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs transition-all text-left",
+                            "bg-[var(--accent-green-bg)]/60 border border-[var(--accent-green)]/15 text-foreground hover:border-[var(--accent-green)]/30",
+                            isLoading && "opacity-50 cursor-not-allowed"
                           )}
-                        </div>
-                      )}
+                        >
+                          <svg className="w-3.5 h-3.5 text-[var(--accent-green)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                          </svg>
+                          <span className="flex-1 truncate font-medium">{btn.label}</span>
+                        </button>
+                      ))}
+                      {kaarten.slice(0, 2).map((kaart, i) => (
+                        <HulpKaart key={`h-${i}`} kaart={kaart} />
+                      ))}
+                      {artikelen.slice(0, 3).map((artikel, i) => (
+                        <ArtikelKaart key={`art-${i}`} artikel={artikel} />
+                      ))}
                     </div>
                   )}
                 </div>
@@ -321,6 +276,35 @@ export function GerHeroChat() {
 
           <div ref={messagesEndRef} />
         </div>
+
+        {/* Suggestie-chips boven input — van het laatste Ger-bericht */}
+        {(() => {
+          const lastAssistant = [...messages].reverse().find(m => m.role === "assistant")
+          if (!lastAssistant || isLoading) return null
+          const raw = getMessageText(lastAssistant)
+          if (!raw) return null
+          const { cleanText: t1 } = parseHulpkaarten(raw)
+          const { cleanText: t2 } = parseArtikelkaarten(t1)
+          const { buttons: btns } = parseButtons(t2)
+          const sugChips = btns.filter(b => b.type === "vraag").slice(0, 2)
+          if (sugChips.length === 0) return null
+          return (
+            <div className="px-3 pt-2 flex flex-wrap gap-1.5">
+              {sugChips.map((btn, i) => (
+                <button
+                  key={`s-${i}`}
+                  onClick={() => handleButtonClick(btn)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all bg-primary/5 border border-primary/15 text-foreground hover:bg-primary/10 hover:border-primary/30"
+                >
+                  <span>{btn.label}</span>
+                  <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              ))}
+            </div>
+          )
+        })()}
 
         {/* Input */}
         <div className="border-t border-border bg-card p-3">

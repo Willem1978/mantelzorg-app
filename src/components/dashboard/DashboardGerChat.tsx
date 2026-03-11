@@ -296,7 +296,7 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
           </div>
         )}
 
-        {/* Chat berichten — WhatsApp/iMessage flow */}
+        {/* Chat berichten */}
         {hasMessages && messages.map((message) => {
           const rawText = getMessageText(message)
           if (!rawText) return null
@@ -312,74 +312,63 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
           const { cleanText, buttons } = isAssistant
             ? parseButtons(textWithoutArticles)
             : { cleanText: textWithoutArticles, buttons: [] }
+          const actieKnoppen = isAssistant ? buttons.filter(b => b.type === "knop").slice(0, 1) : []
+          const hasCards = kaarten.length > 0 || artikelen.length > 0 || actieKnoppen.length > 0
 
-          const hasExtras = isAssistant && (kaarten.length > 0 || artikelen.length > 0 || buttons.length > 0)
+          if (isUser) {
+            return (
+              <div key={message.id} className={cn("flex items-end gap-2.5 flex-row-reverse")}>
+                <div className="max-w-[75%]">
+                  {cleanText && (
+                    <div className="rounded-2xl px-3.5 py-2.5 bg-primary text-primary-foreground rounded-br-sm">
+                      <div className="text-sm leading-relaxed whitespace-pre-wrap text-primary-foreground">
+                        {formatMessage(cleanText)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )
+          }
+
+          // Ger: bubble = alleen tekst, kaarten eronder
           return (
             <div key={message.id}>
-              {/* Bericht bubble */}
-              <div className={cn("flex items-end gap-2.5", isUser && "flex-row-reverse")}>
-                {/* Avatar — alleen voor assistant */}
-                {isAssistant && (
-                  <GerAvatar size="xs" className="!w-8 !h-8 flex-shrink-0 mb-0.5" />
-                )}
-
-                <div className={cn("max-w-[80%]", isUser && "max-w-[75%]")}>
-                  {isUser ? (
-                    cleanText && (
-                      <div className="rounded-2xl px-3.5 py-2.5 bg-primary text-primary-foreground rounded-br-sm">
-                        <div className="text-sm leading-relaxed whitespace-pre-wrap text-primary-foreground">
-                          {formatMessage(cleanText)}
-                        </div>
+              <div className="flex items-end gap-2.5">
+                <GerAvatar size="xs" className="!w-8 !h-8 flex-shrink-0 mb-0.5" />
+                <div className="max-w-[80%] flex flex-col gap-1.5">
+                  {cleanText && (
+                    <div className="bg-primary/10 border border-primary/15 rounded-2xl rounded-tl-sm px-3.5 py-2.5">
+                      <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
+                        {formatMessage(cleanText)}
                       </div>
-                    )
-                  ) : (
-                    /* Ger bubble: tekst + hulpkaarten + knoppen in één geheel */
-                    <div className="bg-primary/10 border border-primary/15 rounded-2xl rounded-tl-sm overflow-hidden">
-                      {cleanText && (
-                        <div className="px-3.5 py-2.5">
-                          <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
-                            {formatMessage(cleanText)}
-                          </div>
-                        </div>
-                      )}
-
-                      {hasExtras && (
-                        <div className={cn("px-3 pb-2.5 flex flex-col gap-1.5", cleanText && "pt-0")}>
-                          {/* Hulpkaarten — compact, in de bubble */}
-                          {kaarten.slice(0, 2).map((kaart, i) => (
-                            <HulpKaart key={`h-${i}`} kaart={kaart} />
-                          ))}
-
-                          {/* Artikelkaarten — max 3, compact inline */}
-                          {artikelen.slice(0, 3).map((artikel, i) => (
-                            <ArtikelKaart key={`art-${i}`} artikel={artikel} />
-                          ))}
-
-                          {/* Vraag/actie chips — horizontal in de bubble */}
-                          {buttons.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mt-0.5">
-                              {buttons.slice(0, 3).map((btn, i) => (
-                                <button
-                                  key={`b-${i}`}
-                                  onClick={() => handleButtonClick(btn)}
-                                  disabled={showTypingIndicator}
-                                  className={cn(
-                                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
-                                    "bg-white/60 dark:bg-card/60 border border-primary/15 text-foreground",
-                                    "hover:bg-white dark:hover:bg-card hover:border-primary/30",
-                                    showTypingIndicator && "opacity-50 cursor-not-allowed"
-                                  )}
-                                >
-                                  <span>{btn.label}</span>
-                                  <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                  </svg>
-                                </button>
-                              ))}
-                            </div>
+                    </div>
+                  )}
+                  {hasCards && (
+                    <div className="flex flex-col gap-1.5">
+                      {actieKnoppen.map((btn, i) => (
+                        <button
+                          key={`a-${i}`}
+                          onClick={() => handleButtonClick(btn)}
+                          disabled={showTypingIndicator}
+                          className={cn(
+                            "flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm transition-all text-left",
+                            "bg-[var(--accent-green-bg)]/60 border border-[var(--accent-green)]/15 text-foreground hover:border-[var(--accent-green)]/30",
+                            showTypingIndicator && "opacity-50 cursor-not-allowed"
                           )}
-                        </div>
-                      )}
+                        >
+                          <svg className="w-4 h-4 text-[var(--accent-green)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                          </svg>
+                          <span className="flex-1 truncate font-medium">{btn.label}</span>
+                        </button>
+                      ))}
+                      {kaarten.slice(0, 2).map((kaart, i) => (
+                        <HulpKaart key={`h-${i}`} kaart={kaart} />
+                      ))}
+                      {artikelen.slice(0, 3).map((artikel, i) => (
+                        <ArtikelKaart key={`art-${i}`} artikel={artikel} />
+                      ))}
                     </div>
                   )}
                 </div>
@@ -433,6 +422,34 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
 
       {/* Tekst-invoer — vast onderaan de chat-container */}
       <div className="border-t border-border/60 pt-3 mt-auto">
+        {/* Suggestie-chips boven input — van het laatste Ger-bericht */}
+        {hasMessages && !showTypingIndicator && (() => {
+          const lastA = [...messages].reverse().find(m => m.role === "assistant")
+          if (!lastA) return null
+          const raw = getMessageText(lastA)
+          if (!raw) return null
+          const { cleanText: t1 } = parseHulpkaarten(raw)
+          const { cleanText: t2 } = parseArtikelkaarten(t1)
+          const { buttons: btns } = parseButtons(t2)
+          const vraagChips = btns.filter(b => b.type === "vraag").slice(0, 2)
+          if (vraagChips.length === 0) return null
+          return (
+            <div className="pb-2 flex flex-wrap gap-1.5">
+              {vraagChips.map((btn, i) => (
+                <button
+                  key={`s-${i}`}
+                  onClick={() => handleButtonClick(btn)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all bg-primary/5 border border-primary/15 text-foreground hover:bg-primary/10 hover:border-primary/30"
+                >
+                  <span>{btn.label}</span>
+                  <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              ))}
+            </div>
+          )
+        })()}
         <form onSubmit={handleSubmit} className="flex items-center gap-2">
           <input
             ref={inputRef}
