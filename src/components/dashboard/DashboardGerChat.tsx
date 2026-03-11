@@ -107,44 +107,36 @@ function buildProactiveActions(ctx: GerChatContext): { label: string; emoji: str
   return actions
 }
 
-function getGreetingText(): string {
-  const hour = new Date().getHours()
-  if (hour < 12) return "Goedemorgen"
-  if (hour < 18) return "Goedemiddag"
-  return "Goedenavond"
-}
-
 function buildGreetingMessage(ctx: GerChatContext): string {
-  const greeting = getGreetingText()
   const naam = ctx.userName || "daar"
 
   if (ctx.hasTest) {
     if (ctx.trend === "worse" || ctx.wellbeingTrend === "down") {
-      return `${greeting} ${naam}, ik zie dat het de laatste tijd zwaarder is geworden. Laten we kijken wat ik voor je kan doen.`
+      return `Hey ${naam}, fijn dat je er bent. Ik ben er voor je. Wat houdt je bezig?`
     }
     if (ctx.trend === "improved" || ctx.wellbeingTrend === "up") {
-      return `${greeting} ${naam}, fijn je weer te zien! Het gaat de goede kant op. Waar kan ik je mee helpen?`
+      return `Hey ${naam}, goed je te zien! Het gaat de goede kant op. Wat kan ik voor je doen?`
     }
     if (ctx.overdueTasks && ctx.overdueTasks > 0) {
-      return `${greeting} ${naam}, je hebt nog een paar dingen openstaan. Zullen we daar even naar kijken?`
+      return `Hey ${naam}, fijn dat je er weer bent! Er staan nog een paar dingen open. Waar wil je mee beginnen?`
     }
     if (ctx.needsNewTest && ctx.daysSinceTest && ctx.daysSinceTest > 30) {
-      return `${greeting} ${naam}, je laatste test is alweer een tijdje geleden. Hoe gaat het nu met je?`
+      return `Hey ${naam}, leuk je weer te zien! Het is even geleden. Hoe gaat het met je?`
     }
     if (ctx.niveau === "HOOG") {
-      return `${greeting} ${naam}, goed dat je er bent. Ik weet dat het zwaar is. Wat kan ik voor je doen?`
+      return `Hey ${naam}, goed dat je er bent. Ik ben er voor je. Vertel, wat speelt er?`
     }
     if (ctx.zwareTaakNaam) {
-      return `${greeting} ${naam}, fijn dat je er bent! Vorige keer hadden we het over ${ctx.zwareTaakNaam}. Hoe gaat het daarmee?`
+      return `Hey ${naam}! Vorige keer hadden we het over ${ctx.zwareTaakNaam}. Hoe gaat het daarmee?`
     }
-    return `${greeting} ${naam}, leuk dat je er weer bent! Waar kan ik je mee helpen?`
+    return `Hey ${naam}, fijn dat je er weer bent! Waar kan ik je mee helpen?`
   }
 
   if (ctx.hasProfile) {
-    return `${greeting} ${naam}, fijn dat je terug bent! Met een balanstest kan ik je veel beter helpen.`
+    return `Hey ${naam}, welkom terug! Wil je de balanstest doen? Dan kan ik je veel gerichter helpen.`
   }
 
-  return `${greeting}! Welkom bij MantelBuddy. Ik ben Ger, je persoonlijke coach. Wat wil je weten?`
+  return `Hey ${naam}! Welkom bij MantelBuddy. Ik ben Ger, je persoonlijke coach. Vertel, wat wil je weten?`
 }
 
 export function DashboardGerChat({ context }: { context?: GerChatContext }) {
@@ -224,12 +216,12 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
 
   // Chip kleuren voor suggesties
   const chipColorMap: Record<string, string> = {
-    amber: "bg-amber-50 border-amber-200/80 text-amber-900 hover:bg-amber-100 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-200 dark:hover:bg-amber-950/50",
-    rose: "bg-rose-50 border-rose-200/80 text-rose-900 hover:bg-rose-100 dark:bg-rose-950/30 dark:border-rose-800 dark:text-rose-200 dark:hover:bg-rose-950/50",
-    sky: "bg-sky-50 border-sky-200/80 text-sky-900 hover:bg-sky-100 dark:bg-sky-950/30 dark:border-sky-800 dark:text-sky-200 dark:hover:bg-sky-950/50",
-    purple: "bg-purple-50 border-purple-200/80 text-purple-900 hover:bg-purple-100 dark:bg-purple-950/30 dark:border-purple-800 dark:text-purple-200 dark:hover:bg-purple-950/50",
-    blue: "bg-blue-50 border-blue-200/80 text-blue-900 hover:bg-blue-100 dark:bg-blue-950/30 dark:border-blue-800 dark:text-blue-200 dark:hover:bg-blue-950/50",
-    green: "bg-emerald-50 border-emerald-200/80 text-emerald-900 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-200 dark:hover:bg-emerald-950/50",
+    amber: "bg-amber-100 border-amber-300 text-amber-900 hover:bg-amber-200 dark:bg-amber-900/40 dark:border-amber-700 dark:text-amber-200 dark:hover:bg-amber-900/60",
+    rose: "bg-rose-100 border-rose-300 text-rose-900 hover:bg-rose-200 dark:bg-rose-900/40 dark:border-rose-700 dark:text-rose-200 dark:hover:bg-rose-900/60",
+    sky: "bg-sky-100 border-sky-300 text-sky-900 hover:bg-sky-200 dark:bg-sky-900/40 dark:border-sky-700 dark:text-sky-200 dark:hover:bg-sky-900/60",
+    purple: "bg-purple-100 border-purple-300 text-purple-900 hover:bg-purple-200 dark:bg-purple-900/40 dark:border-purple-700 dark:text-purple-200 dark:hover:bg-purple-900/60",
+    blue: "bg-blue-100 border-blue-300 text-blue-900 hover:bg-blue-200 dark:bg-blue-900/40 dark:border-blue-700 dark:text-blue-200 dark:hover:bg-blue-900/60",
+    green: "bg-emerald-100 border-emerald-300 text-emerald-900 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-900/60",
   }
 
   return (
@@ -244,8 +236,8 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
         <div className="flex items-start gap-2.5">
           <GerAvatar size="sm" className="!w-9 !h-9 mt-0.5 flex-shrink-0" animate />
           <div className="max-w-[85%]">
-            <div className="bg-[var(--secondary)] rounded-2xl rounded-tl-sm px-3.5 py-2.5">
-              <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
+            <div className="bg-primary/10 border border-primary/15 rounded-2xl rounded-tl-sm px-3.5 py-2.5">
+              <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground font-medium">
                 {formatMessage(greetingMessage)}
               </div>
             </div>
@@ -254,27 +246,52 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
 
         {/* Suggestie-chips — direct onder begroeting, links uitgelijnd */}
         {!hasMessages && proactiveActions.length > 0 && (
-          <div className="pl-[2.875rem] flex flex-wrap gap-2">
-            {proactiveActions.map((action, i) => (
-              <button
-                key={i}
-                onClick={() => {
-                  if (action.action.startsWith("/")) {
-                    router.push(action.action)
-                  } else {
-                    handleSend(action.label)
-                  }
-                }}
-                className={cn(
-                  "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border text-sm font-medium transition-all",
-                  "shadow-sm hover:shadow active:scale-[0.97]",
-                  chipColorMap[action.color] || chipColorMap.amber
-                )}
-              >
-                <span className="text-base leading-none">{action.emoji}</span>
-                <span>{action.label}</span>
-              </button>
-            ))}
+          <div className="pl-[2.875rem] flex flex-col gap-2">
+            {/* Primaire actie — groter en krachtiger */}
+            <button
+              onClick={() => {
+                const action = proactiveActions[0]
+                if (action.action.startsWith("/")) {
+                  router.push(action.action)
+                } else {
+                  handleSend(action.label)
+                }
+              }}
+              className={cn(
+                "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm font-bold transition-all w-fit",
+                "shadow-sm hover:shadow-md active:scale-[0.97]",
+                chipColorMap[proactiveActions[0].color] || chipColorMap.amber
+              )}
+            >
+              <span className="text-lg leading-none">{proactiveActions[0].emoji}</span>
+              <span>{proactiveActions[0].label}</span>
+              <svg className="w-4 h-4 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+            {/* Secundaire acties — compacter */}
+            <div className="flex flex-wrap gap-2">
+              {proactiveActions.slice(1).map((action, i) => (
+                <button
+                  key={i}
+                  onClick={() => {
+                    if (action.action.startsWith("/")) {
+                      router.push(action.action)
+                    } else {
+                      handleSend(action.label)
+                    }
+                  }}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border text-sm font-medium transition-all",
+                    "shadow-sm hover:shadow active:scale-[0.97]",
+                    chipColorMap[action.color] || chipColorMap.amber
+                  )}
+                >
+                  <span className="text-base leading-none">{action.emoji}</span>
+                  <span>{action.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -308,7 +325,7 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
                         "rounded-2xl px-3.5 py-2.5",
                         isUser
                           ? "bg-primary text-primary-foreground rounded-br-sm"
-                          : "bg-[var(--secondary)] rounded-tl-sm"
+                          : "bg-primary/10 border border-primary/15 rounded-tl-sm"
                       )}
                     >
                       <div className={cn(
@@ -341,7 +358,7 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
                       disabled={showTypingIndicator}
                       className={cn(
                         "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border text-sm font-medium transition-all",
-                        "border-border bg-card hover:bg-primary/5 hover:border-primary/30 shadow-sm hover:shadow",
+                        "border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 shadow-sm hover:shadow text-foreground",
                         showTypingIndicator && "opacity-50 cursor-not-allowed"
                       )}
                     >
@@ -361,11 +378,14 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
         {showTypingIndicator && (
           <div className="flex items-end gap-2.5">
             <GerAvatar size="xs" className="!w-8 !h-8 flex-shrink-0 mb-0.5" />
-            <div className="bg-[var(--secondary)] rounded-2xl rounded-tl-sm px-4 py-3">
-              <div className="flex gap-1">
-                <div className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:0ms]" />
-                <div className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:150ms]" />
-                <div className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:300ms]" />
+            <div className="bg-primary/10 border border-primary/15 rounded-2xl rounded-tl-sm px-4 py-3">
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1">
+                  <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce [animation-delay:0ms]" />
+                  <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce [animation-delay:150ms]" />
+                  <div className="w-2 h-2 bg-primary/40 rounded-full animate-bounce [animation-delay:300ms]" />
+                </div>
+                <span className="text-xs text-muted-foreground">Ger typt...</span>
               </div>
             </div>
           </div>
