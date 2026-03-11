@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
+import { DeelgebiedIcon } from "@/components/ui/DeelgebiedIcon"
 
 interface DeelgebiedScore {
   naam: string
@@ -222,8 +223,9 @@ export default function PersoonlijkRapportPage() {
             {deelgebieden.map((d) => (
               <div key={d.naam}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-medium">
-                    {d.emoji} {d.naam}
+                  <span className="font-medium flex items-center gap-1.5">
+                    <DeelgebiedIcon naam={d.naam} size="sm" />
+                    {d.naam}
                   </span>
                   <NiveauBadge niveau={d.niveau} />
                 </div>

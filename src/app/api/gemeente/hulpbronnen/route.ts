@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getGemeenteSession, logGemeenteAudit } from "@/lib/gemeente-auth"
+import { gemeenteHulpbronInformatieSchema, gemeenteHulpbronHulpSchema, gemeenteHulpbronUpdateSchema, validateBody } from "@/lib/validations"
 
 export async function GET(request: NextRequest) {
   const { error, gemeenteNaam, userId } = await getGemeenteSession()
@@ -97,14 +98,11 @@ export async function POST(request: NextRequest) {
     const { sectie } = body
 
     if (sectie === "informatie") {
-      const { titel, beschrijving, inhoud, url, publicatieDatum } = body
-
-      if (!titel || typeof titel !== "string" || titel.trim().length === 0) {
-        return NextResponse.json({ error: "Titel is verplicht" }, { status: 400 })
+      const validation = validateBody(body, gemeenteHulpbronInformatieSchema)
+      if (!validation.success) {
+        return NextResponse.json({ error: validation.error }, { status: 400 })
       }
-      if (!beschrijving || typeof beschrijving !== "string" || beschrijving.trim().length === 0) {
-        return NextResponse.json({ error: "Beschrijving is verplicht" }, { status: 400 })
-      }
+      const { titel, beschrijving, inhoud, url, publicatieDatum } = validation.data
 
       const artikel = await prisma.artikel.create({
         data: {
@@ -127,11 +125,11 @@ export async function POST(request: NextRequest) {
     }
 
     // sectie === "hulp": Zorgorganisatie toevoegen
-    const { naam, beschrijving: hulpBeschrijving, doelgroep, onderdeelTest, soortHulp, telefoon, email, website } = body
-
-    if (!naam || typeof naam !== "string" || naam.trim().length === 0) {
-      return NextResponse.json({ error: "Naam is verplicht" }, { status: 400 })
+    const hulpValidation = validateBody(body, gemeenteHulpbronHulpSchema)
+    if (!hulpValidation.success) {
+      return NextResponse.json({ error: hulpValidation.error }, { status: 400 })
     }
+    const { naam, beschrijving: hulpBeschrijving, doelgroep, onderdeelTest, soortHulp, telefoon, email, website } = hulpValidation.data
 
     const hulpbron = await prisma.zorgorganisatie.create({
       data: {
@@ -167,11 +165,11 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { id, naam, beschrijving, doelgroep, onderdeelTest, soortHulp, telefoon, email, website, openingstijden, kosten, isActief } = body
-
-    if (!id) {
-      return NextResponse.json({ error: "ID is verplicht" }, { status: 400 })
+    const validation = validateBody(body, gemeenteHulpbronUpdateSchema)
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 })
     }
+    const { id, naam, beschrijving, doelgroep, onderdeelTest, soortHulp, telefoon, email, website, openingstijden, kosten, isActief } = validation.data
 
     // Controleer of het record bij deze gemeente hoort
     const bestaand = await prisma.zorgorganisatie.findUnique({ where: { id } })

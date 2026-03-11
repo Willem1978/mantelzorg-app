@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getGemeenteSession, logGemeenteAudit } from "@/lib/gemeente-auth"
+import { gemeenteEvenementSchema, validateBody } from "@/lib/validations"
 
 export async function GET() {
   const { error, gemeenteNaam, userId } = await getGemeenteSession()
@@ -50,29 +51,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { titel, beschrijving, publicatieDatum, inhoud, url, emoji } = body
-
-    // Validatie van verplichte velden
-    if (!titel || typeof titel !== "string" || titel.trim().length === 0) {
-      return NextResponse.json(
-        { error: "Titel is verplicht" },
-        { status: 400 }
-      )
+    const validation = validateBody(body, gemeenteEvenementSchema)
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 })
     }
-
-    if (!beschrijving || typeof beschrijving !== "string" || beschrijving.trim().length === 0) {
-      return NextResponse.json(
-        { error: "Beschrijving is verplicht" },
-        { status: 400 }
-      )
-    }
-
-    if (!publicatieDatum) {
-      return NextResponse.json(
-        { error: "Datum is verplicht" },
-        { status: 400 }
-      )
-    }
+    const { titel, beschrijving, publicatieDatum, inhoud, url, emoji } = validation.data
 
     const evenement = await prisma.artikel.create({
       data: {
