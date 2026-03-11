@@ -7,6 +7,8 @@ import Link from "next/link"
 import { GerAvatar } from "@/components/GerAvatar"
 import { DashboardGerChat, type GerChatContext } from "@/components/dashboard/DashboardGerChat"
 import { BalansThermometer } from "@/components/dashboard/BalansThermometer"
+import { SOSKnop } from "@/components/SOSKnop"
+import { ActiepuntenKaart } from "@/components/dashboard/ActiepuntenKaart"
 import { dashboardContent } from "@/config/content"
 
 const c = dashboardContent
@@ -340,7 +342,15 @@ function DashboardContentView() {
         )}
       </section>
 
-      {/* 4. WHATSAPP HULP */}
+      {/* 4. ACTIEPUNTEN */}
+      <ActiepuntenKaart />
+
+      {/* 5. SOS NOODKNOP */}
+      <section>
+        <SOSKnop />
+      </section>
+
+      {/* 5. WHATSAPP HULP */}
       <section className="border-t border-border/50 pt-4">
         <div className="flex items-center gap-2 mb-3">
           <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 24 24">

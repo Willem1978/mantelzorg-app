@@ -43,6 +43,8 @@ export async function PUT(
       kosten: body.kosten ?? null,
       doelgroep: body.doelgroep ?? null,
       aanmeldprocedure: body.aanmeldprocedure ?? null,
+      eersteStap: body.eersteStap ?? null,
+      verwachtingTekst: body.verwachtingTekst ?? null,
       verschijntIn: body.verschijntIn !== undefined ? body.verschijntIn : undefined,
       routeLabel: body.routeLabel ?? null,
       bronLabel: body.bronLabel ?? null,

@@ -31,6 +31,8 @@ interface Hulpbron {
   kosten: string | null
   doelgroep: string | null
   aanmeldprocedure: string | null
+  eersteStap: string | null
+  verwachtingTekst: string | null
   dienst: string | null
   bronLabel: string | null
   zorgverzekeraar: boolean
@@ -146,6 +148,8 @@ const EMPTY_FORM: Partial<Hulpbron> = {
   kosten: "",
   doelgroep: "",
   aanmeldprocedure: "",
+  eersteStap: "",
+  verwachtingTekst: "",
   dienst: "",
   bronLabel: "",
   zorgverzekeraar: false,
@@ -480,6 +484,8 @@ export default function BeheerHulpbronnenPage() {
       kosten: editItem.kosten || null,
       doelgroep: editItem.doelgroep || null,
       aanmeldprocedure: editItem.aanmeldprocedure || null,
+      eersteStap: editItem.eersteStap || null,
+      verwachtingTekst: editItem.verwachtingTekst || null,
       bronLabel: editItem.bronLabel || null,
       zorgverzekeraar: editItem.zorgverzekeraar ?? false,
     }
@@ -2692,6 +2698,38 @@ export default function BeheerHulpbronnenPage() {
                     setEditItem({ ...editItem, kosten: e.target.value })
                   }
                   placeholder="bijv. Gratis, Eigen bijdrage, Via zorgverzekeraar"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+                />
+              </div>
+
+              {/* Eerste stap */}
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                  Eerste stap (voor mantelzorger)
+                </label>
+                <input
+                  type="text"
+                  value={editItem.eersteStap || ""}
+                  onChange={(e) =>
+                    setEditItem({ ...editItem, eersteStap: e.target.value })
+                  }
+                  placeholder="bijv. Bel en vraag naar een intake-gesprek"
+                  className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
+                />
+              </div>
+
+              {/* Verwachting tekst */}
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                  Wat kan je verwachten?
+                </label>
+                <input
+                  type="text"
+                  value={editItem.verwachtingTekst || ""}
+                  onChange={(e) =>
+                    setEditItem({ ...editItem, verwachtingTekst: e.target.value })
+                  }
+                  placeholder="bijv. Ze komen bij je thuis kijken wat er nodig is"
                   className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
                 />
               </div>

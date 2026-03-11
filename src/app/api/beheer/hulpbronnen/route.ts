@@ -188,6 +188,8 @@ export async function POST(request: NextRequest) {
     kosten: body.kosten || null,
     doelgroep: body.doelgroep || null, // MANTELZORGER or ZORGVRAGER
     aanmeldprocedure: body.aanmeldprocedure || null,
+    eersteStap: body.eersteStap || null,
+    verwachtingTekst: body.verwachtingTekst || null,
     verschijntIn: body.verschijntIn || [],
     routeLabel: body.routeLabel || null,
     bronLabel: body.bronLabel || null,
