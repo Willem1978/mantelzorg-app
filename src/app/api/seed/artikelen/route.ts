@@ -59,8 +59,8 @@ export async function POST(request: Request) {
       for (const q of cat.questions) {
         await prisma.intakeQuestion.upsert({
           where: { id: q.id },
-          create: { id: q.id, categoryId: category.id, question: q.question, type: (q as any).type || "SCALE", order: q.order, isRequired: true },
-          update: { question: q.question, type: (q as any).type || "SCALE", order: q.order },
+          create: { id: q.id, categoryId: category.id, question: q.question, type: "type" in q ? q.type : "SCALE", order: q.order, isRequired: true },
+          update: { question: q.question, type: "type" in q ? q.type : "SCALE", order: q.order },
         })
       }
     }

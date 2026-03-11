@@ -215,7 +215,7 @@ export async function POST(request: Request) {
       ...[ { waarde: "eenmalig", label: "Eenmalige taken", beschrijving: "Af en toe een taak oppakken wanneer het jou uitkomt", volgorde: 1 }, { waarde: "vast", label: "Vast maatje worden", beschrijving: "Regelmatig taken voor de zorgvrager oppakken en uitvoeren", volgorde: 2 }, { waarde: "beide", label: "Beide", beschrijving: "Flexibel inzetbaar - zowel eenmalig als vast", volgorde: 3 } ].map(o => ({ groep: "BUDDY_BESCHIKBAARHEID" as const, ...o })),
     ]
     for (const o of allOpties) {
-      await prisma.formulierOptie.upsert({ where: { groep_waarde: { groep: o.groep, waarde: o.waarde } }, create: o, update: { label: o.label, emoji: (o as any).emoji, beschrijving: (o as any).beschrijving, volgorde: o.volgorde } })
+      await prisma.formulierOptie.upsert({ where: { groep_waarde: { groep: o.groep, waarde: o.waarde } }, create: o, update: { label: o.label, emoji: "emoji" in o ? o.emoji : undefined, beschrijving: "beschrijving" in o ? o.beschrijving : undefined, volgorde: o.volgorde } })
     }
     results.push(`${allOpties.length} formulier opties`)
 
@@ -244,7 +244,7 @@ export async function POST(request: Request) {
       { type: "PAGINA_INTRO" as const, sleutel: "gemeente-nieuws", titel: "Nieuws uit jouw gemeente", inhoud: "Actuele berichten en evenementen voor mantelzorgers bij jou in de buurt.", emoji: "\u{1F3D8}\uFE0F", volgorde: 5 },
     ]
     for (const c of appContent) {
-      await prisma.appContent.upsert({ where: { type_sleutel: { type: c.type, sleutel: c.sleutel } }, create: c, update: { titel: c.titel, inhoud: c.inhoud, subtekst: (c as any).subtekst, emoji: c.emoji, volgorde: c.volgorde, metadata: (c as any).metadata } })
+      await prisma.appContent.upsert({ where: { type_sleutel: { type: c.type, sleutel: c.sleutel } }, create: c, update: { titel: c.titel, inhoud: c.inhoud, subtekst: "subtekst" in c ? c.subtekst : undefined, emoji: c.emoji, volgorde: c.volgorde, metadata: "metadata" in c ? c.metadata : undefined } })
     }
     results.push(`${appContent.length} app content items`)
 

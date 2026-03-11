@@ -265,6 +265,85 @@ export const inviteSchema = z.object({
   password: passwordSchema,
 })
 
+// --- Beheer gebruiker update schema (admin) ---
+
+export const beheerGebruikerUpdateSchema = z.object({
+  role: z.enum(["USER", "ADMIN", "GEMEENTE_ADMIN"]).optional(),
+  name: z.string().max(100).optional(),
+  isActive: z.boolean().optional(),
+  adminNotities: z.string().max(5000).optional().nullable(),
+  resetPassword: passwordSchema.optional(),
+})
+
+// --- Gemeente content schema ---
+
+export const gemeenteContentSchema = z.object({
+  titel: z.string().min(1, "Titel is verplicht").max(200),
+  beschrijving: z.string().min(1, "Beschrijving is verplicht").max(2000),
+  inhoud: z.string().max(10000).optional().nullable(),
+  url: z.string().url().optional().or(z.literal("")).nullable(),
+  bron: z.string().max(200).optional().nullable(),
+  emoji: z.string().max(10).optional().nullable(),
+  publicatieDatum: z.string().optional().nullable(),
+})
+
+// --- Gemeente evenement schema ---
+
+export const gemeenteEvenementSchema = z.object({
+  titel: z.string().min(1, "Titel is verplicht").max(200),
+  beschrijving: z.string().min(1, "Beschrijving is verplicht").max(2000),
+  publicatieDatum: z.string().min(1, "Datum is verplicht"),
+  inhoud: z.string().max(10000).optional().nullable(),
+  url: z.string().url().optional().or(z.literal("")).nullable(),
+  emoji: z.string().max(10).optional().nullable(),
+})
+
+// --- Gemeente hulpbron schema ---
+
+export const gemeenteHulpbronInformatieSchema = z.object({
+  sectie: z.literal("informatie"),
+  titel: z.string().min(1, "Titel is verplicht").max(200),
+  beschrijving: z.string().min(1, "Beschrijving is verplicht").max(2000),
+  inhoud: z.string().max(10000).optional().nullable(),
+  url: z.string().url().optional().or(z.literal("")).nullable(),
+  publicatieDatum: z.string().optional().nullable(),
+})
+
+export const gemeenteHulpbronHulpSchema = z.object({
+  sectie: z.literal("hulp").optional(),
+  naam: z.string().min(1, "Naam is verplicht").max(200),
+  beschrijving: z.string().max(2000).optional().nullable(),
+  doelgroep: z.string().max(100).optional().nullable(),
+  onderdeelTest: z.string().max(100).optional().nullable(),
+  soortHulp: z.string().max(100).optional().nullable(),
+  telefoon: z.string().max(20).optional().nullable(),
+  email: z.string().email().optional().or(z.literal("")).nullable(),
+  website: z.string().url().optional().or(z.literal("")).nullable(),
+})
+
+export const gemeenteHulpbronUpdateSchema = z.object({
+  id: z.string().min(1, "ID is verplicht"),
+  naam: z.string().min(1).max(200).optional(),
+  beschrijving: z.string().max(2000).optional().nullable(),
+  doelgroep: z.string().max(100).optional().nullable(),
+  onderdeelTest: z.string().max(100).optional().nullable(),
+  soortHulp: z.string().max(100).optional().nullable(),
+  telefoon: z.string().max(20).optional().nullable(),
+  email: z.string().email().optional().or(z.literal("")).nullable(),
+  website: z.string().url().optional().or(z.literal("")).nullable(),
+  openingstijden: z.string().max(500).optional().nullable(),
+  kosten: z.string().max(500).optional().nullable(),
+  isActief: z.boolean().optional(),
+})
+
+// --- Gemeente gebruiker uitnodiging schema ---
+
+export const gemeenteGebruikerUitnodigingSchema = z.object({
+  email: z.string().min(1, "E-mailadres is verplicht").email("Vul een geldig e-mailadres in"),
+  name: z.string().max(100).optional(),
+  gemeenteRollen: z.array(z.enum(["COMMUNICATIE", "HULPBRONNEN", "BELEID"])).min(1, "Selecteer minimaal één rol"),
+})
+
 // --- Helper om Zod errors naar een leesbare string te converteren ---
 
 export function formatZodErrors(error: z.ZodError): string {

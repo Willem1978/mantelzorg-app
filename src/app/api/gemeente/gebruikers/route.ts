@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import crypto from "crypto"
 import { getGemeenteSession } from "@/lib/gemeente-auth"
 import { prisma } from "@/lib/prisma"
+import { gemeenteGebruikerUitnodigingSchema, validateBody } from "@/lib/validations"
 
 export async function GET(request: NextRequest) {
   const { error, gemeenteNaam } = await getGemeenteSession()
@@ -11,19 +12,19 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const zoek = searchParams.get("zoek") || ""
 
-    const where: any = {
-      role: "GEMEENTE_ADMIN",
-      gemeenteNaam,
-    }
-
-    if (zoek) {
-      where.OR = [
-        { email: { contains: zoek, mode: "insensitive" }, role: "GEMEENTE_ADMIN", gemeenteNaam },
-        { name: { contains: zoek, mode: "insensitive" }, role: "GEMEENTE_ADMIN", gemeenteNaam },
-      ]
-      delete where.email
-      delete where.name
-    }
+    const where = zoek
+      ? {
+          role: "GEMEENTE_ADMIN" as const,
+          gemeenteNaam,
+          OR: [
+            { email: { contains: zoek, mode: "insensitive" as const } },
+            { name: { contains: zoek, mode: "insensitive" as const } },
+          ],
+        }
+      : {
+          role: "GEMEENTE_ADMIN" as const,
+          gemeenteNaam,
+        }
 
     const gebruikers = await prisma.user.findMany({
       where,
@@ -69,18 +70,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { email, name, gemeenteRollen } = body
-
-    if (!email) {
-      return NextResponse.json({ error: "E-mailadres is verplicht" }, { status: 400 })
+    const validation = validateBody(body, gemeenteGebruikerUitnodigingSchema)
+    if (!validation.success) {
+      return NextResponse.json({ error: validation.error }, { status: 400 })
     }
-
-    const validRollen = ["COMMUNICATIE", "HULPBRONNEN", "BELEID"]
-    const rollen = (gemeenteRollen || []).filter((r: string) => validRollen.includes(r))
-
-    if (rollen.length === 0) {
-      return NextResponse.json({ error: "Selecteer minimaal één rol" }, { status: 400 })
-    }
+    const { email, name, gemeenteRollen: rollen } = validation.data
 
     // Check of email al bestaat als gebruiker
     const existing = await prisma.user.findUnique({ where: { email } })

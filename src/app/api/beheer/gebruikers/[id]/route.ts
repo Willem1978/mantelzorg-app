@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { logAudit } from "@/lib/audit"
+import { beheerGebruikerUpdateSchema, validateBody } from "@/lib/validations"
 import bcrypt from "bcryptjs"
 
 export async function GET(
@@ -155,32 +156,38 @@ export async function PATCH(
   const { id } = await params
   const body = await request.json()
 
+  const validation = validateBody(body, beheerGebruikerUpdateSchema)
+  if (!validation.success) {
+    return NextResponse.json({ error: validation.error }, { status: 400 })
+  }
+  const data = validation.data
+
   try {
     const updateData: Record<string, unknown> = {}
     const auditDetails: Record<string, unknown> = {}
 
-    if (body.role) {
-      updateData.role = body.role
-      auditDetails.role = body.role
+    if (data.role) {
+      updateData.role = data.role
+      auditDetails.role = data.role
     }
 
-    if (body.name !== undefined) {
-      updateData.name = body.name
-      auditDetails.name = body.name
+    if (data.name !== undefined) {
+      updateData.name = data.name
+      auditDetails.name = data.name
     }
 
-    if (body.isActive !== undefined) {
-      updateData.isActive = body.isActive
-      auditDetails.isActive = body.isActive
+    if (data.isActive !== undefined) {
+      updateData.isActive = data.isActive
+      auditDetails.isActive = data.isActive
     }
 
-    if (body.adminNotities !== undefined) {
-      updateData.adminNotities = body.adminNotities || null
+    if (data.adminNotities !== undefined) {
+      updateData.adminNotities = data.adminNotities || null
       auditDetails.adminNotities = "bijgewerkt"
     }
 
-    if (body.resetPassword) {
-      const hashedPassword = await bcrypt.hash(body.resetPassword, 12)
+    if (data.resetPassword) {
+      const hashedPassword = await bcrypt.hash(data.resetPassword, 12)
       updateData.password = hashedPassword
       updateData.sessionVersion = { increment: 1 }
       auditDetails.wachtwoordReset = true
