@@ -1,8 +1,9 @@
 # MantelBuddy — Masterplan 2026
 
 **Datum:** 11 maart 2026
-**Versie:** 3.0
+**Versie:** 3.1
 **Baseline:** v2.5.0 + MantelCoach + dashboard redesign + AI chatbot verbeteringen maart 2026 + Iteratie 1-2 afgerond + Iteratie 3 grotendeels afgerond
+**Nieuw in v3.1:** AI Hulpbronnen Zoeker, AI Hulpbronnen Validator, Profiel Wizard
 **Dit plan vervangt alle eerdere planbestanden.**
 
 ---
@@ -555,6 +556,97 @@ enum WeekKaartType {
 
 ---
 
+### 3.8 Profiel Wizard (Stapsgewijs Profiel Invullen)
+**Prioriteit: HOOG — NIEUW**
+
+De huidige profielpagina (`/profiel`) is één grote pagina met alles door elkaar:
+mijn gegevens, naaste, aandoening, interesses, situatietags, WhatsApp, wachtwoord, privacy, account verwijderen.
+Dit is onoverzichtelijk voor de doelgroep (vaak vermoeide, oudere mantelzorgers).
+
+**Probleem:**
+- `JouwSituatieBlok` toont aandoening + situatietags + 7 interesse-categorieën als platte lijst
+- Geen context of uitleg bij keuzes
+- Gebruiker weet niet waarom deze informatie gevraagd wordt
+- Geen visuele scheiding tussen "wie ben je" en "wat wil je"
+
+**Oplossing: Profiel Wizard met duidelijke stappen**
+
+De profielpagina wordt omgebouwd naar een **stapsgewijze wizard** (vergelijkbaar met de
+gemeente-wizard die al bestaat in `/beheer/gemeenten/nieuw`).
+
+**6 Stappen:**
+
+| Stap | Titel | Inhoud | Emoji |
+|------|-------|--------|-------|
+| 1 | Over jou | Naam, email, adres (PDOK) | 👤 |
+| 2 | Jouw naaste | Naam naaste, relatie, adres naaste | 💚 |
+| 3 | De situatie | Aandoening van de naaste (dropdown), situatietags (toggle buttons) | 🏥 |
+| 4 | Jouw interesses | 7 interesse-categorieën met uitleg per categorie | ⭐ |
+| 5 | Communicatie | WhatsApp koppeling, telefoonnummer | 📱 |
+| 6 | Overzicht | Samenvatting van alles + "Opslaan" | ✅ |
+
+**Per stap:**
+- Duidelijke titel + korte uitleg (B1-niveau) WAAROM dit gevraagd wordt
+- Max 3-4 velden per stap (niet overweldigend)
+- Voortgangsbalk bovenaan ("Stap 2 van 6")
+- "Vorige" en "Volgende" knoppen
+- Tussentijds opslaan (elke stap slaat op naar API)
+- Terugkomen op later moment (voortgang bewaard)
+
+**UX-verbetering per stap:**
+
+**Stap 3 — De situatie:**
+Huidige `JouwSituatieBlok` wordt opgesplitst. Aandoening keuze met CONTEXT:
+```
+Welke aandoening of beperking heeft [naam naaste]?
+Dit helpt ons om artikelen en hulp te tonen die bij jouw situatie passen.
+
+[Dementie] [Kanker] [CVA/Beroerte] [Parkinson] [...]
+
+Herken je jezelf hierin?
+[Werkend] [Jong] [Op afstand] [...]
+```
+
+**Stap 4 — Jouw interesses:**
+Elke categorie krijgt een kaart met uitleg:
+```
+┌──────────────────────────────────┐
+│ 📋 Praktische tips               │
+│ Slimme oplossingen voor het      │
+│ dagelijks leven als mantelzorger │
+│ [Aan ✅]                         │
+└──────────────────────────────────┘
+┌──────────────────────────────────┐
+│ 🧘 Zelfzorg & balans             │
+│ Tips om goed voor jezelf te      │
+│ blijven zorgen                   │
+│ [Uit]                            │
+└──────────────────────────────────┘
+```
+
+**Technisch:**
+- Wijzig: `src/app/(dashboard)/profiel/page.tsx` — Ombouwen naar wizard met stappen-state
+- Nieuw: `src/components/profiel/ProfielWizard.tsx` — Wizard container component
+- Nieuw: `src/components/profiel/StapOverJou.tsx` — Stap 1
+- Nieuw: `src/components/profiel/StapNaaste.tsx` — Stap 2
+- Nieuw: `src/components/profiel/StapSituatie.tsx` — Stap 3 (huidige JouwSituatieBlok opgesplitst)
+- Nieuw: `src/components/profiel/StapInteresses.tsx` — Stap 4 (met kaarten)
+- Nieuw: `src/components/profiel/StapCommunicatie.tsx` — Stap 5
+- Nieuw: `src/components/profiel/StapOverzicht.tsx` — Stap 6
+- Hergebruik: `StreetSearch` component voor PDOK adres-invoer
+- Wijzig: `src/config/content/profiel.ts` — Toevoegen wizard-teksten per stap
+
+**Leesmodus behouden:**
+Na voltooiing van de wizard (of bij terugkeren) wordt het profiel in een
+overzichtelijke **leesmodus** getoond, vergelijkbaar met nu maar netter gegroepeerd.
+Per sectie een "Aanpassen" knop die naar de betreffende stap springt.
+
+**Account-instellingen apart:**
+Wachtwoord, privacy, account verwijderen worden NIET in de wizard opgenomen.
+Deze blijven als aparte sectie onderaan de profielpagina (of als eigen pagina `/profiel/instellingen`).
+
+---
+
 ### Deliverables Iteratie 3 — GROTENDEELS AFGEROND
 - [x] Persoonlijk advies pagina na balanstest (`/rapport/persoonlijk`)
 - [x] "Eerste stap" veld per hulpbron + in AI prompt + beheerportaal (eersteStap + verwachtingTekst velden)
@@ -563,31 +655,203 @@ enum WeekKaartType {
 - [x] Actiepunten zichtbaar op dashboard (`ActiepuntenKaart.tsx` + `/api/actiepunten`)
 - [x] E-mail na balanstest (`sendBalanstestResultEmail` in email.ts)
 - [ ] Wekelijkse hulpkaarten op dashboard (WeekKaart model, hybride generatie, Ger-integratie)
+- [ ] **NIEUW** Profiel wizard (stapsgewijs profiel invullen i.p.v. grote bak)
 
-**Status:** 6/7 afgerond. Wekelijkse hulpkaarten nog te bouwen.
-**Geschatte doorlooptijd:** 3 weken (~48 uur)
+**Status:** 6/8 afgerond. Wekelijkse hulpkaarten en profiel wizard nog te bouwen.
+**Geschatte doorlooptijd:** 3 weken (~48 uur) + 1 week extra voor profiel wizard
 
 ---
 
 ## 5. Iteratie 4: Gemeente Onboarding & Automatisering (Week 8-10)
 
-> **Doel:** Gemeenten snel live krijgen + automatische opvolging na balanstest.
-> **Motto:** "Gemeenten in 15 minuten live."
+> **Doel:** Gemeenten snel live krijgen + automatische opvolging na balanstest + AI-gestuurde hulpbronnen.
+> **Motto:** "Gemeenten in 15 minuten live — met hulp van AI."
 
-### 4.1 Gemeente onboarding wizard
+### 4.1 Gemeente onboarding wizard (uitbreiden met AI hulpbronnen zoeker)
 **Prioriteit: HOOG**
 
-Nieuwe pagina `/beheer/gemeenten/nieuw` met 5-stappen stepper:
+De bestaande wizard (`/beheer/gemeenten/nieuw`) heeft 5 stappen. Stap 3 ("Hulpbronnen") wordt
+uitgebreid met een **AI Agent** die automatisch lokale hulpbronnen zoekt en voorstelt.
 
+**Huidige wizard stappen:**
 1. **Gemeente kiezen** — PDOK autocomplete, CBS-code, check duplicaat
 2. **Contactgegevens** — Email, telefoon, website, WMO loket URL
-3. **Lokale hulpbronnen koppelen** — Automatisch zoeken in bestaande hulpbronnen
-4. **Hulpverleners per belastingniveau** — Organisatie koppelen per niveau (LAAG/GEMIDDELD/HOOG)
+3. **Hulpbronnen** — NU: handmatig URLs invullen → NIEUW: AI zoekt automatisch (zie 4.1a)
+4. **Hulpverleners per belastingniveau** — Organisatie koppelen per niveau
 5. **Eerste beheerder aanmaken** — Email, naam, rol, uitnodigingslink
 
+**Bestanden (bestaand):**
+- `src/app/beheer/gemeenten/nieuw/page.tsx`
+- `src/app/api/beheer/gemeenten/onboarding/route.ts`
+
+---
+
+### 4.1a AI Agent: Lokale Hulpbronnen Zoeker
+**Prioriteit: HOOG — NIEUW**
+
+AI agent die bij gemeente-onboarding (stap 3) automatisch lokale hulpbronnen zoekt, valideert en voorstelt.
+Deze agent wordt onderdeel van de gemeente implementatie wizard.
+
+**Werking:**
+1. Beheerder selecteert gemeente in stap 1 (bijv. "Nijmegen")
+2. Bij stap 3 start de AI agent automatisch
+3. Agent zoekt per categorie (alle 10 zorgtaken + 6 mantelzorger-categorieën) naar lokale organisaties
+4. Bronnen: DuckDuckGo, Regelhulp.nl, Sociale Kaart, gemeentewebsite, WMO-portaal
+5. Per gevonden organisatie: naam, dienst, telefoon, website, adres, openingstijden, kosten
+6. Resultaten worden gepresenteerd als kaarten die de beheerder kan goedkeuren/afwijzen/bewerken
+7. Goedgekeurde hulpbronnen worden als `Zorgorganisatie` in de database opgeslagen
+
+**Categorieën waarop gezocht wordt:**
+
+| Code | Zorgtaak/Categorie | Zoektermen |
+|------|-------------------|------------|
+| t1 | Administratie en aanvragen | "administratieve hulp [gemeente]", "formulierenhulp [gemeente]" |
+| t2 | Plannen en organiseren | "casemanager [gemeente]", "zorgcoördinator [gemeente]" |
+| t3 | Boodschappen | "boodschappenhulp [gemeente]", "maaltijdservice [gemeente]" |
+| t4 | Sociaal contact en activiteiten | "dagbesteding [gemeente]", "ontmoetingscentrum [gemeente]" |
+| t5 | Vervoer | "vervoerservice [gemeente]", "regiotaxi [gemeente]" |
+| t6 | Persoonlijke verzorging | "thuiszorg [gemeente]", "wijkverpleging [gemeente]" |
+| t7 | Maaltijden | "maaltijdvoorziening [gemeente]", "tafeltje dekje [gemeente]" |
+| t8 | Huishoudelijke taken | "huishoudelijke hulp [gemeente]", "WMO hulp [gemeente]" |
+| t9 | Klusjes in en om het huis | "klussenservice [gemeente]", "vrijwillige klussers [gemeente]" |
+| t10 | Huisdieren | "dierenoppas [gemeente]", "hulp huisdier [gemeente]" |
+| M1 | Ondersteuning mantelzorger | "mantelzorgsteunpunt [gemeente]", "sociaal wijkteam [gemeente]" |
+| M2 | Vervangende mantelzorg | "respijtzorg [gemeente]", "logeerhuis [gemeente]" |
+| M3 | Praten & steun | "mantelzorglijn", "emotionele steun mantelzorgers [gemeente]" |
+| M4 | Lotgenoten | "lotgenotencontact [gemeente]", "mantelzorgcafé [gemeente]" |
+| M5 | Leren & training | "cursus mantelzorg [gemeente]", "dementie training [gemeente]" |
+| M6 | Informatie en advies | "juridisch advies mantelzorg", "financieel advies mantelzorgers [gemeente]" |
+
+**AI Agent architectuur:**
+```
+┌─────────────────────────────────────────┐
+│  Gemeente Wizard — Stap 3: Hulpbronnen  │
+│                                         │
+│  [AI zoekt... ██████████░░ 65%]        │
+│                                         │
+│  ✅ Thuiszorg Nijmegen (goedgekeurd)    │
+│  ⏳ Respijtzorg De Waarden (review)     │
+│  ❌ Verouderd resultaat (afgewezen)      │
+│                                         │
+│  [Handmatig toevoegen]  [Volgende stap] │
+└─────────────────────────────────────────┘
+```
+
+**Technisch:**
+- Nieuw: `src/lib/ai/agents/hulpbronnen-zoeker.ts` — AI agent met Claude
+- Nieuw: `src/app/api/beheer/gemeenten/ai-zoek-hulpbronnen/route.ts` — SSE endpoint voor live updates
+- Wijzig: `src/app/beheer/gemeenten/nieuw/page.tsx` — Stap 3 uitbreiden met AI zoekresultaten
+- Hergebruik: `src/app/api/beheer/hulpbronnen/zoeken/route.ts` — Bestaande DuckDuckGo + Regelhulp zoeker
+- Hergebruik: `src/app/api/beheer/hulpbronnen/verrijk/route.ts` — PDOK verrijking
+
+**Per gevonden hulpbron genereert de agent:**
+- `naam`, `dienst`, `beschrijving`, `telefoon`, `website`
+- `gemeente`, `type` (ZorgorganisatieType enum)
+- `onderdeelTest` (categorie-code)
+- `doelgroep` (MANTELZORGER of ZORGVRAGER)
+- `eersteStap` (hoe je contact opneemt)
+- `kosten` (als bekend)
+- `bronLabel` ("Gemeente")
+- `dekkingNiveau` ("GEMEENTE")
+
+**Validatie door agent:**
+- Website bereikbaarheid check (HTTP HEAD request)
+- Telefoonnummer formaat check (NL nummers)
+- Deduplicatie tegen bestaande hulpbronnen in database
+- Confidence score per resultaat (HOOG/GEMIDDELD/LAAG)
+
+---
+
+### 4.1b AI Agent: Wekelijkse Hulpbronnen Validator
+**Prioriteit: HOOG — NIEUW**
+
+AI agent die wekelijks ALLE hulpbronnen controleert of ze nog kloppen.
+
+**Waarom:**
+Hulpbronnen veranderen: organisaties stoppen, telefoonnummers wijzigen, websites verdwijnen.
+Verouderde informatie ondermijnt het vertrouwen van mantelzorgers in het platform.
+
+**Werking:**
+1. Elke maandag (via Vercel Cron) draait de validator agent
+2. Per actieve `Zorgorganisatie`:
+   - **Website check**: HTTP HEAD → bereikbaar? Status code? Redirect?
+   - **Telefoon check**: Formaat geldig? (optioneel: bel-test via Twilio)
+   - **Content check**: AI leest de website en controleert of de dienst nog aangeboden wordt
+   - **Naam check**: Komt de organisatienaam nog overeen met de website?
+3. Per hulpbron krijgt een `validatieStatus`:
+
+| Status | Betekenis | Actie |
+|--------|-----------|-------|
+| GELDIG | Alles klopt | Geen actie |
+| WAARSCHUWING | Website redirect of kleine afwijking | Manuele review |
+| ONGELDIG | Website down of dienst niet meer gevonden | Markeer als inactief |
+| ONBEKEND | Geen website, niet te controleren | Manuele review |
+
+4. Resultaten worden opgeslagen en zichtbaar in beheerportaal
+5. Bij ONGELDIG of WAARSCHUWING: notificatie naar beheerder en/of gemeente-admin
+
+**Database uitbreiding:**
+```prisma
+model HulpbronValidatie {
+  id                String                @id @default(cuid())
+  zorgorganisatieId String
+  status            HulpbronValidatieStatus
+  websiteBereikbaar Boolean?
+  websiteStatusCode Int?
+  contentKlopt      Boolean?
+  telefoonGeldig    Boolean?
+  opmerkingen       String?               @db.Text
+  aiSamenvatting    String?               @db.Text
+  gecontroleerd     DateTime              @default(now())
+  zorgorganisatie   Zorgorganisatie       @relation(fields: [zorgorganisatieId], references: [id], onDelete: Cascade)
+
+  @@index([zorgorganisatieId])
+  @@index([status])
+  @@index([gecontroleerd])
+}
+
+enum HulpbronValidatieStatus {
+  GELDIG
+  WAARSCHUWING
+  ONGELDIG
+  ONBEKEND
+}
+```
+
+**Uitbreiding `Zorgorganisatie`:**
+```prisma
+model Zorgorganisatie {
+  // bestaande velden...
+  laatsteValidatie     DateTime?
+  validatieStatus      String?          // GELDIG, WAARSCHUWING, ONGELDIG, ONBEKEND
+  validaties           HulpbronValidatie[]
+}
+```
+
 **Bestanden:**
-- Nieuw: `src/app/beheer/gemeenten/nieuw/page.tsx`
-- Nieuw: `src/app/api/beheer/gemeenten/onboarding/route.ts`
+- Nieuw: `src/lib/ai/agents/hulpbronnen-validator.ts` — Validatie-agent
+- Nieuw: `src/app/api/cron/valideer-hulpbronnen/route.ts` — Wekelijkse cron job
+- Nieuw: `src/app/api/beheer/hulpbronnen/validatie/route.ts` — API voor validatieresultaten
+- Wijzig: `src/app/beheer/hulpbronnen/page.tsx` — Validatiestatus tonen per hulpbron
+- Wijzig: `prisma/schema.prisma` — HulpbronValidatie model + enum
+- Nieuw: `src/components/admin/HulpbronValidatieOverzicht.tsx` — Dashboard component
+
+**Beheerportaal weergave:**
+```
+┌──────────────────────────────────────────────────┐
+│  Hulpbronnen Validatie — Week 11, 2026           │
+│                                                  │
+│  ✅ 142 Geldig    ⚠️ 12 Waarschuwing    ❌ 3 Ongeldig │
+│                                                  │
+│  ❌ Thuiszorg Dichtbij — Website down (404)       │
+│     Laatst geldig: 3 maart 2026                  │
+│     [Bekijken] [Deactiveren] [Opnieuw checken]   │
+│                                                  │
+│  ⚠️ Mantelzorgcafé Arnhem — Redirect naar        │
+│     andere URL, dienst mogelijk gewijzigd         │
+│     [Bekijken] [Goedkeuren] [Bewerken]           │
+└──────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -647,12 +911,14 @@ Proactieve herinneringen:
 
 ### Deliverables Iteratie 4
 - [ ] Werkende gemeente onboarding wizard (5 stappen)
+- [ ] **NIEUW — HOOG** AI Agent: Lokale Hulpbronnen Zoeker (geïntegreerd in wizard stap 3)
+- [ ] **NIEUW — HOOG** AI Agent: Wekelijkse Hulpbronnen Validator (cron + beheerportaal)
 - [ ] Automatische check-in planning na test
 - [ ] Gemeente-alarmnotificatie (geanonimiseerd)
 - [ ] Gemeente opvolgingsdashboard
 - [ ] WhatsApp check-in herinneringen
 
-**Geschatte doorlooptijd:** 3 weken (~48 uur)
+**Geschatte doorlooptijd:** 4 weken (~64 uur) — uitgebreid vanwege 2 nieuwe AI agents
 
 ---
 
@@ -974,15 +1240,23 @@ Iteratie  Naam                                Week    Uren    Focus             
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 1         Beveiliging Dichtmaken              1-2     32u     11 security items                        AFGEROND (11/12)
 2         Input Validatie & Stabiliteit       3-4     32u     45+ routes + tests                       AFGEROND (6/6)
-3         Mantelzorger Klantreis              5-7     48u     Persoonlijk advies, SOS, actiepunten     6/7 (weekkaarten open)
-4         Gemeente Onboarding & Auto.         8-10    48u     Wizard, reminders, alarmen               OPEN
-5         Content uit Code naar Database      11-13   48u     170+ items migreren                      OPEN
-6         Performance, Caching & Monitoring   14-16   48u     Sentry, caching, N+1                     OPEN
-7         Toegankelijkheid & UX              17-18   32u     WCAG AA, B1-taal, PWA                    OPEN
-8         Schaalbaarheid & Toekomst          19+     —       Backlog + blokkerende items               OPEN
+3         Mantelzorger Klantreis              5-7     56u     Advies, SOS, actiepunten, profiel wiz.   6/8 (weekkaarten+profiel open)
+4         Gemeente Onboarding & AI Agents     8-11    64u     Wizard+AI zoeker+AI validator+reminders  OPEN — HOOG PRIO
+5         Content uit Code naar Database      12-14   48u     170+ items migreren                      OPEN
+6         Performance, Caching & Monitoring   15-17   48u     Sentry, caching, N+1                     OPEN
+7         Toegankelijkheid & UX              18-19   32u     WCAG AA, B1-taal, PWA                    OPEN
+8         Schaalbaarheid & Toekomst          20+     —       Backlog + blokkerende items               OPEN
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Totaal (Iteratie 1-7)                                288u
+Totaal (Iteratie 1-7)                                312u    (+24u door AI agents + profiel wizard)
 ```
+
+### Nieuwe hoge-prioriteit items (toegevoegd 11 maart 2026)
+
+| # | Item | Iteratie | Prioriteit | Status |
+|---|------|----------|------------|--------|
+| A | AI Agent: Lokale Hulpbronnen Zoeker (onderdeel gemeente wizard stap 3) | 4 (4.1a) | HOOG | OPEN |
+| B | AI Agent: Wekelijkse Hulpbronnen Validator (cron + beheerportaal) | 4 (4.1b) | HOOG | OPEN |
+| C | Profiel Wizard (stapsgewijs i.p.v. grote bak) | 3 (3.8) | HOOG | OPEN |
 
 ### Afhankelijkheden
 
@@ -1041,4 +1315,14 @@ FUNCTIONALITEIT — GROTENDEELS OPGELOST:
 
 ---
 
-*Dit masterplan is bijgewerkt op 11 maart 2026 (v3.0). Gebaseerd op: volledige codebase-analyse (124 API routes, 40 DB modellen, 74 pagina's), security audit, architectuur-review, AI chatbot verbeteringen, en iteratie 1-3 implementatie.*
+### Wat is veranderd t.o.v. v3.0
+
+| Aspect | v3.0 (11 maart ochtend) | v3.1 (11 maart middag) |
+|--------|------|------|
+| Iteratie 3 | 7 items (6 af) | 8 items: **Profiel Wizard** toegevoegd (HOOG) |
+| Iteratie 4 | 5 items, 48u | 7 items, 64u: **AI Hulpbronnen Zoeker** + **AI Hulpbronnen Validator** (HOOG) |
+| Totaal uren | 288u | 312u (+24u) |
+| Nieuwe AI agents | 0 | 2 (hulpbronnen zoeker + validator) |
+| Profiel UX | Eén grote pagina | Stapsgewijze wizard (6 stappen) |
+
+*Dit masterplan is bijgewerkt op 11 maart 2026 (v3.1). Gebaseerd op: volledige codebase-analyse (124 API routes, 40 DB modellen, 74 pagina's), security audit, architectuur-review, AI chatbot verbeteringen, iteratie 1-3 implementatie, en nieuwe prioriteiten: AI-gestuurde hulpbronnen agents en profiel wizard.*
