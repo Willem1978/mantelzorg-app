@@ -185,6 +185,8 @@ export async function prefetchUserContext(
         kosten: true,
         gemeente: true,
         openingstijden: true,
+        eersteStap: true,
+        verwachtingTekst: true,
       },
     })
 
@@ -301,6 +303,8 @@ async function fetchAlleHulpbronnenPerCategorie(gemeente: string | null) {
       onderdeelTest: true,
       gemeente: true,
       openingstijden: true,
+      eersteStap: true,
+      verwachtingTekst: true,
     },
   })
 
@@ -323,6 +327,8 @@ async function fetchAlleHulpbronnenPerCategorie(gemeente: string | null) {
         kosten: h.kosten,
         gemeente: h.gemeente,
         openingstijden: h.openingstijden,
+        eersteStap: h.eersteStap,
+        verwachtingTekst: h.verwachtingTekst,
         lokaal: !!h.gemeente,
       }))
     }
@@ -357,6 +363,8 @@ async function fetchMantelzorgerHulp(gemeente: string | null) {
       onderdeelTest: true,
       gemeente: true,
       openingstijden: true,
+      eersteStap: true,
+      verwachtingTekst: true,
     },
   })
 }

@@ -434,6 +434,8 @@ model Zorgorganisatie {
   onderdeelTest         String?             // Categorie: Persoonlijke verzorging, Ondersteuning, Vervangende mantelzorg, etc.
   soortHulp             String?
   voorwaarden           String?
+  eersteStap            String?             // "Bel en vraag naar een intake-gesprek" — eerste concrete actie
+  verwachtingTekst      String?             // "Ze komen bij je thuis kijken" — wat kan je verwachten
   verschijntIn          String[]            // Array van plekken waar dit item verschijnt (voor cross-referencing)
   routeLabel            String?             // Wet/route label: Wmo, Zvw, Wlz (voor display op hulpkaarten)
   bronLabel             String?             // Bronlabel: Landelijk, Gemeente, Zvw, Wlz, Overig

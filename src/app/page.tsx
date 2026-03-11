@@ -3,6 +3,7 @@ import { LogoIcon } from "@/components/ui"
 import { landingContent as c } from "@/config/content"
 import { GerAvatar } from "@/components/GerAvatar"
 import { PublicGerChat } from "@/components/ai/PublicGerChat"
+import { SOSKnop } from "@/components/SOSKnop"
 
 export default function LandingPage() {
   return (
@@ -155,6 +156,13 @@ export default function LandingPage() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* SOS Noodknop — geen inlog vereist */}
+        <section className="py-8 px-4">
+          <div className="max-w-md mx-auto">
+            <SOSKnop />
           </div>
         </section>
 

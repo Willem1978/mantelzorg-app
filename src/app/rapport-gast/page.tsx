@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
+import { SOSKnop } from "@/components/SOSKnop"
 
 const zorgtaken = [
   { id: "t1", naam: "Administratie" },
@@ -232,20 +233,29 @@ export default function RapportGastPage() {
           </a>
         </div>
 
+        {/* SOS Noodknop */}
+        {niveau.kleur === "red" && (
+          <SOSKnop />
+        )}
+
         {/* Account aanmaken melding */}
         <div className="ker-card bg-primary/5 border-2 border-primary/20">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="text-center">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+              <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
               </svg>
             </div>
-            <div>
-              <p className="font-medium text-foreground">Je bekijkt dit als gast</p>
-              <p className="text-sm text-muted-foreground">
-                Maak een account aan om je rapport te bewaren en je voortgang te volgen.
-              </p>
-            </div>
+            <p className="font-bold text-foreground text-lg mb-1">Bewaar je resultaten</p>
+            <p className="text-sm text-muted-foreground mb-4">
+              Maak een gratis account aan om je rapport te bewaren, persoonlijk advies van Ger te krijgen en hulp te vinden bij jou in de buurt.
+            </p>
+            <Link href="/register?from=test" className="ker-btn ker-btn-primary w-full inline-block text-center">
+              Account aanmaken
+            </Link>
+            <p className="text-xs text-muted-foreground mt-2">
+              Je testresultaten worden automatisch gekoppeld
+            </p>
           </div>
         </div>
       </main>

@@ -96,6 +96,25 @@ export async function POST(request: NextRequest) {
         }
       })
 
+      // Koppel gast-testresultaten aan het nieuwe profiel (op basis van email)
+      const ontkoppeldeTests = await tx.belastbaarheidTest.updateMany({
+        where: {
+          email: data.email,
+          caregiverId: null,
+        },
+        data: {
+          caregiverId: caregiver.id,
+        },
+      })
+
+      // Als er tests zijn gekoppeld, markeer intake als voltooid
+      if (ontkoppeldeTests.count > 0) {
+        await tx.caregiver.update({
+          where: { id: caregiver.id },
+          data: { intakeCompleted: true },
+        })
+      }
+
       return { user, caregiver, verificationToken }
     })
 
