@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react"
 import { AdminSpinner } from "@/components/admin"
 import { useToast } from "@/components/ui/Toast"
+import { DeelgebiedIcon } from "@/components/ui/DeelgebiedIcon"
 
 interface CoachAdvies {
   id: string | null
@@ -181,7 +182,9 @@ export default function CoachAdviezenPage() {
       {groepen.map((groep) => (
         <div key={groep.titel} className="space-y-3">
           <div className="flex items-center gap-2">
-            <span className="text-xl">{groep.emoji}</span>
+            {["Energie", "Gevoel", "Tijd"].includes(groep.titel)
+              ? <DeelgebiedIcon naam={groep.titel} size="lg" />
+              : <span className="text-xl">{groep.emoji}</span>}
             <div>
               <h2 className="text-lg font-semibold text-foreground">{groep.titel}</h2>
               <p className="text-xs text-muted-foreground">{groep.beschrijving}</p>

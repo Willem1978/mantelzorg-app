@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { DeelgebiedIcon } from "@/components/ui/DeelgebiedIcon"
 
 interface Stap {
   nummer: number
@@ -210,7 +211,9 @@ export function Stappenplan(props: StappenplanProps) {
               {/* Inhoud */}
               <div className="flex-1 pb-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <span>{stap.emoji}</span>
+                  {["⚡", "💛", "⏰"].includes(stap.emoji)
+                    ? <DeelgebiedIcon naam={stap.titel} size="sm" />
+                    : <span>{stap.emoji}</span>}
                   <h4 className="font-semibold text-sm text-foreground">{stap.titel}</h4>
                 </div>
                 <p className="text-sm text-muted-foreground mb-2">{stap.beschrijving}</p>

@@ -10,6 +10,7 @@ import { PdfDownloadButton } from "@/components/PdfDownloadButton"
 import { useRapportContent } from "@/hooks/useRapportContent"
 import { berekenDeelgebieden } from "@/lib/dashboard/deelgebieden"
 import { Stappenplan } from "@/components/Stappenplan"
+import { DeelgebiedIcon } from "@/components/ui/DeelgebiedIcon"
 
 // Mapping van taak naar categorie voor hulpvragen pagina
 const TAAK_NAAR_HULP_TAB: Record<string, { tab: 'voor-jou' | 'voor-naaste', categorie: string }> = {
@@ -618,7 +619,7 @@ export default function RapportPage() {
               <div key={dg.naam}>
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg">{dg.emoji}</span>
+                    <DeelgebiedIcon naam={dg.naam} size="md" />
                     <span className="text-sm font-semibold text-foreground">{dg.naam}</span>
                   </div>
                   <span

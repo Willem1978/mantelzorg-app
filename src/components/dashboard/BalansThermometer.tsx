@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { DeelgebiedIcon } from "@/components/ui/DeelgebiedIcon"
 
 interface ZorgtaakInfo {
   naam: string
@@ -81,28 +82,6 @@ const DEELGEBIED_CONFIG = {
   },
 }
 
-const DEELGEBIED_ICONS: Record<string, React.ReactNode> = {
-  "Jouw energie": (
-    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="6" y="10" width="12" height="10" rx="2" />
-      <rect x="9" y="6" width="6" height="4" rx="1" />
-      <rect x="10" y="13" width="4" height="4" rx="0.5" fill="currentColor" opacity={0.3} />
-    </svg>
-  ),
-  "Jouw gevoel": (
-    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z" fill="currentColor" opacity={0.15} />
-      <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 000-7.78z" />
-    </svg>
-  ),
-  "Jouw tijd": (
-    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" fill="currentColor" opacity={0.1} />
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
-  ),
-}
 
 /** SVG Donut Chart — zachte, organische uitstraling */
 function BalansDonut({ percentage, config }: { percentage: number; config: typeof NIVEAU_CONFIG.LAAG }) {
@@ -193,14 +172,13 @@ export function BalansThermometer({
           <div className="grid grid-cols-3 gap-2.5">
             {topDeelgebieden.map((dg) => {
               const dgConfig = DEELGEBIED_CONFIG[dg.niveau]
-              const icon = DEELGEBIED_ICONS[dg.naam]
               return (
                 <div
                   key={dg.naam}
                   className={`rounded-2xl p-3 text-center border ${dgConfig.pastelBg} ${dgConfig.pastelBorder}`}
                 >
                   <div className={`flex justify-center mb-1.5 ${dgConfig.textColor}`}>
-                    {icon || <span className="text-xl">{dg.emoji}</span>}
+                    <DeelgebiedIcon naam={dg.naam} size="md" />
                   </div>
                   <p className="text-xs font-semibold text-foreground leading-tight">{dg.naam}</p>
                   <span className={`text-xs font-bold mt-1 inline-block ${dgConfig.textColor}`}>
