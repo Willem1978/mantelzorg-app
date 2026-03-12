@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
+import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
 import { DashboardGerChat, type GerChatContext } from "@/components/dashboard/DashboardGerChat"
 import { BalansThermometer } from "@/components/dashboard/BalansThermometer"
@@ -18,6 +19,8 @@ interface DashboardData {
     name: string
     email: string
     profileCompleted: boolean
+    naasteNaam?: string | null
+    naasteRelatie?: string | null
   }
   test: {
     hasTest: boolean
@@ -29,6 +32,7 @@ interface DashboardData {
     trend?: "improved" | "same" | "worse"
     history?: { score: number; niveau: string; date: string }[]
     zorgtaken?: { id: string; naam: string; uren: number | null; moeilijkheid: string | null }[]
+    highScoreAreas?: { vraag: string; antwoord: string }[]
   }
   hulpbronnen?: {
     perTaak: Record<string, { naam: string; telefoon: string | null; website: string | null; beschrijving: string | null }[]>
@@ -272,7 +276,109 @@ function DashboardContentView() {
       {/* 1. GER CHAT */}
       <DashboardGerChat context={gerContext} />
 
-      {/* 2. COMPACTE BALANSKAART */}
+      {/* 2. JOUW OVERZICHT - compact profiel + score + situatie */}
+      {data && (
+        <section className="ker-card p-4 space-y-3">
+          <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">
+            Jouw overzicht
+          </h2>
+
+          {/* Mantelzorger & Naaste */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex items-center gap-2.5 p-2.5 bg-primary/5 rounded-xl">
+              <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
+                <span className="text-sm">🧑</span>
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Mantelzorger</p>
+                <p className="text-sm font-semibold text-foreground truncate">{userName}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5 p-2.5 bg-primary/5 rounded-xl">
+              <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
+                <span className="text-sm">💚</span>
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Naaste</p>
+                <p className="text-sm font-semibold text-foreground truncate">
+                  {data.user.naasteNaam || "Niet ingevuld"}
+                </p>
+                {data.user.naasteRelatie && (
+                  <p className="text-[10px] text-muted-foreground truncate">{data.user.naasteRelatie}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Score + Situatie */}
+          {data.test?.hasTest && data.test.score !== undefined && data.test.niveau && (
+            <div className="flex items-start gap-3 p-3 bg-muted rounded-xl">
+              {/* Score badge */}
+              <div className={cn(
+                "w-12 h-12 rounded-xl flex flex-col items-center justify-center flex-shrink-0 font-bold",
+                data.test.niveau === "LAAG" && "bg-[var(--accent-green-bg)] text-[var(--accent-green)]",
+                data.test.niveau === "GEMIDDELD" && "bg-[var(--accent-amber-bg)] text-[var(--accent-amber)]",
+                data.test.niveau === "HOOG" && "bg-[var(--accent-red-bg)] text-[var(--accent-red)]"
+              )}>
+                <span className="text-lg leading-none">{data.test.score}</span>
+                <span className="text-[8px] font-normal">/24</span>
+              </div>
+
+              {/* Situatie samenvatting */}
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-foreground mb-1">
+                  {data.test.niveau === "LAAG" && "Lage belasting"}
+                  {data.test.niveau === "GEMIDDELD" && "Gemiddelde belasting"}
+                  {data.test.niveau === "HOOG" && "Hoge belasting"}
+                </p>
+                {/* Aandachtspunten uit de test */}
+                {data.test.highScoreAreas && data.test.highScoreAreas.length > 0 ? (
+                  <div className="space-y-0.5">
+                    {data.test.highScoreAreas.slice(0, 3).map((area, i) => (
+                      <p key={i} className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-red)] flex-shrink-0" />
+                        <span className="truncate">{area.vraag}</span>
+                      </p>
+                    ))}
+                    {data.test.highScoreAreas.length > 3 && (
+                      <p className="text-[10px] text-muted-foreground pl-3">
+                        +{data.test.highScoreAreas.length - 3} meer
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground">
+                    Geen grote aandachtspunten
+                  </p>
+                )}
+              </div>
+
+              {/* Link naar rapport */}
+              <Link href="/rapport" className="flex-shrink-0 mt-1">
+                <svg className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
+          )}
+
+          {/* Geen test gedaan */}
+          {!data.test?.hasTest && (
+            <Link href="/belastbaarheidstest" className="flex items-center gap-3 p-3 bg-primary/5 rounded-xl hover:bg-primary/10 transition-colors group">
+              <span className="text-xl">📋</span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-foreground">Doe de balanstest</p>
+                <p className="text-[11px] text-muted-foreground">Ontdek hoe het met jou gaat</p>
+              </div>
+              <svg className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          )}
+        </section>
+      )}
+
+      {/* 3. COMPACTE BALANSKAART */}
       {data?.test?.hasTest && data.test.score !== undefined && data.test.niveau && (
         <BalansThermometer
           score={data.test.score}
