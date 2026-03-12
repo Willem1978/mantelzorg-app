@@ -24,7 +24,7 @@ export interface ParsedHulpkaart {
   openingstijden: string
 }
 
-const HULPKAART_REGEX = /\{\{hulpkaart:([^}]+)\}\}/g
+const HULPKAART_REGEX = /\{\{hulpkaart:([\s\S]*?)\}\}/g
 
 /**
  * Extraheert hulpkaarten uit tekst en retourneert schone tekst + kaarten.
@@ -65,6 +65,18 @@ export function parseHulpkaarten(text: string): { cleanText: string; kaarten: Pa
   // Verwijder overbodige lege regels die overblijven na het strippen van hulpkaarten
   cleanText = cleanText.replace(/\n{3,}/g, "\n\n").trim()
   return { cleanText, kaarten }
+}
+
+/**
+ * Verwijdert overgebleven {{...}} markers uit tekst die niet correct geparst werden.
+ * Vangnet voor malformed of incomplete AI-output (bijv. tijdens streaming).
+ */
+export function cleanRemainingMarkers(text: string): string {
+  // Verwijder complete maar niet-gematche markers
+  let cleaned = text.replace(/\{\{(hulpkaart|artikelkaart|knop|vraag):[^}]*\}\}/g, "")
+  // Verwijder incomplete markers (geen sluitende }})
+  cleaned = cleaned.replace(/\{\{(hulpkaart|artikelkaart|knop|vraag):[^\n]*/g, "")
+  return cleaned.replace(/\n{3,}/g, "\n\n").trim()
 }
 
 /**

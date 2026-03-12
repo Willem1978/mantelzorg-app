@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import { cn } from "@/lib/utils"
-import { parseHulpkaarten, HulpKaart } from "@/components/ai/HulpKaart"
+import { parseHulpkaarten, HulpKaart, cleanRemainingMarkers } from "@/components/ai/HulpKaart"
 import { parseArtikelkaarten, ArtikelKaart } from "@/components/ai/ArtikelKaart"
 
 /**
@@ -193,7 +193,8 @@ export function AgentChat({
             if (!rawText) return null
             const { cleanText: textWithoutCards, kaarten } = parseHulpkaarten(rawText)
             const { cleanText: textWithoutArticles, artikelen } = parseArtikelkaarten(textWithoutCards)
-            const { cleanText, buttons } = parseButtons(textWithoutArticles)
+            const { cleanText: textWithoutButtons, buttons } = parseButtons(textWithoutArticles)
+            const cleanText = cleanRemainingMarkers(textWithoutButtons)
             // kaarten en knoppen worden apart onder de input gerenderd
             return (
               <div key={message.id}>
@@ -285,10 +286,10 @@ export function AgentChat({
                     onClick={() => handleButtonClick(btn)}
                     className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl rounded-br-sm text-sm transition-all text-left bg-primary/8 border border-primary/15 text-foreground hover:bg-primary/15 hover:border-primary/25 active:scale-[0.98]"
                   >
-                    <span>{btn.label}</span>
-                    <svg className="w-3.5 h-3.5 text-primary/50 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                    <svg className="w-3.5 h-3.5 text-primary/40 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                     </svg>
+                    <span>{btn.label}</span>
                   </button>
                 ))}
               </div>

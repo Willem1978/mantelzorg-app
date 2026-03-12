@@ -7,9 +7,10 @@ import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
-import { parseHulpkaarten, HulpKaart } from "@/components/ai/HulpKaart"
+import { parseHulpkaarten, HulpKaart, cleanRemainingMarkers } from "@/components/ai/HulpKaart"
+import type { ParsedHulpkaart } from "@/components/ai/HulpKaart"
 import { parseArtikelkaarten, ArtikelKaart } from "@/components/ai/ArtikelKaart"
-import Link from "next/link"
+import type { ParsedArtikelkaart } from "@/components/ai/ArtikelKaart"
 
 const BUTTON_REGEX = /\{\{(knop|vraag):([^}]+)\}\}/g
 
@@ -146,6 +147,8 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
   const chatContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [input, setInput] = useState("")
+  const [persistedKaarten, setPersistedKaarten] = useState<ParsedHulpkaart[]>([])
+  const [persistedArtikelen, setPersistedArtikelen] = useState<ParsedArtikelkaart[]>([])
 
   const ctx: GerChatContext = context || {
     userName: "daar",
@@ -186,6 +189,19 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
     }
   }, [messages])
+
+  // Hulpkaarten/artikelkaarten bewaren tot er nieuwe komen
+  useEffect(() => {
+    const lastA = [...messages].reverse().find(m => m.role === "assistant")
+    if (!lastA || isLoading) return
+    const raw = getMessageText(lastA)
+    if (!raw) return
+    const { kaarten } = parseHulpkaarten(raw)
+    const { artikelen } = parseArtikelkaarten(raw)
+    if (kaarten.length > 0) setPersistedKaarten(kaarten.slice(0, 2))
+    if (artikelen.length > 0) setPersistedArtikelen(artikelen.slice(0, 3))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages.length, isLoading])
 
   const handleSend = useCallback((text: string) => {
     if (!text.trim() || isLoading) return
@@ -249,9 +265,11 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
           const { cleanText: textWithoutArticles } = isAssistant
             ? parseArtikelkaarten(textWithoutCards)
             : { cleanText: textWithoutCards }
-          const { cleanText } = isAssistant
+          const { cleanText: textWithoutButtons } = isAssistant
             ? parseButtons(textWithoutArticles)
             : { cleanText: textWithoutArticles }
+          // Vangnet: strip eventueel overgebleven malformed markers
+          const cleanText = isAssistant ? cleanRemainingMarkers(textWithoutButtons) : textWithoutButtons
 
           if (isUser) {
             return (
@@ -375,11 +393,10 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
                 }}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl rounded-br-sm text-sm transition-all text-left bg-primary/8 border border-primary/15 text-foreground hover:bg-primary/15 hover:border-primary/25 active:scale-[0.98]"
               >
-                <span className="text-base leading-none">{action.emoji}</span>
-                <span>{action.label}</span>
-                <svg className="w-3.5 h-3.5 text-primary/50 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                <svg className="w-3.5 h-3.5 text-primary/40 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                 </svg>
+                <span>{action.label}</span>
               </button>
             ))}
           </div>
@@ -404,55 +421,35 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
                   onClick={() => handleButtonClick(btn)}
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl rounded-br-sm text-sm transition-all text-left bg-primary/8 border border-primary/15 text-foreground hover:bg-primary/15 hover:border-primary/25 active:scale-[0.98]"
                 >
-                  <span>{btn.label}</span>
-                  <svg className="w-3.5 h-3.5 text-primary/50 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                  <svg className="w-3.5 h-3.5 text-primary/40 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                   </svg>
+                  <span>{btn.label}</span>
                 </button>
               ))}
             </div>
           )
         })()}
 
-        {/* Hulpkaarten & artikelkaarten — apart van gesprek, met header */}
-        {hasMessages && !showTypingIndicator && (() => {
-          const lastA = [...messages].reverse().find(m => m.role === "assistant")
-          if (!lastA) return null
-          const raw = getMessageText(lastA)
-          if (!raw) return null
-          const { kaarten } = parseHulpkaarten(raw)
-          const { artikelen } = parseArtikelkaarten(raw)
-          const hulpCards = kaarten.slice(0, 2)
-          const artikelCards = artikelen.slice(0, 3)
-          if (hulpCards.length === 0 && artikelCards.length === 0) return null
-          return (
-            <div className="mt-3 pt-3 border-t border-border/40">
-              <p className="text-xs font-medium text-muted-foreground mb-2">
-                {hulpCards.length > 0 && artikelCards.length > 0
-                  ? "Hulp en informatie voor jou"
-                  : hulpCards.length > 0
-                    ? "Hulp voor jou en jouw naaste"
-                    : "Informatie voor jou"
-                }
-              </p>
-              <div className="flex flex-col gap-1.5">
-                {hulpCards.map((kaart, i) => (
-                  <HulpKaart key={`h-${i}`} kaart={kaart} />
-                ))}
-                {artikelCards.map((artikel, i) => (
-                  <ArtikelKaart key={`art-${i}`} artikel={artikel} />
-                ))}
-              </div>
+        {/* Hulpkaarten & artikelkaarten — blijven staan tot er nieuwe komen */}
+        {hasMessages && !showTypingIndicator && (persistedKaarten.length > 0 || persistedArtikelen.length > 0) && (
+          <div className="mt-3 pt-3 border-t border-border/40">
+            <p className="text-xs font-medium text-muted-foreground mb-2">
+              {persistedKaarten.length > 0 && persistedArtikelen.length > 0
+                ? "Hulp en informatie voor jou"
+                : persistedKaarten.length > 0
+                  ? "Hulp voor jou en jouw naaste"
+                  : "Informatie voor jou"
+              }
+            </p>
+            <div className="flex flex-col gap-1.5">
+              {persistedKaarten.map((kaart, i) => (
+                <HulpKaart key={`h-${i}`} kaart={kaart} />
+              ))}
+              {persistedArtikelen.map((artikel, i) => (
+                <ArtikelKaart key={`art-${i}`} artikel={artikel} />
+              ))}
             </div>
-          )
-        })()}
-
-        {/* Link naar volledig gesprek */}
-        {hasMessages && (
-          <div className="text-center mt-2">
-            <Link href="/ai-assistent" className="text-xs text-primary hover:underline">
-              Ga naar volledig gesprek met Ger
-            </Link>
           </div>
         )}
       </div>

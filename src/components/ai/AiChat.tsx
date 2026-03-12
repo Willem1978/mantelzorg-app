@@ -7,8 +7,10 @@ import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
-import { parseHulpkaarten, HulpKaart } from "@/components/ai/HulpKaart"
+import { parseHulpkaarten, HulpKaart, cleanRemainingMarkers } from "@/components/ai/HulpKaart"
+import type { ParsedHulpkaart } from "@/components/ai/HulpKaart"
 import { parseArtikelkaarten, ArtikelKaart } from "@/components/ai/ArtikelKaart"
+import type { ParsedArtikelkaart } from "@/components/ai/ArtikelKaart"
 
 /**
  * Button syntax for Ger:
@@ -75,6 +77,8 @@ export function AiChat() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [showSuggestions, setShowSuggestions] = useState(true)
+  const [persistedKaarten, setPersistedKaarten] = useState<ParsedHulpkaart[]>([])
+  const [persistedArtikelen, setPersistedArtikelen] = useState<ParsedArtikelkaart[]>([])
 
   const isLoading = status === "submitted" || status === "streaming"
 
@@ -124,20 +128,29 @@ export function AiChat() {
       .join("")
   }
 
-  // Haal data uit het LAATSTE assistant-bericht voor onder de input
-  const lastAssistantData = (() => {
+  // Hulpkaarten/artikelkaarten bewaren tot er nieuwe komen
+  useEffect(() => {
+    const lastA = [...messages].reverse().find(m => m.role === "assistant")
+    if (!lastA || isLoading) return
+    const raw = getMessageText(lastA)
+    if (!raw) return
+    const { kaarten } = parseHulpkaarten(raw)
+    const { artikelen } = parseArtikelkaarten(raw)
+    if (kaarten.length > 0) setPersistedKaarten(kaarten.slice(0, 2))
+    if (artikelen.length > 0) setPersistedArtikelen(artikelen.slice(0, 3))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages.length, isLoading])
+
+  // Vraagknoppen uit het laatste assistant-bericht
+  const lastVraagknoppen = (() => {
     const lastAssistant = [...messages].reverse().find(m => m.role === "assistant")
-    if (!lastAssistant) return { vraagknoppen: [], kaarten: [], artikelen: [] }
+    if (!lastAssistant) return []
     const raw = getMessageText(lastAssistant)
-    if (!raw) return { vraagknoppen: [], kaarten: [], artikelen: [] }
-    const { cleanText: t1, kaarten } = parseHulpkaarten(raw)
-    const { cleanText: t2, artikelen } = parseArtikelkaarten(t1)
+    if (!raw) return []
+    const { cleanText: t1 } = parseHulpkaarten(raw)
+    const { cleanText: t2 } = parseArtikelkaarten(t1)
     const { buttons } = parseButtons(t2)
-    return {
-      vraagknoppen: buttons.filter(b => b.type === "vraag").slice(0, 2),
-      kaarten: kaarten.slice(0, 2),
-      artikelen: artikelen.slice(0, 3),
-    }
+    return buttons.filter(b => b.type === "vraag").slice(0, 2)
   })()
 
   return (
@@ -188,9 +201,10 @@ export function AiChat() {
           const { cleanText: textWithoutArticles, artikelen } = isAssistant
             ? parseArtikelkaarten(textWithoutCards)
             : { cleanText: textWithoutCards, artikelen: [] }
-          const { cleanText, buttons } = isAssistant
+          const { cleanText: textWithoutButtons, buttons } = isAssistant
             ? parseButtons(textWithoutArticles)
             : { cleanText: textWithoutArticles, buttons: [] }
+          const cleanText = isAssistant ? cleanRemainingMarkers(textWithoutButtons) : textWithoutButtons
           // kaarten, artikelen en knoppen worden apart buiten de bubble gerenderd
 
           // Gebruikersbericht
@@ -305,39 +319,39 @@ export function AiChat() {
         </form>
 
         {/* Vraagknoppen als spraakbubbels — onder input, rechts uitgelijnd */}
-        {lastAssistantData.vraagknoppen.length > 0 && !isLoading && (
+        {lastVraagknoppen.length > 0 && !isLoading && (
           <div className="mt-2 flex flex-col gap-1.5 items-end">
-            {lastAssistantData.vraagknoppen.map((btn, i) => (
+            {lastVraagknoppen.map((btn, i) => (
               <button
                 key={`s-${i}`}
                 onClick={() => handleButtonClick(btn)}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl rounded-br-sm text-sm transition-all text-left bg-primary/8 border border-primary/15 text-foreground hover:bg-primary/15 hover:border-primary/25 active:scale-[0.98]"
               >
-                <span>{btn.label}</span>
-                <svg className="w-3.5 h-3.5 text-primary/50 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                <svg className="w-3.5 h-3.5 text-primary/40 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                 </svg>
+                <span>{btn.label}</span>
               </button>
             ))}
           </div>
         )}
 
-        {/* Hulpkaarten & artikelkaarten — apart van gesprek, met header */}
-        {(lastAssistantData.kaarten.length > 0 || lastAssistantData.artikelen.length > 0) && !isLoading && (
+        {/* Hulpkaarten & artikelkaarten — blijven staan tot er nieuwe komen */}
+        {(persistedKaarten.length > 0 || persistedArtikelen.length > 0) && !isLoading && (
           <div className="mt-3 pt-3 border-t border-border/40">
             <p className="text-xs font-medium text-muted-foreground mb-2">
-              {lastAssistantData.kaarten.length > 0 && lastAssistantData.artikelen.length > 0
+              {persistedKaarten.length > 0 && persistedArtikelen.length > 0
                 ? "Hulp en informatie voor jou"
-                : lastAssistantData.kaarten.length > 0
+                : persistedKaarten.length > 0
                   ? "Hulp voor jou en jouw naaste"
                   : "Informatie voor jou"
               }
             </p>
             <div className="flex flex-col gap-1.5">
-              {lastAssistantData.kaarten.map((kaart, i) => (
+              {persistedKaarten.map((kaart, i) => (
                 <HulpKaart key={`h-${i}`} kaart={kaart} />
               ))}
-              {lastAssistantData.artikelen.map((artikel, i) => (
+              {persistedArtikelen.map((artikel, i) => (
                 <ArtikelKaart key={`art-${i}`} artikel={artikel} />
               ))}
             </div>
