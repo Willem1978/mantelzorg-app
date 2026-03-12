@@ -333,6 +333,8 @@ export async function GET() {
         name: caregiver.user.name,
         email: caregiver.user.email,
         profileCompleted: caregiver.profileCompleted,
+        naasteNaam: caregiver.careRecipientName || null,
+        naasteRelatie: caregiver.careRecipient || null,
       },
 
       test: latestTest
