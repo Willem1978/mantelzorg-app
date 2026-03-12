@@ -154,7 +154,7 @@ Gebruik deze data direct om de juiste flow te kiezen. Roep bekijkGebruikerStatus
       model: anthropic("claude-sonnet-4-20250514"),
       system: systemPrompt,
       messages,
-      maxOutputTokens: 1000,
+      maxOutputTokens: 1500,
       stopWhen: stepCountIs(3),
       tools: {
         bekijkGebruikerStatus: createBekijkGebruikerStatusTool({ userId }),
