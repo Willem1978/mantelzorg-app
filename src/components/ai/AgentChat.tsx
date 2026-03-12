@@ -194,43 +194,12 @@ export function AgentChat({
             const { cleanText: textWithoutCards, kaarten } = parseHulpkaarten(rawText)
             const { cleanText: textWithoutArticles, artikelen } = parseArtikelkaarten(textWithoutCards)
             const { cleanText, buttons } = parseButtons(textWithoutArticles)
-            const actieKnoppen = buttons.filter(b => b.type === "knop").slice(0, 1)
-            const hasCards = actieKnoppen.length > 0 || kaarten.length > 0 || artikelen.length > 0
+            // kaarten en knoppen worden apart onder de input gerenderd
             return (
               <div key={message.id}>
                 {cleanText && (
                   <div className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
                     {formatMessage(cleanText)}
-                  </div>
-                )}
-
-                {hasCards && (
-                  <div className="flex flex-col gap-1.5 mt-2">
-                    {actieKnoppen.map((btn, i) => (
-                      <button
-                        key={`a-${i}`}
-                        onClick={() => handleButtonClick(btn)}
-                        disabled={isLoading}
-                        className={cn(
-                          "flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm font-medium transition-all text-left",
-                          "bg-primary/5 border border-primary/20 text-foreground hover:bg-primary/10 hover:border-primary/40",
-                          isLoading && "opacity-50 cursor-not-allowed"
-                        )}
-                      >
-                        <svg className="w-4 h-4 text-primary flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                        </svg>
-                        <span className="flex-1 font-medium">{btn.label}</span>
-                      </button>
-                    ))}
-
-                    {kaarten.slice(0, 2).map((kaart, i) => (
-                      <HulpKaart key={`h-${i}`} kaart={kaart} />
-                    ))}
-
-                    {artikelen.slice(0, 3).map((artikel, i) => (
-                      <ArtikelKaart key={`art-${i}`} artikel={artikel} />
-                    ))}
                   </div>
                 )}
               </div>
@@ -261,35 +230,6 @@ export function AgentChat({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Suggestie-chips boven input — van het laatste Ger-bericht */}
-      {(() => {
-        const lastAssistant = [...messages].reverse().find(m => m.role === "assistant")
-        if (!lastAssistant || isLoading) return null
-        const raw = getMessageText(lastAssistant)
-        if (!raw) return null
-        const { cleanText: t1 } = parseHulpkaarten(raw)
-        const { cleanText: t2 } = parseArtikelkaarten(t1)
-        const { buttons: btns } = parseButtons(t2)
-        const sugChips = btns.filter(b => b.type === "vraag").slice(0, 2)
-        if (sugChips.length === 0) return null
-        return (
-          <div className="flex flex-wrap gap-1.5 pt-2">
-            {sugChips.map((btn, i) => (
-              <button
-                key={`s-${i}`}
-                onClick={() => handleButtonClick(btn)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all bg-primary/5 border border-primary/15 text-foreground hover:bg-primary/10 hover:border-primary/30"
-              >
-                <span>{btn.label}</span>
-                <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            ))}
-          </div>
-        )
-      })()}
-
       {/* Input voor vervolgvragen */}
       <form
         onSubmit={(e) => { e.preventDefault(); handleSend(input) }}
@@ -299,7 +239,7 @@ export function AgentChat({
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Stel een vervolgvraag..."
+          placeholder="Type hier jouw vraag of kies een van onderstaande vragen"
           className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
           disabled={isLoading}
           autoComplete="off"
@@ -319,6 +259,58 @@ export function AgentChat({
           </svg>
         </button>
       </form>
+
+      {/* Vraagknoppen als spraakbubbels + hulpkaarten sectie */}
+      {(() => {
+        const lastAssistant = [...messages].reverse().find(m => m.role === "assistant")
+        if (!lastAssistant || isLoading) return null
+        const raw = getMessageText(lastAssistant)
+        if (!raw) return null
+        const { cleanText: t1, kaarten } = parseHulpkaarten(raw)
+        const { cleanText: t2, artikelen } = parseArtikelkaarten(t1)
+        const { buttons: btns } = parseButtons(t2)
+        const vraagChips = btns.filter(b => b.type === "vraag").slice(0, 2)
+        const hulpCards = kaarten.slice(0, 2)
+        const artikelCards = artikelen.slice(0, 3)
+        const hasVragen = vraagChips.length > 0
+        const hasCards = hulpCards.length > 0 || artikelCards.length > 0
+        if (!hasVragen && !hasCards) return null
+        return (
+          <>
+            {hasVragen && (
+              <div className="mt-2 flex flex-col gap-1.5 items-end">
+                {vraagChips.map((btn, i) => (
+                  <button
+                    key={`s-${i}`}
+                    onClick={() => handleButtonClick(btn)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl rounded-br-sm text-sm transition-all text-left bg-primary/8 border border-primary/15 text-foreground hover:bg-primary/15 hover:border-primary/25 active:scale-[0.98]"
+                  >
+                    <span>{btn.label}</span>
+                    <svg className="w-3.5 h-3.5 text-primary/50 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                ))}
+              </div>
+            )}
+            {hasCards && (
+              <div className="mt-3 pt-3 border-t border-border/40">
+                <p className="text-xs font-medium text-muted-foreground mb-2">
+                  {hulpCards.length > 0 ? "Hulp voor jou en jouw naaste" : "Informatie voor jou"}
+                </p>
+                <div className="flex flex-col gap-1.5">
+                  {hulpCards.map((kaart, i) => (
+                    <HulpKaart key={`h-${i}`} kaart={kaart} />
+                  ))}
+                  {artikelCards.map((artikel, i) => (
+                    <ArtikelKaart key={`art-${i}`} artikel={artikel} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )
+      })()}
     </div>
   )
 }

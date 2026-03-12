@@ -303,17 +303,16 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
 
           const isUser = message.role === "user"
           const isAssistant = message.role === "assistant"
-          const { cleanText: textWithoutCards, kaarten } = isAssistant
+          // Parse alles uit tekst — kaarten en knoppen worden apart gerenderd
+          const { cleanText: textWithoutCards } = isAssistant
             ? parseHulpkaarten(rawText)
-            : { cleanText: rawText, kaarten: [] }
-          const { cleanText: textWithoutArticles, artikelen } = isAssistant
+            : { cleanText: rawText }
+          const { cleanText: textWithoutArticles } = isAssistant
             ? parseArtikelkaarten(textWithoutCards)
-            : { cleanText: textWithoutCards, artikelen: [] }
-          const { cleanText, buttons } = isAssistant
+            : { cleanText: textWithoutCards }
+          const { cleanText } = isAssistant
             ? parseButtons(textWithoutArticles)
-            : { cleanText: textWithoutArticles, buttons: [] }
-          const actieKnoppen = isAssistant ? buttons.filter(b => b.type === "knop").slice(0, 1) : []
-          const hasCards = kaarten.length > 0 || artikelen.length > 0 || actieKnoppen.length > 0
+            : { cleanText: textWithoutArticles }
 
           if (isUser) {
             return (
@@ -331,44 +330,17 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
             )
           }
 
-          // Ger: bubble = alleen tekst, kaarten eronder
+          // Ger: bubble = alleen tekst
           return (
             <div key={message.id}>
               <div className="flex items-end gap-2.5">
                 <GerAvatar size="xs" className="!w-8 !h-8 flex-shrink-0 mb-0.5" />
-                <div className="max-w-[80%] flex flex-col gap-1.5">
+                <div className="max-w-[80%]">
                   {cleanText && (
                     <div className="bg-primary/10 border border-primary/15 rounded-2xl rounded-tl-sm px-3.5 py-2.5">
                       <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
                         {formatMessage(cleanText)}
                       </div>
-                    </div>
-                  )}
-                  {hasCards && (
-                    <div className="flex flex-col gap-1.5">
-                      {actieKnoppen.map((btn, i) => (
-                        <button
-                          key={`a-${i}`}
-                          onClick={() => handleButtonClick(btn)}
-                          disabled={showTypingIndicator}
-                          className={cn(
-                            "flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm transition-all text-left",
-                            "bg-[var(--accent-green-bg)]/60 border border-[var(--accent-green)]/15 text-foreground hover:border-[var(--accent-green)]/30",
-                            showTypingIndicator && "opacity-50 cursor-not-allowed"
-                          )}
-                        >
-                          <svg className="w-4 h-4 text-[var(--accent-green)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                          </svg>
-                          <span className="flex-1 truncate font-medium">{btn.label}</span>
-                        </button>
-                      ))}
-                      {kaarten.slice(0, 2).map((kaart, i) => (
-                        <HulpKaart key={`h-${i}`} kaart={kaart} />
-                      ))}
-                      {artikelen.slice(0, 3).map((artikel, i) => (
-                        <ArtikelKaart key={`art-${i}`} artikel={artikel} />
-                      ))}
                     </div>
                   )}
                 </div>
@@ -422,41 +394,13 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
 
       {/* Tekst-invoer — vast onderaan de chat-container */}
       <div className="border-t border-border/60 pt-3 mt-auto">
-        {/* Suggestie-chips boven input — van het laatste Ger-bericht */}
-        {hasMessages && !showTypingIndicator && (() => {
-          const lastA = [...messages].reverse().find(m => m.role === "assistant")
-          if (!lastA) return null
-          const raw = getMessageText(lastA)
-          if (!raw) return null
-          const { cleanText: t1 } = parseHulpkaarten(raw)
-          const { cleanText: t2 } = parseArtikelkaarten(t1)
-          const { buttons: btns } = parseButtons(t2)
-          const vraagChips = btns.filter(b => b.type === "vraag").slice(0, 2)
-          if (vraagChips.length === 0) return null
-          return (
-            <div className="pb-2 flex flex-wrap gap-1.5">
-              {vraagChips.map((btn, i) => (
-                <button
-                  key={`s-${i}`}
-                  onClick={() => handleButtonClick(btn)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all bg-primary/5 border border-primary/15 text-foreground hover:bg-primary/10 hover:border-primary/30"
-                >
-                  <span>{btn.label}</span>
-                  <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              ))}
-            </div>
-          )
-        })()}
         <form onSubmit={handleSubmit} className="flex items-center gap-2">
           <input
             ref={inputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Type jouw vraag hier..."
+            placeholder="Type hier jouw vraag of kies een van onderstaande vragen"
             className="flex-1 bg-[var(--secondary)] rounded-full px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-shadow"
             disabled={isLoading}
             autoComplete="off"
@@ -476,6 +420,68 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
             </svg>
           </button>
         </form>
+
+        {/* Vraagknoppen als spraakbubbels — onder input, rechts uitgelijnd als gebruikersvragen */}
+        {hasMessages && !showTypingIndicator && (() => {
+          const lastA = [...messages].reverse().find(m => m.role === "assistant")
+          if (!lastA) return null
+          const raw = getMessageText(lastA)
+          if (!raw) return null
+          const { cleanText: t1 } = parseHulpkaarten(raw)
+          const { cleanText: t2 } = parseArtikelkaarten(t1)
+          const { buttons: btns } = parseButtons(t2)
+          const vraagChips = btns.filter(b => b.type === "vraag").slice(0, 2)
+          if (vraagChips.length === 0) return null
+          return (
+            <div className="mt-2 flex flex-col gap-1.5 items-end">
+              {vraagChips.map((btn, i) => (
+                <button
+                  key={`s-${i}`}
+                  onClick={() => handleButtonClick(btn)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl rounded-br-sm text-sm transition-all text-left bg-primary/8 border border-primary/15 text-foreground hover:bg-primary/15 hover:border-primary/25 active:scale-[0.98]"
+                >
+                  <span>{btn.label}</span>
+                  <svg className="w-3.5 h-3.5 text-primary/50 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </button>
+              ))}
+            </div>
+          )
+        })()}
+
+        {/* Hulpkaarten & artikelkaarten — apart van gesprek, met header */}
+        {hasMessages && !showTypingIndicator && (() => {
+          const lastA = [...messages].reverse().find(m => m.role === "assistant")
+          if (!lastA) return null
+          const raw = getMessageText(lastA)
+          if (!raw) return null
+          const { kaarten } = parseHulpkaarten(raw)
+          const { artikelen } = parseArtikelkaarten(raw)
+          const hulpCards = kaarten.slice(0, 2)
+          const artikelCards = artikelen.slice(0, 3)
+          if (hulpCards.length === 0 && artikelCards.length === 0) return null
+          return (
+            <div className="mt-3 pt-3 border-t border-border/40">
+              <p className="text-xs font-medium text-muted-foreground mb-2">
+                {hulpCards.length > 0 && artikelCards.length > 0
+                  ? "Hulp en informatie voor jou"
+                  : hulpCards.length > 0
+                    ? "Hulp voor jou en jouw naaste"
+                    : "Informatie voor jou"
+                }
+              </p>
+              <div className="flex flex-col gap-1.5">
+                {hulpCards.map((kaart, i) => (
+                  <HulpKaart key={`h-${i}`} kaart={kaart} />
+                ))}
+                {artikelCards.map((artikel, i) => (
+                  <ArtikelKaart key={`art-${i}`} artikel={artikel} />
+                ))}
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Link naar volledig gesprek */}
         {hasMessages && (
