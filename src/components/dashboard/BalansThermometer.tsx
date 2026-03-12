@@ -26,6 +26,9 @@ export interface BalansThermometerProps {
   deelgebieden?: DeelgebiedInfo[]
   totaalUren?: number | null
   daysSinceTest?: number | null
+  userName?: string
+  naasteNaam?: string | null
+  naasteRelatie?: string | null
 }
 
 const NIVEAU_CONFIG = {
@@ -36,8 +39,6 @@ const NIVEAU_CONFIG = {
     bgColor: "var(--accent-green-bg)",
     ringColor: "#1B7A3D",
     ringTrack: "#E5F5EA",
-    bericht: "Je balans ziet er goed uit!",
-    sub: "Je doet het fantastisch.",
   },
   GEMIDDELD: {
     label: "Matig",
@@ -46,8 +47,6 @@ const NIVEAU_CONFIG = {
     bgColor: "var(--accent-amber-bg)",
     ringColor: "#A85E00",
     ringTrack: "#FFF3E0",
-    bericht: "Let goed op jezelf.",
-    sub: "Je hebt best veel op je bordje.",
   },
   HOOG: {
     label: "Zwaar",
@@ -56,8 +55,6 @@ const NIVEAU_CONFIG = {
     bgColor: "var(--accent-red-bg)",
     ringColor: "#A52019",
     ringTrack: "#FDECEB",
-    bericht: "Het is zwaar, dat mag er zijn.",
-    sub: "Vergeet niet om hulp te vragen.",
   },
 }
 
@@ -83,7 +80,7 @@ const DEELGEBIED_CONFIG = {
 }
 
 
-/** SVG Donut Chart — zachte, organische uitstraling */
+/** SVG Donut Chart */
 function BalansDonut({ percentage, config }: { percentage: number; config: typeof NIVEAU_CONFIG.LAAG }) {
   const size = 100
   const strokeWidth = 10
@@ -94,7 +91,6 @@ function BalansDonut({ percentage, config }: { percentage: number; config: typeo
   return (
     <div className="relative w-[100px] h-[100px] flex-shrink-0">
       <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full -rotate-90">
-        {/* Track */}
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -104,7 +100,6 @@ function BalansDonut({ percentage, config }: { percentage: number; config: typeo
           strokeWidth={strokeWidth}
           opacity={0.6}
         />
-        {/* Filled arc */}
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -118,12 +113,55 @@ function BalansDonut({ percentage, config }: { percentage: number; config: typeo
           className="transition-all duration-1000 ease-out"
         />
       </svg>
-      {/* Center emoji */}
       <div className="absolute inset-0 flex items-center justify-center">
         <span className="text-2xl">{config.emoji}</span>
       </div>
     </div>
   )
+}
+
+/** Build a personal narrative about the caregiver's situation */
+function buildVerhaal(
+  niveau: "LAAG" | "GEMIDDELD" | "HOOG",
+  userName: string,
+  naasteNaam: string | null,
+  naasteRelatie: string | null,
+  totaalUren: number | null,
+  zorgtaken: ZorgtaakInfo[],
+  zwaarCount: number,
+): { titel: string; verhaal: string } {
+  const naasteTekst = naasteNaam
+    ? naasteRelatie
+      ? `${naasteNaam} (je ${naasteRelatie.toLowerCase()})`
+      : naasteNaam
+    : naasteRelatie
+      ? `je ${naasteRelatie.toLowerCase()}`
+      : "je naaste"
+
+  const urenTekst = totaalUren
+    ? totaalUren >= 20
+      ? `Je besteedt ${totaalUren} uur per week aan zorg — dat is een flinke klus.`
+      : `Je besteedt zo'n ${totaalUren} uur per week aan zorg.`
+    : ""
+
+  if (niveau === "HOOG") {
+    return {
+      titel: "Het is zwaar, dat mag er zijn.",
+      verhaal: `${userName}, je zorgt voor ${naasteTekst} en dat kost veel van je. ${urenTekst}${zwaarCount > 0 ? ` ${zwaarCount === 1 ? "Een van je zorgtaken" : `${zwaarCount} van je zorgtaken`} ${zwaarCount === 1 ? "weegt" : "wegen"} zwaar.` : ""} Vergeet niet om ook hulp te vragen voor jezelf.`,
+    }
+  }
+
+  if (niveau === "GEMIDDELD") {
+    return {
+      titel: "Let goed op jezelf.",
+      verhaal: `${userName}, je zorgt voor ${naasteTekst} en hebt best wat op je bordje. ${urenTekst}${zwaarCount > 0 ? ` Let extra op bij de ${zwaarCount === 1 ? "taak die" : "taken die"} zwaar ${zwaarCount === 1 ? "voelt" : "voelen"}.` : " Het gaat redelijk, maar houd je grenzen in de gaten."}`,
+    }
+  }
+
+  return {
+    titel: "Je balans ziet er goed uit!",
+    verhaal: `${userName}, je zorgt voor ${naasteTekst} en houdt de balans goed. ${urenTekst} Ga zo door en blijf goed voor jezelf zorgen.`,
+  }
 }
 
 export function BalansThermometer({
@@ -132,7 +170,11 @@ export function BalansThermometer({
   niveau,
   zorgtaken = [],
   deelgebieden = [],
+  totaalUren,
   daysSinceTest,
+  userName = "Je",
+  naasteNaam,
+  naasteRelatie,
 }: BalansThermometerProps) {
   const config = NIVEAU_CONFIG[niveau]
   const percentage = Math.min((score / maxScore) * 100, 100)
@@ -146,24 +188,26 @@ export function BalansThermometer({
 
   const topDeelgebieden = deelgebieden.slice(0, 3)
 
-  // Bouw vriendelijke zorgtaken-samenvatting
+  const { titel, verhaal } = buildVerhaal(niveau, userName, naasteNaam ?? null, naasteRelatie ?? null, totaalUren ?? null, zorgtaken, zwaarCount)
+
+  // Zorgtaken samenvatting
   const zorgtakenText = buildZorgtakenText(zorgtaken.length, goedCount, matigCount, zwaarCount)
 
   return (
     <div className="ker-card space-y-5">
-      {/* Balans Cirkel — donut met warme tekst */}
-      <div className="flex items-center gap-5">
+      {/* Balans Cirkel + persoonlijk verhaal */}
+      <div className="flex items-start gap-5">
         <BalansDonut percentage={percentage} config={config} />
         <div className="flex-1 min-w-0">
           <h3 className="text-lg font-bold text-foreground leading-tight">Balans Cirkel</h3>
           <p className="text-base font-semibold mt-0.5" style={{ color: config.color }}>
-            {config.bericht}
+            {titel}
           </p>
-          <p className="text-sm text-muted-foreground mt-0.5">{config.sub}</p>
+          <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{verhaal}</p>
         </div>
       </div>
 
-      {/* Deelgebieden: Energie, Gevoel, Tijd — zachte pastelkaarten */}
+      {/* Deelgebieden: Energie, Gevoel, Tijd */}
       {topDeelgebieden.length > 0 && (
         <div>
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">
@@ -191,7 +235,7 @@ export function BalansThermometer({
         </div>
       )}
 
-      {/* Zorgtaken — vriendelijke samenvatting in kaart */}
+      {/* Zorgtaken samenvatting */}
       {zorgtaken.length > 0 && (
         <div>
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">
@@ -204,7 +248,6 @@ export function BalansThermometer({
             <div className="flex-1 min-w-0">
               <p className="text-sm text-foreground leading-relaxed">{zorgtakenText}</p>
             </div>
-            {/* Compacte status badges */}
             <div className="flex items-center gap-2 flex-shrink-0">
               {goedCount > 0 && (
                 <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
