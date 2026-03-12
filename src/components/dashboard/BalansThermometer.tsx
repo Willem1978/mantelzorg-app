@@ -237,6 +237,12 @@ function buildSamenvattingVerhaal(
       const laatste = beschrijvingen.pop()
       parts.push(`Uit je test blijkt dat ${beschrijvingen.join(", ")} en ${laatste}.`)
     }
+
+    // Korte adviezen voor deelgebieden die aandacht nodig hebben
+    const aandacht = deelgebieden.filter((dg) => dg.niveau !== "LAAG")
+    for (const dg of aandacht) {
+      parts.push(dg.tip)
+    }
   }
 
   // Zorgtaken als doorlopende zin
