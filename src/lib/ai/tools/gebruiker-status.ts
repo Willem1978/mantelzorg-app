@@ -88,7 +88,7 @@ export async function fetchGebruikerStatus(userId: string) {
   const categorieVoorkeuren = caregiver.voorkeuren.filter(v => v.type === "CATEGORIE").map(v => v.slug)
   const tagVoorkeuren = caregiver.voorkeuren.filter(v => v.type === "TAG").map(v => v.slug)
 
-  // Laatste balanstest
+  // Laatste balanstest (inclusief antwoorden voor "jouw situatie" context)
   const laatsteTest = await prisma.belastbaarheidTest.findFirst({
     where: { caregiverId: caregiver.id, isCompleted: true },
     orderBy: { completedAt: "desc" },
@@ -97,6 +97,11 @@ export async function fetchGebruikerStatus(userId: string) {
       totaleBelastingScore: true,
       belastingNiveau: true,
       totaleZorguren: true,
+      antwoorden: {
+        where: { score: 2 },
+        select: { vraagTekst: true, antwoord: true },
+        orderBy: { vraagId: "asc" },
+      },
     },
   })
 
@@ -160,6 +165,7 @@ export async function fetchGebruikerStatus(userId: string) {
       gemeenteNaaste: caregiver.careRecipientMunicipality || caregiver.careRecipientCity || null,
       woonplaatsNaaste: caregiver.careRecipientCity || null,
       naamNaaste: caregiver.careRecipientName || null,
+      relatieNaaste: caregiver.careRecipient || null,
       aandoening: caregiver.aandoening,
     },
     voorkeuren: {
@@ -177,6 +183,7 @@ export async function fetchGebruikerStatus(userId: string) {
           niveau: laatsteTest.belastingNiveau,
           zorguren: laatsteTest.totaleZorguren,
           verouderd: testVerouderd,
+          aandachtspunten: laatsteTest.antwoorden.map(a => a.vraagTekst),
         }
       : { gedaan: false, aantalTests: 0 },
     checkIn: laatsteCheckIn
