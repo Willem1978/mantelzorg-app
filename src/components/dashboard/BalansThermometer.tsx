@@ -94,16 +94,30 @@ function BalansDonut({ percentage, config }: { percentage: number; config: typeo
   )
 }
 
-/** Build a personal narrative about the caregiver's situation */
-function buildVerhaal(
-  niveau: "LAAG" | "GEMIDDELD" | "HOOG",
-  userName: string,
-  naasteNaam: string | null,
-  naasteRelatie: string | null,
-  totaalUren: number | null,
-  zwaarCount: number,
-  deelgebieden: DeelgebiedInfo[],
-): string {
+/** Deelgebied naam zonder "Jouw" prefix voor in een zin */
+function deelgebiedLabel(naam: string): string {
+  return naam.replace(/^Jouw\s+/i, "").toLowerCase()
+}
+
+/** Niveau woord */
+function niveauWoord(n: "LAAG" | "GEMIDDELD" | "HOOG"): string {
+  return n === "LAAG" ? "goed" : n === "GEMIDDELD" ? "matig" : "zwaar"
+}
+
+/** Build JSX paragraphs for the narrative */
+function VerhaalContent({
+  niveau, userName, naasteNaam, naasteRelatie, totaalUren, zwaarCount, matigCount, totaleTaken, deelgebieden,
+}: {
+  niveau: "LAAG" | "GEMIDDELD" | "HOOG"
+  userName: string
+  naasteNaam: string | null
+  naasteRelatie: string | null
+  totaalUren: number | null
+  zwaarCount: number
+  matigCount: number
+  totaleTaken: number
+  deelgebieden: DeelgebiedInfo[]
+}) {
   const naasteTekst = naasteNaam
     ? naasteRelatie
       ? `${naasteNaam} (je ${naasteRelatie.toLowerCase()})`
@@ -114,37 +128,69 @@ function buildVerhaal(
 
   const urenTekst = totaalUren
     ? totaalUren >= 20
-      ? ` Je besteedt ${totaalUren} uur per week aan zorg — dat is een flinke klus.`
-      : ` Je besteedt zo'n ${totaalUren} uur per week aan zorg.`
-    : ""
+      ? <> Je besteedt <strong>{totaalUren} uur per week</strong> aan zorg — dat is een flinke klus.</>
+      : <> Je besteedt zo&apos;n <strong>{totaalUren} uur per week</strong> aan zorg.</>
+    : null
 
-  const parts: string[] = []
-
+  // Alinea 1: Persoonlijke intro
+  let intro: React.ReactNode
   if (niveau === "HOOG") {
-    parts.push(`${userName}, je zorgt voor ${naasteTekst} en dat kost veel van je.${urenTekst}`)
-    if (zwaarCount > 0) {
-      parts.push(`${zwaarCount === 1 ? "Een van je zorgtaken" : `${zwaarCount} van je zorgtaken`} ${zwaarCount === 1 ? "weegt" : "wegen"} zwaar.`)
-    }
-    parts.push("Vergeet niet om ook hulp te vragen voor jezelf.")
+    intro = <>{userName}, je zorgt voor <strong>{naasteTekst}</strong> en dat kost veel van je.{urenTekst} Vergeet niet om ook hulp te vragen voor jezelf.</>
   } else if (niveau === "GEMIDDELD") {
-    parts.push(`${userName}, je zorgt voor ${naasteTekst} en hebt best wat op je bordje.${urenTekst}`)
-    if (zwaarCount > 0) {
-      parts.push(`Let extra op bij de ${zwaarCount === 1 ? "taak die" : "taken die"} zwaar ${zwaarCount === 1 ? "voelt" : "voelen"}.`)
-    } else {
-      parts.push("Het gaat redelijk, maar houd je grenzen in de gaten.")
-    }
+    intro = <>{userName}, je zorgt voor <strong>{naasteTekst}</strong> en hebt best wat op je bordje.{urenTekst} Houd je grenzen in de gaten.</>
   } else {
-    parts.push(`${userName}, je zorgt voor ${naasteTekst} en houdt de balans goed.${urenTekst}`)
-    parts.push("Ga zo door en blijf goed voor jezelf zorgen.")
+    intro = <>{userName}, je zorgt voor <strong>{naasteTekst}</strong> en houdt de balans goed.{urenTekst} Ga zo door en blijf goed voor jezelf zorgen.</>
   }
 
-  // Deelgebieden adviezen die aandacht nodig hebben
+  // Alinea 2: Deelgebieden (energie, gevoel, tijd)
   const aandacht = deelgebieden.filter((dg) => dg.niveau !== "LAAG")
-  if (aandacht.length > 0) {
-    parts.push(aandacht.map((dg) => dg.tip).join(" "))
+  let deelgebiedenBlok: React.ReactNode = null
+  if (deelgebieden.length > 0) {
+    deelgebiedenBlok = (
+      <>
+        {deelgebieden.map((dg, i) => (
+          <span key={dg.naam}>
+            {i > 0 && (i === deelgebieden.length - 1 ? " en " : ", ")}
+            je <strong>{deelgebiedLabel(dg.naam)}</strong> is {niveauWoord(dg.niveau)}
+          </span>
+        ))}
+        .{" "}
+        {aandacht.length > 0 && aandacht.map((dg, i) => (
+          <span key={dg.naam}>{i > 0 ? " " : ""}{dg.tip}</span>
+        ))}
+      </>
+    )
   }
 
-  return parts.join(" ")
+  // Alinea 3: Zorgtaken
+  let takenBlok: React.ReactNode = null
+  if (totaleTaken > 0) {
+    takenBlok = (
+      <>
+        Je hebt <strong>{totaleTaken} {totaleTaken === 1 ? "zorgtaak" : "zorgtaken"}</strong>
+        {zwaarCount > 0 && matigCount > 0
+          ? <>, waarvan {zwaarCount === 1 ? "één" : zwaarCount} {zwaarCount === 1 ? "weegt" : "wegen"} zwaar en {matigCount === 1 ? "één" : matigCount} aandacht {matigCount === 1 ? "vraagt" : "vragen"}</>
+          : zwaarCount > 0
+            ? <>, waarvan <strong>{zwaarCount === 1 ? "één" : zwaarCount}</strong> best zwaar {zwaarCount === 1 ? "is" : "zijn"}</>
+            : matigCount > 0
+              ? <>, waarvan {matigCount === 1 ? "één" : matigCount} wat aandacht {matigCount === 1 ? "vraagt" : "vragen"}</>
+              : <> — en alles gaat lekker</>
+        }.
+      </>
+    )
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="text-base leading-relaxed text-foreground/80">{intro}</p>
+      {deelgebiedenBlok && (
+        <p className="text-base leading-relaxed text-foreground/80">{deelgebiedenBlok}</p>
+      )}
+      {takenBlok && (
+        <p className="text-base leading-relaxed text-foreground/80">{takenBlok}</p>
+      )}
+    </div>
+  )
 }
 
 /** Niveau titel */
@@ -170,14 +216,12 @@ export function BalansThermometer({
   const percentage = Math.min((score / maxScore) * 100, 100)
 
   const isZwaar = (m: string | null) => m === 'MOEILIJK' || m === 'ZEER_MOEILIJK' || m === 'JA' || m === 'ja'
+  const isMatig = (m: string | null) => m === 'GEMIDDELD' || m === 'SOMS' || m === 'soms'
   const zwaarCount = zorgtaken.filter(t => isZwaar(t.moeilijkheid)).length
+  const matigCount = zorgtaken.filter(t => isMatig(t.moeilijkheid)).length
 
   const topDeelgebieden = deelgebieden.slice(0, 3)
   const titel = getNiveauTitel(niveau)
-  const verhaal = buildVerhaal(
-    niveau, userName, naasteNaam ?? null, naasteRelatie ?? null,
-    totaalUren ?? null, zwaarCount, topDeelgebieden,
-  )
 
   return (
     <div className="ker-card space-y-4" style={{ background: config.cardBg }}>
@@ -185,24 +229,32 @@ export function BalansThermometer({
       <div className="flex items-center gap-4">
         <BalansDonut percentage={percentage} config={config} />
         <div className="flex-1 min-w-0">
-          <h3 className="text-xl font-bold text-foreground leading-snug" style={{ color: config.color }}>
+          <h3 className="text-xl font-bold leading-snug" style={{ color: config.color }}>
             {titel}
           </h3>
           {daysSinceTest != null && (
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="text-sm text-muted-foreground mt-0.5">
               {daysSinceTest === 0 ? "Vandaag getest" : `${daysSinceTest} dagen geleden getest`}
             </p>
           )}
         </div>
       </div>
 
-      {/* Persoonlijk verhaal */}
-      <p className="text-[15px] leading-relaxed text-foreground/80">
-        {verhaal}
-      </p>
+      {/* Persoonlijk verhaal in alinea's */}
+      <VerhaalContent
+        niveau={niveau}
+        userName={userName}
+        naasteNaam={naasteNaam ?? null}
+        naasteRelatie={naasteRelatie ?? null}
+        totaalUren={totaalUren ?? null}
+        zwaarCount={zwaarCount}
+        matigCount={matigCount}
+        totaleTaken={zorgtaken.length}
+        deelgebieden={topDeelgebieden}
+      />
 
       {/* Rapport link */}
-      <div className="pt-2">
+      <div className="pt-1">
         <Link
           href="/rapport"
           className="text-sm font-semibold text-primary hover:underline inline-flex items-center gap-1 min-h-[44px]"
