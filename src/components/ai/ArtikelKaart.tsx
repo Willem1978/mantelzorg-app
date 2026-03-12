@@ -24,7 +24,7 @@ export interface ParsedArtikelkaart {
   inhoud: string
 }
 
-const ARTIKELKAART_REGEX = /\{\{artikelkaart:([^}]+)\}\}/g
+const ARTIKELKAART_REGEX = /\{\{artikelkaart:([\s\S]*?)\}\}/g
 
 /**
  * Extraheert artikelkaarten uit tekst en retourneert schone tekst + kaarten.

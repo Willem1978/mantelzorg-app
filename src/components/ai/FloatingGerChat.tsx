@@ -7,8 +7,10 @@ import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import { cn } from "@/lib/utils"
 import { GerAvatar } from "@/components/GerAvatar"
-import { parseHulpkaarten, HulpKaart } from "@/components/ai/HulpKaart"
+import { parseHulpkaarten, HulpKaart, cleanRemainingMarkers } from "@/components/ai/HulpKaart"
+import type { ParsedHulpkaart } from "@/components/ai/HulpKaart"
 import { parseArtikelkaarten, ArtikelKaart } from "@/components/ai/ArtikelKaart"
+import type { ParsedArtikelkaart } from "@/components/ai/ArtikelKaart"
 
 /**
  * Button syntax parsing:
@@ -92,6 +94,8 @@ export function FloatingGerChat() {
   const [currentPage, setCurrentPage] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [input, setInput] = useState("")
+  const [persistedKaarten, setPersistedKaarten] = useState<ParsedHulpkaart[]>([])
+  const [persistedArtikelen, setPersistedArtikelen] = useState<ParsedArtikelkaart[]>([])
 
   const paginaContext = getPaginaContext(pathname)
 
@@ -140,6 +144,19 @@ export function FloatingGerChat() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
+
+  // Hulpkaarten/artikelkaarten bewaren tot er nieuwe komen
+  useEffect(() => {
+    const lastA = [...messages].reverse().find(m => m.role === "assistant")
+    if (!lastA || isLoading) return
+    const raw = getMessageText(lastA)
+    if (!raw) return
+    const { kaarten } = parseHulpkaarten(raw)
+    const { artikelen } = parseArtikelkaarten(raw)
+    if (kaarten.length > 0) setPersistedKaarten(kaarten.slice(0, 2))
+    if (artikelen.length > 0) setPersistedArtikelen(artikelen.slice(0, 3))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages.length, isLoading])
 
   const getMessageText = (message: typeof messages[number]): string => {
     const parts = message.parts
@@ -225,9 +242,10 @@ export function FloatingGerChat() {
               const { cleanText: textWithoutArticles, artikelen } = isAssistant
                 ? parseArtikelkaarten(textWithoutCards)
                 : { cleanText: textWithoutCards, artikelen: [] }
-              const { cleanText, buttons } = isAssistant
+              const { cleanText: textWithoutButtons, buttons } = isAssistant
                 ? parseButtons(textWithoutArticles)
                 : { cleanText: textWithoutArticles, buttons: [] }
+              const cleanText = isAssistant ? cleanRemainingMarkers(textWithoutButtons) : textWithoutButtons
               // kaarten en knoppen worden apart onder de input gerenderd
 
               // Gebruikersbericht — rechts uitgelijnd
@@ -330,24 +348,21 @@ export function FloatingGerChat() {
           </button>
         </form>
 
-        {/* Vraagknoppen als spraakbubbels + hulpkaarten als aparte sectie */}
+        {/* Vraagknoppen + hulpkaarten */}
         {(() => {
           const lastAssistant = [...messages].reverse().find(m => m.role === "assistant")
           if (!lastAssistant || isLoading) return null
           const raw = getMessageText(lastAssistant)
           if (!raw) return null
-          const { cleanText: t1, kaarten } = parseHulpkaarten(raw)
-          const { cleanText: t2, artikelen } = parseArtikelkaarten(t1)
+          const { cleanText: t1 } = parseHulpkaarten(raw)
+          const { cleanText: t2 } = parseArtikelkaarten(t1)
           const { buttons: btns } = parseButtons(t2)
           const vraagChips = btns.filter(b => b.type === "vraag").slice(0, 2)
-          const hulpCards = kaarten.slice(0, 2)
-          const artikelCards = artikelen.slice(0, 3)
-          const hasVragen = vraagChips.length > 0
-          const hasCards = hulpCards.length > 0 || artikelCards.length > 0
-          if (!hasVragen && !hasCards) return null
+          const hasCards = persistedKaarten.length > 0 || persistedArtikelen.length > 0
+          if (vraagChips.length === 0 && !hasCards) return null
           return (
             <div className="px-3 pb-2">
-              {hasVragen && (
+              {vraagChips.length > 0 && (
                 <div className="flex flex-col gap-1.5 items-end mb-2">
                   {vraagChips.map((btn, i) => (
                     <button
@@ -355,10 +370,10 @@ export function FloatingGerChat() {
                       onClick={() => handleButtonClick(btn)}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl rounded-br-sm text-xs font-medium transition-all bg-primary/8 border border-primary/15 text-foreground hover:bg-primary/15 hover:border-primary/25 active:scale-[0.98]"
                     >
-                      <span>{btn.label}</span>
-                      <svg className="w-3 h-3 text-primary/50 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                      <svg className="w-3 h-3 text-primary/40 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
                       </svg>
+                      <span>{btn.label}</span>
                     </button>
                   ))}
                 </div>
@@ -366,13 +381,13 @@ export function FloatingGerChat() {
               {hasCards && (
                 <div className="pt-2 border-t border-border/40">
                   <p className="text-[10px] font-medium text-muted-foreground mb-1.5">
-                    {hulpCards.length > 0 ? "Hulp voor jou en jouw naaste" : "Informatie voor jou"}
+                    {persistedKaarten.length > 0 ? "Hulp voor jou en jouw naaste" : "Informatie voor jou"}
                   </p>
                   <div className="flex flex-col gap-1">
-                    {hulpCards.map((kaart, i) => (
+                    {persistedKaarten.map((kaart, i) => (
                       <HulpKaart key={`h-${i}`} kaart={kaart} />
                     ))}
-                    {artikelCards.map((artikel, i) => (
+                    {persistedArtikelen.map((artikel, i) => (
                       <ArtikelKaart key={`art-${i}`} artikel={artikel} />
                     ))}
                   </div>
