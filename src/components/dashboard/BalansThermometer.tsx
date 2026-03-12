@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import { DeelgebiedIcon } from "@/components/ui/DeelgebiedIcon"
 
 interface ZorgtaakInfo {
   naam: string
@@ -57,28 +56,6 @@ const NIVEAU_CONFIG = {
     ringTrack: "#FDECEB",
   },
 }
-
-const DEELGEBIED_CONFIG = {
-  LAAG: {
-    label: "Goed",
-    pastelBg: "bg-emerald-50 dark:bg-emerald-950/20",
-    pastelBorder: "border-emerald-200/60 dark:border-emerald-800/40",
-    textColor: "text-emerald-700 dark:text-emerald-400",
-  },
-  GEMIDDELD: {
-    label: "Matig",
-    pastelBg: "bg-amber-50 dark:bg-amber-950/20",
-    pastelBorder: "border-amber-200/60 dark:border-amber-800/40",
-    textColor: "text-amber-700 dark:text-amber-400",
-  },
-  HOOG: {
-    label: "Zwaar",
-    pastelBg: "bg-rose-50 dark:bg-rose-950/20",
-    pastelBorder: "border-rose-200/60 dark:border-rose-800/40",
-    textColor: "text-rose-700 dark:text-rose-400",
-  },
-}
-
 
 /** SVG Donut Chart */
 function BalansDonut({ percentage, config }: { percentage: number; config: typeof NIVEAU_CONFIG.LAAG }) {
@@ -190,8 +167,7 @@ export function BalansThermometer({
 
   const { titel, verhaal } = buildVerhaal(niveau, userName, naasteNaam ?? null, naasteRelatie ?? null, totaalUren ?? null, zorgtaken, zwaarCount)
 
-  // Zorgtaken samenvatting
-  const zorgtakenText = buildZorgtakenText(zorgtaken.length, goedCount, matigCount, zwaarCount)
+  // (deelgebieden + zorgtaken worden nu als verhaal getoond)
 
   return (
     <div className="ker-card space-y-5">
@@ -207,69 +183,11 @@ export function BalansThermometer({
         </div>
       </div>
 
-      {/* Deelgebieden: Energie, Gevoel, Tijd */}
-      {topDeelgebieden.length > 0 && (
-        <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">
-            Hoe gaat het met jou?
-          </p>
-          <div className="grid grid-cols-3 gap-2.5">
-            {topDeelgebieden.map((dg) => {
-              const dgConfig = DEELGEBIED_CONFIG[dg.niveau]
-              return (
-                <div
-                  key={dg.naam}
-                  className={`rounded-2xl p-3 text-center border ${dgConfig.pastelBg} ${dgConfig.pastelBorder}`}
-                >
-                  <div className={`flex justify-center mb-1.5 ${dgConfig.textColor}`}>
-                    <DeelgebiedIcon naam={dg.naam} size="md" />
-                  </div>
-                  <p className="text-xs font-semibold text-foreground leading-tight">{dg.naam}</p>
-                  <span className={`text-xs font-bold mt-1 inline-block ${dgConfig.textColor}`}>
-                    {dgConfig.label}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Zorgtaken samenvatting */}
-      {zorgtaken.length > 0 && (
-        <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">
-            Jouw zorgtaken
-          </p>
-          <div
-            className="rounded-2xl px-4 py-3.5 flex items-center gap-3 border"
-            style={{ backgroundColor: "var(--accent-green-bg)", borderColor: "transparent" }}
-          >
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-foreground leading-relaxed">{zorgtakenText}</p>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {goedCount > 0 && (
-                <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  Goed
-                </span>
-              )}
-              {matigCount > 0 && (
-                <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 dark:text-amber-400">
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L1 21h22L12 2zm0 4l7.53 13H4.47L12 6z" opacity={0.6}/><path d="M11 10h2v5h-2zm0 6h2v2h-2z"/></svg>
-                  Matig
-                </span>
-              )}
-              {zwaarCount > 0 && (
-                <span className="inline-flex items-center gap-1 text-xs font-semibold text-rose-700 dark:text-rose-400">
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" opacity={0.15}/><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth={2}/><path d="M12 8v5M12 16h.01"/></svg>
-                  Zwaar
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
+      {/* Deelgebieden + zorgtaken als doorlopend verhaal */}
+      {(topDeelgebieden.length > 0 || zorgtaken.length > 0) && (
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          {buildSamenvattingVerhaal(topDeelgebieden, zorgtaken.length, goedCount, matigCount, zwaarCount)}
+        </p>
       )}
 
       {/* Footer */}
@@ -293,21 +211,49 @@ export function BalansThermometer({
   )
 }
 
-function buildZorgtakenText(total: number, goed: number, matig: number, zwaar: number): string {
-  if (total === 0) return "Je hebt nog geen zorgtaken ingevuld."
-
+function buildSamenvattingVerhaal(
+  deelgebieden: DeelgebiedInfo[],
+  totaleTaken: number,
+  goed: number,
+  matig: number,
+  zwaar: number,
+): string {
   const parts: string[] = []
-  parts.push(`Je hebt momenteel ${total} lopende ${total === 1 ? "zorgtaak" : "zorgtaken"}.`)
 
-  if (zwaar > 0 && matig > 0) {
-    parts.push(`${zwaar === 1 ? "Eén daarvan" : `${zwaar} daarvan`} ${zwaar === 1 ? "vraagt" : "vragen"} wat extra aandacht.`)
-  } else if (zwaar > 0) {
-    parts.push(`${zwaar === 1 ? "Eén daarvan" : `${zwaar} daarvan`} ${zwaar === 1 ? "is" : "zijn"} best zwaar.`)
-  } else if (matig > 0) {
-    parts.push(`${matig === 1 ? "Eén" : `${matig}`} ${matig === 1 ? "vraagt" : "vragen"} wat aandacht.`)
-  } else {
-    parts.push("Alles gaat lekker!")
+  // Deelgebieden als vloeiende tekst
+  if (deelgebieden.length > 0) {
+    const niveauWoord = (n: "LAAG" | "GEMIDDELD" | "HOOG") =>
+      n === "LAAG" ? "goed" : n === "GEMIDDELD" ? "matig" : "zwaar"
+
+    const beschrijvingen = deelgebieden.map(
+      (dg) => `je ${dg.naam.toLowerCase()} is ${niveauWoord(dg.niveau)}`
+    )
+
+    if (beschrijvingen.length === 1) {
+      parts.push(`Uit je test blijkt dat ${beschrijvingen[0]}.`)
+    } else if (beschrijvingen.length === 2) {
+      parts.push(`Uit je test blijkt dat ${beschrijvingen[0]} en ${beschrijvingen[1]}.`)
+    } else {
+      const laatste = beschrijvingen.pop()
+      parts.push(`Uit je test blijkt dat ${beschrijvingen.join(", ")} en ${laatste}.`)
+    }
   }
 
-  return parts.join("\n")
+  // Zorgtaken als doorlopende zin
+  if (totaleTaken > 0) {
+    let takenZin = `Je hebt ${totaleTaken} ${totaleTaken === 1 ? "zorgtaak" : "zorgtaken"}`
+    if (zwaar > 0 && matig > 0) {
+      takenZin += `, waarvan ${zwaar === 1 ? "één" : zwaar} ${zwaar === 1 ? "weegt" : "wegen"} zwaar`
+    } else if (zwaar > 0) {
+      takenZin += `, waarvan ${zwaar === 1 ? "één" : zwaar} best zwaar ${zwaar === 1 ? "is" : "zijn"}`
+    } else if (matig > 0) {
+      takenZin += `, waarvan ${matig === 1 ? "één" : matig} wat aandacht ${matig === 1 ? "vraagt" : "vragen"}`
+    } else {
+      takenZin += " en alles gaat lekker"
+    }
+    takenZin += "."
+    parts.push(takenZin)
+  }
+
+  return parts.join(" ")
 }
