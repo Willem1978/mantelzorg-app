@@ -124,16 +124,20 @@ export function AiChat() {
       .join("")
   }
 
-  // Haal vraagknoppen uit het LAATSTE assistant-bericht (voor boven de input)
-  const lastSuggesties = (() => {
+  // Haal data uit het LAATSTE assistant-bericht voor onder de input
+  const lastAssistantData = (() => {
     const lastAssistant = [...messages].reverse().find(m => m.role === "assistant")
-    if (!lastAssistant) return []
+    if (!lastAssistant) return { vraagknoppen: [], kaarten: [], artikelen: [] }
     const raw = getMessageText(lastAssistant)
-    if (!raw) return []
-    const { cleanText: t1 } = parseHulpkaarten(raw)
-    const { cleanText: t2 } = parseArtikelkaarten(t1)
+    if (!raw) return { vraagknoppen: [], kaarten: [], artikelen: [] }
+    const { cleanText: t1, kaarten } = parseHulpkaarten(raw)
+    const { cleanText: t2, artikelen } = parseArtikelkaarten(t1)
     const { buttons } = parseButtons(t2)
-    return buttons.filter(b => b.type === "vraag").slice(0, 2)
+    return {
+      vraagknoppen: buttons.filter(b => b.type === "vraag").slice(0, 2),
+      kaarten: kaarten.slice(0, 2),
+      artikelen: artikelen.slice(0, 3),
+    }
   })()
 
   return (
@@ -187,8 +191,7 @@ export function AiChat() {
           const { cleanText, buttons } = isAssistant
             ? parseButtons(textWithoutArticles)
             : { cleanText: textWithoutArticles, buttons: [] }
-          const actieKnoppen = buttons.filter(b => b.type === "knop").slice(0, 1)
-          const hasCards = kaarten.length > 0 || artikelen.length > 0 || actieKnoppen.length > 0
+          // kaarten, artikelen en knoppen worden apart buiten de bubble gerenderd
 
           // Gebruikersbericht
           if (message.role === "user") {
@@ -201,47 +204,16 @@ export function AiChat() {
             )
           }
 
-          // Ger-bericht: bubble = alleen tekst, kaarten = eronder
+          // Ger-bericht: bubble = alleen tekst
           return (
             <div key={message.id} className="flex gap-3 items-start pr-8">
               <GerAvatar size="xs" className="!w-8 !h-8 flex-shrink-0 mt-0.5" />
-
-              <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-                {/* Tekstbubble */}
+              <div className="flex-1 min-w-0">
                 {cleanText && (
                   <div className="bg-[var(--accent-amber-bg)]/40 border border-[var(--accent-amber)]/10 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
                     <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
                       {formatMessage(cleanText)}
                     </div>
-                  </div>
-                )}
-
-                {/* Kaarten als bijlagen onder de bubble */}
-                {hasCards && (
-                  <div className="flex flex-col gap-1.5 max-w-[90%]">
-                    {actieKnoppen.map((btn, i) => (
-                      <button
-                        key={`a-${i}`}
-                        onClick={() => handleButtonClick(btn)}
-                        disabled={isLoading}
-                        className={cn(
-                          "flex items-center gap-2 w-full px-3 py-2 rounded-xl text-sm transition-all text-left",
-                          "bg-[var(--accent-green-bg)]/60 border border-[var(--accent-green)]/15 text-foreground hover:border-[var(--accent-green)]/30 hover:bg-[var(--accent-green-bg)]",
-                          isLoading && "opacity-50 cursor-not-allowed"
-                        )}
-                      >
-                        <svg className="w-4 h-4 text-[var(--accent-green)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                        </svg>
-                        <span className="flex-1 truncate text-sm font-medium">{btn.label}</span>
-                      </button>
-                    ))}
-                    {kaarten.slice(0, 2).map((kaart, i) => (
-                      <HulpKaart key={`h-${i}`} kaart={kaart} />
-                    ))}
-                    {artikelen.slice(0, 3).map((artikel, i) => (
-                      <ArtikelKaart key={`art-${i}`} artikel={artikel} />
-                    ))}
                   </div>
                 )}
               </div>
@@ -299,24 +271,6 @@ export function AiChat() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Suggestie-chips boven input — van het laatste Ger-bericht */}
-      {lastSuggesties.length > 0 && !isLoading && (
-        <div className="px-3 pt-2 flex flex-wrap gap-1.5">
-          {lastSuggesties.map((btn, i) => (
-            <button
-              key={`s-${i}`}
-              onClick={() => handleButtonClick(btn)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all bg-primary/5 border border-primary/15 text-foreground hover:bg-primary/10 hover:border-primary/30"
-            >
-              <span>{btn.label}</span>
-              <svg className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          ))}
-        </div>
-      )}
-
       {/* Input */}
       <div className="border-t border-border bg-card p-3">
         <form
@@ -328,7 +282,7 @@ export function AiChat() {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Stel je vraag..."
+            placeholder="Type hier jouw vraag of kies een van onderstaande vragen"
             className="flex-1 px-4 py-3 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
             disabled={isLoading}
             autoComplete="off"
@@ -349,6 +303,46 @@ export function AiChat() {
             </svg>
           </button>
         </form>
+
+        {/* Vraagknoppen als spraakbubbels — onder input, rechts uitgelijnd */}
+        {lastAssistantData.vraagknoppen.length > 0 && !isLoading && (
+          <div className="mt-2 flex flex-col gap-1.5 items-end">
+            {lastAssistantData.vraagknoppen.map((btn, i) => (
+              <button
+                key={`s-${i}`}
+                onClick={() => handleButtonClick(btn)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl rounded-br-sm text-sm transition-all text-left bg-primary/8 border border-primary/15 text-foreground hover:bg-primary/15 hover:border-primary/25 active:scale-[0.98]"
+              >
+                <span>{btn.label}</span>
+                <svg className="w-3.5 h-3.5 text-primary/50 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Hulpkaarten & artikelkaarten — apart van gesprek, met header */}
+        {(lastAssistantData.kaarten.length > 0 || lastAssistantData.artikelen.length > 0) && !isLoading && (
+          <div className="mt-3 pt-3 border-t border-border/40">
+            <p className="text-xs font-medium text-muted-foreground mb-2">
+              {lastAssistantData.kaarten.length > 0 && lastAssistantData.artikelen.length > 0
+                ? "Hulp en informatie voor jou"
+                : lastAssistantData.kaarten.length > 0
+                  ? "Hulp voor jou en jouw naaste"
+                  : "Informatie voor jou"
+              }
+            </p>
+            <div className="flex flex-col gap-1.5">
+              {lastAssistantData.kaarten.map((kaart, i) => (
+                <HulpKaart key={`h-${i}`} kaart={kaart} />
+              ))}
+              {lastAssistantData.artikelen.map((artikel, i) => (
+                <ArtikelKaart key={`art-${i}`} artikel={artikel} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
