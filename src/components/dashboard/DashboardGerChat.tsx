@@ -215,16 +215,6 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
       .join("")
   }
 
-  // Chip kleuren voor suggesties
-  const chipColorMap: Record<string, string> = {
-    amber: "bg-amber-100 border-amber-300 text-amber-900 hover:bg-amber-200 dark:bg-amber-900/40 dark:border-amber-700 dark:text-amber-200 dark:hover:bg-amber-900/60",
-    rose: "bg-rose-100 border-rose-300 text-rose-900 hover:bg-rose-200 dark:bg-rose-900/40 dark:border-rose-700 dark:text-rose-200 dark:hover:bg-rose-900/60",
-    sky: "bg-sky-100 border-sky-300 text-sky-900 hover:bg-sky-200 dark:bg-sky-900/40 dark:border-sky-700 dark:text-sky-200 dark:hover:bg-sky-900/60",
-    purple: "bg-purple-100 border-purple-300 text-purple-900 hover:bg-purple-200 dark:bg-purple-900/40 dark:border-purple-700 dark:text-purple-200 dark:hover:bg-purple-900/60",
-    blue: "bg-blue-100 border-blue-300 text-blue-900 hover:bg-blue-200 dark:bg-blue-900/40 dark:border-blue-700 dark:text-blue-200 dark:hover:bg-blue-900/60",
-    green: "bg-emerald-100 border-emerald-300 text-emerald-900 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:border-emerald-700 dark:text-emerald-200 dark:hover:bg-emerald-900/60",
-  }
-
   return (
     <div className="ker-card flex flex-col relative" style={{ minHeight: "320px" }}>
       {/* Chat berichten container — scrollable area */}
@@ -244,57 +234,6 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
             </div>
           </div>
         </div>
-
-        {/* Suggestie-chips — direct onder begroeting, links uitgelijnd */}
-        {!hasMessages && proactiveActions.length > 0 && (
-          <div className="pl-[2.875rem] flex flex-col gap-2">
-            {/* Primaire actie — groter en krachtiger */}
-            <button
-              onClick={() => {
-                const action = proactiveActions[0]
-                if (action.action.startsWith("/")) {
-                  router.push(action.action)
-                } else {
-                  handleSend(action.label)
-                }
-              }}
-              className={cn(
-                "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm font-bold transition-all w-fit",
-                "shadow-sm hover:shadow-md active:scale-[0.97]",
-                chipColorMap[proactiveActions[0].color] || chipColorMap.amber
-              )}
-            >
-              <span className="text-lg leading-none">{proactiveActions[0].emoji}</span>
-              <span>{proactiveActions[0].label}</span>
-              <svg className="w-4 h-4 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-            {/* Secundaire acties — compacter */}
-            <div className="flex flex-wrap gap-2">
-              {proactiveActions.slice(1).map((action, i) => (
-                <button
-                  key={i}
-                  onClick={() => {
-                    if (action.action.startsWith("/")) {
-                      router.push(action.action)
-                    } else {
-                      handleSend(action.label)
-                    }
-                  }}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border text-sm font-medium transition-all",
-                    "shadow-sm hover:shadow active:scale-[0.97]",
-                    chipColorMap[action.color] || chipColorMap.amber
-                  )}
-                >
-                  <span className="text-base leading-none">{action.emoji}</span>
-                  <span>{action.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Chat berichten */}
         {hasMessages && messages.map((message) => {
@@ -420,6 +359,31 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
             </svg>
           </button>
         </form>
+
+        {/* Proactieve acties — onder input als spraakbubbels (pre-conversatie) */}
+        {!hasMessages && proactiveActions.length > 0 && (
+          <div className="mt-2 flex flex-col gap-1.5 items-end">
+            {proactiveActions.map((action, i) => (
+              <button
+                key={`pa-${i}`}
+                onClick={() => {
+                  if (action.action.startsWith("/")) {
+                    router.push(action.action)
+                  } else {
+                    handleSend(action.label)
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl rounded-br-sm text-sm transition-all text-left bg-primary/8 border border-primary/15 text-foreground hover:bg-primary/15 hover:border-primary/25 active:scale-[0.98]"
+              >
+                <span className="text-base leading-none">{action.emoji}</span>
+                <span>{action.label}</span>
+                <svg className="w-3.5 h-3.5 text-primary/50 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Vraagknoppen als spraakbubbels — onder input, rechts uitgelijnd als gebruikersvragen */}
         {hasMessages && !showTypingIndicator && (() => {
