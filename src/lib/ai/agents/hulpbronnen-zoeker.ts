@@ -404,7 +404,8 @@ export async function zoekHulpbronnenVoorGemeente(
       console.log(`[hulpbronnen-zoeker] ${batch.naam}: ${batchResultaten.length} resultaten`)
       alleResultaten.push(...batchResultaten)
     } catch (e) {
-      console.error(`[hulpbronnen-zoeker] Fout bij ${batch.naam}:`, e)
+      const isTimeout = e instanceof Error && (e.name === "AbortError" || e.name === "TimeoutError")
+      console.error(`[hulpbronnen-zoeker] ${isTimeout ? "Timeout" : "Fout"} bij ${batch.naam}:`, e)
       // Ga door met volgende batch
     }
 
@@ -470,12 +471,12 @@ BESTAANDE HULPBRONNEN IN DATABASE (ter deduplicatie):
 ${bestaandeFormatted}
 
 INSTRUCTIES:
-1. Doe per categorie minstens 2 webzoekopdrachten, bijv.:
+1. Doe per categorie 1 gerichte webzoekopdracht (max 5 zoekopdrachten totaal), bijv.:
    - "${categorieen[0]?.zoekwoorden[0]} ${gemeente}"
-   - "sociale kaart ${gemeente} ${categorieen[0]?.label.toLowerCase()}"
 2. Neem alleen organisaties op die echt bestaan en een dienst bieden
 3. Vergelijk met bestaande hulpbronnen — markeer duplicaten
-4. Max 8 resultaten per categorie
+4. Max 5 resultaten per categorie
+5. Wees EFFICIËNT: zoek niet te veel, geef snel je JSON antwoord
 
 VERTROUWEN:
 - HOOG: Overheidswebsite, bekende instelling, gemeentelijke bron
@@ -520,15 +521,17 @@ Als telefoon/adres/email niet gevonden is: laat het veld leeg (lege string "").`
     prompt,
     tools: {
       web_search: anthropic.tools.webSearch_20250305({
+        maxUses: 5,
         userLocation: {
           type: "approximate",
           country: "NL",
         },
       }),
     },
-    stopWhen: stepCountIs(20),
+    stopWhen: stepCountIs(8),
     maxOutputTokens: 8000,
     temperature: 0.1,
+    abortSignal: AbortSignal.timeout(90_000),
   })
 
   // Parse JSON uit response
