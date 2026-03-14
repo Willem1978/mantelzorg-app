@@ -192,6 +192,7 @@ export const voorkeurenSchema = z.object({
     slug: z.string(),
   })),
   aandoening: z.string().optional(),
+  aandoeningen: z.array(z.string()).optional(), // Multi-select aandoeningen
 })
 
 // --- Onboarding profiel schema ---

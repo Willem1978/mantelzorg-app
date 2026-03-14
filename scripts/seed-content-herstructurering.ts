@@ -161,15 +161,24 @@ async function main() {
   ]
 
   const situatieTags = [
-    { slug: 'jong', naam: 'Jonge mantelzorger (< 25)', emoji: '👶', volgorde: 1 },
+    { slug: 'jong', naam: 'Jonge mantelzorger (< 25)', emoji: '🎓', volgorde: 1 },
     { slug: 'werkend', naam: 'Werkende mantelzorger', emoji: '💼', volgorde: 2 },
-    { slug: 'op-afstand', naam: 'Mantelzorger op afstand', emoji: '📍', volgorde: 3 },
-    { slug: 'met-kinderen', naam: 'Mantelzorger met kinderen', emoji: '👨‍👩‍👧', volgorde: 4 },
-    { slug: 'beginnend', naam: 'Beginnende mantelzorger', emoji: '🌱', volgorde: 5 },
-    { slug: 'langdurig', naam: 'Langdurige zorg (> 5 jaar)', emoji: '⏳', volgorde: 6 },
-    { slug: 'partner-zorg', naam: 'Mantelzorger voor partner', emoji: '💑', volgorde: 7 },
-    { slug: 'ouder-zorg', naam: 'Mantelzorger voor ouder', emoji: '👵', volgorde: 8 },
-    { slug: 'kind-zorg', naam: 'Mantelzorger voor kind', emoji: '👧', volgorde: 9 },
+    { slug: 'werkend-parttime', naam: 'Parttime werkend', emoji: '🕐', volgorde: 3 },
+    { slug: 'student', naam: 'Studerende mantelzorger', emoji: '🎓', volgorde: 4 },
+    { slug: 'gepensioneerd', naam: 'Gepensioneerde mantelzorger', emoji: '👴', volgorde: 5 },
+    { slug: 'samenwonend', naam: 'Samenwonend met naaste', emoji: '🏠', volgorde: 6 },
+    { slug: 'dichtbij', naam: 'Naaste woont dichtbij', emoji: '📍', volgorde: 7 },
+    { slug: 'op-afstand', naam: 'Mantelzorg op afstand', emoji: '🚗', volgorde: 8 },
+    { slug: 'met-kinderen', naam: 'Mantelzorg naast eigen kinderen', emoji: '👨‍👩‍👧', volgorde: 9 },
+    { slug: 'beginnend', naam: 'Net begonnen (< 1 jaar)', emoji: '🌱', volgorde: 10 },
+    { slug: 'langdurig', naam: 'Al jaren bezig (> 5 jaar)', emoji: '⏳', volgorde: 11 },
+    { slug: 'intensief', naam: 'Intensieve zorg (20+ uur/week)', emoji: '⏰', volgorde: 12 },
+    { slug: 'partner-zorg', naam: 'Partnerzorg', emoji: '💑', volgorde: 13 },
+    { slug: 'ouder-zorg', naam: 'Kind zorgt voor ouder', emoji: '👵', volgorde: 14 },
+    { slug: 'kind-zorg', naam: 'Ouder zorgt voor kind', emoji: '👧', volgorde: 15 },
+    { slug: 'meerdere-zorgvragers', naam: 'Meerdere naasten', emoji: '👥', volgorde: 16 },
+    { slug: 'alleenstaand', naam: 'Alleenstaande mantelzorger', emoji: '🏚️', volgorde: 17 },
+    { slug: 'rouwverwerking', naam: 'Na het overlijden', emoji: '🕊️', volgorde: 18 },
   ]
 
   for (const tag of aandoeningTags) {
@@ -203,6 +212,39 @@ async function main() {
     })
   }
   console.log(`  ✓ ${situatieTags.length} situatie-tags aangemaakt/bijgewerkt`)
+
+  // ONDERWERP-tags (voor artikel-tagging, niet door gebruiker gekozen)
+  const onderwerpTags = [
+    { slug: 'financien', naam: 'Financiën & vergoedingen', emoji: '💰', volgorde: 1 },
+    { slug: 'wmo-aanvragen', naam: 'Wmo aanvragen', emoji: '📋', volgorde: 2 },
+    { slug: 'pgb', naam: 'Persoonsgebonden budget', emoji: '💳', volgorde: 3, synoniemen: ['PGB', 'persoonsgebonden budget'] },
+    { slug: 'medicatie', naam: 'Medicatie & medicijnbeheer', emoji: '💊', volgorde: 4 },
+    { slug: 'nachtrust', naam: 'Slaap & nachtrust', emoji: '😴', volgorde: 5 },
+    { slug: 'voeding', naam: 'Voeding & maaltijden', emoji: '🍽️', volgorde: 6 },
+    { slug: 'veiligheid-thuis', naam: 'Veiligheid in huis', emoji: '🏠', volgorde: 7 },
+    { slug: 'dagbesteding', naam: 'Dagbesteding', emoji: '🎨', volgorde: 8 },
+    { slug: 'vervoer', naam: 'Vervoer & mobiliteit', emoji: '🚗', volgorde: 9 },
+    { slug: 'respijtzorg', naam: 'Respijtzorg', emoji: '🌿', volgorde: 10, synoniemen: ['respijt', 'vervangende zorg', 'logeervoorziening'] },
+    { slug: 'werk-zorg-balans', naam: 'Werk-zorgbalans', emoji: '⚖️', volgorde: 11 },
+    { slug: 'emotionele-steun', naam: 'Emotionele steun', emoji: '💚', volgorde: 12 },
+  ]
+
+  for (const tag of onderwerpTags) {
+    await prisma.contentTag.upsert({
+      where: { slug: tag.slug },
+      update: { naam: tag.naam, emoji: tag.emoji, volgorde: tag.volgorde, synoniemen: (tag as any).synoniemen || [] },
+      create: {
+        type: 'ONDERWERP',
+        slug: tag.slug,
+        naam: tag.naam,
+        emoji: tag.emoji,
+        volgorde: tag.volgorde,
+        synoniemen: (tag as any).synoniemen || [],
+        isActief: true,
+      },
+    })
+  }
+  console.log(`  ✓ ${onderwerpTags.length} onderwerp-tags aangemaakt/bijgewerkt`)
 
   console.log('\n=== Content Herstructurering voltooid! ===')
 }

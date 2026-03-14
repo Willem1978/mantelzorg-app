@@ -144,6 +144,9 @@ model Caregiver {
   aandoening                String?                 // Primaire aandoening van zorgvrager (tag slug)
   voorkeuren                GebruikerVoorkeur[]
   weekKaarten               WeekKaart[]
+  // Profiel uitbreiding (Iteratie A)
+  woonsituatie              String?                 // "samen" | "dichtbij" | "op-afstand"
+  werkstatus                String?                 // "fulltime" | "parttime" | "niet-werkend" | "student" | "gepensioneerd"
 
   @@index([municipality])
   @@index([careRecipientMunicipality])
@@ -989,6 +992,7 @@ model ContentTag {
   naam         String
   beschrijving String?
   emoji        String?
+  synoniemen   String[]     @default([]) // Synoniemen voor zoeken, bijv. ["PGB", "persoonsgebonden budget"]
   volgorde     Int          @default(0)
   isActief     Boolean      @default(true)
   createdAt    DateTime     @default(now())
@@ -1024,6 +1028,7 @@ model GebruikerVoorkeur {
 enum TagType {
   AANDOENING    // Bijv. dementie, kanker, CVA
   SITUATIE      // Bijv. werkend, jong, op-afstand
+  ONDERWERP     // Bijv. financien, respijtzorg, medicatie
 }
 
 enum VoorkeurType {
