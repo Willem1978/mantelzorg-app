@@ -1,23 +1,35 @@
 # Plan: Content & Zoek Fundament — "Stevig als een Huis"
 
 **Datum:** 14 maart 2026
-**Versie:** 1.0
-**Doel:** Het zoeken naar informatie en hulpbronnen robuust, relevant en tastbaar maken. Content beter matchen aan gebruikers. Bronvermelding op orde. Hiaten in content systematisch opsporen en opvullen.
+**Versie:** 1.1
+**Doel:** Artikelen proactief aanbevelen aan mantelzorgers op basis van hun persoonlijke profiel (tags), in plaats van hen door 100+ artikelen te laten zoeken. Hulpbronnen tastbaar maken. Content gericht genereren voor specifieke doelgroepen. Bronvermelding op orde.
+
+---
+
+## Kernvisie
+
+> **Van "zoek zelf" naar "aanbevolen voor jou"**
+>
+> Een werkende mantelzorger met een dementerende moeder moet andere artikelen zien dan een gepensioneerde mantelzorger met een partner met kanker. Door profiel-tags (zoals *werkende mantelzorger*, *mantelzorger met gezin*, *dementie*, *op afstand*) te koppelen aan artikelen, kan het systeem de juiste content bij de juiste persoon brengen — zonder dat ze zelf hoeven te zoeken.
+>
+> Dit principe geldt ook voor het **genereren** van nieuwe artikelen: de AI content agent schrijft artikelen voor specifieke tag-combinaties (bijv. "financiën + werkende mantelzorger + dementie"), zodat elke doelgroep relevante content krijgt.
 
 ---
 
 ## Inhoudsopgave
 
 1. [Probleemanalyse: Wat mist er nu?](#1-probleemanalyse)
-2. [Stap 1: Hulpbronnen Tastbaar Maken](#2-stap-1-hulpbronnen-tastbaar-maken)
-3. [Stap 2: Tagging & Matching Verbeteren](#3-stap-2-tagging--matching-verbeteren)
-4. [Stap 3: Artikelen Scoren & Relevantie](#4-stap-3-artikelen-scoren--relevantie)
-5. [Stap 4: Voorgestelde Artikelen Slimmer Maken](#5-stap-4-voorgestelde-artikelen-slimmer-maken)
-6. [Stap 5: Content Hiaten & Prioriteitsmatrix](#6-stap-5-content-hiaten--prioriteitsmatrix)
-7. [Stap 6: Bronvermelding & Auteurschap](#7-stap-6-bronvermelding--auteurschap)
-8. [Database Wijzigingen (totaaloverzicht)](#8-database-wijzigingen)
-9. [Bouwvolgorde & Afhankelijkheden](#9-bouwvolgorde)
-10. [Acceptatiecriteria per Stap](#10-acceptatiecriteria)
+2. [Stap 1: Tagging & Profiel-matching](#2-stap-1-tagging--profiel-matching)
+3. [Stap 2: Aanbevolen Artikelen](#3-stap-2-aanbevolen-artikelen)
+4. [Stap 3: Gerichte Artikelgeneratie](#4-stap-3-gerichte-artikelgeneratie)
+5. [Stap 4: Hulpbronnen Tastbaar Maken](#5-stap-4-hulpbronnen-tastbaar-maken)
+6. [Stap 5: Artikel Compleetheid & Kwaliteitsbeheer](#6-stap-5-artikel-compleetheid--kwaliteitsbeheer)
+7. [Stap 6: Content Hiaten & Prioriteitsmatrix](#7-stap-6-content-hiaten--prioriteitsmatrix)
+8. [Stap 6: Scoren & Feedback](#8-stap-6-scoren--feedback)
+9. [Stap 7: Bronvermelding & Auteurschap](#9-stap-7-bronvermelding--auteurschap)
+10. [Database Wijzigingen (totaaloverzicht)](#10-database-wijzigingen)
+11. [Bouwvolgorde & Afhankelijkheden](#11-bouwvolgorde)
+12. [Acceptatiecriteria per Stap](#12-acceptatiecriteria)
 
 ---
 
@@ -25,6 +37,9 @@
 
 ### Wat werkt al goed
 - 47+ artikelen in 7 categorieën met 21 tags
+- ContentTag model met AANDOENING en SITUATIE types
+- ArtikelTag koppeltabel (many-to-many)
+- GebruikerVoorkeur model voor gebruikerspreferenties
 - Semantisch zoeken via pgvector embeddings
 - AI content agent kan artikelen genereren, herschrijven en verrijken
 - Hulpbronnen zoeker vindt lokale organisaties per gemeente
@@ -34,53 +49,394 @@
 
 | Probleem | Impact | Waar zit het? |
 |----------|--------|---------------|
+| **Tags onvoldoende benut voor artikelaanbevelingen** — artikelen matchen op categorie + belastingniveau, maar niet op profiel-tags (aandoening, situatie, levensfase) | Een werkende mantelzorger met dementie-naaste krijgt dezelfde artikelen als een gepensioneerde met kanker-naaste | `getAanbevolenArtikelen()` + ArtikelTag + GebruikerVoorkeur |
+| **Geen profiel-tags voor specifieke doelgroepen** — het systeem kent alleen AANDOENING en SITUATIE tags, maar mist combinatie-tags zoals "werkende mantelzorger", "mantelzorger met gezin", "jong mantelzorger" | Artikelen kunnen niet worden geschreven/gematcht voor specifieke doelgroepen | ContentTag model + TagType enum |
+| **Artikelen worden niet gericht gegenereerd** — de content agent maakt generieke artikelen, niet specifiek voor een doelgroep (bijv. "Financiën voor werkende mantelzorgers met dementie-naaste") | Alle artikelen zijn te generiek; de persoonlijke herkenning ontbreekt | Content agent prompts |
+| **Geen "aanbevolen voor jou" op dashboard** — het dashboard toont weekkaarten maar geen persoonlijke artikellijst op basis van profiel | Mantelzorger moet zelf zoeken in 100+ artikelen | Dashboard + leren-pagina |
+| **Geen gebruikersfeedback op content** — geen scores, geen "was dit nuttig?", geen leesgeschiedenis | Geen data om aanbevelingen te verbeteren | Ontbreekt volledig |
 | **Hulpbronnen zijn niet tastbaar** — beschrijvingen te vaag, geen concrete "wat kun je verwachten", geen stappen | Mantelzorger weet niet wat ze aan een organisatie hebben | Zorgorganisatie model + AI zoeker output |
-| **Tags onvoldoende benut** — artikelen matchen op categorie maar nauwelijks op aandoening/situatie van de gebruiker | Iemand met dementie-naaste krijgt dezelfde content als iemand met kanker-naaste | ArtikelTag + GebruikerVoorkeur |
-| **Geen gebruikersfeedback op content** — geen scores, geen "was dit nuttig?", geen leesgeschiedenis | Geen data om relevantie te verbeteren | Ontbreekt volledig |
-| **Voorgestelde artikelen te willekeurig** — weekkaarten en Ger suggereren op basis van categorie, niet op persoonlijke match | Gemiste kans voor persoonlijke relevantie | Weekkaarten + AI tools |
-| **Zoekwoorden-matching onvolledig** — artikelen zoeken op titel/beschrijving, niet op synoniemen of gerelateerde termen | "PGB aanvragen" vindt niks als artikel "Persoonsgebonden budget" heet | zoekArtikelen tool |
-| **Content hiaten niet zichtbaar** — curator kan hiaten detecteren maar geen prioriteitsmatrix | Dementie (700.000+ mantelzorgers) heeft evenveel artikelen als zeldzame aandoeningen | Content agent + curator |
+| **Zoekwoorden-matching onvolledig** — "PGB aanvragen" vindt niks als artikel "Persoonsgebonden budget" heet | Relevante artikelen worden niet gevonden | zoekArtikelen tool |
+| **Content hiaten niet zichtbaar per doelgroep** — curator kan hiaten detecteren maar niet per tag-combinatie | Dementie (700.000+ mantelzorgers) heeft evenveel artikelen als zeldzame aandoeningen | Content agent + curator |
 | **Bronvermelding ontbreekt** — geen "geschreven door", geen bronlinks bij AI-gegenereerde artikelen | Vertrouwen en transparantie ontbreken | Artikel model |
-| **Hulpbronnen zoekervaring** — geen filters voor de mantelzorger zelf, geen sortering op afstand/relevantie | Zoeken voelt als blaadjes door een telefoonboek | Frontend + API |
 
 ---
 
-## 2. Stap 1: Hulpbronnen Tastbaar Maken
+## 2. Stap 1: Tagging & Profiel-matching
+
+> **Doel:** Het fundament leggen — een slim tagsysteem dat mantelzorgers profileert en artikelen koppelt aan hun specifieke situatie. Dit is de basis voor alle aanbevelingen.
+
+### 1.1 Tag-taxonomie uitbreiden
+
+Het huidige `ContentTag` model heeft 2 types: AANDOENING en SITUATIE. Dit is onvoldoende om doelgroepen als "werkende mantelzorger met dementie-naaste" te herkennen.
+
+**Uitbreiding TagType enum:**
+
+```prisma
+enum TagType {
+  AANDOENING    // dementie, kanker, CVA, parkinson, psychisch
+  SITUATIE      // werkend, jong, op-afstand, samenwonend, met-gezin
+  ONDERWERP     // NIEUW: financien, wmo, medicatie, nachtrust, voeding
+  DOELGROEP     // NIEUW: partner, kind, ouder, buur, professional
+  LEVENSFASE    // NIEUW: begin-mantelzorg, langdurig, rouw-na-verlies
+}
+```
+
+**Specifieke profieltags voor matching (voorbeelden):**
+
+| Type | Tags | Waarom? |
+|------|------|---------|
+| SITUATIE | `werkend`, `werkend-parttime`, `met-gezin`, `jong-mantelzorger`, `op-afstand`, `samenwonend`, `alleenstaand`, `mantelzorger-van-kind`, `dubbele-mantelzorg` | Dit zijn de "herkenningslabels" waarmee een mantelzorger zich identificeert. Een artikel "Werk en zorg combineren" wordt getagd met `werkend` en matcht dan automatisch met alle werkende mantelzorgers. |
+| AANDOENING | `dementie`, `kanker`, `CVA`, `parkinson`, `psychisch`, `verstandelijke-beperking`, `NAH`, `ouderdomsklachten`, `hartfalen`, `MS`, `ALS` | De aandoening van de naaste bepaalt welke zorgspecifieke artikelen relevant zijn. |
+| ONDERWERP | `financien`, `wmo-aanvragen`, `pgb`, `eigen-bijdrage`, `medicatie`, `nachtrust`, `voeding`, `veiligheid-thuis`, `hulpmiddelen`, `dagbesteding`, `vervoer`, `respijtzorg`, `werk-zorg-balans`, `zelfzorg`, `emotionele-steun` | Inhoudelijke onderwerpen die de relevantie van een artikel bepalen. |
+| DOELGROEP | `partner-mantelzorger`, `kind-mantelzorger`, `ouder-van-zorgkind`, `buur-mantelzorger`, `mantelzorger-op-afstand` | De relatie met de zorgvrager bepaalt de toon en relevantie. |
+| LEVENSFASE | `net-begonnen`, `al-jaren-bezig`, `crisis`, `rouw-na-verlies`, `opname-naaste`, `terugval-na-behandeling` | Waar de mantelzorger in het zorgtraject zit. |
+
+### 1.2 Profiel-tags ophalen uit bestaande data
+
+Het systeem kent al veel over de mantelzorger uit de intake en belastbaarheidstest. Deze data moet omgezet worden naar profiel-tags:
+
+| Bestaande data | → Profiel-tag |
+|----------------|---------------|
+| `caregiver.aandoening = "dementie"` | Tag: `dementie` (AANDOENING) |
+| Werkt (uit intake/profiel) | Tag: `werkend` (SITUATIE) |
+| Heeft thuiswonende kinderen | Tag: `met-gezin` (SITUATIE) |
+| Woont niet samen met naaste | Tag: `op-afstand` (SITUATIE) |
+| `belastingTest.zorgtaken` bevat meerdere taken | Tag: `dubbele-mantelzorg` (SITUATIE) |
+| Leeftijd < 25 | Tag: `jong-mantelzorger` (SITUATIE) |
+| Zorgt al > 3 jaar | Tag: `al-jaren-bezig` (LEVENSFASE) |
+| Net geregistreerd, < 1 jaar zorgen | Tag: `net-begonnen` (LEVENSFASE) |
+
+**Technisch:** Functie `bepaalProfielTags(caregiver)` die op basis van profieldata automatisch de juiste tags berekent. Deze draait bij:
+- Eerste login na registratie
+- Na intake-gesprek met Ger
+- Na voltooien belastbaarheidstest
+- Handmatig door gebruiker (tag-voorkeuren instellen)
+
+### 1.3 Artikelen taggen voor doelgroepen
+
+Elk artikel krijgt tags die bepalen voor **wie** het relevant is. Voorbeeld:
+
+| Artikel | Tags |
+|---------|------|
+| "Werk en mantelzorg combineren: 7 tips" | `werkend`, `werk-zorg-balans` |
+| "Dementie: veiligheid in huis" | `dementie`, `veiligheid-thuis`, `samenwonend` |
+| "Financiële steun als je voor je kind zorgt" | `ouder-van-zorgkind`, `financien` |
+| "Als je moeder je niet meer herkent" | `dementie`, `kind-mantelzorger`, `emotionele-steun` |
+| "Mantelzorg naast je gezin: hoe houd je balans?" | `met-gezin`, `zelfzorg`, `werk-zorg-balans` |
+| "Respijtzorg: even op adem komen" | `respijtzorg`, `al-jaren-bezig`, `zelfzorg` |
+
+### 1.4 Bestaande artikelen bulk-taggen
+
+De 47+ bestaande artikelen moeten getagd worden met de nieuwe tag-types.
+
+**Aanpak:** AI-gestuurde bulk-tagging via de content agent:
+1. Lees alle artikelen zonder tags (of alleen met AANDOENING/SITUATIE tags)
+2. AI analyseert titel + beschrijving + inhoud
+3. Stelt relevante tags voor uit alle 5 types
+4. Beheerder reviewt en bevestigt per artikel
+
+**Nieuw endpoint:** `POST /api/ai/admin/content-agent` met type `"tag-bulk"`
+
+### 1.5 Zoekwoorden / synoniemen op tags
+
+Probleem: een gebruiker zoekt "PGB" maar de tag heet "persoonsgebonden-budget". Of zoekt "thuishulp" terwijl de categorie "Huishoudelijke taken" heet.
+
+**Uitbreiding ContentTag model:**
+
+```prisma
+model ContentTag {
+  // bestaande velden...
+  synoniemen     String[]   // NIEUW: ["PGB", "persoonsgebonden budget", "pgb aanvragen"]
+}
+```
+
+De zoektools (`zoekArtikelen`, `zoekHulpbronnen`, `semantischZoeken`) zoeken dan ook in synoniemen.
+
+### 1.6 Hulpbronnen taggen
+
+Hulpbronnen (Zorgorganisatie) krijgen dezelfde tags als artikelen. Een hulpbron voor dagbesteding bij dementie krijgt tags: `dementie` + `dagbesteding`. Dit maakt cross-matching mogelijk: als een mantelzorger een artikel over dagbesteding leest, kunnen we ook de bijpassende hulpbron tonen.
+
+**Nieuwe koppeltabel:**
+
+```prisma
+model ZorgorganisatieTag {
+  id                String          @id @default(cuid())
+  zorgorganisatieId String
+  tagId             String
+  zorgorganisatie   Zorgorganisatie @relation(fields: [zorgorganisatieId], references: [id], onDelete: Cascade)
+  tag               ContentTag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([zorgorganisatieId, tagId])
+  @@index([tagId])
+}
+```
+
+### 1.7 Tag-voorkeuren in profiel
+
+De mantelzorger kan in het profiel zelf tags aan/uitzetten:
+
+```
+┌──────────────────────────────────────────────────┐
+│ Je situatie                                       │
+│                                                   │
+│ Dit helpt ons om de juiste artikelen te tonen.    │
+│                                                   │
+│ ✅ Werkende mantelzorger                          │
+│ ✅ Mantelzorger met gezin                         │
+│ ☐  Jong mantelzorger                              │
+│ ☐  Mantelzorg op afstand                          │
+│ ✅ Dementie (naaste)                              │
+│ ☐  Net begonnen met zorgen                        │
+│ ✅ Al jaren bezig                                  │
+│                                                   │
+│ [Opslaan]                                          │
+└──────────────────────────────────────────────────┘
+```
+
+Automatisch ingevuld vanuit profiel-data (1.2), handmatig aanpasbaar.
+
+---
+
+## 3. Stap 2: Aanbevolen Artikelen
+
+> **Doel:** De juiste artikelen bij de juiste gebruiker, automatisch. Van "zoek zelf" naar "dit is voor jou".
+
+### 2.1 Persoonlijke relevantie-score berekenen
+
+De huidige `getAanbevolenArtikelen()` matcht alleen op categorie + belastingniveau. Dit wordt vervangen door een **persoonlijke relevantie-score** per artikel, berekend op basis van tag-overlap:
+
+| Factor | Gewicht | Hoe? |
+|--------|---------|------|
+| **Tag-overlap** | 40% | Hoeveel van de profiel-tags van de gebruiker matchen met de tags van het artikel? Een artikel met 3/4 matchende tags scoort hoger dan 1/4. |
+| **Aandoening-match** | 25% | Extra gewicht als de aandoening-tag matcht — dit is de belangrijkste dimensie. |
+| **Situatie-match** | 15% | "Werkend" of "met gezin" als profiel-tag matcht met artikel-tag. |
+| **Belastingniveau-match** | 10% | Hoge belasting → zelfzorg en rechten-artikelen krijgen bonus. |
+| **Community-score** | 5% | Gemiddelde beoordeling door andere gebruikers. |
+| **Nog niet gelezen** | 5% | Ongelezen artikelen krijgen een kleine bonus. |
+
+**Voorbeeld berekening:**
+
+Mantelzorger: Tags = `[werkend, dementie, met-gezin, al-jaren-bezig]`, belasting = HOOG
+
+| Artikel | Tags | Overlap | Score |
+|---------|------|---------|-------|
+| "Werk en mantelzorg: 7 tips" | `werkend, werk-zorg-balans` | 1/4 + werkend-match | **72%** |
+| "Dementie & werk: beide combineren" | `werkend, dementie, werk-zorg-balans` | 2/4 + aandoening | **89%** |
+| "Kanker en kinderen: hoe leg je uit" | `kanker, ouder-van-zorgkind` | 0/4 | **12%** |
+| "Mantelzorg naast je gezin" | `met-gezin, zelfzorg` | 1/4 + situatie | **68%** |
+
+De mantelzorger ziet dus "Dementie & werk" bovenaan, daarna "Werk en mantelzorg", dan "Mantelzorg naast je gezin". Het kanker-artikel verschijnt niet.
+
+### 2.2 "Aanbevolen voor jou" op dashboard
+
+Nieuwe sectie op het dashboard die de top 3-5 artikelen toont op basis van de relevantie-score:
+
+```
+┌──────────────────────────────────────────────────┐
+│ 📖 Aanbevolen voor jou                            │
+│                                                   │
+│ Op basis van je situatie: dementie, werkend,       │
+│ mantelzorger met gezin                             │
+│                                                   │
+│ ┌─────────────────────────────────────────────────┐
+│ │ 🧠 Dementie en werk combineren                  │
+│ │ Praktische tips voor als je werkt en zorgt voor  │
+│ │ iemand met dementie                              │
+│ │ ⭐ 4.5  •  3 min lezen  •  89% match             │
+│ └─────────────────────────────────────────────────┘
+│ ┌─────────────────────────────────────────────────┐
+│ │ 💼 Werk en mantelzorg: 7 tips                    │
+│ │ Hoe bespreek je het op werk? Welke rechten heb   │
+│ │ je? Tips om het vol te houden.                   │
+│ │ ⭐ 4.2  •  5 min lezen  •  72% match             │
+│ └─────────────────────────────────────────────────┘
+│ ┌─────────────────────────────────────────────────┐
+│ │ 👨‍👩‍👧 Mantelzorg naast je gezin                    │
+│ │ Hoe houd je balans als je ook kinderen hebt?     │
+│ │ ⭐ 4.8  •  4 min lezen  •  68% match             │
+│ └─────────────────────────────────────────────────┘
+│                                                   │
+│ [Bekijk alle aanbevelingen →]                     │
+└──────────────────────────────────────────────────┘
+```
+
+### 2.3 Leren-pagina sorteren op relevantie
+
+De huidige leren-pagina toont artikelen op volgorde van `sorteerVolgorde`. Met tags kan dit worden:
+
+1. **Standaard: gesorteerd op relevantie** — de persoonlijke relevantie-score bepaalt de volgorde
+2. **Optioneel: filter op tag** — bijv. "Toon alleen artikelen over dementie" of "Toon alleen voor werkende mantelzorgers"
+3. **"Nieuw voor jou"** — artikelen die je nog niet gelezen hebt, gesorteerd op relevantie
+
+### 2.4 Weekkaarten LEREN slimmer vullen
+
+Huidige weekkaarten LEREN-type selecteert artikelen op basis van categorie. Verbeteren met:
+1. **Relevantie-score als primair selectiecriterium** — kies het hoogst scorende artikel dat nog niet is getoond
+2. Niet-gelezen artikelen prefereren boven gelezen
+3. Artikelen met hoge community-score prefereren
+4. Afwisseling in categorieën (niet 3 weken achtereen dezelfde categorie)
+
+### 2.5 "Meer hierover" suggesties
+
+Onderaan elk artikel: gerelateerde artikelen op basis van gedeelde tags.
+
+```
+┌──────────────────────────────────────┐
+│ 📖 Meer hierover                      │
+│                                       │
+│ • Hoe vraag je Wmo-hulp aan?          │
+│ • Eigen bijdrage: wat betaal je?      │
+│ • Respijtzorg: even op adem komen     │
+└──────────────────────────────────────┘
+```
+
+**Logica:** Artikelen met >= 2 gedeelde tags, gesorteerd op relevantie-score.
+
+### 2.6 Ger (AI-assistent) integratie
+
+Ger krijgt de profiel-tags mee in de context en kan:
+- Bij vragen proactief het best matchende artikel suggereren
+- Zeggen: "Ik heb een artikel dat speciaal is geschreven voor werkende mantelzorgers met dementie in de familie — wil je dat lezen?"
+- Bij het tonen van een artikel de match-reden vermelden ("Dit past bij jouw situatie als werkende mantelzorger")
+
+---
+
+## 4. Stap 3: Gerichte Artikelgeneratie
+
+> **Doel:** Artikelen schrijven voor specifieke doelgroepen op basis van tag-combinaties, zodat elke mantelzorger content vindt die écht bij hen past.
+
+### 3.1 Doelgroep-specifieke artikelen genereren
+
+De content agent genereert nu generieke artikelen. Met het tagsysteem kan de agent **gericht** schrijven voor specifieke tag-combinaties:
+
+**Voorbeeld generatie-opdrachten:**
+
+| Doelgroep (tags) | Onderwerp | Artikel |
+|------------------|-----------|---------|
+| `werkend` + `dementie` | Werk-zorgbalans | "Dementie en werk: zo combineer je het" |
+| `met-gezin` + `kanker` | Emotionele steun | "Je partner heeft kanker: hoe leg je het uit aan je kinderen?" |
+| `jong-mantelzorger` + `psychisch` | Zelfzorg | "Jong en mantelzorger: het is oké om hulp te vragen" |
+| `op-afstand` + `ouderdomsklachten` | Praktisch | "Op afstand zorgen: hoe houd je grip?" |
+| `werkend` + `met-gezin` | Financieel | "Mantelzorgverlof en andere financiële regelingen voor werkende ouders" |
+| `al-jaren-bezig` + `dementie` | Emotioneel | "Als de zorg al jaren duurt: hoe voorkom je dat je opbrandt?" |
+
+### 3.2 Slimme generatie-voorstellen op basis van data
+
+De admin hoeft niet zelf te bedenken welke artikelen er moeten komen. De agent analyseert:
+
+1. **Wat wordt veel gelezen?** — LeesGeschiedenis data: welke categorieën/tags zijn populair?
+2. **Wat scoort goed?** — ContentScore data: welke artikelen beoordelen gebruikers als nuttig?
+3. **Wat ontbreekt?** — De generatie-matrix (3.3): welke tag-combinaties hebben geen artikelen?
+4. **Wie zijn de gebruikers?** — Profiel-tags: hoeveel werkende mantelzorgers zijn er vs. jonge mantelzorgers?
+
+**Workflow:**
+
+1. Admin opent "Artikelen genereren" pagina
+2. Geeft aan: **hoeveel artikelen** wil ik laten genereren (bijv. 5, 10, 20)
+3. De agent analyseert de data en presenteert een **voorstel**:
+
+```
+┌──────────────────────────────────────────────────────┐
+│ 🤖 Voorstel: 10 artikelen genereren                   │
+│                                                       │
+│ Op basis van: 234 actieve gebruikers, leesgedrag,     │
+│ scores en ontbrekende tag-combinaties                  │
+│                                                       │
+│ Prioriteit  Doelgroep              Onderwerp           │
+│ ──────────────────────────────────────────────────     │
+│ 1. ⭐⭐⭐  werkend + dementie       Financiën          │
+│    → 87 werkende mantelzorgers, 0 artikelen            │
+│ 2. ⭐⭐⭐  met-gezin + kanker       Kinderen uitleggen │
+│    → 62 mantelzorgers met gezin, 0 artikelen           │
+│ 3. ⭐⭐   werkend + dementie       Zelfzorg            │
+│    → Zelfzorg-artikelen scoren gem. 4.6/5              │
+│ 4. ⭐⭐   op-afstand + ouderdom    Praktische tips     │
+│    → 45 mantelzorgers op afstand, 1 artikel            │
+│ 5. ⭐⭐   jong + psychisch         Emotionele steun   │
+│    → "Emotionele steun" categorie meest gelezen        │
+│ ... (5 meer)                                           │
+│                                                       │
+│ [✏️ Aanpassen voorstel]  [🚀 Genereer alle 10]         │
+└──────────────────────────────────────────────────────┘
+```
+
+4. Admin kan het voorstel aanpassen (artikelen verwijderen, tags wijzigen, onderwerp aanpassen)
+5. Klikt "Genereer" → content agent schrijft alle artikelen met de juiste tags
+6. Artikelen komen in status CONCEPT, klaar voor review
+
+### 3.3 Generatie-matrix: welke combinaties bestaan er nog niet?
+
+Het systeem toont welke tag-combinaties al gedekt zijn en welke niet:
+
+```
+                 | werkend | met-gezin | op-afstand | jong | al-jaren |
+─────────────────|---------|-----------|------------|------|----------|
+dementie         |   🟢 3   |    🔴 0    |    🟡 1     | 🔴 0  |   🟡 1    |
+kanker           |   🔴 0   |    🔴 0    |    🔴 0     | 🔴 0  |   🔴 0    |
+psychisch        |   🔴 0   |    🔴 0    |    🔴 0     | 🟡 1  |   🔴 0    |
+ouderdom         |   🟡 1   |    🔴 0    |    🟡 1     | 🔴 0  |   🟡 2    |
+```
+
+**Klik op een rode cel → "Genereer artikel voor [situatie] + [aandoening]"**
+
+### 3.4 Content agent prompt aanpassen
+
+De content agent krijgt een nieuwe functie `"genereer-voor-doelgroep"`:
+
+```
+Schrijf een artikel voor mantelzorgers met de volgende kenmerken:
+- Situatie: werkende mantelzorger met gezin
+- Aandoening naaste: dementie
+- Onderwerp: financiële regelingen
+
+Het artikel moet:
+1. Geschreven zijn in B1-taalniveau (eenvoudig Nederlands)
+2. Specifiek ingaan op de combinatie werk + gezin + dementie
+3. Concrete, uitvoerbare tips bevatten
+4. Herkenbare voorbeelden gebruiken
+5. Een "eerste stap" bevatten (1 concrete actie die de lezer vandaag kan doen)
+
+Tags voor dit artikel: werkend, met-gezin, dementie, financien
+```
+
+### 3.5 Batch-generatie per doelgroep
+
+Admin kan ook handmatig een doelgroep + aandoening selecteren en aangeven hoeveel artikelen:
+
+1. Selecteer doelgroep: "werkende mantelzorger"
+2. Selecteer aandoening: "dementie"
+3. Selecteer aantal: 5
+4. Systeem toont ontbrekende onderwerpen: financieel, zelfzorg, praktisch, emotioneel, rechten
+5. Content agent genereert 5 artikelen met de juiste tags
+6. Admin reviewt en publiceert
+
+---
+
+## 5. Stap 4: Hulpbronnen Tastbaar Maken
 
 > **Doel:** Elke hulpbron voelt concreet — de mantelzorger weet precies wat ze kunnen verwachten, wat de eerste stap is, en wat het kost.
 
-### 1.1 Zorgorganisatie velden verrijken
+### 4.1 Zorgorganisatie velden verrijken
 
-De velden `eersteStap` en `verwachtingTekst` bestaan al maar zijn bij de meeste hulpbronnen leeg. Daarnaast ontbreken velden voor een tastbare ervaring.
+De velden `eersteStap` en `verwachtingTekst` bestaan al maar zijn bij de meeste hulpbronnen leeg.
 
 **Nieuwe velden op Zorgorganisatie:**
 
 ```prisma
-// Toevoegen aan Zorgorganisatie
-wachttijd         String?   // "Meestal binnen 2 weken" — verwachte wachttijd
-bereikbaarheid    String?   // "Ma-vr 9-17" — samengevatte bereikbaarheid
-ervaringTekst     String?   // "Ze komen bij je thuis voor een gesprek van 30 min" — wat gebeurt er
-geschiktVoor      String[]  // ["dementie", "parkinson"] — voor welke aandoeningen specifiek geschikt
+wachttijd         String?   // "Meestal binnen 2 weken"
+bereikbaarheid    String?   // "Ma-vr 9-17"
+ervaringTekst     String?   // "Ze komen bij je thuis voor een gesprek van 30 min"
+geschiktVoor      String[]  // ["dementie", "parkinson"] — specifieke aandoeningen
 ```
 
-### 1.2 AI Zoeker: verplicht eersteStap en ervaringTekst
-
-De hulpbronnen-zoeker (`hulpbronnen-zoeker.ts`) schrijft nu beschrijvingen maar vult `eersteStap` en `verwachtingTekst` niet consequent in.
-
-**Wijziging in prompt:**
-- Maak `eersteStap` een **verplicht** veld in de AI-output
-- Voeg `ervaringTekst` toe als verplicht veld (1-2 zinnen: wat kun je verwachten bij eerste contact)
-- Fallback per categorie als de AI het niet kan bepalen (al gedefinieerd in masterplan 3.2)
+### 4.2 AI Zoeker: verplicht eersteStap en ervaringTekst
 
 **Wijziging in `hulpbronnen-zoeker.ts`:**
-- Output schema uitbreiden met verplichte velden
-- Validatie: weiger resultaten zonder eersteStap (of vul automatisch fallback in)
+- `eersteStap` wordt verplicht in de AI-output
+- `ervaringTekst` wordt verplicht (1-2 zinnen: wat kun je verwachten)
+- Fallback per categorie als de AI het niet kan bepalen
 
-### 1.3 Frontend: hulpbronkaart redesign
-
-Huidige kaart toont: naam, beschrijving, telefoon, website. Dat is een telefoonboek.
-
-**Nieuwe kaart-indeling:**
+### 4.3 Frontend: hulpbronkaart redesign
 
 ```
 ┌──────────────────────────────────────────────────┐
@@ -98,119 +454,223 @@ Huidige kaart toont: naam, beschrijving, telefoon, website. Dat is een telefoonb
 └──────────────────────────────────────────────────┘
 ```
 
-### 1.4 Hulpbronnen zoek-UI verbeteren
+### 4.4 Hulpbronnen zoek-UI met filters
 
-**Filters toevoegen op de hulpbronnen-pagina:**
-- Categorie (dropdown met zorgtaken)
-- Aandoening (op basis van profiel, met optie om te wijzigen)
-- Soort hulp (praktisch / emotioneel / financieel / administratief)
-- Afstand/dekkingsgebied (gemeente / regio / landelijk)
+**Filters:**
+- Categorie (zorgtaken)
+- Aandoening (op basis van profiel)
+- Soort hulp (praktisch / emotioneel / financieel)
+- Dekkingsgebied (gemeente / regio / landelijk)
+
+### 4.5 Batch-verrijking bestaande hulpbronnen
+
+Admin-tool voor AI-verrijking van bestaande hulpbronnen (eersteStap, ervaringTekst). Batches van 5.
+
+---
+
+## 6. Stap 5: Artikel Compleetheid & Kwaliteitsbeheer
+
+> **Doel:** Elk artikel doorloopt een kwaliteitsproces. De beheerder ziet in één oogopslag welke artikelen "af" zijn en welke stappen nog missen. Via agents kunnen ontbrekende stappen automatisch worden uitgevoerd.
+
+### 5.1 Artikel-compleetheidscore
+
+Elk artikel heeft een kwaliteitsproces dat uit meerdere stappen bestaat. De voortgang wordt uitgedrukt als een **percentage**:
+
+| Stap | Gewicht | Beschrijving | Automatiseerbaar? |
+|------|---------|-------------|-------------------|
+| **Tags toegekend** | 15% | Minimaal 2 tag-types (AANDOENING + SITUATIE of ONDERWERP) | Ja (AI agent) |
+| **B1-taalcheck** | 15% | Artikel gecontroleerd op B1-taalniveau | Ja (curator) |
+| **Inhoud compleet** | 15% | `inhoud` veld is gevuld (niet alleen beschrijving) | Nee |
+| **Bronvermelding** | 10% | Minimaal 1 bron vermeld (ArtikelBron) | Ja (content agent) |
+| **Categorie + subhoofdstuk** | 10% | Correct gecategoriseerd | Ja (AI agent) |
+| **Emoji/icoon** | 5% | Visueel herkenbaar | Ja (AI agent) |
+| **SEO/beschrijving** | 10% | Beschrijving aanwezig en < 160 tekens | Ja (AI agent) |
+| **Review door beheerder** | 10% | Handmatig goedgekeurd | Nee |
+| **Embedding gegenereerd** | 5% | Vector embedding voor semantisch zoeken | Ja (automatisch) |
+| **Publicatie-check** | 5% | Status = GEPUBLICEERD, publicatieDatum ingesteld | Nee |
+
+**Compleetheidscore = som van voltooide stappen × gewicht**
+
+Voorbeeld: een artikel met tags (15%) + B1-check (15%) + inhoud (15%) + categorie (10%) = **55%**
+
+### 5.2 Compleetheids-dashboard voor beheerder
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│ 📋 Artikel Kwaliteitsbeheer                                   │
+│                                                               │
+│ Filters: [Compleetheid ▼] [Status ▼] [Categorie ▼] [Tags ▼] │
+│                                                               │
+│ ○ Toon alleen: □ <50%  □ 50-79%  □ 80-99%  ☑ Alle           │
+│                                                               │
+│ Artikel                          Status      Compleet  Actie  │
+│ ─────────────────────────────────────────────────────────────│
+│ 🔴 Dementie en werk combineren    CONCEPT      35%     [▶]   │
+│    ⬜ Tags  ⬜ B1  ✅ Inhoud  ⬜ Bron  ✅ Cat                  │
+│                                                               │
+│ 🟡 Wmo aanvragen stap voor stap   HERSCHREVEN  65%     [▶]   │
+│    ✅ Tags  ✅ B1  ✅ Inhoud  ⬜ Bron  ✅ Cat  ⬜ Review       │
+│                                                               │
+│ 🟢 Slaaptips voor mantelzorgers   GEPUBLICEERD 95%     [▶]   │
+│    ✅ Tags  ✅ B1  ✅ Inhoud  ✅ Bron  ✅ Cat  ✅ Review       │
+│    ⬜ Embedding                                               │
+│                                                               │
+│ Geselecteerd: 12 artikelen                                    │
+│ [🤖 Tags toevoegen]  [🤖 B1-check]  [🤖 Bronnen zoeken]      │
+│ [🤖 Embeddings genereren]  [🤖 Alle ontbrekende stappen]      │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### 5.3 Batch-acties via agents
+
+De beheerder kan artikelen selecteren en per ontbrekende stap een agent starten:
+
+| Actie | Agent | Wat doet het? |
+|-------|-------|---------------|
+| **Tags toevoegen** | Content agent `"tag-bulk"` | AI leest artikel en stelt tags voor uit alle 5 types. Beheerder reviewt. |
+| **B1-taalcheck** | Curator `"b1check"` | Controleert taalniveau, markeert moeilijke passages. |
+| **Bronnen zoeken** | Content agent `"zoek-bronnen"` | Zoekt online bronnen die bij het artikel passen en voegt ze toe. |
+| **Categoriseren** | Content agent `"categoriseer-bulk"` | AI bepaalt juiste categorie en subhoofdstuk. |
+| **Embeddings** | Embeddings API | Genereert vector embedding voor semantisch zoeken. |
+| **Alle stappen** | Sequentieel | Voert alle ontbrekende stappen achtereenvolgens uit. |
+
+### 5.4 Per-artikel actie-overzicht
+
+Bij klik op een artikel ziet de beheerder exact welke stappen nog ontbreken en kan per stap kiezen:
+
+```
+┌──────────────────────────────────────────────────┐
+│ 📝 Dementie en werk combineren — 35% compleet     │
+│                                                   │
+│ ✅ Inhoud compleet (1.423 woorden)                │
+│ ✅ Categorie: praktische-tips > dagelijks-zorgen  │
+│ ⬜ Tags — geen tags toegekend                     │
+│    [🤖 AI tags laten voorstellen]  [✏️ Handmatig] │
+│ ⬜ B1-taalcheck — niet uitgevoerd                 │
+│    [🤖 B1-check uitvoeren]                        │
+│ ⬜ Bronvermelding — geen bronnen                  │
+│    [🤖 Bronnen zoeken]  [✏️ Handmatig toevoegen]  │
+│ ⬜ Emoji — niet ingesteld                         │
+│    [🤖 Suggestie]  [✏️ Handmatig]                 │
+│ ⬜ Review — niet beoordeeld                       │
+│    [✅ Goedkeuren]  [❌ Afwijzen met opmerking]     │
+│ ⬜ Embedding — niet gegenereerd                   │
+│    [🤖 Genereer]                                   │
+│ ⬜ Publicatie — status is CONCEPT                  │
+│    [📢 Publiceer]  [📅 Plan publicatie]             │
+│                                                   │
+│ [🤖 Alle ontbrekende stappen uitvoeren]            │
+└──────────────────────────────────────────────────┘
+```
+
+### 5.5 Filteren en sorteren op compleetheid
+
+De beheerder kan het overzicht filteren op:
+- **Compleetheidspercentage**: < 50%, 50-79%, 80-99%, 100%
+- **Ontbrekende stap**: "Toon alle artikelen zonder tags", "zonder B1-check", etc.
+- **Status**: CONCEPT, HERSCHREVEN, VERRIJKT, GEPUBLICEERD
+- **Categorie**: per artikelcategorie
+- **Tags**: per tag (bijv. "toon alle dementie-artikelen")
 
 **Sortering:**
-- Relevantie (standaard — op basis van profiel-match)
-- Afstand (dichtstbijzijnde eerst)
-- Beoordeling (hoogst gewaardeerd eerst)
+- Compleetheid (laagst eerst — prioriteer onafgemaakte artikelen)
+- Laatst bewerkt
+- Populairiteit (leesaantallen)
 - Alfabetisch
 
-### 1.5 Batch-verrijking bestaande hulpbronnen
+---
 
-Admin-tool om alle bestaande hulpbronnen die `eersteStap` of `ervaringTekst` missen te laten verrijken door de AI. Werkt in batches van 5 om API-kosten te beperken.
+## 7. Stap 6a: Content Hiaten & Prioriteitsmatrix
 
-**Bestand:** `src/app/api/beheer/hulpbronnen/verrijk-batch/route.ts`
+> **Doel:** Systematisch in kaart brengen waar te weinig content over is, gewogen naar hoeveel mantelzorgers het betreft. Gecombineerd met de generatie-matrix uit Stap 3.
+
+### 6.1 Impactmatrix: aandoening × aantal mantelzorgers
+
+```prisma
+model AandoeningGewicht {
+  id                String   @id @default(cuid())
+  tagSlug           String   @unique
+  geschatAantal     Int      // Geschat aantal mantelzorgers in NL
+  prioriteit        Int      @default(5) // 1-10
+  bronVermelding    String?  // "CBS 2024", "Alzheimer Nederland"
+  updatedAt         DateTime @updatedAt
+}
+```
+
+| Aandoening | Geschat aantal | Prioriteit |
+|------------|----------------|------------|
+| Dementie | 700.000 | 10 |
+| Ouderdomsklachten | 500.000 | 9 |
+| Kanker | 350.000 | 9 |
+| Psychisch | 300.000 | 9 |
+| CVA/Beroerte | 200.000 | 8 |
+| Hart- en vaatziekten | 180.000 | 8 |
+| Verstandelijke beperking | 150.000 | 7 |
+| Parkinson | 80.000 | 6 |
+| NAH | 60.000 | 5 |
+| MS | 40.000 | 5 |
+| ALS | 5.000 | 3 |
+
+### 6.2 Onderwerp-impactmatrix
+
+```prisma
+model OnderwerpGewicht {
+  id                 String   @id @default(cuid())
+  tagSlug            String   @unique
+  relevantieBreedte  Int      // 1-10
+  urgentie           Int      // 1-10
+  prioriteit         Int      // berekend
+  updatedAt          DateTime @updatedAt
+}
+```
+
+| Onderwerp | Breedte | Urgentie | Prioriteit |
+|-----------|---------|----------|------------|
+| Overbelasting herkennen | 9 | 9 | 9.0 |
+| Financiën/vergoedingen | 9 | 8 | 8.6 |
+| Wmo aanvragen | 8 | 9 | 8.4 |
+| Nachtrust | 8 | 7 | 7.6 |
+| Respijtzorg | 7 | 8 | 7.4 |
+| Dagbesteding | 7 | 6 | 6.6 |
+| Medicatie beheer | 6 | 7 | 6.4 |
+
+### 6.3 Gecombineerde hiaten-analyse (met generatie-matrix)
+
+De hiaten-analyse uit 6.1/6.2 wordt gecombineerd met de generatie-matrix uit Stap 3.3. Dit geeft een 3-dimensionaal beeld:
+
+**Dimensie 1:** Aandoening × Onderwerp (welke combinatie mist?)
+**Dimensie 2:** Situatie × Aandoening (voor welke doelgroep mist het?)
+**Dimensie 3:** Prioriteit × Dekking (waar moeten we het eerst schrijven?)
+
+De "Genereer artikelen" knop op de hiaten-pagina roept direct de slimme generatie-workflow aan (Stap 3.2).
+
+### 6.4 Content-dekking dashboard
+
+```
+┌──────────────────────────────────────────────────────┐
+│ 📊 Content Dekking                                    │
+│                                                       │
+│ Totaal: 47 artikelen  •  Gemiddelde compleetheid: 62% │
+│                                                       │
+│ Per doelgroep:                                        │
+│ 🔴 Werkende mantelzorger    3 artikelen (nodig: 10+)  │
+│ 🔴 Mantelzorger met gezin   1 artikel   (nodig: 8+)   │
+│ 🟡 Jong mantelzorger        4 artikelen (nodig: 6+)   │
+│ 🟡 Op afstand               2 artikelen (nodig: 6+)   │
+│ 🟢 Algemeen                 37 artikelen              │
+│                                                       │
+│ [🤖 Genereer voor hiaten (10 artikelen)]              │
+│ [📊 Bekijk generatie-matrix]                          │
+└──────────────────────────────────────────────────────┘
+```
 
 ---
 
-## 3. Stap 2: Tagging & Matching Verbeteren
+## 8. Stap 6b: Scoren & Feedback
 
-> **Doel:** Artikelen en hulpbronnen koppelen aan de specifieke situatie van de gebruiker via een slimmer tagsysteem.
+> **Doel:** Gebruikers kunnen artikelen en hulpbronnen beoordelen. Dit verbetert aanbevelingen en geeft inzicht in content-kwaliteit. De feedback-data voedt de slimme generatie (Stap 3).
 
-### 2.1 Tag-taxonomie uitbreiden
-
-Het huidige `ContentTag` model heeft 2 types: AANDOENING en SITUATIE. Dit is te beperkt.
-
-**Uitbreiding TagType enum:**
-
-```prisma
-enum TagType {
-  AANDOENING    // dementie, kanker, CVA, parkinson, psychisch
-  SITUATIE      // werkend, jong, op-afstand, samenwonend
-  ONDERWERP     // NIEUW: financien, wmo, medicatie, nachtrust, voeding
-  DOELGROEP     // NIEUW: partner, kind, ouder, buur, professional
-  LEVENSFASE    // NIEUW: begin-mantelzorg, langdurig, rouw-na-verlies
-}
-```
-
-**Nieuwe tags per type (voorbeelden):**
-
-| Type | Tags |
-|------|------|
-| ONDERWERP | financien, wmo-aanvragen, pgb, eigen-bijdrage, medicatie, nachtrust, voeding, veiligheid-thuis, hulpmiddelen, dagbesteding, vervoer, respijtzorg |
-| DOELGROEP | partner, kind, ouder-van, buurman-vrouw, mantelzorger-op-afstand |
-| LEVENSFASE | net-begonnen, al-jaren-bezig, crisis, rouw-na-verlies, opname-naaste |
-
-### 2.2 Artikelen bulk-taggen
-
-Bestaande 47+ artikelen moeten getagd worden met de nieuwe tag-types.
-
-**Aanpak:** AI-gestuurde bulk-tagging via de content agent:
-1. Lees alle artikelen zonder tags (of alleen met AANDOENING/SITUATIE tags)
-2. AI analyseert titel + beschrijving + inhoud
-3. Stelt relevante tags voor uit alle 5 types
-4. Beheerder reviewt en bevestigt
-
-**Nieuw endpoint:** `POST /api/ai/admin/content-agent` met type `"tag-bulk"`
-
-### 2.3 Zoekwoorden / synoniemen op tags
-
-Probleem: een gebruiker zoekt "PGB" maar de tag heet "persoonsgebonden-budget". Of zoekt "thuishulp" terwijl de categorie "Huishoudelijke taken" heet.
-
-**Uitbreiding ContentTag model:**
-
-```prisma
-model ContentTag {
-  // bestaande velden...
-  synoniemen     String[]   // NIEUW: ["PGB", "persoonsgebonden budget", "pgb aanvragen"]
-}
-```
-
-De zoektools (`zoekArtikelen`, `zoekHulpbronnen`, `semantischZoeken`) zoeken dan ook in synoniemen.
-
-### 2.4 Automatische tag-suggesties in profiel
-
-Bij stap 3 van de profielwizard (zorgsituatie) en stap 4 (interesses):
-- Na selectie van aandoening → automatisch relevante ONDERWERP-tags voorstellen
-- Voorbeeld: selecteer "Dementie" → automatisch suggereer "dagbesteding", "veiligheid-thuis", "nachtrust", "financien"
-
-**Technisch:** Mapping-tabel `AandoeningOnderwerp` of een JSON-configuratie die aandoening → relevante onderwerpen koppelt.
-
-### 2.5 Hulpbronnen taggen
-
-Hulpbronnen (Zorgorganisatie) hebben nu `onderdeelTest` als categorie maar geen tags.
-
-**Nieuwe koppeltabel:**
-
-```prisma
-model ZorgorganisatieTag {
-  id                String          @id @default(cuid())
-  zorgorganisatieId String
-  tagId             String
-  zorgorganisatie   Zorgorganisatie @relation(fields: [zorgorganisatieId], references: [id], onDelete: Cascade)
-  tag               ContentTag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
-
-  @@unique([zorgorganisatieId, tagId])
-  @@index([tagId])
-}
-```
-
-Hiermee kunnen hulpbronnen dezelfde tags krijgen als artikelen. Een hulpbron voor dagbesteding bij dementie krijgt tags: `dementie` + `dagbesteding`. Dit maakt cross-matching mogelijk.
-
----
-
-## 4. Stap 3: Artikelen Scoren & Relevantie
-
-> **Doel:** Gebruikers kunnen artikelen en hulpbronnen beoordelen. Dit verbetert aanbevelingen en geeft inzicht in content-kwaliteit.
-
-### 3.1 ContentScore model
+### 6.1 ContentScore model
 
 ```prisma
 model ContentScore {
@@ -218,8 +678,8 @@ model ContentScore {
   caregiverId   String
   type          ScoreType // ARTIKEL of HULPBRON
   itemId        String    // Artikel ID of Zorgorganisatie ID
-  score         Int       // 1-5 sterren, of simpeler: 1 (niet nuttig) / 5 (nuttig)
-  feedback      String?   // Optionele vrije tekst ("Dit was verouderd", "Heel duidelijk!")
+  score         Int       // 1 (niet nuttig) / 5 (nuttig)
+  feedback      String?   // Optionele vrije tekst
   createdAt     DateTime  @default(now())
   caregiver     Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
 
@@ -234,7 +694,7 @@ enum ScoreType {
 }
 ```
 
-### 3.2 Leesgeschiedenis
+### 6.2 LeesGeschiedenis
 
 ```prisma
 model LeesGeschiedenis {
@@ -242,7 +702,7 @@ model LeesGeschiedenis {
   caregiverId   String
   artikelId     String
   gelezenOp     DateTime  @default(now())
-  leestijd      Int?      // Geschatte leestijd in seconden (scroll tracking)
+  leestijd      Int?      // Geschatte leestijd in seconden
   caregiver     Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
 
   @@unique([caregiverId, artikelId])
@@ -251,7 +711,7 @@ model LeesGeschiedenis {
 }
 ```
 
-### 3.3 "Was dit nuttig?" component
+### 6.3 "Was dit nuttig?" component
 
 Na het lezen van een artikel of bekijken van een hulpbron:
 
@@ -269,254 +729,32 @@ Na het lezen van een artikel of bekijken van een hulpbron:
 └──────────────────────────────────────┘
 ```
 
-**Snelle feedback-opties (zonder vrije tekst):**
-- Verouderde informatie
-- Te ingewikkeld geschreven
-- Niet relevant voor mijn situatie
-- Contactgegevens kloppen niet (alleen bij hulpbronnen)
-- Heel duidelijk en praktisch (positief)
+### 6.4 Score-aggregatie en gebruik
 
-### 3.4 Score-aggregatie op content
-
-Op het Artikel en Zorgorganisatie model worden berekende velden bijgehouden (gecached):
+Op Artikel en Zorgorganisatie worden gecachte velden bijgehouden:
 
 ```prisma
 // Toevoegen aan Artikel
-gemiddeldeScore   Float?    // Gemiddelde van alle scores
+gemiddeldeScore   Float?
 aantalScores      Int       @default(0)
-aantalGelezen     Int       @default(0) // Aantal unieke lezers
+aantalGelezen     Int       @default(0)
 
 // Toevoegen aan Zorgorganisatie
 gemiddeldeScore   Float?
 aantalScores      Int       @default(0)
 ```
 
-**Herberekening:** Na elke nieuwe score wordt het gemiddelde opnieuw berekend (simple UPDATE met subquery).
-
-### 3.5 Score-data gebruiken in zoekresultaten
-
-- Zoekresultaten tonen gemiddelde score als er >= 3 beoordelingen zijn
-- Bij gelijke relevantie: sorteer op score
-- AI assistenten zien ook de score en kunnen zeggen: "Dit artikel wordt door andere mantelzorgers als heel nuttig beoordeeld"
+- Score zichtbaar bij >= 3 beoordelingen
+- AI assistenten kunnen zeggen: "Dit artikel wordt door andere mantelzorgers als heel nuttig beoordeeld"
+- **Slimme generatie (Stap 3.2) gebruikt deze data** om te bepalen welk soort artikelen populair zijn
 
 ---
 
-## 5. Stap 4: Voorgestelde Artikelen Slimmer Maken
-
-> **Doel:** De juiste artikelen bij de juiste gebruiker, op het juiste moment.
-
-### 4.1 Persoonlijke relevantie-score berekenen
-
-Voor elk artikel berekenen we een **relevantie-score** per gebruiker op basis van:
-
-| Factor | Gewicht | Bron |
-|--------|---------|------|
-| Aandoening-match | 30% | Profiel aandoening ↔ artikel AANDOENING-tag |
-| Situatie-match | 15% | Profiel situatie-tags ↔ artikel SITUATIE-tags |
-| Onderwerp-match | 20% | Profiel interesses ↔ artikel ONDERWERP-tags |
-| Belastingniveau-match | 15% | Hoge belasting → meer zelfzorg/rechten artikelen |
-| Gemeenschapsscore | 10% | Gemiddelde beoordeling door andere gebruikers |
-| Nieuwheid | 10% | Recenter = relevanter (met decay) |
-
-**Implementatie:** SQL query of Prisma query die per gebruiker een ranked list genereert.
-
-**Locaties waar dit gebruikt wordt:**
-1. Dashboard: "Aanbevolen voor jou" sectie (top 3)
-2. Leren-pagina: gesorteerd op relevantie i.p.v. volgorde
-3. Weekkaarten LEREN-type: kies artikel met hoogste relevantie-score
-4. AI assistenten: suggereer hoogst-scorende artikelen eerst
-
-### 4.2 "Aanbevolen voor jou" dashboard-sectie
-
-Nieuwe component op het dashboard:
-
-```
-┌──────────────────────────────────────────────────┐
-│ 📚 Aanbevolen voor jou                            │
-│                                                   │
-│ Op basis van je situatie (dementie, werkend)       │
-│                                                   │
-│ ┌─────────────────────────┐ ┌─────────────────────┐
-│ │ 💰 PGB aanvragen: zo     │ │ 😴 Slaaptips voor   │
-│ │ doe je dat               │ │ mantelzorgers       │
-│ │ ⭐ 4.5  •  3 min lezen   │ │ ⭐ 4.8  •  2 min    │
-│ └─────────────────────────┘ └─────────────────────┘
-│                                                   │
-│ [Bekijk alle aanbevelingen →]                     │
-└──────────────────────────────────────────────────┘
-```
-
-### 4.3 Weekkaarten LEREN slimmer vullen
-
-Huidige weekkaarten LEREN-type selecteert artikelen op basis van ContentTag en categorie-matching. Verbeteren met:
-1. Relevantie-score als primair selectiecriterium
-2. Niet-gelezen artikelen prefereren boven gelezen
-3. Artikelen met hoge community-score prefereren
-4. Afwisseling in categorieën (niet 3 weken achtereen dezelfde categorie)
-
-### 4.4 "Meer hierover" suggesties
-
-Onderaan elk artikel: gerelateerde artikelen op basis van gedeelde tags.
-
-```
-┌──────────────────────────────────────┐
-│ 📖 Meer hierover                      │
-│                                       │
-│ • Hoe vraag je Wmo-hulp aan?          │
-│ • Eigen bijdrage: wat betaal je?      │
-│ • Respijtzorg: even op adem komen     │
-└──────────────────────────────────────┘
-```
-
-**Logica:** Artikelen met >= 2 gedeelde tags, gesorteerd op relevantie-score.
-
----
-
-## 6. Stap 5: Content Hiaten & Prioriteitsmatrix
-
-> **Doel:** Systematisch in kaart brengen waar te weinig content over is, gewogen naar hoeveel mantelzorgers het betreft.
-
-### 5.1 Impactmatrix: aandoening × aantal mantelzorgers
-
-Niet elke aandoening treft evenveel mantelzorgers. Dementie treft ~700.000 mantelzorgers, een zeldzame aandoening misschien 500. De content-dekking moet dit weerspiegelen.
-
-**Nieuwe tabel:**
-
-```prisma
-model AandoeningGewicht {
-  id                String   @id @default(cuid())
-  tagSlug           String   @unique  // verwijst naar ContentTag.slug
-  geschatAantal     Int      // Geschat aantal mantelzorgers in NL
-  prioriteit        Int      @default(5) // 1-10, berekend of handmatig
-  bronVermelding    String?  // "CBS 2024", "Alzheimer Nederland"
-  updatedAt         DateTime @updatedAt
-}
-```
-
-**Initiële data (indicatief):**
-
-| Aandoening | Geschat aantal mantelzorgers | Prioriteit |
-|------------|------------------------------|------------|
-| Dementie | 700.000 | 10 |
-| Kanker | 350.000 | 9 |
-| Psychische aandoeningen | 300.000 | 9 |
-| CVA/Beroerte | 200.000 | 8 |
-| Hart- en vaatziekten | 180.000 | 8 |
-| Ouderdomsklachten (algemeen) | 500.000 | 9 |
-| Verstandelijke beperking | 150.000 | 7 |
-| Parkinson | 80.000 | 6 |
-| MS | 40.000 | 5 |
-| NAH (niet-aangeboren hersenletsel) | 60.000 | 5 |
-| ALS | 5.000 | 3 |
-
-### 5.2 Onderwerp-impactmatrix
-
-Niet elk onderwerp is even relevant. Financiën en regelingen raken iedereen; erfenissen een klein deel.
-
-**Dezelfde aanpak voor ONDERWERP-tags:**
-
-```prisma
-model OnderwerpGewicht {
-  id              String   @id @default(cuid())
-  tagSlug         String   @unique
-  relevantieBreedte  Int   // 1-10: hoeveel % van mantelzorgers dit betreft
-  urgentie        Int      // 1-10: hoe urgent is dit onderwerp
-  prioriteit      Int      // berekend: (breedte × 0.6) + (urgentie × 0.4)
-  updatedAt       DateTime @updatedAt
-}
-```
-
-| Onderwerp | Breedte | Urgentie | Prioriteit |
-|-----------|---------|----------|------------|
-| Financiën/vergoedingen | 9 | 8 | 8.6 |
-| Wmo aanvragen | 8 | 9 | 8.4 |
-| Overbelasting herkennen | 9 | 9 | 9.0 |
-| Respijtzorg | 7 | 8 | 7.4 |
-| Dagbesteding | 7 | 6 | 6.6 |
-| Nachtrust | 8 | 7 | 7.6 |
-| Medicatie beheer | 6 | 7 | 6.4 |
-| Erfenis/testament | 3 | 3 | 3.0 |
-| Huisdieren tijdens zorg | 2 | 2 | 2.0 |
-
-### 5.3 Content-dekking dashboard
-
-Nieuw beheer-component dat de impactmatrix combineert met huidige content:
-
-```
-┌──────────────────────────────────────────────────────┐
-│ 📊 Content Dekking — Hiaten Analyse                   │
-│                                                       │
-│ Aandoening          Prioriteit  Artikelen  Dekking    │
-│ ──────────────────────────────────────────────────    │
-│ 🔴 Dementie           10          3         LAAG     │
-│ 🔴 Kanker              9          2         LAAG     │
-│ 🟡 Psychisch           9          4         GEMIDDELD │
-│ 🟢 CVA/Beroerte        8          5         GOED     │
-│ 🔴 Ouderdom            9          1         LAAG     │
-│                                                       │
-│ Onderwerp           Prioriteit  Artikelen  Dekking    │
-│ ──────────────────────────────────────────────────    │
-│ 🔴 Financiën           8.6        2         LAAG     │
-│ 🔴 Wmo aanvragen       8.4        1         LAAG     │
-│ 🟢 Overbelasting       9.0        6         GOED     │
-│ 🟡 Respijtzorg         7.4        3         GEMIDDELD │
-│                                                       │
-│ [🤖 Genereer artikelen voor hiaten]                   │
-│ [📥 Exporteer rapport]                                │
-└──────────────────────────────────────────────────────┘
-```
-
-**Dekking-berekening:**
-- LAAG: < 3 artikelen voor een prioriteit 7+ onderwerp
-- GEMIDDELD: 3-5 artikelen
-- GOED: 6+ artikelen
-- (Drempelwaarden schalen mee met prioriteit: voor prioriteit 10 is GOED pas bij 8+ artikelen)
-
-### 5.4 Content agent integratie
-
-De content agent (`zoek-online` functie) krijgt de impactmatrix mee in de prompt:
-
-```
-PRIORITEITEN VOOR NIEUWE CONTENT:
-De volgende hiaten zijn het meest urgent (hoge prioriteit, weinig artikelen):
-1. Dementie — financiën en vergoedingen (0 artikelen, prioriteit 8.6)
-2. Dementie — dagbesteding (1 artikel, prioriteit 6.6)
-3. Kanker — overbelasting herkennen (0 artikelen, prioriteit 9.0)
-...
-
-Genereer artikelen die deze hiaten vullen, met voorkeur voor onderwerpen
-die de meeste mantelzorgers raken.
-```
-
-### 5.5 Kruistabel: aandoening × onderwerp
-
-De ultieme hiaten-analyse is een kruistabel: per aandoening × per onderwerp → hoeveel artikelen?
-
-Dit wordt een beheer-pagina met een heatmap:
-
-```
-              | Financiën | Wmo | Overbelasting | Respijtzorg | Nachtrust |
-──────────────|-----------|-----|---------------|-------------|-----------|
-Dementie      |    🔴 0    | 🔴 0|     🟡 2      |    🟡 1     |   🔴 0    |
-Kanker        |    🔴 0    | 🔴 0|     🔴 1      |    🔴 0     |   🟡 1    |
-Psychisch     |    🟡 1    | 🟡 1|     🟢 3      |    🟡 2     |   🟡 1    |
-Ouderdom      |    🔴 0    | 🔴 0|     🔴 0      |    🔴 0     |   🔴 0    |
-```
-
-**Celkleuring:**
-- 🔴 Rood: 0 artikelen bij hoge-prioriteit combinatie
-- 🟡 Geel: 1-2 artikelen
-- 🟢 Groen: 3+ artikelen
-
-**Klik op een cel → "Genereer artikel over [aandoening] + [onderwerp]"**
-
----
-
-## 7. Stap 6: Bronvermelding & Auteurschap
+## 9. Stap 7: Bronvermelding & Auteurschap
 
 > **Doel:** Transparant zijn over waar informatie vandaan komt en wie het geschreven heeft.
 
-### 6.1 Bronvermelding-model
+### 7.1 Bronvermelding-model
 
 ```prisma
 model ArtikelBron {
@@ -541,7 +779,7 @@ enum BronType {
 }
 ```
 
-### 6.2 Uitbreiding Artikel model
+### 7.2 Uitbreiding Artikel model
 
 ```prisma
 // Toevoegen aan Artikel
@@ -557,7 +795,7 @@ enum AuteurType {
 }
 ```
 
-### 6.3 Bronvermelding in artikel-weergave
+### 7.3 Bronvermelding in artikel-weergave
 
 Onderaan elk artikel wordt een duidelijke bronsectie getoond:
 
@@ -588,7 +826,7 @@ Onderaan elk artikel wordt een duidelijke bronsectie getoond:
 **Specifiek voor AI_SAMENGESTELD artikelen:**
 > "Dit artikel is door MantelBuddy samengesteld op basis van informatie uit meerdere bronnen. De informatie is zorgvuldig geselecteerd en in begrijpelijke taal herschreven."
 
-### 6.4 Content agent: bronnen automatisch vastleggen
+### 7.4 Content agent: bronnen automatisch vastleggen
 
 Bij de functies `genereer`, `herschrijf` en `verrijk`:
 1. De AI krijgt de instructie om gebruikte bronnen te benoemen in een apart JSON-blok
@@ -609,7 +847,7 @@ Als je informatie uit meerdere bronnen combineert tot een nieuw verhaal:
 - Maak duidelijk dat MantelBuddy dit artikel heeft samengesteld
 ```
 
-### 6.5 Beheerportaal: bronnen beheren
+### 7.5 Beheerportaal: bronnen beheren
 
 Bij het bewerken van een artikel in het beheerportaal:
 - Sectie "Bronnen" met mogelijkheid om bronnen toe te voegen/verwijderen
@@ -618,7 +856,7 @@ Bij het bewerken van een artikel in het beheerportaal:
 
 ---
 
-## 8. Database Wijzigingen (totaaloverzicht)
+## 10. Database Wijzigingen (totaaloverzicht)
 
 ### Nieuwe modellen
 
@@ -636,7 +874,7 @@ Bij het bewerken van een artikel in het beheerportaal:
 | Model | Nieuwe velden |
 |-------|---------------|
 | `Zorgorganisatie` | `wachttijd`, `bereikbaarheid`, `ervaringTekst`, `geschiktVoor[]`, `gemiddeldeScore`, `aantalScores` |
-| `Artikel` | `auteur`, `auteurType`, `gemiddeldeScore`, `aantalScores`, `aantalGelezen` |
+| `Artikel` | `auteur`, `auteurType`, `gemiddeldeScore`, `aantalScores`, `aantalGelezen`, `compleetheidsScore` (berekend) |
 | `ContentTag` | `synoniemen[]` |
 
 ### Uitbreidingen bestaande enums
@@ -655,106 +893,141 @@ Bij het bewerken van een artikel in het beheerportaal:
 
 ---
 
-## 9. Bouwvolgorde
+## 11. Bouwvolgorde
 
 ```
-Stap 1: Hulpbronnen Tastbaar          ~16 uur
-├── 1.1 DB migratie (nieuwe velden)         2 uur
-├── 1.2 AI zoeker prompt aanpassen          3 uur
-├── 1.3 Hulpbronkaart redesign              4 uur
-├── 1.4 Zoek-UI met filters                 5 uur
-└── 1.5 Batch-verrijking tool               2 uur
+Stap 1: Tagging & Profiel-matching     ~16 uur  ← FUNDAMENT
+├── 1.1 TagType enum uitbreiden              1 uur
+├── 1.2 Nieuwe tags seeden (40+ tags)        2 uur
+├── 1.3 bepaalProfielTags() functie          3 uur
+├── 1.4 Bulk-taggen bestaande artikelen (AI) 3 uur
+├── 1.5 Synoniemen op ContentTag             1 uur
+├── 1.6 ZorgorganisatieTag koppeltabel       2 uur
+├── 1.7 Tag-voorkeuren in profiel UI         3 uur
+└── 1.8 GebruikerVoorkeur integratie         1 uur
 
-Stap 2: Tagging & Matching            ~14 uur
-├── 2.1 Tag-taxonomie uitbreiden            2 uur
-├── 2.2 Bulk-taggen met AI                  3 uur
-├── 2.3 Synoniemen op tags                  2 uur
-├── 2.4 Profiel tag-suggesties              3 uur
-└── 2.5 Hulpbronnen taggen                  4 uur
+Stap 2: Aanbevolen Artikelen           ~14 uur
+├── 2.1 Relevantie-score berekening          4 uur
+├── 2.2 "Aanbevolen voor jou" dashboard      3 uur
+├── 2.3 Leren-pagina sorteren op relevantie  2 uur
+├── 2.4 Weekkaarten LEREN verbeteren         2 uur
+├── 2.5 "Meer hierover" suggesties           2 uur
+└── 2.6 Ger AI-assistent integratie          1 uur
 
-Stap 3: Scoren & Relevantie           ~12 uur
-├── 3.1 ContentScore + LeesGeschiedenis     2 uur
-├── 3.2 "Was dit nuttig?" component         3 uur
-├── 3.3 Score-aggregatie                    2 uur
-├── 3.4 Score in zoekresultaten             2 uur
-└── 3.5 Leesgeschiedenis tracking           3 uur
+Stap 3: Gerichte Artikelgeneratie      ~14 uur
+├── 3.1 Doelgroep-specifiek genereren        3 uur
+├── 3.2 Slimme generatie-voorstellen (data)  4 uur
+├── 3.3 Generatie-matrix UI                  3 uur
+├── 3.4 Content agent "genereer-voor-doelgroep" 2 uur
+└── 3.5 Batch-generatie + aantal kiezen      2 uur
 
-Stap 4: Voorgestelde Artikelen         ~12 uur
-├── 4.1 Relevantie-score berekening         4 uur
-├── 4.2 "Aanbevolen voor jou" sectie        3 uur
-├── 4.3 Weekkaarten LEREN verbeteren        2 uur
-└── 4.4 "Meer hierover" suggesties          3 uur
+Stap 4: Hulpbronnen Tastbaar           ~12 uur
+├── 4.1 DB migratie (nieuwe velden)          2 uur
+├── 4.2 AI zoeker prompt aanpassen           2 uur
+├── 4.3 Hulpbronkaart redesign               4 uur
+├── 4.4 Zoek-UI met filters                  3 uur
+└── 4.5 Batch-verrijking tool                1 uur
 
-Stap 5: Content Hiaten                ~10 uur
-├── 5.1 AandoeningGewicht + seed data       2 uur
-├── 5.2 OnderwerpGewicht + seed data        2 uur
-├── 5.3 Content-dekking dashboard           3 uur
-├── 5.4 Content agent integratie            2 uur
-└── 5.5 Kruistabel hiaten-analyse           1 uur
+Stap 5: Artikel Compleetheid           ~14 uur
+├── 5.1 Compleetheidscore berekening         3 uur
+├── 5.2 Compleetheids-dashboard UI           4 uur
+├── 5.3 Batch-acties via agents              3 uur
+├── 5.4 Per-artikel actie-overzicht          2 uur
+└── 5.5 Filters en sortering                 2 uur
 
-Stap 6: Bronvermelding                ~10 uur
-├── 6.1 ArtikelBron model + migratie        2 uur
-├── 6.2 Artikel auteur-velden               1 uur
-├── 6.3 Bronsectie in artikel-weergave      3 uur
-├── 6.4 Content agent bronnen vastleggen    2 uur
-└── 6.5 Beheerportaal bronnen-sectie        2 uur
+Stap 6: Scoren & Feedback              ~10 uur
+├── 6.1 ContentScore + LeesGeschiedenis      2 uur
+├── 6.2 "Was dit nuttig?" component          3 uur
+├── 6.3 Score-aggregatie                     2 uur
+└── 6.4 Leesgeschiedenis tracking            3 uur
+
+Stap 7: Content Hiaten                  ~8 uur
+├── 7.1 AandoeningGewicht + seed data        2 uur
+├── 7.2 OnderwerpGewicht + seed data         2 uur
+├── 7.3 Content-dekking dashboard            3 uur
+└── 7.4 Kruistabel hiaten-analyse            1 uur
+
+Stap 8: Bronvermelding                 ~10 uur
+├── 8.1 ArtikelBron model + migratie         2 uur
+├── 8.2 Artikel auteur-velden                1 uur
+├── 8.3 Bronsectie in artikel-weergave       3 uur
+├── 8.4 Content agent bronnen vastleggen     2 uur
+└── 8.5 Beheerportaal bronnen-sectie         2 uur
 
 ─────────────────────────────────────────────
-Totaal geschat:                        ~74 uur
+Totaal geschat:                        ~98 uur
 ```
 
 ### Afhankelijkheden
 
 ```
-Stap 1 (Hulpbronnen) ──→ Stap 3 (Scoren) ──→ Stap 4 (Aanbevelingen)
-                     │                    │
-Stap 2 (Tagging) ───┘                    └──→ Stap 5 (Hiaten)
-                                          │
-Stap 6 (Bronvermelding) ─────────────────┘ (onafhankelijk, kan parallel)
+Stap 1 (Tagging) ──→ Stap 2 (Aanbevelingen) ──→ Stap 3 (Generatie)
+                 │                             │
+                 ├──→ Stap 4 (Hulpbronnen)     ├──→ Stap 7 (Hiaten)
+                 │                             │
+                 └──→ Stap 5 (Compleetheid)    └──→ Stap 6 (Scoren)
+                                               │
+Stap 8 (Bronvermelding) ─────────────────────┘ (onafhankelijk, kan parallel)
 ```
 
-**Stap 1 en 2** kunnen deels parallel gebouwd worden.
-**Stap 6** is volledig onafhankelijk en kan op elk moment.
-**Stap 3** vereist dat stap 1 en 2 af zijn (tags nodig voor scoring).
-**Stap 4 en 5** vereisen stap 3.
+**Stap 1** is het fundament — alles hangt af van het tagsysteem.
+**Stap 2** bouwt voort op tags voor aanbevelingen.
+**Stap 3** gebruikt aanbevelingsdata + tags voor slimme generatie.
+**Stap 4 en 5** kunnen parallel met stap 2/3.
+**Stap 8** is volledig onafhankelijk.
 
 ---
 
-## 10. Acceptatiecriteria per Stap
+## 12. Acceptatiecriteria per Stap
 
-### Stap 1: Hulpbronnen Tastbaar
+### Stap 1: Tagging & Profiel-matching
+- [ ] 5 tag-types beschikbaar (AANDOENING, SITUATIE, ONDERWERP, DOELGROEP, LEVENSFASE)
+- [ ] 40+ tags geseeded met synoniemen
+- [ ] `bepaalProfielTags()` leidt tags af uit bestaande profieldata
+- [ ] Alle bestaande artikelen getagd met minimaal 2 tag-types (via AI bulk-tagging)
+- [ ] Mantelzorger kan in profiel tags bekijken en aanpassen
+- [ ] Hulpbronnen kunnen getagd worden via ZorgorganisatieTag
+
+### Stap 2: Aanbevolen Artikelen
+- [ ] Dashboard toont "Aanbevolen voor jou" met 3-5 artikelen
+- [ ] Aanbevelingen zijn persoonlijk (werkende mantelzorger ≠ gepensioneerde mantelzorger)
+- [ ] Leren-pagina sorteerbaar op relevantie
+- [ ] Weekkaarten LEREN gebruiken relevantie-score
+- [ ] Onderaan artikel staan 2-3 gerelateerde artikelen
+- [ ] Ger noemt de match-reden bij artikel-suggesties
+
+### Stap 3: Gerichte Artikelgeneratie
+- [ ] Beheerder kan aangeven hoeveel artikelen gegenereerd moeten worden
+- [ ] Agent analyseert leesgedrag, scores en matrix en doet een voorstel
+- [ ] Voorstel is aanpasbaar door beheerder voor generatie start
+- [ ] Gegenereerde artikelen krijgen automatisch de juiste tags
+- [ ] Generatie-matrix toont welke tag-combinaties gedekt zijn
+
+### Stap 4: Hulpbronnen Tastbaar
 - [ ] Elke hulpbron heeft een `eersteStap` (ingevuld of fallback)
 - [ ] Hulpbronkaart toont: eerste stap, kosten, wachttijd (indien beschikbaar)
 - [ ] Filters werken: categorie, soort hulp, dekkingsgebied
-- [ ] Sortering op relevantie (standaard) en alfabetisch
 - [ ] Batch-verrijking kan 50+ hulpbronnen verwerken
 
-### Stap 2: Tagging & Matching
-- [ ] 5 tag-types beschikbaar (AANDOENING, SITUATIE, ONDERWERP, DOELGROEP, LEVENSFASE)
-- [ ] Alle bestaande artikelen getagd met minimaal 2 tag-types
-- [ ] Synoniemen werken in zoekopdrachten
-- [ ] Profiel-wizard stelt relevante tags voor na aandoening-selectie
-- [ ] Hulpbronnen kunnen getagd worden
+### Stap 5: Artikel Compleetheid
+- [ ] Elk artikel toont een compleetheidspercentage (0-100%)
+- [ ] Beheerder kan filteren op compleetheid en ontbrekende stappen
+- [ ] Batch-acties: tags toevoegen, B1-check, bronnen zoeken via agents
+- [ ] Per artikel: overzicht van voltooide en ontbrekende stappen met actieknoppen
+- [ ] "Alle ontbrekende stappen uitvoeren" als één-klik actie
 
-### Stap 3: Scoren & Relevantie
-- [ ] Gebruiker kan artikel beoordelen met 👍/👎 + optionele reden
+### Stap 6: Scoren & Feedback
+- [ ] Gebruiker kan artikel beoordelen met nuttig/niet-nuttig + optionele reden
 - [ ] Gebruiker kan hulpbron beoordelen
 - [ ] Gemiddelde score zichtbaar bij >= 3 beoordelingen
-- [ ] Leesgeschiedenis wordt bijgehouden (zonder merkbare vertraging)
+- [ ] Leesgeschiedenis wordt bijgehouden
 
-### Stap 4: Voorgestelde Artikelen
-- [ ] Dashboard toont "Aanbevolen voor jou" met 2-3 artikelen
-- [ ] Aanbevelingen zijn persoonlijk (andere situatie = andere artikelen)
-- [ ] Weekkaarten LEREN gebruiken relevantie-score
-- [ ] Onderaan artikel staan 2-3 gerelateerde artikelen
+### Stap 7: Content Hiaten
+- [ ] Beheerder ziet content-dekking per doelgroep en aandoening
+- [ ] Hiaten-analyse combineert met generatie-matrix
+- [ ] "Genereer voor hiaten" knop linkt naar slimme generatie (Stap 3)
 
-### Stap 5: Content Hiaten
-- [ ] Beheerder ziet content-dekking per aandoening en onderwerp
-- [ ] Rode cellen in kruistabel zijn klikbaar → "Genereer artikel"
-- [ ] Content agent gebruikt prioriteitsmatrix in voorstellen
-- [ ] Prioriteitsdata is handmatig aanpasbaar door beheerder
-
-### Stap 6: Bronvermelding
+### Stap 8: Bronvermelding
 - [ ] Elk artikel toont bronsectie (indien bronnen aanwezig)
 - [ ] AI-gegenereerde artikelen worden gemarkeerd als "Samengesteld door MantelBuddy"
 - [ ] Content agent slaat bronnen automatisch op
@@ -773,7 +1046,7 @@ Dit plan vervangt **geen** bestaande iteraties maar voegt een nieuwe iteratie to
 Iteratie 1-3: AFGEROND
 Iteratie 4:   Gemeente Onboarding (fase 2: on hold)
 ─── NIEUW ──────────────────────────────────────
-Iteratie 4B:  Content & Zoek Fundament (~74 uur, 4-5 weken)
+Iteratie 4B:  Content & Zoek Fundament (~98 uur, 6-7 weken)
 ────────────────────────────────────────────────
 Iteratie 5:   Content uit Code naar Database
 Iteratie 6:   Performance
@@ -783,4 +1056,4 @@ Iteratie 8:   Schaalbaarheid
 
 ---
 
-*Dit plan is opgesteld op 14 maart 2026 en wacht op goedkeuring voordat de bouw begint.*
+*Dit plan is opgesteld op 14 maart 2026 (v1.1) en wacht op goedkeuring voordat de bouw begint.*
