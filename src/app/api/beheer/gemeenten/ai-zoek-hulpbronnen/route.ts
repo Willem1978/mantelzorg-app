@@ -17,7 +17,7 @@ import { auth } from "@/lib/auth"
 import { zoekHulpbronnenVoorGemeente } from "@/lib/ai/agents/hulpbronnen-zoeker"
 
 export const dynamic = "force-dynamic"
-export const maxDuration = 120 // 2 minuten voor de volledige zoektocht
+export const maxDuration = 300 // 5 minuten — 15 categorieën × ~15s per stuk
 
 export async function POST(request: NextRequest) {
   const session = await auth()
