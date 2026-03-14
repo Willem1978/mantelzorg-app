@@ -1,9 +1,9 @@
 # MantelBuddy — Masterplan 2026
 
-**Datum:** 11 maart 2026
-**Versie:** 3.1
+**Datum:** 14 maart 2026
+**Versie:** 3.2
 **Baseline:** v2.5.0 + MantelCoach + dashboard redesign + AI chatbot verbeteringen maart 2026 + Iteratie 1-3 afgerond
-**Nieuw in v3.1:** AI Hulpbronnen Zoeker, AI Hulpbronnen Validator, Profiel Wizard
+**Nieuw in v3.2:** Iteratie 4 functioneel uitgewerkt met bouwstappen
 **Dit plan vervangt alle eerdere planbestanden.**
 
 ---
@@ -655,155 +655,137 @@ Deze blijven als aparte sectie onderaan de profielpagina (of als eigen pagina `/
 - [x] Actiepunten zichtbaar op dashboard (`ActiepuntenKaart.tsx` + `/api/actiepunten`)
 - [x] E-mail na balanstest (`sendBalanstestResultEmail` in email.ts)
 - [x] Wekelijkse hulpkaarten op dashboard (WeekKaart model, regelgebaseerde generatie, 3 types, Ger-integratie)
-- [x] Profiel wizard (6 stappen: over jou, naaste, adressen, situatie, interesses, overzicht)
+- [x] Profiel wizard (5 stappen + gecombineerde overzicht/bedankpagina: over jou, naaste, zorgsituatie, interesses, overzicht+bedankt)
 
 **Status:** 8/8 afgerond.
 **Geschatte doorlooptijd:** 3 weken (~48 uur) + 1 week extra voor profiel wizard
 
 ---
 
-## 5. Iteratie 4: Gemeente Onboarding & Automatisering (Week 8-10)
+## 5. Iteratie 4: Gemeente Onboarding & Opvolging (Week 8-12)
 
-> **Doel:** Gemeenten snel live krijgen + automatische opvolging na balanstest + AI-gestuurde hulpbronnen.
-> **Motto:** "Gemeenten in 15 minuten live — met hulp van AI."
+> **Doel:** Gemeenten snel live krijgen, hulpbronnen automatisch vinden en actueel houden, en mantelzorgers proactief opvolgen.
+> **Motto:** "Gemeenten in 15 minuten live — mantelzorgers nooit meer uit beeld."
 
-### 4.1 Gemeente onboarding wizard (uitbreiden met AI hulpbronnen zoeker)
-**Prioriteit: HOOG**
+### Wat gaat de gebruiker merken?
 
-De bestaande wizard (`/beheer/gemeenten/nieuw`) heeft 5 stappen. Stap 3 ("Hulpbronnen") wordt
-uitgebreid met een **AI Agent** die automatisch lokale hulpbronnen zoekt en voorstelt.
+**Voor de beheerder (admin):**
+- Bij het toevoegen van een nieuwe gemeente hoeft de beheerder niet meer zelf alle hulpbronnen te zoeken. De AI zoekt automatisch per zorgtaak-categorie naar lokale organisaties en presenteert ze als kaarten. De beheerder bekijkt, keurt goed of wijst af, en kan aanpassen. Binnen 15 minuten is een gemeente volledig ingericht.
+- Elke week krijgt de beheerder een overzicht: welke hulpbronnen zijn nog actueel, welke websites zijn offline, welke telefoonnummers zijn gewijzigd. Dit voorkomt dat mantelzorgers verouderde informatie krijgen.
+- Bij een alarmsignaal (hoge belasting) krijgt de gemeente automatisch een geanonimiseerde melding per e-mail. Zo kan het sociaal wijkteam proactief handelen.
+- Een nieuw opvolgingsdashboard toont: hoeveel tests deze week, hoeveel alarmen, welke check-ins zijn gepland en welke zijn gemist.
 
-**Huidige wizard stappen:**
-1. **Gemeente kiezen** — PDOK autocomplete, CBS-code, check duplicaat
-2. **Contactgegevens** — Email, telefoon, website, WMO loket URL
-3. **Hulpbronnen** — NU: handmatig URLs invullen → NIEUW: AI zoekt automatisch (zie 4.1a)
-4. **Hulpverleners per belastingniveau** — Organisatie koppelen per niveau
-5. **Eerste beheerder aanmaken** — Email, naam, rol, uitnodigingslink
-
-**Bestanden (bestaand):**
-- `src/app/beheer/gemeenten/nieuw/page.tsx`
-- `src/app/api/beheer/gemeenten/onboarding/route.ts`
+**Voor de mantelzorger:**
+- Na de balanstest wordt automatisch een check-in herinnering gepland. Bij hoge belasting al na 1 week, bij lage belasting na 4 weken.
+- De herinnering komt via WhatsApp (als gekoppeld) of als in-app notificatie.
+- De mantelzorger hoeft zelf niets te doen — het platform houdt contact en vraagt hoe het gaat.
 
 ---
 
-### 4.1a AI Agent: Lokale Hulpbronnen Zoeker
-**Prioriteit: HOOG — NIEUW**
+### Bouwvolgorde: 7 stappen
 
-AI agent die bij gemeente-onboarding (stap 3) automatisch lokale hulpbronnen zoekt, valideert en voorstelt.
-Deze agent wordt onderdeel van de gemeente implementatie wizard.
-
-**Werking:**
-1. Beheerder selecteert gemeente in stap 1 (bijv. "Nijmegen")
-2. Bij stap 3 start de AI agent automatisch
-3. Agent zoekt per categorie (alle 10 zorgtaken + 6 mantelzorger-categorieën) naar lokale organisaties
-4. Bronnen: DuckDuckGo, Regelhulp.nl, Sociale Kaart, gemeentewebsite, WMO-portaal
-5. Per gevonden organisatie: naam, dienst, telefoon, website, adres, openingstijden, kosten
-6. Resultaten worden gepresenteerd als kaarten die de beheerder kan goedkeuren/afwijzen/bewerken
-7. Goedgekeurde hulpbronnen worden als `Zorgorganisatie` in de database opgeslagen
-
-**Categorieën waarop gezocht wordt:**
-
-| Code | Zorgtaak/Categorie | Zoektermen |
-|------|-------------------|------------|
-| t1 | Administratie en aanvragen | "administratieve hulp [gemeente]", "formulierenhulp [gemeente]" |
-| t2 | Plannen en organiseren | "casemanager [gemeente]", "zorgcoördinator [gemeente]" |
-| t3 | Boodschappen | "boodschappenhulp [gemeente]", "maaltijdservice [gemeente]" |
-| t4 | Sociaal contact en activiteiten | "dagbesteding [gemeente]", "ontmoetingscentrum [gemeente]" |
-| t5 | Vervoer | "vervoerservice [gemeente]", "regiotaxi [gemeente]" |
-| t6 | Persoonlijke verzorging | "thuiszorg [gemeente]", "wijkverpleging [gemeente]" |
-| t7 | Maaltijden | "maaltijdvoorziening [gemeente]", "tafeltje dekje [gemeente]" |
-| t8 | Huishoudelijke taken | "huishoudelijke hulp [gemeente]", "WMO hulp [gemeente]" |
-| t9 | Klusjes in en om het huis | "klussenservice [gemeente]", "vrijwillige klussers [gemeente]" |
-| t10 | Huisdieren | "dierenoppas [gemeente]", "hulp huisdier [gemeente]" |
-| M1 | Ondersteuning mantelzorger | "mantelzorgsteunpunt [gemeente]", "sociaal wijkteam [gemeente]" |
-| M2 | Vervangende mantelzorg | "respijtzorg [gemeente]", "logeerhuis [gemeente]" |
-| M3 | Praten & steun | "mantelzorglijn", "emotionele steun mantelzorgers [gemeente]" |
-| M4 | Lotgenoten | "lotgenotencontact [gemeente]", "mantelzorgcafé [gemeente]" |
-| M5 | Leren & training | "cursus mantelzorg [gemeente]", "dementie training [gemeente]" |
-| M6 | Informatie en advies | "juridisch advies mantelzorg", "financieel advies mantelzorgers [gemeente]" |
-
-**AI Agent architectuur:**
-```
-┌─────────────────────────────────────────┐
-│  Gemeente Wizard — Stap 3: Hulpbronnen  │
-│                                         │
-│  [AI zoekt... ██████████░░ 65%]        │
-│                                         │
-│  ✅ Thuiszorg Nijmegen (goedgekeurd)    │
-│  ⏳ Respijtzorg De Waarden (review)     │
-│  ❌ Verouderd resultaat (afgewezen)      │
-│                                         │
-│  [Handmatig toevoegen]  [Volgende stap] │
-└─────────────────────────────────────────┘
-```
-
-**Technisch:**
-- Nieuw: `src/lib/ai/agents/hulpbronnen-zoeker.ts` — AI agent met Claude
-- Nieuw: `src/app/api/beheer/gemeenten/ai-zoek-hulpbronnen/route.ts` — SSE endpoint voor live updates
-- Wijzig: `src/app/beheer/gemeenten/nieuw/page.tsx` — Stap 3 uitbreiden met AI zoekresultaten
-- Hergebruik: `src/app/api/beheer/hulpbronnen/zoeken/route.ts` — Bestaande DuckDuckGo + Regelhulp zoeker
-- Hergebruik: `src/app/api/beheer/hulpbronnen/verrijk/route.ts` — PDOK verrijking
-
-**Per gevonden hulpbron genereert de agent:**
-- `naam`, `dienst`, `beschrijving`, `telefoon`, `website`
-- `gemeente`, `type` (ZorgorganisatieType enum)
-- `onderdeelTest` (categorie-code)
-- `doelgroep` (MANTELZORGER of ZORGVRAGER)
-- `eersteStap` (hoe je contact opneemt)
-- `kosten` (als bekend)
-- `bronLabel` ("Gemeente")
-- `dekkingNiveau` ("GEMEENTE")
-
-**Validatie door agent:**
-- Website bereikbaarheid check (HTTP HEAD request)
-- Telefoonnummer formaat check (NL nummers)
-- Deduplicatie tegen bestaande hulpbronnen in database
-- Confidence score per resultaat (HOOG/GEMIDDELD/LAAG)
+Hieronder de volgorde waarin ik de onderdelen wil bouwen, met per stap een korte uitleg van wat er functioneel verandert.
 
 ---
 
-### 4.1b AI Agent: Wekelijkse Hulpbronnen Validator
-**Prioriteit: HOOG — NIEUW**
+#### Stap 1: AI Hulpbronnen Zoeker (4.1a)
+**Prioriteit: HOOG | Geschatte omvang: ~16 uur**
 
-AI agent die wekelijks ALLE hulpbronnen controleert of ze nog kloppen.
+**Wat het doet:**
+De beheerder selecteert een gemeente (bijv. "Nijmegen") in de onboarding wizard. Bij stap 3 ("Hulpbronnen") drukt de beheerder op "Zoek hulpbronnen". De AI agent:
 
-**Waarom:**
-Hulpbronnen veranderen: organisaties stoppen, telefoonnummers wijzigen, websites verdwijnen.
-Verouderde informatie ondermijnt het vertrouwen van mantelzorgers in het platform.
+1. Zoekt per categorie (10 zorgtaken + 6 mantelzorger-categorieën) via DuckDuckGo, Regelhulp.nl, De Sociale Kaart en de gemeentewebsite
+2. Structureert de resultaten: naam, dienst, telefoon, website, adres, eerste stap, kosten
+3. Valideert: is de website bereikbaar? Klopt het telefoonnummer (NL formaat)?
+4. Deduplicatie: zit deze organisatie al in de database?
+5. Geeft elk resultaat een vertrouwensscore (HOOG/GEMIDDELD/LAAG)
+6. Presenteert de resultaten als kaarten met knoppen: [Goedkeuren] [Afwijzen] [Bewerken]
 
-**Werking:**
-1. Elke maandag (via Vercel Cron) draait de validator agent
-2. Per actieve `Zorgorganisatie`:
-   - **Website check**: HTTP HEAD → bereikbaar? Status code? Redirect?
-   - **Telefoon check**: Formaat geldig? (optioneel: bel-test via Twilio)
-   - **Content check**: AI leest de website en controleert of de dienst nog aangeboden wordt
-   - **Naam check**: Komt de organisatienaam nog overeen met de website?
-3. Per hulpbron krijgt een `validatieStatus`:
+**Wat de beheerder ziet:**
+```
+┌──────────────────────────────────────────────────┐
+│  Stap 3: Hulpbronnen — Nijmegen                  │
+│                                                   │
+│  AI zoekt lokale hulpbronnen...                   │
+│  [████████████░░░░] 75% — Categorie: Thuiszorg    │
+│                                                   │
+│  Gevonden (12):                                   │
+│                                                   │
+│  ┌─────────────────────────────────────────┐      │
+│  │ Thuiszorg Nijmegen     ⭐ Hoog vertrouwen│      │
+│  │ Dienst: Huishoudelijke hulp, PV         │      │
+│  │ Tel: 024-123 4567  Web: thuiszorg-nij.nl│      │
+│  │ Eerste stap: Bel voor intake-gesprek    │      │
+│  │ [✅ Goedkeuren] [✏️ Bewerken] [❌ Afwijzen]│      │
+│  └─────────────────────────────────────────┘      │
+│                                                   │
+│  [+ Handmatig toevoegen]        [Volgende stap →] │
+└──────────────────────────────────────────────────┘
+```
 
-| Status | Betekenis | Actie |
-|--------|-----------|-------|
-| GELDIG | Alles klopt | Geen actie |
-| WAARSCHUWING | Website redirect of kleine afwijking | Manuele review |
-| ONGELDIG | Website down of dienst niet meer gevonden | Markeer als inactief |
-| ONBEKEND | Geen website, niet te controleren | Manuele review |
+**Wat er al bestaat (hergebruik):**
+- `src/app/api/beheer/hulpbronnen/zoeken/route.ts` — DuckDuckGo + Regelhulp + Sociale Kaart zoekers
+- `src/app/api/beheer/hulpbronnen/verrijk/route.ts` — PDOK locatie-verrijking
+- `src/app/beheer/gemeenten/nieuw/page.tsx` — Bestaande 5-stappen wizard
 
-4. Resultaten worden opgeslagen en zichtbaar in beheerportaal
-5. Bij ONGELDIG of WAARSCHUWING: notificatie naar beheerder en/of gemeente-admin
+**Wat er nieuw gebouwd wordt:**
+- `src/lib/ai/agents/hulpbronnen-zoeker.ts` — AI agent die Claude gebruikt om zoekresultaten te structureren, valideren en categoriseren
+- `src/app/api/beheer/gemeenten/ai-zoek-hulpbronnen/route.ts` — SSE (Server-Sent Events) endpoint zodat de UI live updates toont terwijl de agent zoekt
+- Uitbreiding van wizard stap 3 met de zoekresultaat-kaarten en goedkeur-workflow
+
+---
+
+#### Stap 2: AI Hulpbronnen Validator (4.1b)
+**Prioriteit: HOOG | Geschatte omvang: ~12 uur**
+
+**Wat het doet:**
+Elke maandag draait een cron job die ALLE actieve hulpbronnen controleert:
+
+1. **Website check**: HTTP HEAD request — bereikbaar? Redirect? 404?
+2. **Content check**: AI leest de website en controleert of de dienst nog aangeboden wordt
+3. **Telefoon check**: Is het telefoonnummer een geldig NL-nummer?
+4. **Naam check**: Komt de organisatienaam nog overeen?
+
+Per hulpbron wordt een status bepaald:
+
+| Status | Betekenis | Wat er gebeurt |
+|--------|-----------|----------------|
+| GELDIG | Alles klopt | Niets — groen vinkje in beheerportaal |
+| WAARSCHUWING | Website redirect of kleine afwijking | Kaart verschijnt in review-lijst |
+| ONGELDIG | Website down of dienst verdwenen | Hulpbron wordt gemarkeerd, beheerder krijgt melding |
+| ONBEKEND | Geen website om te checken | Wordt overgeslagen |
+
+**Wat de beheerder ziet:**
+```
+┌──────────────────────────────────────────────────┐
+│  Hulpbronnen Controle — Week 12, 2026             │
+│                                                   │
+│  ✅ 142 Geldig  ⚠️ 8 Waarschuwing  ❌ 2 Ongeldig   │
+│                                                   │
+│  ❌ Thuiszorg Dichtbij                             │
+│     Website geeft 404 sinds 10 maart              │
+│     [Bekijken] [Deactiveren] [Opnieuw checken]    │
+│                                                   │
+│  ⚠️ Mantelzorgcafé Arnhem                          │
+│     Website doorgestuurd naar andere URL           │
+│     [Bekijken] [Goedkeuren] [Bewerken]            │
+└──────────────────────────────────────────────────┘
+```
 
 **Database uitbreiding:**
 ```prisma
 model HulpbronValidatie {
-  id                String                @id @default(cuid())
+  id                String                  @id @default(cuid())
   zorgorganisatieId String
   status            HulpbronValidatieStatus
   websiteBereikbaar Boolean?
   websiteStatusCode Int?
   contentKlopt      Boolean?
   telefoonGeldig    Boolean?
-  opmerkingen       String?               @db.Text
-  aiSamenvatting    String?               @db.Text
-  gecontroleerd     DateTime              @default(now())
-  zorgorganisatie   Zorgorganisatie       @relation(fields: [zorgorganisatieId], references: [id], onDelete: Cascade)
+  opmerkingen       String?                 @db.Text
+  aiSamenvatting    String?                 @db.Text
+  gecontroleerd     DateTime                @default(now())
+  zorgorganisatie   Zorgorganisatie         @relation(fields: [zorgorganisatieId], references: [id], onDelete: Cascade)
 
   @@index([zorgorganisatieId])
   @@index([status])
@@ -818,107 +800,197 @@ enum HulpbronValidatieStatus {
 }
 ```
 
-**Uitbreiding `Zorgorganisatie`:**
+**Wat er nieuw gebouwd wordt:**
+- `src/lib/ai/agents/hulpbronnen-validator.ts` — Validatie-agent
+- `src/app/api/cron/valideer-hulpbronnen/route.ts` — Wekelijkse cron job
+- `src/app/api/beheer/hulpbronnen/validatie/route.ts` — API voor resultaten
+- `src/components/admin/HulpbronValidatieOverzicht.tsx` — Beheerportaal component
+- Uitbreiding `Zorgorganisatie` model met `laatsteValidatie` en `validatieStatus` velden
+
+---
+
+#### Stap 3: Automatische check-in planning (4.2)
+**Prioriteit: HOOG | Geschatte omvang: ~8 uur**
+
+**Wat het doet:**
+Na het voltooien van de balanstest wordt automatisch een check-in herinnering gepland. De timing hangt af van het belastingniveau:
+
+| Belastingniveau | Herinnering na | Doel |
+|-----------------|----------------|------|
+| HOOG | 1 week | Snel opvolgen, situatie is urgent |
+| GEMIDDELD | 2 weken | Tussentijds even checken |
+| LAAG | 4 weken | Op langere termijn bijhouden |
+
+**Hoe het werkt:**
+1. Mantelzorger maakt balanstest af → belastingniveau wordt bepaald
+2. Systeem plant automatisch een `GeplandCheckin` record in de database
+3. Dagelijkse cron job checkt welke herinneringen vandaag verstuurd moeten worden
+4. Herinnering gaat via WhatsApp (als gekoppeld) OF als in-app notificatie
+5. Als de mantelzorger reageert (nieuwe test of check-in doet), wordt de volgende herinnering automatisch gepland
+
+**Database:**
 ```prisma
-model Zorgorganisatie {
-  // bestaande velden...
-  laatsteValidatie     DateTime?
-  validatieStatus      String?          // GELDIG, WAARSCHUWING, ONGELDIG, ONBEKEND
-  validaties           HulpbronValidatie[]
+model GeplandCheckin {
+  id            String    @id @default(cuid())
+  caregiverId   String
+  geplandOp     DateTime  // wanneer de herinnering verstuurd moet worden
+  verstuurdOp   DateTime? // wanneer de herinnering daadwerkelijk verstuurd is
+  kanaal        String    @default("IN_APP") // IN_APP, WHATSAPP
+  aanleiding    String    // "balanstest", "check-in", "alarm"
+  status        String    @default("GEPLAND") // GEPLAND, VERSTUURD, VOLTOOID, VERLOPEN
+  testId        String?   // optioneel: gekoppeld aan specifieke test
+  createdAt     DateTime  @default(now())
+  caregiver     Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  @@index([caregiverId, geplandOp])
+  @@index([status, geplandOp])
 }
 ```
 
-**Bestanden:**
-- Nieuw: `src/lib/ai/agents/hulpbronnen-validator.ts` — Validatie-agent
-- Nieuw: `src/app/api/cron/valideer-hulpbronnen/route.ts` — Wekelijkse cron job
-- Nieuw: `src/app/api/beheer/hulpbronnen/validatie/route.ts` — API voor validatieresultaten
-- Wijzig: `src/app/beheer/hulpbronnen/page.tsx` — Validatiestatus tonen per hulpbron
-- Wijzig: `prisma/schema.prisma` — HulpbronValidatie model + enum
-- Nieuw: `src/components/admin/HulpbronValidatieOverzicht.tsx` — Dashboard component
+**Wat er nieuw gebouwd wordt:**
+- `src/lib/check-in/plan-check-in.ts` — Planningslogica na test-voltooiing
+- `src/app/api/cron/check-in-reminders/route.ts` — Dagelijkse cron: verstuur herinneringen
+- Integratie in `src/app/api/belastbaarheidstest/route.ts` — Na test opslaan → planning aanmaken
 
-**Beheerportaal weergave:**
+---
+
+#### Stap 4: Gemeente-alarmnotificatie (4.3)
+**Prioriteit: HOOG | Geschatte omvang: ~6 uur**
+
+**Wat het doet:**
+Als Ger (de AI chatbot) een alarmsignaal detecteert met urgentie HIGH of CRITICAL, wordt automatisch een geanonimiseerde e-mail verstuurd naar de gemeente-contactpersoon.
+
+**Wat de gemeente NIET krijgt (privacy):**
+- Geen naam, geboortedatum, adres of telefoonnummer
+- Geen gespreksinhoud
+
+**Wat de gemeente WEL krijgt:**
+- Type alarm (bijv. "Emotionele nood")
+- Belastingniveau (HOOG)
+- Gemeente waar de mantelzorger woont
+- Datum en tijdstip
+- Aanbeveling: "Overweeg proactief contact op te nemen via het sociaal wijkteam"
+
+**Opt-in:**
+Gemeenten kiezen zelf of ze deze meldingen willen ontvangen. Dit wordt ingesteld bij gemeente-onboarding (nieuw veld: `alarmNotificatiesAan: Boolean`).
+
+**Wat er nieuw gebouwd wordt:**
+- E-mail template in `src/lib/email.ts` — `sendGemeenteAlarmNotificatie()`
+- Uitbreiding `registreer-alarm.ts` — Na alarm registratie: check of gemeente opt-in heeft, zo ja → e-mail
+- Uitbreiding gemeente-model: `alarmNotificatiesAan` + `alarmNotificatieEmail` velden
+
+---
+
+#### Stap 5: Gemeente opvolgingsdashboard (4.4)
+**Prioriteit: GEMIDDELD | Geschatte omvang: ~10 uur**
+
+**Wat het doet:**
+Een nieuw component op het gemeente-dashboard dat in één oogopslag laat zien hoe het gaat met de mantelzorgers in de gemeente.
+
+**Wat de gemeente-beheerder ziet:**
 ```
 ┌──────────────────────────────────────────────────┐
-│  Hulpbronnen Validatie — Week 11, 2026           │
-│                                                  │
-│  ✅ 142 Geldig    ⚠️ 12 Waarschuwing    ❌ 3 Ongeldig │
-│                                                  │
-│  ❌ Thuiszorg Dichtbij — Website down (404)       │
-│     Laatst geldig: 3 maart 2026                  │
-│     [Bekijken] [Deactiveren] [Opnieuw checken]   │
-│                                                  │
-│  ⚠️ Mantelzorgcafé Arnhem — Redirect naar        │
-│     andere URL, dienst mogelijk gewijzigd         │
-│     [Bekijken] [Goedkeuren] [Bewerken]           │
+│  Opvolging — Nijmegen                             │
+│                                                   │
+│  Deze week                                        │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐          │
+│  │ 8 Tests  │ │ 2 Alarmen│ │ 5 Check- │          │
+│  │ (3 HOOG) │ │ (1 open) │ │ ins gepland│         │
+│  └──────────┘ └──────────┘ └──────────┘          │
+│                                                   │
+│  Gemiste check-ins (2):                           │
+│  ⚠️ Mantelzorger #A3F — HOOG — check-in gemist    │
+│     Gepland: 10 maart, nog geen reactie           │
+│     [Markeer als afgehandeld]                     │
+│                                                   │
+│  Trend (laatste 4 weken):                         │
+│  Tests: 8 → 12 → 6 → 8                           │
+│  Gemiddeld niveau: GEMIDDELD (stabiel)            │
 └──────────────────────────────────────────────────┘
 ```
 
----
+**Belangrijk:** Alle data is geanonimiseerd. De gemeente ziet aantallen en trends, geen namen.
 
-### 4.2 Automatische check-in planning
-**Prioriteit: HOOG**
-
-Na test-voltooiing automatisch reminder plannen:
-- HOOG: 1 week
-- GEMIDDELD: 2 weken
-- LAAG: 4 weken
-
-Via Vercel Cron + WhatsApp (Twilio) + in-app notificatie.
-
-**Bestanden:**
-- Nieuw: `src/lib/check-in/plan-check-in.ts`
-- Nieuw: `src/app/api/cron/check-in-reminders/route.ts`
+**Wat er nieuw gebouwd wordt:**
+- `src/components/gemeente/OpvolgingKaart.tsx` — Dashboard component
+- `src/app/api/gemeente/opvolging/route.ts` — API endpoint met geanonimiseerde statistieken
+- Integratie op het bestaande gemeente-dashboard
 
 ---
 
-### 4.3 Gemeente-alarmnotificatie
-**Prioriteit: HOOG**
+#### Stap 6: WhatsApp check-in herinneringen (4.5)
+**Prioriteit: GEMIDDELD | Geschatte omvang: ~8 uur**
 
-Bij CRITICAL/HIGH alarm: geanonimiseerde notificatie naar gemeente contactemail.
-- Alleen: belastingniveau, gemeente, type alarm
-- NIET: naam, geboortedatum, of andere PII
-- Opt-in per gemeente
+**Wat het doet:**
+De geplande check-in herinneringen (stap 3) worden via WhatsApp verstuurd aan mantelzorgers die WhatsApp gekoppeld hebben.
 
-**Bestanden:**
-- Nieuw: `src/lib/email/gemeente-alarm-notificatie.ts`
-- Wijzig: `src/lib/ai/tools/registreer-alarm.ts`
+**Voorbeeld WhatsApp-bericht:**
+```
+Hoi [naam], hoe gaat het met je?
+
+Twee weken geleden vulde je de balanstest in.
+We willen even checken of het nog goed gaat.
+
+Antwoord met:
+1 = Goed, geen hulp nodig
+2 = Het gaat wel, maar ik wil even praten
+3 = Het gaat niet goed, ik heb hulp nodig
+
+Of bezoek je dashboard: [link]
+```
+
+**Hoe het werkt:**
+1. Cron job (stap 3) detecteert dat een herinnering verstuurd moet worden
+2. Check: heeft deze mantelzorger WhatsApp gekoppeld?
+3. Zo ja: stuur bericht via Twilio WhatsApp API
+4. Zo nee: maak een in-app notificatie aan
+5. Bij reactie "3" (hulp nodig): automatisch alarm registreren
+
+**Wat er nieuw gebouwd wordt:**
+- Uitbreiding cron job uit stap 3 met WhatsApp kanaal
+- WhatsApp template bericht registreren bij Twilio
+- Response handler in bestaande WhatsApp webhook
+
+---
+
+#### Stap 7: Gemeente onboarding wizard verbeteren (4.1)
+**Prioriteit: GEMIDDELD | Geschatte omvang: ~6 uur**
+
+**Wat het doet:**
+De bestaande gemeente-wizard (`/beheer/gemeenten/nieuw`) wordt verbeterd:
+
+1. **Stap 3 uitbreiden** — De AI Hulpbronnen Zoeker (stap 1) wordt geïntegreerd als knop in de bestaande wizard
+2. **Stap 5 verbeteren** — Betere flow voor eerste beheerder aanmaken met welkomstmail
+3. **Validatie** — Dubbele gemeente-check, verplichte velden controleren per stap
+4. **Visuele feedback** — Voortgangsbalk per stap, succesmelding na voltooiing
+
+Dit is de laatste stap omdat het de AI Zoeker integreert die in stap 1 is gebouwd.
 
 ---
 
-### 4.4 Gemeente opvolgingsdashboard
-**Prioriteit: GEMIDDELD**
+### Samenvatting Iteratie 4
 
-Nieuw component op gemeente-dashboard:
-- Nieuwe tests deze week (waarvan HOOG)
-- Open alarmen
-- Geplande check-ins + niet-uitgevoerde check-ins
-
-**Bestanden:**
-- Nieuw: `src/components/gemeente/OpvolgingKaart.tsx`
-- Nieuw: `src/app/api/gemeente/opvolging/route.ts`
-
----
-
-### 4.5 Smart check-in herinneringen via WhatsApp
-**Prioriteit: GEMIDDELD**
-
-Proactieve herinneringen:
-- HOOG: wekelijks via WhatsApp
-- GEMIDDELD: tweewekelijks
-- LAAG: maandelijks
-
----
+| # | Onderdeel | Prioriteit | Geschatte uren | Afhankelijk van |
+|---|-----------|------------|----------------|-----------------|
+| 1 | AI Hulpbronnen Zoeker | HOOG | ~16u | — |
+| 2 | AI Hulpbronnen Validator | HOOG | ~12u | — |
+| 3 | Automatische check-in planning | HOOG | ~8u | — |
+| 4 | Gemeente-alarmnotificatie | HOOG | ~6u | — |
+| 5 | Gemeente opvolgingsdashboard | GEMIDDELD | ~10u | Stap 3 + 4 |
+| 6 | WhatsApp check-in herinneringen | GEMIDDELD | ~8u | Stap 3 |
+| 7 | Gemeente wizard verbeteren | GEMIDDELD | ~6u | Stap 1 |
+| | **Totaal** | | **~66u** | |
 
 ### Deliverables Iteratie 4
-- [ ] Werkende gemeente onboarding wizard (5 stappen)
-- [ ] **NIEUW — HOOG** AI Agent: Lokale Hulpbronnen Zoeker (geïntegreerd in wizard stap 3)
-- [ ] **NIEUW — HOOG** AI Agent: Wekelijkse Hulpbronnen Validator (cron + beheerportaal)
-- [ ] Automatische check-in planning na test
-- [ ] Gemeente-alarmnotificatie (geanonimiseerd)
-- [ ] Gemeente opvolgingsdashboard
+- [ ] AI Hulpbronnen Zoeker: automatisch lokale hulpbronnen vinden bij gemeente-onboarding
+- [ ] AI Hulpbronnen Validator: wekelijkse controle of hulpbronnen nog actueel zijn
+- [ ] Automatische check-in planning na balanstest (1/2/4 weken afhankelijk van niveau)
+- [ ] Gemeente-alarmnotificatie bij hoge belasting (geanonimiseerd, opt-in)
+- [ ] Gemeente opvolgingsdashboard met trends en gemiste check-ins
 - [ ] WhatsApp check-in herinneringen
+- [ ] Gemeente onboarding wizard uitgebreid met AI zoeker
 
-**Geschatte doorlooptijd:** 4 weken (~64 uur) — uitgebreid vanwege 2 nieuwe AI agents
+**Geschatte doorlooptijd:** 4-5 weken (~66 uur)
 
 ---
 
@@ -1241,13 +1313,13 @@ Iteratie  Naam                                Week    Uren    Focus             
 1         Beveiliging Dichtmaken              1-2     32u     11 security items                        AFGEROND (11/12)
 2         Input Validatie & Stabiliteit       3-4     32u     45+ routes + tests                       AFGEROND (6/6)
 3         Mantelzorger Klantreis              5-7     56u     Advies, SOS, actiepunten, profiel wiz.   AFGEROND (8/8)
-4         Gemeente Onboarding & AI Agents     8-11    64u     Wizard+AI zoeker+AI validator+reminders  OPEN — HOOG PRIO
-5         Content uit Code naar Database      12-14   48u     170+ items migreren                      OPEN
-6         Performance, Caching & Monitoring   15-17   48u     Sentry, caching, N+1                     OPEN
-7         Toegankelijkheid & UX              18-19   32u     WCAG AA, B1-taal, PWA                    OPEN
-8         Schaalbaarheid & Toekomst          20+     —       Backlog + blokkerende items               OPEN
+4         Gemeente Onboarding & Opvolging     8-12    66u     AI zoeker+validator+check-in+alarmering   OPEN — HOOG PRIO
+5         Content uit Code naar Database      13-15   48u     170+ items migreren                      OPEN
+6         Performance, Caching & Monitoring   16-18   48u     Sentry, caching, N+1                     OPEN
+7         Toegankelijkheid & UX              19-20   32u     WCAG AA, B1-taal, PWA                    OPEN
+8         Schaalbaarheid & Toekomst          21+     —       Backlog + blokkerende items               OPEN
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Totaal (Iteratie 1-7)                                312u    (+24u door AI agents + profiel wizard)
+Totaal (Iteratie 1-7)                                314u
 ```
 
 ### Nieuwe hoge-prioriteit items (toegevoegd 11 maart 2026)
@@ -1325,4 +1397,15 @@ FUNCTIONALITEIT — GROTENDEELS OPGELOST:
 | Nieuwe AI agents | 0 | 2 (hulpbronnen zoeker + validator) |
 | Profiel UX | Eén grote pagina | Stapsgewijze wizard (6 stappen) |
 
-*Dit masterplan is bijgewerkt op 11 maart 2026 (v3.1). Gebaseerd op: volledige codebase-analyse (124 API routes, 40 DB modellen, 74 pagina's), security audit, architectuur-review, AI chatbot verbeteringen, iteratie 1-3 implementatie, en nieuwe prioriteiten: AI-gestuurde hulpbronnen agents en profiel wizard.*
+### Wat is veranderd t.o.v. v3.1
+
+| Aspect | v3.1 (11 maart) | v3.2 (14 maart) |
+|--------|------|------|
+| Iteratie 3 Profiel Wizard | 6 stappen | 5 stappen + gecombineerde overzicht/bedankpagina |
+| Iteratie 4 | Technische beschrijving | Functioneel uitgewerkt met 7 bouwstappen |
+| Iteratie 4 uren | 64u | 66u (preciezer ingeschat per stap) |
+| Check-in planning | Korte beschrijving | Volledig uitgewerkt met database model |
+| Gemeente alarm | Korte beschrijving | Privacy-model en opt-in uitgewerkt |
+| Opvolgingsdashboard | Korte beschrijving | UI mockup en geanonimiseerde statistieken |
+
+*Dit masterplan is bijgewerkt op 14 maart 2026 (v3.2). Iteratie 4 is functioneel uitgewerkt met concrete bouwstappen, UI mockups en database modellen, klaar voor feedback voordat de bouw begint.*
