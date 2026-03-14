@@ -446,9 +446,35 @@ model Zorgorganisatie {
   // Gegenereerd door OpenAI text-embedding-3-small
   embedding             Unsupported("vector(1536)")?
 
+  // Validatie-relatie
+  validaties            HulpbronValidatie[]
+  laatsteValidatie       DateTime?           // Timestamp van laatste validatie-check
+  validatieStatus        String?             // GELDIG, WAARSCHUWING, ONGELDIG, ONBEKEND
+  bronType               String?             // Hoe gevonden: AI_ZOEKER, HANDMATIG, IMPORT, SOCIALE_KAART
+
   @@index([isActief, gemeente])
   @@index([isActief, onderdeelTest])
   @@index([gemeente])
+  @@index([validatieStatus])
+}
+
+// Validatieresultaten voor hulpbronnen — wekelijkse controle of informatie nog klopt
+model HulpbronValidatie {
+  id                String                  @id @default(cuid())
+  zorgorganisatieId String
+  status            HulpbronValidatieStatus
+  websiteBereikbaar Boolean?
+  websiteStatusCode Int?
+  contentKlopt      Boolean?
+  telefoonGeldig    Boolean?
+  opmerkingen       String?                 @db.Text
+  aiSamenvatting    String?                 @db.Text
+  gecontroleerd     DateTime                @default(now())
+  zorgorganisatie   Zorgorganisatie         @relation(fields: [zorgorganisatieId], references: [id], onDelete: Cascade)
+
+  @@index([zorgorganisatieId])
+  @@index([status])
+  @@index([gecontroleerd])
 }
 
 model BelastbaarheidRapport {
@@ -912,6 +938,13 @@ enum ZorgorganisatieType {
   VRIJWILLIGERS
   OVERIG
   LANDELIJK
+}
+
+enum HulpbronValidatieStatus {
+  GELDIG
+  WAARSCHUWING
+  ONGELDIG
+  ONBEKEND
 }
 
 enum AlarmType {

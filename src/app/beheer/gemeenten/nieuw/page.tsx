@@ -490,6 +490,26 @@ export default function GemeenteOnboardingWizard() {
                 />
               </div>
 
+              {/* AI Zoeken knop */}
+              <div className="border-t pt-4 mt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">AI Hulpbronnen Zoeker</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Laat de AI automatisch hulpbronnen zoeken in 15 categorieën voor {data.naam || "deze gemeente"}.
+                    </p>
+                  </div>
+                  <a
+                    href={`/beheer/hulpbronnen/ai-zoeken?gemeente=${encodeURIComponent(data.naam)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm shrink-0"
+                  >
+                    AI Zoeken
+                  </a>
+                </div>
+              </div>
+
               {/* Gevonden organisaties */}
               {orgLoading && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
