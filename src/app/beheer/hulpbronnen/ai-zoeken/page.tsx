@@ -138,6 +138,7 @@ function AIZoekenContent() {
 
       const decoder = new TextDecoder()
       let buffer = ""
+      let eventType = ""
 
       while (true) {
         const { done, value } = await reader.read()
@@ -145,11 +146,15 @@ function AIZoekenContent() {
 
         buffer += decoder.decode(value, { stream: true })
 
-        // Parse SSE events
-        const lines = buffer.split("\n")
-        buffer = ""
+        // Alleen complete regels verwerken (eindigend op \n)
+        const lastNewline = buffer.lastIndexOf("\n")
+        if (lastNewline === -1) continue
 
-        let eventType = ""
+        const complete = buffer.substring(0, lastNewline)
+        buffer = buffer.substring(lastNewline + 1)
+
+        const lines = complete.split("\n")
+
         for (const line of lines) {
           if (line.startsWith("event: ")) {
             eventType = line.slice(7).trim()
@@ -171,13 +176,10 @@ function AIZoekenContent() {
                 setFout(parsed.bericht)
               }
             } catch {
-              // Incomplete JSON, bewaar in buffer
-              buffer = line + "\n"
+              // JSON parse mislukt — waarschijnlijk incompleet, negeer
             }
           } else if (line.trim() === "") {
             eventType = ""
-          } else {
-            buffer += line + "\n"
           }
         }
       }
