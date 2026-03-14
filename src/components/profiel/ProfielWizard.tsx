@@ -182,7 +182,7 @@ interface ProfielWizardProps {
 export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
   const router = useRouter()
   const [stap, setStap] = useState(1)
-  const [showBedankt, setShowBedankt] = useState(false)
+  const [opgeslagen, setOpgeslagen] = useState(false)
   const [data, setData] = useState<WizardData>({
     naam: "", email: "", telefoon: "",
     adres: null,
@@ -321,7 +321,7 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
         relatie: data.naasteRelatie,
       }))
 
-      setShowBedankt(true)
+      setOpgeslagen(true)
     } catch {
       setSaveError("Het opslaan is niet gelukt. Wil je het nog een keer proberen?")
     } finally {
@@ -337,50 +337,6 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
   // Aandoeningen en situaties apart
   const aandoeningen = beschikbareTags.filter((t) => t.type === "AANDOENING")
   const situaties = beschikbareTags.filter((t) => t.type === "SITUATIE")
-
-  // ============================================
-  // BEDANKPAGINA
-  // ============================================
-
-  if (showBedankt) {
-    return (
-      <div className="ker-page-content">
-        <div className="ker-card text-center py-8 space-y-5">
-          <div className="text-5xl">&#127881;</div>
-          <h2 className="text-2xl font-bold text-foreground">
-            Bedankt{data.naam ? `, ${data.naam.split(" ")[0]}` : ""}!
-          </h2>
-          <div className="space-y-3 text-base text-foreground/80 max-w-md mx-auto leading-relaxed">
-            <p>
-              Je profiel is opgeslagen. We gebruiken deze gegevens om je zo goed mogelijk te helpen.
-            </p>
-            <p>
-              Je kunt je gegevens altijd weer aanpassen via je profielpagina.
-            </p>
-            {data.naasteNaam && (
-              <p className="text-primary font-medium">
-                Fijn dat je er bent voor {data.naasteNaam}. En vergeet niet: je mag er ook zijn voor jezelf.
-              </p>
-            )}
-          </div>
-          <div className="pt-3 space-y-3">
-            <button
-              onClick={() => router.push("/dashboard")}
-              className="ker-btn ker-btn-primary w-full max-w-xs mx-auto"
-            >
-              Naar mijn dashboard
-            </button>
-            <button
-              onClick={onComplete}
-              className="ker-btn w-full max-w-xs mx-auto bg-muted text-foreground hover:bg-muted/80"
-            >
-              Terug naar profiel
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   // ============================================
   // WIZARD
@@ -700,19 +656,51 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
         )}
 
         {/* ============================================ */}
-        {/* STAP 5: Overzicht */}
+        {/* STAP 5: Overzicht + Bedankt (gecombineerd) */}
         {/* ============================================ */}
         {stap === 5 && (
           <div className="space-y-4">
-            {/* Over jou */}
+            {/* Bedankt bericht (verschijnt na opslaan) */}
+            {opgeslagen && (
+              <div className="ker-card text-center py-6 space-y-4 bg-primary/5 border-primary/20">
+                <div className="text-4xl">&#127881;</div>
+                <h3 className="text-xl font-bold text-foreground">
+                  Bedankt{data.naam ? `, ${data.naam.split(" ")[0]}` : ""}!
+                </h3>
+                <div className="space-y-2 text-base text-foreground/80 leading-relaxed">
+                  <p>Je profiel is opgeslagen. We gebruiken deze gegevens om je zo goed mogelijk te helpen.</p>
+                  {data.naasteNaam && (
+                    <p className="text-primary font-medium">
+                      Fijn dat je er bent voor {data.naasteNaam}. En vergeet niet: je mag er ook zijn voor jezelf.
+                    </p>
+                  )}
+                </div>
+                <div className="pt-2 space-y-2 max-w-xs mx-auto">
+                  <button
+                    onClick={() => router.push("/dashboard")}
+                    className="ker-btn ker-btn-primary w-full"
+                  >
+                    Naar mijn dashboard
+                  </button>
+                  <button
+                    onClick={onComplete}
+                    className="ker-btn w-full bg-muted text-foreground hover:bg-muted/80"
+                  >
+                    Terug naar profiel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Overzicht kaarten */}
             <div className="ker-card">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold text-foreground flex items-center gap-2">
                   <span>{STAPPEN[0].emoji}</span> Over jou
                 </h3>
-                <button onClick={() => setStap(1)} className="text-xs text-primary font-semibold hover:underline">
-                  Aanpassen
-                </button>
+                {!opgeslagen && (
+                  <button onClick={() => setStap(1)} className="text-xs text-primary font-semibold hover:underline">Aanpassen</button>
+                )}
               </div>
               <div className="text-sm space-y-1 text-foreground/80">
                 <p><strong>Naam:</strong> {data.naam || "-"}</p>
@@ -722,15 +710,14 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
               </div>
             </div>
 
-            {/* Naaste */}
             <div className="ker-card">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold text-foreground flex items-center gap-2">
                   <span>{STAPPEN[1].emoji}</span> Jouw naaste
                 </h3>
-                <button onClick={() => setStap(2)} className="text-xs text-primary font-semibold hover:underline">
-                  Aanpassen
-                </button>
+                {!opgeslagen && (
+                  <button onClick={() => setStap(2)} className="text-xs text-primary font-semibold hover:underline">Aanpassen</button>
+                )}
               </div>
               <div className="text-sm space-y-1 text-foreground/80">
                 <p><strong>Naam:</strong> {data.naasteNaam || "-"}</p>
@@ -739,15 +726,14 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
               </div>
             </div>
 
-            {/* Situatie */}
             <div className="ker-card">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold text-foreground flex items-center gap-2">
                   <span>{STAPPEN[2].emoji}</span> De zorgsituatie
                 </h3>
-                <button onClick={() => setStap(3)} className="text-xs text-primary font-semibold hover:underline">
-                  Aanpassen
-                </button>
+                {!opgeslagen && (
+                  <button onClick={() => setStap(3)} className="text-xs text-primary font-semibold hover:underline">Aanpassen</button>
+                )}
               </div>
               <div className="text-sm space-y-1 text-foreground/80">
                 {data.aandoening ? (
@@ -763,15 +749,14 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
               </div>
             </div>
 
-            {/* Interesses */}
             <div className="ker-card">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="font-semibold text-foreground flex items-center gap-2">
                   <span>{STAPPEN[3].emoji}</span> Interesses
                 </h3>
-                <button onClick={() => setStap(4)} className="text-xs text-primary font-semibold hover:underline">
-                  Aanpassen
-                </button>
+                {!opgeslagen && (
+                  <button onClick={() => setStap(4)} className="text-xs text-primary font-semibold hover:underline">Aanpassen</button>
+                )}
               </div>
               <div className="text-sm text-foreground/80">
                 {data.interesseCategorieen.length > 0 ? (
@@ -791,31 +776,33 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
         )}
       </div>
 
-      {/* Navigatie knoppen */}
-      <div className="flex gap-3 mt-6">
-        {stap > 1 && (
-          <button onClick={handlePrev} className="ker-btn flex-1 bg-muted text-foreground hover:bg-muted/80">
-            Vorige
-          </button>
-        )}
-        {stap < TOTAAL_STAPPEN ? (
-          <button
-            onClick={handleNext}
-            disabled={!canProceed()}
-            className="ker-btn ker-btn-primary flex-1"
-          >
-            Volgende
-          </button>
-        ) : (
-          <button
-            onClick={handleFinish}
-            disabled={isSaving}
-            className="ker-btn ker-btn-primary flex-1"
-          >
-            {isSaving ? "Even geduld..." : "Alles opslaan"}
-          </button>
-        )}
-      </div>
+      {/* Navigatie knoppen (verborgen na opslaan) */}
+      {!opgeslagen && (
+        <div className="flex gap-3 mt-6">
+          {stap > 1 && (
+            <button onClick={handlePrev} className="ker-btn flex-1 bg-muted text-foreground hover:bg-muted/80">
+              Vorige
+            </button>
+          )}
+          {stap < TOTAAL_STAPPEN ? (
+            <button
+              onClick={handleNext}
+              disabled={!canProceed()}
+              className="ker-btn ker-btn-primary flex-1"
+            >
+              Volgende
+            </button>
+          ) : (
+            <button
+              onClick={handleFinish}
+              disabled={isSaving}
+              className="ker-btn ker-btn-primary flex-1"
+            >
+              {isSaving ? "Even geduld..." : "Alles opslaan"}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
