@@ -1,7 +1,7 @@
 # Plan: Content & Zoek Fundament — "Stevig als een Huis"
 
 **Datum:** 14 maart 2026
-**Versie:** 1.1
+**Versie:** 1.2
 **Doel:** Artikelen proactief aanbevelen aan mantelzorgers op basis van hun persoonlijke profiel (tags), in plaats van hen door 100+ artikelen te laten zoeken. Hulpbronnen tastbaar maken. Content gericht genereren voor specifieke doelgroepen. Bronvermelding op orde.
 
 ---
@@ -61,6 +61,174 @@
 
 ---
 
+## 1b. Kritische Review & Aanvullende Verbeteringen
+
+> Dit onderdeel is toegevoegd na een grondige review van het plan tegen de huidige codebase. Het bevat zowel **showstoppers** die eerst opgelost moeten worden, als **verbeteringen** die we eerder niet hadden bedacht.
+
+### Showstoppers (moeten eerst opgelost worden)
+
+#### S1. Ontbrekende profielvelden op Caregiver model
+
+Het Caregiver model mist essentiële velden die nodig zijn voor de kernfunctie `bepaalProfielTags()`:
+
+| Ontbrekend veld | Benodigde tag | Huidige status |
+|-----------------|---------------|----------------|
+| **Werkstatus** (werkend/parttime/niet werkend) | `werkend`, `werkend-parttime` | Bestaat niet — KRITIEK |
+| **Kinderen/gezin** (heeft thuiswonende kinderen) | `met-gezin`, `met-kinderen` | Bestaat niet — KRITIEK |
+| **Samenwonend** (woont samen met naaste) | `samenwonend` vs `op-afstand` | Kan deels afgeleid worden uit adressen, maar niet betrouwbaar |
+
+**Oplossing:** Vóór Stap 1 moeten deze velden worden toegevoegd aan het Caregiver model en worden opgenomen in de onboarding-flow:
+
+```prisma
+// Toevoegen aan Caregiver
+werkstatus         String?   // "werkend", "parttime", "niet-werkend", "pensioen", "student"
+heeftThuiswonendGezin  Boolean?  // true als er kinderen/partner thuis wonen
+woontSamenMetNaaste    Boolean?  // true als mantelzorger en zorgvrager samenwonen
+```
+
+**Onboarding uitbreiden:** Na de huidige stappen (gemeente, relatie, uren, duur) twee korte vragen toevoegen:
+1. "Werk je naast het zorgen?" → dropdown: Ja voltijd / Ja deeltijd / Nee / Gepensioneerd / Student
+2. "Heb je thuiswonende kinderen?" → Ja / Nee
+
+#### S2. Nul tag-data in de database
+
+De ContentTag records bestaan in `scripts/seed-content-herstructurering.ts` (21 tags: 12 AANDOENING + 9 SITUATIE), maar **ArtikelTag koppelingen worden nergens aangemaakt**. Geen enkel artikel is gekoppeld aan een tag.
+
+**Oplossing:** Onderdeel van Stap 1 wordt het initieel taggen van alle 42 bestaande artikelen — minimaal de AANDOENING- en SITUATIE-tags. Dit moet gebeuren vóór de aanbevelingsengine kan werken.
+
+#### S3. Categorie-slug mismatch in getAanbevolenArtikelen()
+
+De huidige code zoekt op `"zelfzorg-balans"` en `"geld-financien"`, maar de database heeft `"zelfzorg"` en `"financieel"`. Dit is een bestaande bug die eerst moet worden gefixed.
+
+#### S4. Multi-aandoening support
+
+Het veld `caregiver.aandoening` is een enkelvoudig `String?`. Maar naasten hebben vaak meerdere aandoeningen (dementie + diabetes, kanker + psychisch). Dit moet een array of many-to-many relatie worden:
+
+```prisma
+// Optie 1: String array
+aandoeningen      String[]   // ["dementie", "diabetes"]
+
+// Optie 2: Via GebruikerVoorkeur (bestaand model, type TAG)
+// Geen schemawijziging nodig, maar logica aanpassen
+```
+
+### Aanvullende verbeteringen
+
+#### V1. Progressieve onboarding voor tags (i.p.v. alles-in-één)
+
+In plaats van alle tags in één keer vragen (overweldigend voor een mantelzorger in stress), tags **geleidelijk verzamelen**:
+
+| Moment | Welke tags? | Hoe? |
+|--------|-------------|------|
+| Registratie | Aandoening + werkstatus + gezin | 3 korte onboarding-vragen |
+| Na belastbaarheidstest | Levensfase (beginnend/langdurig) + relatie | Automatisch afgeleid uit data |
+| Na 1 week | Interesses (onderwerp-tags) | Ger vraagt: "Waar wil je meer over lezen?" |
+| Na 1 maand | Verfijning | Ger stelt tags voor op basis van leesgedrag |
+
+Dit is minder confronterend en levert betere data op.
+
+#### V2. "Herken je dit?"-sectie bovenaan doelgroep-artikelen
+
+Elk doelgroep-specifiek artikel begint met een herkenningszin die de lezer het gevoel geeft: "dit is voor mij geschreven."
+
+```
+┌──────────────────────────────────────────────────┐
+│ 💼🧠 Dit artikel is geschreven voor jou als       │
+│ werkende mantelzorger met een naaste met dementie │
+│                                                   │
+│ "Je zit in een vergadering en de thuiszorg belt.  │
+│ Of je komt thuis na een lange dag en de was is    │
+│ niet gedaan. Herkenbaar?"                          │
+└──────────────────────────────────────────────────┘
+```
+
+**Technisch:** Veld `herkenningsTekst` op Artikel model, automatisch gegenereerd bij doelgroep-specifieke artikelen.
+
+#### V3. Content veroudering & review-datum
+
+Artikelen over regelingen (Wmo, PGB, eigen bijdrage) verouderen als beleid verandert. Er is een review-mechanisme nodig:
+
+```prisma
+// Toevoegen aan Artikel
+reviewDatum        DateTime?  // Wanneer moet dit artikel opnieuw gecheckt worden?
+laatsteReview      DateTime?  // Wanneer was de laatste inhoudelijke review?
+verouderingRisico  String?    // LAAG (tijdloos advies), GEMIDDELD (jaarlijks), HOOG (bij beleidswijziging)
+```
+
+- Artikelen over regelingen krijgen automatisch `reviewDatum = +6 maanden`
+- Artikelen over emoties/zelfzorg krijgen `reviewDatum = +12 maanden`
+- Beheer-dashboard toont artikelen die review nodig hebben
+
+#### V4. "Niet relevant voor mij" — afwijzen van aanbevelingen
+
+Gebruikers moeten aanbevelingen permanent kunnen wegklikken:
+
+```prisma
+model ArtikelAfwijzing {
+  id            String    @id @default(cuid())
+  caregiverId   String
+  artikelId     String
+  reden         String?   // "niet relevant", "al gelezen", "te ingewikkeld"
+  createdAt     DateTime  @default(now())
+
+  @@unique([caregiverId, artikelId])
+}
+```
+
+Afgewezen artikelen verschijnen nooit meer in aanbevelingen voor die gebruiker.
+
+#### V5. Seizoens-/tijdsgebonden relevantie
+
+Sommige content is tijdgebonden relevant:
+
+| Periode | Relevante onderwerpen |
+|---------|-----------------------|
+| Maart | Belastingaangifte, mantelzorgaftrek |
+| Juni-augustus | Vakantie-respijtzorg, zomeractiviteiten |
+| November-december | Feestdagen-stress, eenzaamheid, eindejaars-regelingen |
+| Januari | Goede voornemens, zelfzorg-reset |
+
+**Technisch:** Optioneel veld `seizoensRelevantie` op ContentTag of Artikel: `["maart", "april"]`. De relevantie-score krijgt een tijdsbonus als het huidige seizoen matcht.
+
+#### V6. Notificatie bij nieuwe relevante content
+
+Als een nieuw artikel wordt gepubliceerd dat matcht met het profiel van een gebruiker (hoge relevantie-score), kan het systeem een melding sturen:
+
+- **In-app**: badge op "Leren" tab + dashboard-kaart
+- **E-mail** (opt-in): "Er is een nieuw artikel voor jou: Dementie en werk combineren"
+- **WhatsApp** (indien geregistreerd via WhatsApp): korte melding
+
+Dit past bij de visie "van zoek zelf naar aanbevolen voor jou" — je stuurt de content actief naar de gebruiker.
+
+#### V7. Performance: SQL-aggregatiequery voor tag-overlap
+
+De relevantie-score moet via een efficiënte SQL-query berekend worden, niet via applicatie-logica:
+
+```sql
+SELECT a.id, a.titel,
+  COUNT(DISTINCT CASE WHEN at.tag_id IN (user_tag_ids) THEN at.tag_id END) as overlap,
+  COUNT(DISTINCT at.tag_id) as total_article_tags
+FROM "Artikel" a
+JOIN "ArtikelTag" at ON a.id = at.artikel_id
+WHERE a.is_actief = true AND a.status = 'GEPUBLICEERD'
+GROUP BY a.id
+ORDER BY overlap DESC
+LIMIT 10;
+```
+
+Dit is O(1) per gebruiker in plaats van O(N×M) bij applicatie-side filtering.
+
+#### V8. Minimum contentvolume vóór personalisatie
+
+Met 42 artikelen en 5+ tag-dimensies, blijven er na filtering soms 0-1 artikelen over. **Vuistregel:** personalisatie werkt pas goed bij 100+ artikelen.
+
+**Aanpak:**
+1. Stap 1-3 bouwen: tagging + aanbevelingen + gerichte generatie
+2. Vóór live-gang: met de generatie-tools 60+ artikelen bijgenereren voor de belangrijkste doelgroepen
+3. Fallback: als personalisatie < 3 artikelen oplevert, aanvullen met generieke top-artikelen
+
+---
+
 ## 2. Stap 1: Tagging & Profiel-matching
 
 > **Doel:** Het fundament leggen — een slim tagsysteem dat mantelzorgers profileert en artikelen koppelt aan hun specifieke situatie. Dit is de basis voor alle aanbevelingen.
@@ -91,26 +259,42 @@ enum TagType {
 | DOELGROEP | `partner-mantelzorger`, `kind-mantelzorger`, `ouder-van-zorgkind`, `buur-mantelzorger`, `mantelzorger-op-afstand` | De relatie met de zorgvrager bepaalt de toon en relevantie. |
 | LEVENSFASE | `net-begonnen`, `al-jaren-bezig`, `crisis`, `rouw-na-verlies`, `opname-naaste`, `terugval-na-behandeling` | Waar de mantelzorger in het zorgtraject zit. |
 
-### 1.2 Profiel-tags ophalen uit bestaande data
+### 1.2 Caregiver model uitbreiden (prerequisite — zie S1)
 
-Het systeem kent al veel over de mantelzorger uit de intake en belastbaarheidstest. Deze data moet omgezet worden naar profiel-tags:
+Vóór profiel-tags kunnen worden afgeleid, moeten ontbrekende velden worden toegevoegd:
 
-| Bestaande data | → Profiel-tag |
-|----------------|---------------|
-| `caregiver.aandoening = "dementie"` | Tag: `dementie` (AANDOENING) |
-| Werkt (uit intake/profiel) | Tag: `werkend` (SITUATIE) |
-| Heeft thuiswonende kinderen | Tag: `met-gezin` (SITUATIE) |
-| Woont niet samen met naaste | Tag: `op-afstand` (SITUATIE) |
-| `belastingTest.zorgtaken` bevat meerdere taken | Tag: `dubbele-mantelzorg` (SITUATIE) |
-| Leeftijd < 25 | Tag: `jong-mantelzorger` (SITUATIE) |
-| Zorgt al > 3 jaar | Tag: `al-jaren-bezig` (LEVENSFASE) |
-| Net geregistreerd, < 1 jaar zorgen | Tag: `net-begonnen` (LEVENSFASE) |
+```prisma
+// Toevoegen aan Caregiver
+werkstatus              String?    // "werkend", "parttime", "niet-werkend", "pensioen", "student"
+heeftThuiswonendGezin   Boolean?   // true als er kinderen/partner thuis wonen
+woontSamenMetNaaste     Boolean?   // true als mantelzorger en zorgvrager samenwonen
+aandoeningen            String[]   // VERVANGT het enkelvoudige aandoening veld: ["dementie", "diabetes"]
+```
 
-**Technisch:** Functie `bepaalProfielTags(caregiver)` die op basis van profieldata automatisch de juiste tags berekent. Deze draait bij:
-- Eerste login na registratie
-- Na intake-gesprek met Ger
-- Na voltooien belastbaarheidstest
-- Handmatig door gebruiker (tag-voorkeuren instellen)
+**Onboarding-flow uitbreiden** (2 extra vragen na bestaande stappen):
+1. "Werk je naast het zorgen?" → Ja voltijd / Ja deeltijd / Nee / Gepensioneerd
+2. "Heb je thuiswonende kinderen?" → Ja / Nee
+
+### 1.3 Profiel-tags ophalen uit profieldata
+
+Functie `bepaalProfielTags(caregiver)` die automatisch tags afleidt:
+
+| Profieldata | → Profiel-tag | Beschikbaar? |
+|-------------|---------------|--------------|
+| `aandoeningen = ["dementie"]` | Tag: `dementie` (AANDOENING) | Ja (na migratie) |
+| `werkstatus = "werkend"` | Tag: `werkend` (SITUATIE) | Na S1 fix |
+| `heeftThuiswonendGezin = true` | Tag: `met-gezin` (SITUATIE) | Na S1 fix |
+| `woontSamenMetNaaste = false` | Tag: `op-afstand` (SITUATIE) | Na S1 fix |
+| `careRecipient = "partner"` | Tag: `partner-zorg` (DOELGROEP) | Ja |
+| `dateOfBirth` → leeftijd < 25 | Tag: `jong-mantelzorger` (SITUATIE) | Ja |
+| `careSince` → < 1 jaar geleden | Tag: `net-begonnen` (LEVENSFASE) | Ja |
+| `careSince` → > 5 jaar geleden | Tag: `al-jaren-bezig` (LEVENSFASE) | Ja |
+
+**Progressieve onboarding (zie V1):** Tags worden geleidelijk verzameld, niet allemaal tegelijk:
+1. Bij registratie: aandoening + werkstatus + gezin (3 vragen)
+2. Na belastbaarheidstest: levensfase + relatie (automatisch)
+3. Na 1 week: Ger vraagt naar interesses (onderwerp-tags)
+4. Na 1 maand: Ger verfijnt op basis van leesgedrag
 
 ### 1.3 Artikelen taggen voor doelgroepen
 
@@ -864,6 +1048,7 @@ Bij het bewerken van een artikel in het beheerportaal:
 |-------|------|
 | `ContentScore` | Gebruiker-scores op artikelen en hulpbronnen |
 | `LeesGeschiedenis` | Welke artikelen heeft de gebruiker gelezen |
+| `ArtikelAfwijzing` | Artikelen die een gebruiker niet meer wil zien |
 | `ZorgorganisatieTag` | Tags op hulpbronnen (koppeltabel) |
 | `ArtikelBron` | Bronvermelding per artikel |
 | `AandoeningGewicht` | Impactgewicht per aandoening-tag |
@@ -873,8 +1058,9 @@ Bij het bewerken van een artikel in het beheerportaal:
 
 | Model | Nieuwe velden |
 |-------|---------------|
+| `Caregiver` | `werkstatus`, `heeftThuiswonendGezin`, `woontSamenMetNaaste`, `aandoeningen[]` (vervangt enkelvoudig `aandoening`) |
 | `Zorgorganisatie` | `wachttijd`, `bereikbaarheid`, `ervaringTekst`, `geschiktVoor[]`, `gemiddeldeScore`, `aantalScores` |
-| `Artikel` | `auteur`, `auteurType`, `gemiddeldeScore`, `aantalScores`, `aantalGelezen`, `compleetheidsScore` (berekend) |
+| `Artikel` | `auteur`, `auteurType`, `gemiddeldeScore`, `aantalScores`, `aantalGelezen`, `herkenningsTekst`, `reviewDatum`, `laatsteReview`, `verouderingRisico`, `seizoensRelevantie[]` |
 | `ContentTag` | `synoniemen[]` |
 
 ### Uitbreidingen bestaande enums
@@ -891,20 +1077,40 @@ Bij het bewerken van een artikel in het beheerportaal:
 | `AuteurType` | `REDACTIE`, `AI_GEGENEREERD`, `AI_SAMENGESTELD`, `EXTERN` |
 | `BronType` | `WEBSITE`, `ONDERZOEK`, `ORGANISATIE`, `OVERHEID`, `AI_SAMENVATTING` |
 
+### Bugfixes (prerequisite)
+
+| Issue | Fix |
+|-------|-----|
+| `getAanbevolenArtikelen()` categorie-slug mismatch | Slugs updaten naar `"zelfzorg"`, `"financieel"`, `"praktische-tips"` |
+| `aandoening` is enkelvoudig String | Migreren naar `aandoeningen String[]` met backward-compatibiliteit |
+| ArtikelTag koppelingen leeg | Initieel taggen van 42 bestaande artikelen als onderdeel van Stap 1 |
+
 ---
 
 ## 11. Bouwvolgorde
 
 ```
-Stap 1: Tagging & Profiel-matching     ~16 uur  ← FUNDAMENT
+Stap 0: Prerequisites (bugfixes)       ~6 uur
+├── 0.1 Caregiver model uitbreiden            2 uur
+│   (werkstatus, heeftThuiswonendGezin,
+│    woontSamenMetNaaste, aandoeningen[])
+├── 0.2 Onboarding-flow 2 vragen toevoegen   2 uur
+├── 0.3 getAanbevolenArtikelen() slug fix    0.5 uur
+└── 0.4 aandoening→aandoeningen migratie     1.5 uur
+
+Stap 1: Tagging & Profiel-matching     ~18 uur  ← FUNDAMENT
 ├── 1.1 TagType enum uitbreiden              1 uur
 ├── 1.2 Nieuwe tags seeden (40+ tags)        2 uur
 ├── 1.3 bepaalProfielTags() functie          3 uur
-├── 1.4 Bulk-taggen bestaande artikelen (AI) 3 uur
+├── 1.4 Bulk-taggen bestaande 42 artikelen   3 uur
+│   (ArtikelTag koppelingen aanmaken)
 ├── 1.5 Synoniemen op ContentTag             1 uur
 ├── 1.6 ZorgorganisatieTag koppeltabel       2 uur
 ├── 1.7 Tag-voorkeuren in profiel UI         3 uur
-└── 1.8 GebruikerVoorkeur integratie         1 uur
+│   (progressieve onboarding: niet alles
+│    tegelijk, geleidelijk via Ger)
+├── 1.8 GebruikerVoorkeur integratie         1 uur
+└── 1.9 Artikel: herkenningsTekst veld       2 uur
 
 Stap 2: Aanbevolen Artikelen           ~14 uur
 ├── 2.1 Relevantie-score berekening          4 uur
@@ -935,11 +1141,13 @@ Stap 5: Artikel Compleetheid           ~14 uur
 ├── 5.4 Per-artikel actie-overzicht          2 uur
 └── 5.5 Filters en sortering                 2 uur
 
-Stap 6: Scoren & Feedback              ~10 uur
+Stap 6: Scoren & Feedback              ~12 uur
 ├── 6.1 ContentScore + LeesGeschiedenis      2 uur
 ├── 6.2 "Was dit nuttig?" component          3 uur
-├── 6.3 Score-aggregatie                     2 uur
-└── 6.4 Leesgeschiedenis tracking            3 uur
+├── 6.3 ArtikelAfwijzing ("niet tonen")      1 uur
+├── 6.4 Score-aggregatie                     2 uur
+├── 6.5 Leesgeschiedenis tracking            3 uur
+└── 6.6 AVG consent voor leesgeschiedenis    1 uur
 
 Stap 7: Content Hiaten                  ~8 uur
 ├── 7.1 AandoeningGewicht + seed data        2 uur
@@ -947,32 +1155,42 @@ Stap 7: Content Hiaten                  ~8 uur
 ├── 7.3 Content-dekking dashboard            3 uur
 └── 7.4 Kruistabel hiaten-analyse            1 uur
 
-Stap 8: Bronvermelding                 ~10 uur
+Stap 8: Bronvermelding                 ~12 uur
 ├── 8.1 ArtikelBron model + migratie         2 uur
 ├── 8.2 Artikel auteur-velden                1 uur
 ├── 8.3 Bronsectie in artikel-weergave       3 uur
 ├── 8.4 Content agent bronnen vastleggen     2 uur
-└── 8.5 Beheerportaal bronnen-sectie         2 uur
+├── 8.5 Beheerportaal bronnen-sectie         2 uur
+└── 8.6 Content veroudering + reviewDatum    2 uur
 
 ─────────────────────────────────────────────
-Totaal geschat:                        ~98 uur
+Totaal geschat:                       ~120 uur
+(inclusief Stap 0 prerequisites)
+
+BELANGRIJK: Vóór live-gang minimaal 60 extra
+artikelen genereren voor de belangrijkste
+doelgroepen (42 huidige artikelen is te weinig
+voor effectieve personalisatie).
 ```
 
 ### Afhankelijkheden
 
 ```
-Stap 1 (Tagging) ──→ Stap 2 (Aanbevelingen) ──→ Stap 3 (Generatie)
-                 │                             │
-                 ├──→ Stap 4 (Hulpbronnen)     ├──→ Stap 7 (Hiaten)
-                 │                             │
-                 └──→ Stap 5 (Compleetheid)    └──→ Stap 6 (Scoren)
-                                               │
-Stap 8 (Bronvermelding) ─────────────────────┘ (onafhankelijk, kan parallel)
+Stap 0 (Prerequisites) ──→ Stap 1 (Tagging) ──→ Stap 2 (Aanbevelingen)
+                                             │                │
+                                             ├──→ Stap 4      ├──→ Stap 3 (Generatie)
+                                             │   (Hulpbronnen) │
+                                             │                ├──→ Stap 7 (Hiaten)
+                                             └──→ Stap 5      │
+                                                 (Compleet.)  └──→ Stap 6 (Scoren)
+
+Stap 8 (Bronvermelding) ──────────────────────── (onafhankelijk, kan parallel)
 ```
 
+**Stap 0** is een prerequisite — zonder de extra Caregiver velden en de bug-fixes werkt niets.
 **Stap 1** is het fundament — alles hangt af van het tagsysteem.
 **Stap 2** bouwt voort op tags voor aanbevelingen.
-**Stap 3** gebruikt aanbevelingsdata + tags voor slimme generatie.
+**Stap 3** gebruikt aanbevelingsdata + tags voor slimme generatie. Werkt optimaal als Stap 6 (scores/leesdata) er ook is, maar kan met defaults/fallbacks starten.
 **Stap 4 en 5** kunnen parallel met stap 2/3.
 **Stap 8** is volledig onafhankelijk.
 
@@ -1046,7 +1264,7 @@ Dit plan vervangt **geen** bestaande iteraties maar voegt een nieuwe iteratie to
 Iteratie 1-3: AFGEROND
 Iteratie 4:   Gemeente Onboarding (fase 2: on hold)
 ─── NIEUW ──────────────────────────────────────
-Iteratie 4B:  Content & Zoek Fundament (~98 uur, 6-7 weken)
+Iteratie 4B:  Content & Zoek Fundament (~120 uur, 7-8 weken)
 ────────────────────────────────────────────────
 Iteratie 5:   Content uit Code naar Database
 Iteratie 6:   Performance
@@ -1056,4 +1274,4 @@ Iteratie 8:   Schaalbaarheid
 
 ---
 
-*Dit plan is opgesteld op 14 maart 2026 (v1.1) en wacht op goedkeuring voordat de bouw begint.*
+*Dit plan is opgesteld op 14 maart 2026 (v1.2 — na kritische review) en wacht op goedkeuring voordat de bouw begint.*
