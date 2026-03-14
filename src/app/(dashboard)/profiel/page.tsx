@@ -11,6 +11,7 @@ import { searchStreets } from "@/lib/pdok"
 import { TUTORIAL_STORAGE_KEY } from "@/components/Tutorial"
 import { GerPageIntro } from "@/components/ui"
 import { AccessibilitySettings } from "@/components/AccessibilitySettings"
+import { ProfielWizard } from "@/components/profiel/ProfielWizard"
 import { profielContent } from "@/config/content"
 
 const c = profielContent
@@ -203,6 +204,7 @@ export default function ProfielPage() {
     naasteAdres: null,
   })
   const [isEditing, setIsEditing] = useState(false)
+  const [isWizardMode, setIsWizardMode] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [isChangingPhone, setIsChangingPhone] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -568,6 +570,25 @@ export default function ProfielPage() {
   const niveau = profile.testNiveau ? getNiveauInfo(profile.testNiveau) : null
 
   // ============================================
+  // PROFIEL WIZARD (stapsgewijs invullen)
+  // ============================================
+
+  if (isWizardMode) {
+    return (
+      <ProfielWizard
+        onComplete={() => {
+          setIsWizardMode(false)
+          setSaveMessage(c.bewerken.opgeslagen)
+          setTimeout(() => setSaveMessage(""), 3000)
+          // Herlaad profiel data
+          window.location.reload()
+        }}
+        onCancel={() => setIsWizardMode(false)}
+      />
+    )
+  }
+
+  // ============================================
   // TELEFOONNUMMER WIJZIGEN SCHERM
   // ============================================
 
@@ -887,7 +908,7 @@ export default function ProfielPage() {
               {c.mijnGegevens.title}
             </h2>
             <button
-              onClick={() => setIsEditing(true)}
+              onClick={() => setIsWizardMode(true)}
               className="text-primary text-sm font-medium hover:underline"
             >
               {c.bewerken.bewerken}
@@ -958,7 +979,7 @@ export default function ProfielPage() {
               {c.naaste.title}
             </h2>
             <button
-              onClick={() => setIsEditing(true)}
+              onClick={() => setIsWizardMode(true)}
               className="text-primary text-sm font-medium hover:underline"
             >
               {c.bewerken.bewerken}

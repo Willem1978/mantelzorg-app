@@ -13,6 +13,7 @@ import { resolveGemeenteContact } from "@/lib/ai/gemeente-resolver"
 import { fetchOpenActiepunten } from "@/lib/ai/tools/actiepunten"
 import { DEELGEBIED_SLEUTEL_MAP, TAAK_ID_MAP } from "@/lib/ai/types"
 import { ZORGTAKEN, TAAK_NAAM_VARIANTEN } from "@/config/options"
+import { getISOWeekNummer } from "@/lib/weekkaarten/genereer-weekkaarten"
 
 // Mapping van taakNaam (dbValue) naar alle mogelijke onderdeelTest waarden
 // Identiek aan TAAK_NAAR_ONDERDEEL_VARIANTEN in hulpbronnen.ts
@@ -62,6 +63,17 @@ export async function prefetchUserContext(
   // 0b) Haal openstaande actiepunten op voor opvolging
   const actiepunten = await fetchOpenActiepunten(userId)
 
+  // 0c) Haal weekkaarten op voor deze week
+  const weekKaarten = caregiver
+    ? await prisma.weekKaart.findMany({
+        where: {
+          caregiver: { userId },
+          weekNummer: getISOWeekNummer(),
+        },
+        select: { type: true, titel: true, isVoltooid: true },
+      })
+    : []
+
   // 1) Haal de laatste balanstest op
   const test = await prisma.belastbaarheidTest.findFirst({
     where: { caregiver: { userId }, isCompleted: true },
@@ -105,6 +117,7 @@ export async function prefetchUserContext(
       aandoening: caregiver?.aandoening || null,
       voorkeuren: caregiver?.voorkeuren || [],
       actiepunten,
+      weekKaarten,
       externeHulp: caregiver?.organisationLinks?.map((l) => ({
         naam: l.organisation.name,
         beschrijving: l.organisation.description,
@@ -263,6 +276,7 @@ export async function prefetchUserContext(
     aandoening: caregiver?.aandoening || null,
     voorkeuren: caregiver?.voorkeuren || [],
     actiepunten,
+    weekKaarten,
     externeHulp: caregiver?.organisationLinks?.map((l) => ({
       naam: l.organisation.name,
       beschrijving: l.organisation.description,
@@ -378,6 +392,8 @@ export function buildContextBlock(ctx: Awaited<ReturnType<typeof prefetchUserCon
 
   // Actiepunten blok (voor beide paden)
   const actiepuntenBlock = buildActiepuntenBlock(ctx.actiepunten)
+  // Weekkaarten blok (voor beide paden)
+  const weekKaartenBlock = buildWeekKaartenBlock(ctx.weekKaarten)
   // Externe hulp blok (voor beide paden)
   const externeHulpBlock = buildExterneHulpBlock(ctx.externeHulp)
 
@@ -387,6 +403,7 @@ Deze gebruiker heeft nog GEEN balanstest gedaan. Moedig aan om de test te doen v
 
     block += voorkeurenBlock
     block += actiepuntenBlock
+    block += weekKaartenBlock
     block += externeHulpBlock
     // Toch hulpbronnen tonen als die er zijn
     block += buildHulpPerCategorieBlock(ctx.alleHulpPerCategorie)
@@ -411,6 +428,7 @@ BALANSTEST (${ctx.testDatum}):
 
   block += voorkeurenBlock
   block += actiepuntenBlock
+  block += weekKaartenBlock
   block += externeHulpBlock
 
   block += `\n\nDEELGEBIEDEN:`
@@ -539,6 +557,23 @@ Begin het gesprek met opvolging! Vraag: "Vorige keer spraken we over [actie]. Is
       ? new Date(a.createdAt).toLocaleDateString("nl-NL", { day: "numeric", month: "long" })
       : ""
     block += `\n- ${a.title}${a.description ? ` (${a.description})` : ""}${datum ? ` — ${datum}` : ""}`
+  }
+  return block
+}
+
+function buildWeekKaartenBlock(weekKaarten: { type: string; titel: string; isVoltooid: boolean }[]): string {
+  if (!weekKaarten || weekKaarten.length === 0) return ""
+
+  const voltooid = weekKaarten.filter((k) => k.isVoltooid).length
+  let block = `\n\nWEEKKAARTEN (${voltooid}/${weekKaarten.length} voltooid deze week):`
+  if (voltooid > 0) {
+    block += `\nComplimenteer de gebruiker met voltooide kaarten!`
+  }
+  for (const k of weekKaarten) {
+    block += `\n- ${k.isVoltooid ? "[VOLTOOID]" : "[OPEN]"} ${k.type}: ${k.titel}`
+  }
+  if (weekKaarten.some((k) => !k.isVoltooid)) {
+    block += `\nVraag proactief naar de openstaande kaarten: "Heb je al kans gezien om [titel] te doen?"`
   }
   return block
 }
