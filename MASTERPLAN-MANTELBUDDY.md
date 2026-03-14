@@ -2,7 +2,7 @@
 
 **Datum:** 11 maart 2026
 **Versie:** 3.1
-**Baseline:** v2.5.0 + MantelCoach + dashboard redesign + AI chatbot verbeteringen maart 2026 + Iteratie 1-2 afgerond + Iteratie 3 grotendeels afgerond
+**Baseline:** v2.5.0 + MantelCoach + dashboard redesign + AI chatbot verbeteringen maart 2026 + Iteratie 1-3 afgerond
 **Nieuw in v3.1:** AI Hulpbronnen Zoeker, AI Hulpbronnen Validator, Profiel Wizard
 **Dit plan vervangt alle eerdere planbestanden.**
 
@@ -647,17 +647,17 @@ Deze blijven als aparte sectie onderaan de profielpagina (of als eigen pagina `/
 
 ---
 
-### Deliverables Iteratie 3 — GROTENDEELS AFGEROND
+### Deliverables Iteratie 3 — AFGEROND
 - [x] Persoonlijk advies pagina na balanstest (`/rapport/persoonlijk`)
 - [x] "Eerste stap" veld per hulpbron + in AI prompt + beheerportaal (eersteStap + verwachtingTekst velden)
 - [x] SOS noodknop op dashboard en homepage (`SOSKnop.tsx` — 112, Mantelzorglijn, 113, Crisislijn)
 - [x] Gastgebruiker flow met sessionStorage + automatische koppeling na registratie
 - [x] Actiepunten zichtbaar op dashboard (`ActiepuntenKaart.tsx` + `/api/actiepunten`)
 - [x] E-mail na balanstest (`sendBalanstestResultEmail` in email.ts)
-- [ ] Wekelijkse hulpkaarten op dashboard (WeekKaart model, hybride generatie, Ger-integratie)
-- [ ] **NIEUW** Profiel wizard (stapsgewijs profiel invullen i.p.v. grote bak)
+- [x] Wekelijkse hulpkaarten op dashboard (WeekKaart model, regelgebaseerde generatie, 3 types, Ger-integratie)
+- [x] Profiel wizard (6 stappen: over jou, naaste, adressen, situatie, interesses, overzicht)
 
-**Status:** 6/8 afgerond. Wekelijkse hulpkaarten en profiel wizard nog te bouwen.
+**Status:** 8/8 afgerond.
 **Geschatte doorlooptijd:** 3 weken (~48 uur) + 1 week extra voor profiel wizard
 
 ---
@@ -1240,7 +1240,7 @@ Iteratie  Naam                                Week    Uren    Focus             
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 1         Beveiliging Dichtmaken              1-2     32u     11 security items                        AFGEROND (11/12)
 2         Input Validatie & Stabiliteit       3-4     32u     45+ routes + tests                       AFGEROND (6/6)
-3         Mantelzorger Klantreis              5-7     56u     Advies, SOS, actiepunten, profiel wiz.   6/8 (weekkaarten+profiel open)
+3         Mantelzorger Klantreis              5-7     56u     Advies, SOS, actiepunten, profiel wiz.   AFGEROND (8/8)
 4         Gemeente Onboarding & AI Agents     8-11    64u     Wizard+AI zoeker+AI validator+reminders  OPEN — HOOG PRIO
 5         Content uit Code naar Database      12-14   48u     170+ items migreren                      OPEN
 6         Performance, Caching & Monitoring   15-17   48u     Sentry, caching, N+1                     OPEN
@@ -1256,7 +1256,7 @@ Totaal (Iteratie 1-7)                                312u    (+24u door AI agent
 |---|------|----------|------------|--------|
 | A | AI Agent: Lokale Hulpbronnen Zoeker (onderdeel gemeente wizard stap 3) | 4 (4.1a) | HOOG | OPEN |
 | B | AI Agent: Wekelijkse Hulpbronnen Validator (cron + beheerportaal) | 4 (4.1b) | HOOG | OPEN |
-| C | Profiel Wizard (stapsgewijs i.p.v. grote bak) | 3 (3.8) | HOOG | OPEN |
+| C | Profiel Wizard (stapsgewijs i.p.v. grote bak) | 3 (3.8) | HOOG | AFGEROND |
 
 ### Afhankelijkheden
 
