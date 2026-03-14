@@ -19,6 +19,8 @@ const profileUpdateSchema = z.object({
   naasteWoonplaats: z.string().max(100).optional(),
   naasteGemeente: z.string().max(100).optional(),
   naasteWijk: z.string().max(100).optional(),
+  woonsituatie: z.enum(["samen", "dichtbij", "op-afstand"]).nullable().optional(),
+  werkstatus: z.enum(["fulltime", "parttime", "niet-werkend", "student", "gepensioneerd"]).nullable().optional(),
 })
 
 // GET: Profiel ophalen
@@ -85,6 +87,12 @@ export async function GET() {
       // Locatie coördinaten naaste
       careRecipientLatitude: caregiver.careRecipientLatitude,
       careRecipientLongitude: caregiver.careRecipientLongitude,
+      // Zorgsituatie
+      woonsituatie: caregiver.woonsituatie,
+      werkstatus: caregiver.werkstatus,
+      careHoursPerWeek: caregiver.careHoursPerWeek,
+      careSince: caregiver.careSince,
+      dateOfBirth: caregiver.dateOfBirth,
       // Zorgtaken
       zorgtaken,
       // Status
@@ -188,6 +196,9 @@ export async function PUT(request: Request) {
         careRecipientNeighborhood: body.naasteWijk,
         // Naaste coördinaten
         ...careRecipientCoords,
+        // Zorgsituatie
+        ...(body.woonsituatie !== undefined ? { woonsituatie: body.woonsituatie } : {}),
+        ...(body.werkstatus !== undefined ? { werkstatus: body.werkstatus } : {}),
         // Status
         profileCompleted,
       }

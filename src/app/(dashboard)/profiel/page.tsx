@@ -11,8 +11,9 @@ import { searchStreets } from "@/lib/pdok"
 import { TUTORIAL_STORAGE_KEY } from "@/components/Tutorial"
 import { GerPageIntro } from "@/components/ui"
 import { AccessibilitySettings } from "@/components/AccessibilitySettings"
-import { ProfielWizard } from "@/components/profiel/ProfielWizard"
+import { ProfielFormulier } from "@/components/profiel/ProfielFormulier"
 import { profielContent } from "@/config/content"
+import { berekenProfielCompleteness } from "@/lib/profiel-completeness"
 
 const c = profielContent
 
@@ -575,16 +576,28 @@ export default function ProfielPage() {
 
   if (isWizardMode) {
     return (
-      <ProfielWizard
-        onComplete={() => {
-          setIsWizardMode(false)
-          setSaveMessage(c.bewerken.opgeslagen)
-          setTimeout(() => setSaveMessage(""), 3000)
-          // Herlaad profiel data
-          window.location.reload()
-        }}
-        onCancel={() => setIsWizardMode(false)}
-      />
+      <div className="ker-page-content">
+        <div className="flex items-center gap-4 mb-4">
+          <button
+            onClick={() => setIsWizardMode(false)}
+            className="p-2 hover:bg-muted rounded-lg transition-colors"
+          >
+            <svg className="w-6 h-6 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h1 className="text-xl font-bold text-foreground">Profiel aanpassen</h1>
+        </div>
+        <ProfielFormulier
+          onSave={() => {
+            setIsWizardMode(false)
+            setSaveMessage(c.bewerken.opgeslagen)
+            setTimeout(() => setSaveMessage(""), 3000)
+            window.location.reload()
+          }}
+          variant="profiel"
+        />
+      </div>
     )
   }
 
@@ -898,6 +911,20 @@ export default function ProfielPage() {
           {saveMessage}
         </div>
       )}
+
+      {/* Profiel-completeness indicator */}
+      <ProfielCompletenessBar
+        profiel={{
+          naam: profile.naam,
+          straat: profile.adres?.straat,
+          naasteNaam: profile.naasteNaam,
+          naasteRelatie: profile.naasteRelatie,
+          naasteStraat: profile.naasteAdres?.straat,
+          aandoeningen: aandoening ? [aandoening] : [],
+          interesseCategorieen: situatieTags, // approximation from loaded data
+        }}
+        onEditClick={() => setIsWizardMode(true)}
+      />
 
       <div className="space-y-4">
         {/* Mijn gegevens */}
@@ -1527,6 +1554,48 @@ function JouwSituatieBlok() {
       >
         {saving ? "Opslaan..." : "Voorkeuren opslaan"}
       </button>
+    </div>
+  )
+}
+
+// ============================================
+// PROFIEL COMPLETENESS BAR
+// ============================================
+function ProfielCompletenessBar({
+  profiel,
+  onEditClick,
+}: {
+  profiel: Parameters<typeof berekenProfielCompleteness>[0]
+  onEditClick: () => void
+}) {
+  const { percentage, ontbreekt } = berekenProfielCompleteness(profiel)
+
+  if (percentage >= 100) return null
+
+  return (
+    <div className="ker-card mb-4">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-medium text-foreground">
+          Je profiel: {percentage}% compleet
+        </span>
+        <button
+          onClick={onEditClick}
+          className="text-xs text-primary font-medium hover:underline"
+        >
+          Aanvullen
+        </button>
+      </div>
+      <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+        <div
+          className="h-full bg-primary rounded-full transition-all duration-500"
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+      {ontbreekt.length > 0 && ontbreekt.length <= 3 && (
+        <p className="text-xs text-muted-foreground mt-2">
+          Nog niet ingevuld: {ontbreekt.join(", ")}
+        </p>
+      )}
     </div>
   )
 }

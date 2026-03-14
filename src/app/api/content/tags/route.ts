@@ -17,8 +17,9 @@ export async function GET() {
 
     const aandoeningen = tags.filter((t) => t.type === "AANDOENING")
     const situaties = tags.filter((t) => t.type === "SITUATIE")
+    const onderwerpen = tags.filter((t) => t.type === "ONDERWERP")
 
-    return NextResponse.json({ aandoeningen, situaties })
+    return NextResponse.json({ aandoeningen, situaties, onderwerpen })
   } catch (error) {
     console.error("Tags ophalen mislukt:", error)
     return NextResponse.json({ error: "Tags ophalen mislukt" }, { status: 500 })

@@ -236,6 +236,11 @@ function DashboardContentView() {
       {/* 1. GER CHAT */}
       <DashboardGerChat context={gerContext} />
 
+      {/* PROFIEL HERINNERING — toon als profiel niet compleet is */}
+      {data?.user && !data.user.profileCompleted && (
+        <ProfielHerinnering />
+      )}
+
       {/* 2. COMPACTE BALANSKAART */}
       {data?.test?.hasTest && data.test.score !== undefined && data.test.niveau && (
         <BalansThermometer
@@ -295,6 +300,56 @@ function DashboardContentView() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
               </svg>
             </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// PROFIEL HERINNERING — zachte nudge op dashboard
+// ============================================
+function ProfielHerinnering() {
+  const [dismissed, setDismissed] = useState(false)
+
+  useEffect(() => {
+    const count = parseInt(localStorage.getItem("profiel-herinnering-dismissed") || "0", 10)
+    if (count >= 3) setDismissed(true)
+  }, [])
+
+  const handleDismiss = () => {
+    const count = parseInt(localStorage.getItem("profiel-herinnering-dismissed") || "0", 10)
+    localStorage.setItem("profiel-herinnering-dismissed", String(count + 1))
+    setDismissed(true)
+  }
+
+  if (dismissed) return null
+
+  return (
+    <div className="ker-card bg-primary/5 border-primary/20">
+      <div className="flex items-start gap-4">
+        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+          <span className="text-xl">&#128203;</span>
+        </div>
+        <div className="flex-1">
+          <h3 className="font-semibold text-foreground">Vul je profiel aan</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Hoe meer we over je weten, hoe persoonlijker onze tips en artikelen. Het kost maar 2 minuten.
+          </p>
+          <div className="flex items-center gap-3 mt-3">
+            <Link
+              href="/profiel"
+              className="ker-btn ker-btn-primary text-sm py-2 px-4"
+            >
+              Profiel invullen
+            </Link>
+            <button
+              onClick={handleDismiss}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Niet nu
+            </button>
           </div>
         </div>
       </div>
