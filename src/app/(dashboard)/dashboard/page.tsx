@@ -8,6 +8,7 @@ import { GerAvatar } from "@/components/GerAvatar"
 import { DashboardGerChat, type GerChatContext } from "@/components/dashboard/DashboardGerChat"
 import { BalansThermometer } from "@/components/dashboard/BalansThermometer"
 import { ActiepuntenKaart } from "@/components/dashboard/ActiepuntenKaart"
+import { WeekKaartenKaart } from "@/components/dashboard/WeekKaartenKaart"
 import { dashboardContent } from "@/config/content"
 
 const c = dashboardContent
@@ -250,10 +251,13 @@ function DashboardContentView() {
         />
       )}
 
-      {/* 3. ACTIEPUNTEN */}
+      {/* 3. WEEKKAARTEN — "Deze week voor jou" */}
+      {data?.test?.hasTest && <WeekKaartenKaart />}
+
+      {/* 4. ACTIEPUNTEN */}
       <ActiepuntenKaart />
 
-      {/* 4. WHATSAPP HULP — met QR code */}
+      {/* 5. WHATSAPP HULP — met QR code */}
       <div className="ker-card bg-green-50/60 dark:bg-green-950/10 border border-green-200/40 dark:border-green-800/20">
         <div className="flex items-center gap-4">
           {/* QR Code */}

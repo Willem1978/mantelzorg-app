@@ -143,6 +143,7 @@ model Caregiver {
   // Aandoening zorgvrager & voorkeuren
   aandoening                String?                 // Primaire aandoening van zorgvrager (tag slug)
   voorkeuren                GebruikerVoorkeur[]
+  weekKaarten               WeekKaart[]
 
   @@index([municipality])
   @@index([careRecipientMunicipality])
@@ -1248,4 +1249,35 @@ model SiteSettings {
   updatedBy String?  // User ID van de laatste wijziging
 
   @@index([categorie])
+}
+
+// ============================================
+// WEKELIJKSE HULPKAARTEN (3 per week per mantelzorger)
+// ============================================
+
+model WeekKaart {
+  id            String        @id @default(cuid())
+  caregiverId   String
+  weekNummer    String        // ISO week: "2026-W11"
+  type          WeekKaartType // ZELFZORG, PRAKTISCH, LEREN
+  titel         String
+  beschrijving  String        @db.Text
+  linkUrl       String?       // Optioneel: artikel of hulpbron URL
+  linkLabel     String?       // "Lees artikel" of "Bel nu"
+  emoji         String?       // Visueel icoon
+  isVoltooid    Boolean       @default(false)
+  voltooitOp    DateTime?
+  bron          String        @default("REGEL") // REGEL, AI, ADMIN
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  caregiver     Caregiver     @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  @@unique([caregiverId, weekNummer, type])
+  @@index([caregiverId, weekNummer])
+}
+
+enum WeekKaartType {
+  ZELFZORG
+  PRAKTISCH
+  LEREN
 }
