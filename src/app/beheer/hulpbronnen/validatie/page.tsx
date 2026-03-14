@@ -8,6 +8,13 @@ import Link from "next/link"
 // TYPES
 // ============================================
 
+interface CorrectieVoorstel {
+  nieuwWebsite?: string
+  nieuwTelefoon?: string
+  toelichting: string
+  bron: string
+}
+
 interface HulpbronMetValidatie {
   id: string
   naam: string
@@ -27,6 +34,7 @@ interface HulpbronMetValidatie {
     telefoonGeldig: boolean | null
     opmerkingen: string | null
     gecontroleerd: string
+    correctieVoorstel: CorrectieVoorstel | null
   } | null
 }
 
@@ -51,6 +59,7 @@ export default function ValidatieOverzichtPage() {
   const [totaal, setTotaal] = useState(0)
   const [laden, setLaden] = useState(true)
   const [valideren, setValideren] = useState(false)
+  const [bezig, setBezig] = useState<Record<string, string>>({}) // id → actie
 
   // Filters
   const [filterStatus, setFilterStatus] = useState("alle")
@@ -110,6 +119,56 @@ export default function ValidatieOverzichtPage() {
     }
   }, [filterGemeente, laadData])
 
+  const zoekCorrectie = useCallback(async (id: string) => {
+    setBezig((prev) => ({ ...prev, [id]: "zoeken" }))
+    try {
+      const response = await fetch("/api/beheer/hulpbronnen/validatie", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ actie: "zoek-correctie", zorgorganisatieId: id }),
+      })
+      if (!response.ok) throw new Error("Zoeken mislukt")
+      await laadData()
+    } catch (e) {
+      console.error("Correctie zoeken mislukt:", e)
+    } finally {
+      setBezig((prev) => {
+        const next = { ...prev }
+        delete next[id]
+        return next
+      })
+    }
+  }, [laadData])
+
+  const pasCorrectie = useCallback(async (
+    id: string,
+    nieuwWebsite?: string,
+    nieuwTelefoon?: string,
+  ) => {
+    setBezig((prev) => ({ ...prev, [id]: "toepassen" }))
+    try {
+      const response = await fetch("/api/beheer/hulpbronnen/validatie", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          zorgorganisatieId: id,
+          nieuwWebsite,
+          nieuwTelefoon,
+        }),
+      })
+      if (!response.ok) throw new Error("Wijziging mislukt")
+      await laadData()
+    } catch (e) {
+      console.error("Correctie toepassen mislukt:", e)
+    } finally {
+      setBezig((prev) => {
+        const next = { ...prev }
+        delete next[id]
+        return next
+      })
+    }
+  }, [laadData])
+
   if (session?.user?.role !== "ADMIN") {
     return (
       <div className="p-8">
@@ -127,7 +186,7 @@ export default function ValidatieOverzichtPage() {
         <div>
           <h1 className="text-2xl font-bold">Hulpbronnen Validatie</h1>
           <p className="text-muted-foreground mt-1">
-            Controleer of hulpbronnen nog actueel zijn. Websites en telefoonnummers worden automatisch gecheckt.
+            Controleer of hulpbronnen nog actueel zijn. Bij problemen zoekt AI automatisch de juiste gegevens.
           </p>
         </div>
         <div className="flex gap-2">
@@ -269,62 +328,16 @@ export default function ValidatieOverzichtPage() {
           Geen hulpbronnen gevonden met deze filters.
         </div>
       ) : (
-        <div className="border rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="text-left p-3 font-medium">Status</th>
-                <th className="text-left p-3 font-medium">Naam</th>
-                <th className="text-left p-3 font-medium hidden md:table-cell">Gemeente</th>
-                <th className="text-left p-3 font-medium hidden md:table-cell">Categorie</th>
-                <th className="text-left p-3 font-medium hidden lg:table-cell">Laatst gecontroleerd</th>
-                <th className="text-left p-3 font-medium hidden lg:table-cell">Details</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {hulpbronnen.map((h) => (
-                <tr key={h.id} className="hover:bg-gray-50">
-                  <td className="p-3">
-                    <StatusBadge status={h.validatieStatus} />
-                  </td>
-                  <td className="p-3">
-                    <div>
-                      <Link
-                        href={`/beheer/hulpbronnen`}
-                        className="font-medium hover:underline"
-                      >
-                        {h.naam}
-                      </Link>
-                      {h.website && (
-                        <a
-                          href={h.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block text-xs text-blue-600 hover:underline truncate max-w-[250px]"
-                        >
-                          {h.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
-                        </a>
-                      )}
-                    </div>
-                  </td>
-                  <td className="p-3 hidden md:table-cell text-muted-foreground">
-                    {h.gemeente || "Landelijk"}
-                  </td>
-                  <td className="p-3 hidden md:table-cell text-muted-foreground">
-                    {h.onderdeelTest || h.soortHulp || "-"}
-                  </td>
-                  <td className="p-3 hidden lg:table-cell text-muted-foreground">
-                    {h.laatsteValidatie
-                      ? new Date(h.laatsteValidatie).toLocaleDateString("nl-NL")
-                      : "Nooit"}
-                  </td>
-                  <td className="p-3 hidden lg:table-cell text-xs text-muted-foreground">
-                    {h.validatieDetail?.opmerkingen || "-"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="space-y-0">
+          {hulpbronnen.map((h) => (
+            <HulpbronRij
+              key={h.id}
+              hulpbron={h}
+              bezig={bezig[h.id]}
+              onZoekCorrectie={() => zoekCorrectie(h.id)}
+              onPasCorrectie={(w, t) => pasCorrectie(h.id, w, t)}
+            />
+          ))}
         </div>
       )}
 
@@ -348,6 +361,143 @@ export default function ValidatieOverzichtPage() {
           >
             Volgende
           </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================
+// HULPBRON RIJ MET CORRECTIEVOORSTEL
+// ============================================
+
+function HulpbronRij({
+  hulpbron,
+  bezig,
+  onZoekCorrectie,
+  onPasCorrectie,
+}: {
+  hulpbron: HulpbronMetValidatie
+  bezig?: string
+  onZoekCorrectie: () => void
+  onPasCorrectie: (nieuwWebsite?: string, nieuwTelefoon?: string) => void
+}) {
+  const voorstel = hulpbron.validatieDetail?.correctieVoorstel
+  const heeftProbleem =
+    hulpbron.validatieStatus === "ONGELDIG" || hulpbron.validatieStatus === "WAARSCHUWING"
+
+  return (
+    <div className="border rounded-lg mb-3 overflow-hidden">
+      {/* Hoofdrij */}
+      <div className="flex items-center gap-3 p-3 bg-white hover:bg-gray-50">
+        <div className="shrink-0">
+          <StatusBadge status={hulpbron.validatieStatus} />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <Link
+              href="/beheer/hulpbronnen"
+              className="font-medium text-sm hover:underline truncate"
+            >
+              {hulpbron.naam}
+            </Link>
+          </div>
+          <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-0.5">
+            {hulpbron.website && (
+              <a
+                href={hulpbron.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-blue-600 hover:underline truncate max-w-[250px]"
+              >
+                {hulpbron.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+              </a>
+            )}
+            {hulpbron.telefoon && (
+              <span className="text-xs text-muted-foreground">{hulpbron.telefoon}</span>
+            )}
+            <span className="text-xs text-muted-foreground hidden md:inline">
+              {hulpbron.gemeente || "Landelijk"}
+            </span>
+          </div>
+        </div>
+
+        <div className="hidden lg:block text-xs text-muted-foreground text-right shrink-0">
+          {hulpbron.laatsteValidatie
+            ? new Date(hulpbron.laatsteValidatie).toLocaleDateString("nl-NL")
+            : "Nooit"}
+        </div>
+
+        <div className="hidden lg:block text-xs text-muted-foreground max-w-[200px] truncate shrink-0">
+          {hulpbron.validatieDetail?.opmerkingen || "-"}
+        </div>
+
+        {/* Zoek correctie knop */}
+        {heeftProbleem && !voorstel && (
+          <button
+            onClick={onZoekCorrectie}
+            disabled={!!bezig}
+            className="shrink-0 px-3 py-1.5 text-xs bg-purple-50 text-purple-700 border border-purple-200 rounded-md hover:bg-purple-100 disabled:opacity-50"
+          >
+            {bezig === "zoeken" ? "Zoeken..." : "Zoek correctie"}
+          </button>
+        )}
+      </div>
+
+      {/* Correctievoorstel kaart */}
+      {voorstel && (
+        <div className="border-t bg-blue-50 p-3">
+          <div className="flex items-start gap-3">
+            <span className="text-lg shrink-0">💡</span>
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <p className="text-sm font-medium text-blue-900">AI Correctievoorstel</p>
+              {voorstel.nieuwWebsite && (
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Website: </span>
+                  <span className="line-through text-red-600 text-xs mr-2">
+                    {hulpbron.website?.replace(/^https?:\/\//, "").replace(/\/$/, "") || "geen"}
+                  </span>
+                  <a
+                    href={voorstel.nieuwWebsite}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-700 font-medium hover:underline"
+                  >
+                    {voorstel.nieuwWebsite.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                  </a>
+                </div>
+              )}
+              {voorstel.nieuwTelefoon && (
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Telefoon: </span>
+                  <span className="line-through text-red-600 text-xs mr-2">
+                    {hulpbron.telefoon || "geen"}
+                  </span>
+                  <span className="text-blue-700 font-medium">{voorstel.nieuwTelefoon}</span>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">{voorstel.toelichting}</p>
+              <p className="text-xs text-muted-foreground italic">Bron: {voorstel.bron}</p>
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <button
+                onClick={() => onPasCorrectie(voorstel.nieuwWebsite, voorstel.nieuwTelefoon)}
+                disabled={!!bezig}
+                className="px-3 py-1.5 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+              >
+                {bezig === "toepassen" ? "Bezig..." : "Doorvoeren"}
+              </button>
+              <button
+                onClick={onZoekCorrectie}
+                disabled={!!bezig}
+                className="px-3 py-1.5 text-xs border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50"
+                title="Opnieuw zoeken"
+              >
+                Opnieuw
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

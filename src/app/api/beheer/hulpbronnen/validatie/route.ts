@@ -11,11 +11,17 @@
  *
  * POST /api/beheer/hulpbronnen/validatie — Start handmatige validatie
  * Body: { gemeente?: string }
+ *
+ * PATCH /api/beheer/hulpbronnen/validatie — Pas correctievoorstel toe
+ * Body: { zorgorganisatieId, nieuwWebsite?, nieuwTelefoon? }
  */
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { valideerAlleHulpbronnen } from "@/lib/ai/agents/hulpbronnen-validator"
+import {
+  valideerAlleHulpbronnen,
+  zoekCorrectieVoorHulpbron,
+} from "@/lib/ai/agents/hulpbronnen-validator"
 
 export const dynamic = "force-dynamic"
 
@@ -107,7 +113,7 @@ export async function GET(request: NextRequest) {
       ]),
     ])
 
-    // Haal de laatste validatiedetails op voor de resultaten
+    // Haal de laatste validatiedetails op voor de resultaten (inclusief aiSamenvatting)
     const ids = hulpbronnen.map((h) => h.id)
     const validaties = ids.length > 0
       ? await prisma.hulpbronValidatie.findMany({
@@ -121,6 +127,7 @@ export async function GET(request: NextRequest) {
             websiteStatusCode: true,
             telefoonGeldig: true,
             opmerkingen: true,
+            aiSamenvatting: true,
             gecontroleerd: true,
           },
         })
@@ -137,10 +144,20 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json({
-      hulpbronnen: hulpbronnen.map((h) => ({
-        ...h,
-        validatieDetail: validatieMap.get(h.id) || null,
-      })),
+      hulpbronnen: hulpbronnen.map((h) => {
+        const detail = validatieMap.get(h.id)
+        return {
+          ...h,
+          validatieDetail: detail
+            ? {
+                ...detail,
+                correctieVoorstel: detail.aiSamenvatting
+                  ? parseCorrectieVoorstel(detail.aiSamenvatting)
+                  : null,
+              }
+            : null,
+        }
+      }),
       totaal,
       pagina,
       perPagina,
@@ -165,10 +182,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Niet geautoriseerd" }, { status: 401 })
   }
 
-  const { gemeente } = await request.json()
+  const body = await request.json()
 
+  // Handmatig correctie zoeken voor een enkele hulpbron
+  if (body.actie === "zoek-correctie" && body.zorgorganisatieId) {
+    try {
+      const correctie = await zoekCorrectieVoorHulpbron(body.zorgorganisatieId)
+      return NextResponse.json({ succes: true, correctie })
+    } catch (e) {
+      const bericht = e instanceof Error ? e.message : "Onbekende fout"
+      return NextResponse.json({ error: bericht }, { status: 500 })
+    }
+  }
+
+  // Standaard: volledige validatie
   try {
-    const samenvatting = await valideerAlleHulpbronnen(gemeente || undefined)
+    const samenvatting = await valideerAlleHulpbronnen(body.gemeente || undefined)
 
     return NextResponse.json({
       succes: true,
@@ -183,5 +212,64 @@ export async function POST(request: NextRequest) {
   } catch (e) {
     const bericht = e instanceof Error ? e.message : "Onbekende fout"
     return NextResponse.json({ error: bericht }, { status: 500 })
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  const session = await auth()
+  if (!session || session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Niet geautoriseerd" }, { status: 401 })
+  }
+
+  const { zorgorganisatieId, nieuwWebsite, nieuwTelefoon } = await request.json()
+
+  if (!zorgorganisatieId) {
+    return NextResponse.json({ error: "zorgorganisatieId is verplicht" }, { status: 400 })
+  }
+
+  if (!nieuwWebsite && !nieuwTelefoon) {
+    return NextResponse.json({ error: "Geen wijzigingen opgegeven" }, { status: 400 })
+  }
+
+  try {
+    const updateData: Record<string, unknown> = {}
+    if (nieuwWebsite) updateData.website = nieuwWebsite
+    if (nieuwTelefoon) updateData.telefoon = nieuwTelefoon
+    // Reset validatie zodat het opnieuw gecontroleerd wordt
+    updateData.validatieStatus = null
+    updateData.laatsteValidatie = null
+
+    const updated = await prisma.zorgorganisatie.update({
+      where: { id: zorgorganisatieId },
+      data: updateData,
+      select: { id: true, naam: true, website: true, telefoon: true },
+    })
+
+    // Verwijder het correctievoorstel uit de validatie-logs
+    await prisma.hulpbronValidatie.updateMany({
+      where: {
+        zorgorganisatieId,
+        aiSamenvatting: { not: null },
+      },
+      data: { aiSamenvatting: null },
+    })
+
+    return NextResponse.json({ succes: true, hulpbron: updated })
+  } catch (e) {
+    const bericht = e instanceof Error ? e.message : "Onbekende fout"
+    return NextResponse.json({ error: bericht }, { status: 500 })
+  }
+}
+
+function parseCorrectieVoorstel(json: string): {
+  nieuwWebsite?: string
+  nieuwTelefoon?: string
+  toelichting: string
+  bron: string
+} | null {
+  try {
+    return JSON.parse(json)
+  } catch {
+    return null
   }
 }
