@@ -1,7 +1,7 @@
 "use client"
 
 import { useSession } from "next-auth/react"
-import { useState, useCallback, useRef, useEffect } from "react"
+import { useState, useCallback, useRef, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 
 // ============================================
@@ -64,6 +64,14 @@ const CATEGORIE_META: Record<string, { emoji: string; groep: string }> = {
 // ============================================
 
 export default function AIZoekenPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Laden...</div>}>
+      <AIZoekenContent />
+    </Suspense>
+  )
+}
+
+function AIZoekenContent() {
   const { data: session } = useSession()
   const searchParams = useSearchParams()
 
