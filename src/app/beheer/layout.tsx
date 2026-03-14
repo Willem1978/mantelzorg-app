@@ -27,6 +27,8 @@ const menuGroepen: { label: string; items: { href: string; label: string; icon: 
     items: [
       { href: "/beheer/artikelen", label: "Artikelen & Tips", icon: "📝" },
       { href: "/beheer/hulpbronnen", label: "Hulpbronnen", icon: "🏥" },
+      { href: "/beheer/hulpbronnen/ai-zoeken", label: "AI Hulpbronnen Zoeker", icon: "🔍" },
+      { href: "/beheer/hulpbronnen/validatie", label: "Hulpbronnen Validatie", icon: "✅" },
       { href: "/beheer/app-content", label: "App content", icon: "📱" },
     ],
   },

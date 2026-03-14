@@ -3,5 +3,11 @@
   "framework": "nextjs",
   "buildCommand": "npm run build",
   "installCommand": "npm install --include=dev",
-  "regions": ["cdg1"]
+  "regions": ["cdg1"],
+  "crons": [
+    {
+      "path": "/api/cron/valideer-hulpbronnen",
+      "schedule": "0 3 * * 1"
+    }
+  ]
 }
