@@ -3,7 +3,8 @@
  *
  * Zoekt automatisch lokale hulpbronnen voor mantelzorgers per gemeente.
  * Gebruikt Claude met de Anthropic web_search tool voor betrouwbaar zoeken.
- * Claude zoekt zelf per categorie en structureert de resultaten.
+ * Zoekt PER CATEGORIE apart (A1, A2, ... B10) zodat elke stap snel is
+ * en vastlopen wordt voorkomen.
  *
  * Categorieën zijn 1:1 gekoppeld aan:
  * - HULP_VOOR_MANTELZORGER (soortHulp) → config/options.ts
@@ -308,12 +309,9 @@ export const ZOEK_CATEGORIEEN: ZoekCategorie[] = [
 /**
  * Voer een complete hulpbronnen-zoekopdracht uit voor een gemeente.
  *
- * Gebruikt Claude met de Anthropic web_search tool in 3 batches:
- * 1. Groep A: Hulp voor de mantelzorger (A1-A5)
- * 2. Groep B deel 1: Taken B1-B5
- * 3. Groep B deel 2: Taken B6-B10
- *
- * Claude zoekt zelf via het web en structureert de resultaten.
+ * Zoekt PER CATEGORIE apart (A1, A2, ... B10).
+ * Elke categorie = 1 snelle Claude call met 1 web search.
+ * Als een categorie faalt of timeout, gaan de rest gewoon door.
  */
 export async function zoekHulpbronnenVoorGemeente(
   gemeente: string,
@@ -361,63 +359,41 @@ export async function zoekHulpbronnenVoorGemeente(
       ).join("\n")
     : "Geen bestaande hulpbronnen voor deze gemeente."
 
-  // Batches definiëren
-  const batches = [
-    {
-      naam: "Hulp voor de mantelzorger (A1-A5)",
-      categorieen: ZOEK_CATEGORIEEN.filter(c => c.groep === "mantelzorger"),
-      percentage: { start: 10, eind: 40 },
-    },
-    {
-      naam: "Hulp bij taken deel 1 (B1-B5)",
-      categorieen: ZOEK_CATEGORIEEN.filter(c => c.groep === "naaste").slice(0, 5),
-      percentage: { start: 40, eind: 70 },
-    },
-    {
-      naam: "Hulp bij taken deel 2 (B6-B10)",
-      categorieen: ZOEK_CATEGORIEEN.filter(c => c.groep === "naaste").slice(5),
-      percentage: { start: 70, eind: 90 },
-    },
-  ]
-
+  // Per categorie zoeken (A1, A2, ... B10)
   const alleResultaten: GevondenHulpbron[] = []
+  const totaal = ZOEK_CATEGORIEEN.length
 
-  for (const batch of batches) {
+  for (let i = 0; i < totaal; i++) {
+    const cat = ZOEK_CATEGORIEEN[i]
+    const percentage = Math.round(5 + (i / totaal) * 90)
+
     onVoortgang?.({
       fase: "zoeken",
-      stap: `${batch.naam}...`,
-      percentage: batch.percentage.start,
+      stap: `${cat.code} ${cat.label} zoeken...`,
+      percentage,
       resultaten: alleResultaten.length,
     })
 
-    console.log(`[hulpbronnen-zoeker] Batch: ${batch.naam}`)
+    console.log(`[hulpbronnen-zoeker] ${cat.code} ${cat.label} starten...`)
 
     try {
-      const batchResultaten = await zoekBatchMetWebSearch(
+      const resultaten = await zoekEnkeleCategorieMetWebSearch(
         anthropic,
         gemeente,
         woonplaatsen,
-        batch.categorieen,
+        cat,
         bestaandeFormatted,
       )
 
-      console.log(`[hulpbronnen-zoeker] ${batch.naam}: ${batchResultaten.length} resultaten`)
-      alleResultaten.push(...batchResultaten)
+      console.log(`[hulpbronnen-zoeker] ${cat.code} ${cat.label}: ${resultaten.length} resultaten`)
+      alleResultaten.push(...resultaten)
     } catch (e) {
       const isTimeout = e instanceof Error && (e.name === "AbortError" || e.name === "TimeoutError")
-      console.error(`[hulpbronnen-zoeker] ${isTimeout ? "Timeout" : "Fout"} bij ${batch.naam}:`, e)
-      // Ga door met volgende batch
+      console.error(`[hulpbronnen-zoeker] ${isTimeout ? "Timeout" : "Fout"} bij ${cat.code} ${cat.label}:`, e)
     }
-
-    onVoortgang?.({
-      fase: "zoeken",
-      stap: `${batch.naam}: ${alleResultaten.length} gevonden`,
-      percentage: batch.percentage.eind,
-      resultaten: alleResultaten.length,
-    })
   }
 
-  // Dedupliceer over batches heen
+  // Dedupliceer
   const gedeupeerd = dedupliceerHulpbronnen(alleResultaten)
 
   onVoortgang?.({
@@ -431,119 +407,92 @@ export async function zoekHulpbronnenVoorGemeente(
 }
 
 // ============================================
-// CLAUDE + WEB SEARCH PER BATCH
+// CLAUDE + WEB SEARCH PER ENKELE CATEGORIE
 // ============================================
 
-async function zoekBatchMetWebSearch(
+async function zoekEnkeleCategorieMetWebSearch(
   anthropic: ReturnType<typeof createAnthropic>,
   gemeente: string,
   woonplaatsen: string[],
-  categorieen: ZoekCategorie[],
+  categorie: ZoekCategorie,
   bestaandeFormatted: string,
 ): Promise<GevondenHulpbron[]> {
-  const categorieenFormatted = categorieen.map((c) =>
-    `${c.code}. ${c.label} (dbField: ${c.dbField}, dbValue: "${c.dbValue}")
-    Zoek op: ${c.zoekwoorden.join(", ")}
-    Synoniemen: ${c.synoniemen.join(", ")}`
-  ).join("\n\n")
+  const zoekterm = categorie.zoekwoorden[0]
 
-  const systemPrompt = `Je bent een hulpbronnen-specialist voor MantelBuddy, een app voor mantelzorgers in Nederland.
-Je schrijft altijd in B1-taalniveau: korte zinnen, eenvoudige woorden, geen jargon.
+  const prompt = `Zoek organisaties voor "${categorie.label}" in gemeente ${gemeente}.
+Woonplaatsen: ${woonplaatsen.join(", ") || gemeente}
 
-Je hebt toegang tot een web_search tool. Gebruik deze om daadwerkelijke organisaties en diensten te vinden.
+Categorie: ${categorie.code} - ${categorie.label}
+dbField: ${categorie.dbField}
+dbValue: "${categorie.dbValue}"
+Groep: ${categorie.groep}
+Zoektermen: ${categorie.zoekwoorden.join(", ")}
+Synoniemen: ${categorie.synoniemen.join(", ")}
 
-BELANGRIJK:
-- Zoek ALTIJD specifiek naar "${gemeente}" in je zoekopdrachten
-- Doe MEERDERE zoekopdrachten per categorie voor de beste resultaten
-- Zoek ook op de gemeentelijke sociale kaart en hulpwijzer
-- Neem ALLEEN organisaties op die daadwerkelijk een dienst aanbieden
-- NIET: nieuwsartikelen, beleidsdocumenten, vacatures, webshops, blogs
-- Verzin NOOIT informatie — gebruik alleen wat je vindt`
+Zoek op: "${zoekterm} ${gemeente}"
 
-  const prompt = `Zoek hulpbronnen voor mantelzorgers in de gemeente ${gemeente}.
-De woonplaatsen in deze gemeente zijn: ${woonplaatsen.join(", ") || gemeente}
-
-Zoek voor deze categorieën:
-
-${categorieenFormatted}
-
-BESTAANDE HULPBRONNEN IN DATABASE (ter deduplicatie):
+BESTAANDE (ter deduplicatie):
 ${bestaandeFormatted}
 
-INSTRUCTIES:
-1. Doe per categorie 1 gerichte webzoekopdracht (max 5 zoekopdrachten totaal), bijv.:
-   - "${categorieen[0]?.zoekwoorden[0]} ${gemeente}"
-2. Neem alleen organisaties op die echt bestaan en een dienst bieden
-3. Vergelijk met bestaande hulpbronnen — markeer duplicaten
-4. Max 5 resultaten per categorie
-5. Wees EFFICIËNT: zoek niet te veel, geef snel je JSON antwoord
+Geef ALLEEN een JSON array terug. Geen uitleg, geen markdown.
+Max 5 resultaten. Alleen echte organisaties die een dienst aanbieden.
+NIET: nieuwsartikelen, beleidsdocumenten, vacatures, webshops, blogs.
 
-VERTROUWEN:
-- HOOG: Overheidswebsite, bekende instelling, gemeentelijke bron
-- GEMIDDELD: Eén bron, professionele website, duidelijke contactgegevens
-- LAAG: Onduidelijk, mogelijk niet meer actief
-
-GEEF JE ANTWOORD als ALLEEN een JSON array (geen markdown, geen uitleg, geen code blocks):
 [
   {
-    "categorie": "${categorieen[0]?.code}",
-    "categorieLabel": "${categorieen[0]?.label}",
-    "categorieDbField": "${categorieen[0]?.dbField}",
-    "categorieDbValue": "${categorieen[0]?.dbValue}",
-    "categorieGroep": "${categorieen[0]?.groep}",
-    "naam": "Naam van de organisatie",
-    "beschrijving": "Korte beschrijving in B1-taal (max 200 tekens)",
+    "categorie": "${categorie.code}",
+    "categorieLabel": "${categorie.label}",
+    "categorieDbField": "${categorie.dbField}",
+    "categorieDbValue": "${categorie.dbValue}",
+    "categorieGroep": "${categorie.groep}",
+    "naam": "Organisatienaam",
+    "beschrijving": "Korte beschrijving (max 200 tekens, B1-taal)",
     "website": "https://...",
-    "telefoon": "0XX-XXX XXXX",
+    "telefoon": "",
     "email": "",
     "adres": "",
     "gemeente": "${gemeente}",
     "woonplaats": "",
-    "dienst": "Wat zij concreet doen",
+    "dienst": "Wat zij doen",
     "doelgroep": "Voor wie",
-    "kosten": "Gratis / Via WMO / Eigen bijdrage / Kosten onbekend",
-    "aanmeldprocedure": "Hoe je je aanmeldt",
-    "eersteStap": "Eén concrete zin: wat moet de mantelzorger nu doen?",
+    "kosten": "Gratis / Via WMO / Kosten onbekend",
+    "aanmeldprocedure": "Hoe aanmelden",
+    "eersteStap": "Concrete actie voor de mantelzorger",
     "vertrouwen": "HOOG",
-    "bron": "Bron waar je dit gevonden hebt",
+    "bron": "Bron",
     "isDuplicaat": false,
     "duplicaatVan": null
   }
 ]
 
-Als je voor een categorie niets vindt, sla die over (geen lege objecten).
-Vul "eersteStap" ALTIJD in met een concrete actie.
-Als telefoon/adres/email niet gevonden is: laat het veld leeg (lege string "").`
+Lege velden = lege string "". Niets verzinnen.`
 
   const { text } = await generateText({
     model: anthropic("claude-sonnet-4-20250514"),
-    system: systemPrompt,
     prompt,
     tools: {
       web_search: anthropic.tools.webSearch_20250305({
-        maxUses: 5,
+        maxUses: 2,
         userLocation: {
           type: "approximate",
           country: "NL",
         },
       }),
     },
-    stopWhen: stepCountIs(8),
-    maxOutputTokens: 8000,
+    stopWhen: stepCountIs(4),
+    maxOutputTokens: 4000,
     temperature: 0.1,
-    abortSignal: AbortSignal.timeout(90_000),
+    abortSignal: AbortSignal.timeout(45_000),
   })
 
   // Parse JSON uit response
   try {
     let json = text.trim()
 
-    // Strip eventuele markdown code blocks
     if (json.startsWith("```")) {
       json = json.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "")
     }
 
-    // Zoek de JSON array in de tekst als het niet direct parsed
     if (!json.startsWith("[")) {
       const arrayMatch = json.match(/\[[\s\S]*\]/)
       if (arrayMatch) {
@@ -565,7 +514,7 @@ Als telefoon/adres/email niet gevonden is: laat het veld leeg (lege string "").`
         kosten: h.kosten || "Kosten onbekend, bel voor informatie.",
       }))
   } catch (e) {
-    console.error("[hulpbronnen-zoeker] JSON parse error:", e, "\nResponse:", text.substring(0, 500))
+    console.error(`[hulpbronnen-zoeker] ${categorie.code} JSON parse error:`, e, "\nResponse:", text.substring(0, 300))
     return []
   }
 }
@@ -666,7 +615,6 @@ function bepaalZorgorganisatieType(hulpbron: GevondenHulpbron): string {
 function dedupliceerHulpbronnen(hulpbronnen: GevondenHulpbron[]): GevondenHulpbron[] {
   const seen = new Set<string>()
   return hulpbronnen.filter((h) => {
-    // Dedupliceer op website domein + naam
     let key = ""
     try {
       if (h.website) {
