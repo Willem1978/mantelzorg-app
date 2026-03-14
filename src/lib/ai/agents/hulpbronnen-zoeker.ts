@@ -359,37 +359,47 @@ export async function zoekHulpbronnenVoorGemeente(
       ).join("\n")
     : "Geen bestaande hulpbronnen voor deze gemeente."
 
-  // Per categorie zoeken (A1, A2, ... B10)
+  // Per categorie zoeken (A1, A2, ... B10) — 3 tegelijk parallel
   const alleResultaten: GevondenHulpbron[] = []
   const totaal = ZOEK_CATEGORIEEN.length
+  const PARALLEL = 3
 
-  for (let i = 0; i < totaal; i++) {
-    const cat = ZOEK_CATEGORIEEN[i]
+  for (let i = 0; i < totaal; i += PARALLEL) {
+    const batch = ZOEK_CATEGORIEEN.slice(i, i + PARALLEL)
     const percentage = Math.round(5 + (i / totaal) * 90)
 
     onVoortgang?.({
       fase: "zoeken",
-      stap: `${cat.code} ${cat.label} zoeken...`,
+      stap: `${batch.map(c => c.code).join(", ")} zoeken...`,
       percentage,
       resultaten: alleResultaten.length,
     })
 
-    console.log(`[hulpbronnen-zoeker] ${cat.code} ${cat.label} starten...`)
+    console.log(`[hulpbronnen-zoeker] Parallel: ${batch.map(c => `${c.code} ${c.label}`).join(", ")}`)
 
-    try {
-      const resultaten = await zoekEnkeleCategorieMetWebSearch(
-        anthropic,
-        gemeente,
-        woonplaatsen,
-        cat,
-        bestaandeFormatted,
+    const results = await Promise.allSettled(
+      batch.map((cat) =>
+        zoekEnkeleCategorieMetWebSearch(
+          anthropic,
+          gemeente,
+          woonplaatsen,
+          cat,
+          bestaandeFormatted,
+        )
       )
+    )
 
-      console.log(`[hulpbronnen-zoeker] ${cat.code} ${cat.label}: ${resultaten.length} resultaten`)
-      alleResultaten.push(...resultaten)
-    } catch (e) {
-      const isTimeout = e instanceof Error && (e.name === "AbortError" || e.name === "TimeoutError")
-      console.error(`[hulpbronnen-zoeker] ${isTimeout ? "Timeout" : "Fout"} bij ${cat.code} ${cat.label}:`, e)
+    for (let j = 0; j < results.length; j++) {
+      const result = results[j]
+      const cat = batch[j]
+      if (result.status === "fulfilled") {
+        console.log(`[hulpbronnen-zoeker] ${cat.code} ${cat.label}: ${result.value.length} resultaten`)
+        alleResultaten.push(...result.value)
+      } else {
+        const e = result.reason
+        const isTimeout = e instanceof Error && (e.name === "AbortError" || e.name === "TimeoutError")
+        console.error(`[hulpbronnen-zoeker] ${isTimeout ? "Timeout" : "Fout"} bij ${cat.code} ${cat.label}:`, e)
+      }
     }
   }
 
