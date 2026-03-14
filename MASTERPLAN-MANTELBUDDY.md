@@ -1,9 +1,9 @@
 # MantelBuddy — Masterplan 2026
 
 **Datum:** 14 maart 2026
-**Versie:** 3.2
+**Versie:** 3.3
 **Baseline:** v2.5.0 + MantelCoach + dashboard redesign + AI chatbot verbeteringen maart 2026 + Iteratie 1-3 afgerond
-**Nieuw in v3.2:** Iteratie 4 functioneel uitgewerkt met bouwstappen
+**Nieuw in v3.3:** Iteratie 4 fase 1 (hulpbronnen) gebouwd. Stap 3-6 (check-in, alarm, dashboard, WhatsApp) on hold.
 **Dit plan vervangt alle eerdere planbestanden.**
 
 ---
@@ -970,27 +970,35 @@ Dit is de laatste stap omdat het de AI Zoeker integreert die in stap 1 is gebouw
 
 ### Samenvatting Iteratie 4
 
-| # | Onderdeel | Prioriteit | Geschatte uren | Afhankelijk van |
-|---|-----------|------------|----------------|-----------------|
-| 1 | AI Hulpbronnen Zoeker | HOOG | ~16u | — |
-| 2 | AI Hulpbronnen Validator | HOOG | ~12u | — |
-| 3 | Automatische check-in planning | HOOG | ~8u | — |
-| 4 | Gemeente-alarmnotificatie | HOOG | ~6u | — |
-| 5 | Gemeente opvolgingsdashboard | GEMIDDELD | ~10u | Stap 3 + 4 |
-| 6 | WhatsApp check-in herinneringen | GEMIDDELD | ~8u | Stap 3 |
-| 7 | Gemeente wizard verbeteren | GEMIDDELD | ~6u | Stap 1 |
-| | **Totaal** | | **~66u** | |
+| # | Onderdeel | Prioriteit | Status | Afhankelijk van |
+|---|-----------|------------|--------|-----------------|
+| 1 | AI Hulpbronnen Zoeker | HOOG | GEBOUWD | — |
+| 2 | AI Hulpbronnen Validator | HOOG | GEBOUWD | — |
+| 3 | Automatische check-in planning | HOOG | ON HOLD | — |
+| 4 | Gemeente-alarmnotificatie | HOOG | ON HOLD | — |
+| 5 | Gemeente opvolgingsdashboard | GEMIDDELD | ON HOLD | Stap 3 + 4 |
+| 6 | WhatsApp check-in herinneringen | GEMIDDELD | ON HOLD | Stap 3 |
+| 7 | Gemeente wizard verbeteren | GEMIDDELD | GEBOUWD | Stap 1 |
 
-### Deliverables Iteratie 4
-- [ ] AI Hulpbronnen Zoeker: automatisch lokale hulpbronnen vinden bij gemeente-onboarding
-- [ ] AI Hulpbronnen Validator: wekelijkse controle of hulpbronnen nog actueel zijn
+**Stappen 3-6 zijn ON HOLD** — worden opgepakt in een volgende iteratie.
+
+### Deliverables Iteratie 4 (fase 1: Hulpbronnen)
+- [x] AI Hulpbronnen Zoeker: zoekt per gemeente in 15 categorieën (5 mantelzorger + 10 taken) via DuckDuckGo, Sociale Kaart, gemeentelijke hulpwijzer, en Regelhulp
+- [x] Woonplaats-specifiek zoeken via PDOK (zoekt per woonplaats binnen gemeente)
+- [x] AI categoriseert, dedupliceert, en schrijft B1-taalniveau beschrijvingen
+- [x] Beheerder review-UI: resultaten per categorie met vinkjes, inline bewerken, vertrouwensscore
+- [x] Filters: categorie, groep (mantelzorger/naaste), vertrouwensniveau
+- [x] Na goedkeuren: hulpbronnen verschijnen automatisch op dashboard, in Ger, op hulpvragen-pagina, en in weekkaarten
+- [x] AI Hulpbronnen Validator: wekelijkse cron controleert website bereikbaarheid + telefoon geldigheid
+- [x] Validatie-overzicht met filters (status/gemeente/bron/periode) en aandacht-teller
+- [x] Gemeente wizard stap 3 uitgebreid met AI Zoeken knop
+- [x] Database uitbreiding: HulpbronValidatie model + validatieStatus/bronType op Zorgorganisatie
+
+### Deliverables Iteratie 4 (fase 2: ON HOLD)
 - [ ] Automatische check-in planning na balanstest (1/2/4 weken afhankelijk van niveau)
 - [ ] Gemeente-alarmnotificatie bij hoge belasting (geanonimiseerd, opt-in)
 - [ ] Gemeente opvolgingsdashboard met trends en gemiste check-ins
 - [ ] WhatsApp check-in herinneringen
-- [ ] Gemeente onboarding wizard uitgebreid met AI zoeker
-
-**Geschatte doorlooptijd:** 4-5 weken (~66 uur)
 
 ---
 
