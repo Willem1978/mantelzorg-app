@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AdminSpinner } from "@/components/admin"
 import { useToast } from "@/components/ui/Toast"
 
@@ -52,12 +52,34 @@ const TYPE_BESCHRIJVINGEN: Record<CuratieType, string> = {
   hiaten: "Detecteer ontbrekende content en gaps in de kennisbank",
 }
 
+interface HiatenHistorie {
+  datum: string
+  aantalHiaten: number
+  totaalArtikelen: number
+}
+
 export default function CuratorPage() {
   const [type, setType] = useState<CuratieType>("alles")
   const [limiet, setLimiet] = useState(20)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<CuratieResponse | null>(null)
-  const { showError } = useToast()
+  const [hiatenHistorie, setHiatenHistorie] = useState<HiatenHistorie[]>([])
+  const toast = useToast()
+
+  // Laad hiaten-historie bij mount
+  useEffect(() => {
+    fetch("/api/beheer/site-settings?sleutel=curator.hiaten.historie")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.waarde) {
+          try { setHiatenHistorie(JSON.parse(data.waarde)) } catch { /* skip */ }
+        }
+      })
+      .catch(() => {})
+  }, [result]) // herlaad na nieuwe analyse
+
+  const [herschrijfLoading, setHerschrijfLoading] = useState<string | null>(null)
+  const { showSuccess, showError } = toast
 
   async function runCuratie() {
     setLoading(true)
@@ -76,6 +98,25 @@ export default function CuratorPage() {
       showError(message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function herschrijfArtikel(artikelId: string) {
+    setHerschrijfLoading(artikelId)
+    try {
+      const res = await fetch("/api/ai/admin/content-agent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "herschrijf", artikelId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Herschrijven mislukt")
+      showSuccess("Artikel herschreven naar B1-niveau")
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Herschrijven mislukt"
+      showError(msg)
+    } finally {
+      setHerschrijfLoading(null)
     }
   }
 
@@ -131,6 +172,28 @@ export default function CuratorPage() {
         </p>
       </div>
 
+      {/* Hiaten trend */}
+      {hiatenHistorie.length > 1 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Hiaten-trend</h3>
+          <div className="flex items-end gap-2">
+            {hiatenHistorie.slice(0, 5).reverse().map((h, i) => (
+              <div key={i} className="text-center">
+                <div
+                  className="w-10 bg-purple-200 rounded-t"
+                  style={{ height: `${Math.max(8, h.aantalHiaten * 3)}px` }}
+                />
+                <p className="text-xs font-medium text-gray-700 mt-1">{h.aantalHiaten}</p>
+                <p className="text-xs text-gray-400">{new Date(h.datum).toLocaleDateString("nl-NL", { day: "numeric", month: "short" })}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-gray-400 mt-2">
+            Vorige analyse: {hiatenHistorie[1]?.aantalHiaten} hiaten, nu: {hiatenHistorie[0]?.aantalHiaten} hiaten
+          </p>
+        </div>
+      )}
+
       {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center py-12">
@@ -153,7 +216,12 @@ export default function CuratorPage() {
 
           {/* Detail per sectie */}
           {secties.map((s) => (
-            <CuratieCard key={s.type} data={s} />
+            <CuratieCard
+              key={s.type}
+              data={s}
+              onHerschrijf={herschrijfArtikel}
+              herschrijfLoading={herschrijfLoading}
+            />
           ))}
         </div>
       )}
@@ -222,7 +290,11 @@ function getBadge(data: CuratieResultaat): { text: string; className: string } |
   return null
 }
 
-function CuratieCard({ data }: { data: CuratieResultaat }) {
+function CuratieCard({ data, onHerschrijf, herschrijfLoading }: {
+  data: CuratieResultaat
+  onHerschrijf: (id: string) => void
+  herschrijfLoading: string | null
+}) {
   const [open, setOpen] = useState(true)
 
   const icon =
@@ -260,6 +332,27 @@ function CuratieCard({ data }: { data: CuratieResultaat }) {
           <div className="prose prose-sm max-w-none text-gray-700 mt-4 whitespace-pre-wrap">
             {formatAnalyse(data.analyse)}
           </div>
+          {/* Actie-knoppen voor review en b1check resultaten */}
+          {(data.type === "review" || data.type === "b1check") && (
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <p className="text-xs font-medium text-gray-500 mb-2">Acties</p>
+              <div className="flex flex-wrap gap-2">
+                {extractArtikelIds(data.analyse).map((id) => (
+                  <button
+                    key={id}
+                    onClick={() => onHerschrijf(id)}
+                    disabled={herschrijfLoading === id}
+                    className="px-3 py-1.5 text-xs bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 disabled:opacity-50"
+                  >
+                    {herschrijfLoading === id ? "Herschrijft..." : `Herschrijf ${id.slice(0, 8)}...`}
+                  </button>
+                ))}
+                {extractArtikelIds(data.analyse).length === 0 && (
+                  <span className="text-xs text-gray-400">Geen artikel-IDs gevonden in analyse</span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -392,6 +485,12 @@ function formatAnalyse(text: string) {
     }
     return <span key={i}>{part}</span>
   })
+}
+
+function extractArtikelIds(text: string): string[] {
+  // Extract CUID-achtige IDs uit de analyse tekst (bijv. cl1234abc...)
+  const matches = text.match(/\b(c[a-z0-9]{20,30})\b/g)
+  return [...new Set(matches || [])]
 }
 
 function formatTeMoeilijk(text: string, key: number) {

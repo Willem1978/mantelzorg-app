@@ -31,9 +31,22 @@ export async function GET(request: NextRequest) {
     const artikelen = await prisma.artikel.findMany({
       where,
       orderBy: [{ sorteerVolgorde: "asc" }, { createdAt: "desc" }],
+      include: {
+        tags: {
+          include: { tag: { select: { id: true, slug: true, naam: true, type: true, emoji: true } } },
+        },
+      },
     })
 
-    return NextResponse.json({ artikelen })
+    // Flatten tags for frontend
+    const result = artikelen.map((a) => ({
+      ...a,
+      tagIds: a.tags.map((t) => t.tagId),
+      tagNamen: a.tags.map((t) => `${t.tag.emoji || ""} ${t.tag.naam}`.trim()),
+      tags: undefined,
+    }))
+
+    return NextResponse.json({ artikelen: result })
   } catch (error) {
     console.error("Artikelen ophalen mislukt:", error)
     return NextResponse.json({ error: "Artikelen ophalen mislukt" }, { status: 500 })
@@ -48,6 +61,8 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
+
+    const tagIds: string[] = body.tagIds || []
 
     const artikel = await prisma.artikel.create({
       data: {
@@ -67,6 +82,11 @@ export async function POST(request: NextRequest) {
         sorteerVolgorde: body.sorteerVolgorde || 0,
         isActief: body.isActief !== undefined ? body.isActief : true,
         aangemaaaktDoor: session.user.id,
+        ...(tagIds.length > 0 && {
+          tags: {
+            create: tagIds.map((tagId: string) => ({ tagId })),
+          },
+        }),
       },
     })
 

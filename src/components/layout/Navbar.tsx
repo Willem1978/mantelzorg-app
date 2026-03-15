@@ -133,6 +133,21 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
           </div>
 
           <div className="flex items-center space-x-1 sm:space-x-2">
+            {/* Zoek-knop */}
+            <Link
+              href="/zoeken"
+              className={cn(
+                "p-2 rounded-lg transition-colors",
+                pathname === "/zoeken"
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+              )}
+              title="Zoeken"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </Link>
             <FavorietenIcon />
             {/* Profiel dropdown met meldingen */}
             <div className="relative" ref={profielRef}>

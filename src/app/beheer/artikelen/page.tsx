@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import dynamic from "next/dynamic"
 import { AdminSpinner, AdminEmptyState } from "@/components/admin"
 import { useToast } from "@/components/ui/Toast"
 import { ARTIKEL_CATEGORIEEN, ARTIKEL_TYPES, ARTIKEL_STATUSSEN, ARTIKEL_SUB_HOOFDSTUKKEN, BRON_LABELS } from "@/config/options"
+import { berekenCompleteness, getCompletenessBadge } from "@/lib/artikel-completeness"
 
 // Lazy-load rich text editor (SSR niet nodig)
 const RichTextEditor = dynamic(
@@ -30,6 +31,16 @@ interface Artikel {
   sorteerVolgorde: number
   isActief: boolean
   createdAt: string
+  tagIds?: string[]
+  tagNamen?: string[]
+}
+
+interface ContentTag {
+  id: string
+  type: string
+  slug: string
+  naam: string
+  emoji: string | null
 }
 
 const categorieOpties = [
@@ -83,7 +94,36 @@ export default function ArtikelenPage() {
   const [gemeenteZoek, setGemeenteZoek] = useState("")
   const [gemeenteOpties, setGemeenteOpties] = useState<string[]>([])
   const [showGemeenteDropdown, setShowGemeenteDropdown] = useState(false)
+  const [beschikbareTags, setBeschikbareTags] = useState<{ aandoeningen: ContentTag[]; situaties: ContentTag[]; onderwerpen: ContentTag[] }>({ aandoeningen: [], situaties: [], onderwerpen: [] })
+  const [geselecteerdeTags, setGeselecteerdeTags] = useState<string[]>([])
+  const [tagSuggestieLoading, setTagSuggestieLoading] = useState(false)
+  const [filterCompleteness, setFilterCompleteness] = useState<"" | "incompleet" | "gedeeltelijk" | "compleet">("")
   const { showSuccess, showError } = useToast()
+
+  // D.4: Completeness stats
+  const completenessStats = useMemo(() => {
+    if (artikelen.length === 0) return null
+    const scores = artikelen.map((a) => {
+      const tagCount = a.tagIds?.length || 0
+      return berekenCompleteness({ ...a, tagCount }).score
+    })
+    const gemiddeld = Math.round(scores.reduce((s, v) => s + v, 0) / scores.length)
+    const compleet = scores.filter((s) => s > 80).length
+    const gedeeltelijk = scores.filter((s) => s >= 50 && s <= 80).length
+    const incompleet = scores.filter((s) => s < 50).length
+    return { gemiddeld, compleet, gedeeltelijk, incompleet }
+  }, [artikelen])
+
+  // Filter artikelen op completeness
+  const gefilterd = useMemo(() => {
+    if (!filterCompleteness) return artikelen
+    return artikelen.filter((a) => {
+      const score = berekenCompleteness({ ...a, tagCount: a.tagIds?.length || 0 }).score
+      if (filterCompleteness === "compleet") return score > 80
+      if (filterCompleteness === "gedeeltelijk") return score >= 50 && score <= 80
+      return score < 50
+    })
+  }, [artikelen, filterCompleteness])
 
   const laadArtikelen = async () => {
     setLoading(true)
@@ -107,6 +147,13 @@ export default function ArtikelenPage() {
   useEffect(() => {
     laadArtikelen()
   }, [filterCategorie, filterType, filterStatus])
+
+  useEffect(() => {
+    fetch("/api/content/tags")
+      .then((r) => r.json())
+      .then((data) => setBeschikbareTags(data))
+      .catch(() => {})
+  }, [])
 
   const zoekGemeenten = async (query: string) => {
     setGemeenteZoek(query)
@@ -134,6 +181,7 @@ export default function ArtikelenPage() {
   const handleNieuw = () => {
     setEditId(null)
     setFormulier(LEEG_FORMULIER)
+    setGeselecteerdeTags([])
     setGemeenteZoek("")
     setShowForm(true)
   }
@@ -156,6 +204,7 @@ export default function ArtikelenPage() {
       publicatieDatum: artikel.publicatieDatum ? artikel.publicatieDatum.split("T")[0] : "",
       sorteerVolgorde: artikel.sorteerVolgorde,
     })
+    setGeselecteerdeTags(artikel.tagIds || [])
     setGemeenteZoek(artikel.gemeente || "")
     setShowForm(true)
   }
@@ -169,7 +218,7 @@ export default function ArtikelenPage() {
       await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formulier),
+        body: JSON.stringify({ ...formulier, tagIds: geselecteerdeTags }),
       })
 
       setShowForm(false)
@@ -196,6 +245,43 @@ export default function ArtikelenPage() {
     }
   }
 
+  const toggleTag = (tagId: string) => {
+    setGeselecteerdeTags((prev) =>
+      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]
+    )
+  }
+
+  const suggereerTags = async () => {
+    if (!formulier.titel && !formulier.beschrijving) {
+      showError("Vul eerst een titel en beschrijving in")
+      return
+    }
+    setTagSuggestieLoading(true)
+    try {
+      const res = await fetch("/api/ai/admin/tag-suggestie", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          titel: formulier.titel,
+          beschrijving: formulier.beschrijving,
+          inhoud: formulier.inhoud,
+          categorie: formulier.categorie,
+        }),
+      })
+      const data = await res.json()
+      if (data.tagIds?.length > 0) {
+        setGeselecteerdeTags((prev) => [...new Set([...prev, ...data.tagIds])])
+        showSuccess(`${data.tagIds.length} tags gesuggereerd`)
+      } else {
+        showError("Geen relevante tags gevonden")
+      }
+    } catch {
+      showError("Tag-suggestie mislukt")
+    } finally {
+      setTagSuggestieLoading(false)
+    }
+  }
+
   const statusKleur: Record<string, string> = {
     CONCEPT: "bg-gray-100 text-gray-700",
     GEPUBLICEERD: "bg-green-100 text-green-700",
@@ -216,6 +302,43 @@ export default function ArtikelenPage() {
           + Nieuw artikel
         </button>
       </div>
+
+      {/* D.4: Content-gezondheid overzicht */}
+      {completenessStats && (
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <div className="flex items-center gap-6 flex-wrap">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-gray-900">{artikelen.length}</p>
+              <p className="text-xs text-gray-500">artikelen</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-blue-600">{completenessStats.gemiddeld}%</p>
+              <p className="text-xs text-gray-500">gem. compleet</p>
+            </div>
+            <button
+              onClick={() => setFilterCompleteness(filterCompleteness === "compleet" ? "" : "compleet")}
+              className={`text-center px-3 py-1 rounded-lg ${filterCompleteness === "compleet" ? "bg-green-100 ring-2 ring-green-400" : "hover:bg-green-50"}`}
+            >
+              <p className="text-2xl font-bold text-green-600">{completenessStats.compleet}</p>
+              <p className="text-xs text-gray-500">compleet</p>
+            </button>
+            <button
+              onClick={() => setFilterCompleteness(filterCompleteness === "gedeeltelijk" ? "" : "gedeeltelijk")}
+              className={`text-center px-3 py-1 rounded-lg ${filterCompleteness === "gedeeltelijk" ? "bg-amber-100 ring-2 ring-amber-400" : "hover:bg-amber-50"}`}
+            >
+              <p className="text-2xl font-bold text-amber-600">{completenessStats.gedeeltelijk}</p>
+              <p className="text-xs text-gray-500">gedeeltelijk</p>
+            </button>
+            <button
+              onClick={() => setFilterCompleteness(filterCompleteness === "incompleet" ? "" : "incompleet")}
+              className={`text-center px-3 py-1 rounded-lg ${filterCompleteness === "incompleet" ? "bg-red-100 ring-2 ring-red-400" : "hover:bg-red-50"}`}
+            >
+              <p className="text-2xl font-bold text-red-600">{completenessStats.incompleet}</p>
+              <p className="text-xs text-gray-500">incompleet</p>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="bg-white rounded-xl border border-gray-200 p-4">
@@ -478,6 +601,54 @@ export default function ArtikelenPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                 />
               </div>
+
+              {/* Tags sectie */}
+              <div className="col-span-2 border-t border-gray-200 pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <label className="block text-sm font-medium text-gray-700">Tags</label>
+                  <button
+                    type="button"
+                    onClick={suggereerTags}
+                    disabled={tagSuggestieLoading}
+                    className="px-3 py-1 text-xs bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 disabled:opacity-50"
+                  >
+                    {tagSuggestieLoading ? "AI denkt na..." : "AI tag-suggestie"}
+                  </button>
+                </div>
+
+                {(["aandoeningen", "situaties", "onderwerpen"] as const).map((groep) => {
+                  const tags = beschikbareTags[groep]
+                  if (!tags?.length) return null
+                  const label = groep === "aandoeningen" ? "Aandoeningen" : groep === "situaties" ? "Situaties" : "Onderwerpen"
+                  return (
+                    <div key={groep} className="mb-3">
+                      <p className="text-xs font-medium text-gray-500 mb-1">{label}</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {tags.map((tag) => {
+                          const isSelected = geselecteerdeTags.includes(tag.id)
+                          return (
+                            <button
+                              key={tag.id}
+                              type="button"
+                              onClick={() => toggleTag(tag.id)}
+                              className={`px-2 py-1 text-xs rounded-full border transition-colors ${
+                                isSelected
+                                  ? "bg-blue-100 border-blue-300 text-blue-700"
+                                  : "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100"
+                              }`}
+                            >
+                              {tag.emoji ? `${tag.emoji} ` : ""}{tag.naam}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
+                {geselecteerdeTags.length > 0 && (
+                  <p className="text-xs text-gray-400 mt-1">{geselecteerdeTags.length} tags geselecteerd</p>
+                )}
+              </div>
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
@@ -503,11 +674,14 @@ export default function ArtikelenPage() {
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         {loading ? (
           <AdminSpinner tekst="Artikelen laden..." />
-        ) : artikelen.length === 0 ? (
+        ) : gefilterd.length === 0 ? (
           <AdminEmptyState icon="📝" titel="Geen artikelen gevonden" beschrijving="Voeg je eerste artikel toe" actieLabel="Nieuw artikel aanmaken" onActie={handleNieuw} />
         ) : (
           <div className="divide-y divide-gray-100">
-            {artikelen.map((artikel) => (
+            {gefilterd.map((artikel) => {
+              const cs = berekenCompleteness({ ...artikel, tagCount: artikel.tagIds?.length || 0 })
+              const badge = getCompletenessBadge(cs.score)
+              return (
               <div key={artikel.id} className="p-4 hover:bg-gray-50 flex items-start gap-4">
                 <span className="text-2xl">{artikel.emoji || "📄"}</span>
                 <div className="flex-1 min-w-0">
@@ -515,6 +689,9 @@ export default function ArtikelenPage() {
                     <h3 className="font-medium text-gray-900">{artikel.titel}</h3>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${statusKleur[artikel.status]}`}>
                       {artikel.status}
+                    </span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full border ${badge.className}`}>
+                      {cs.score}%
                     </span>
                     <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
                       {artikel.categorie}
@@ -526,6 +703,16 @@ export default function ArtikelenPage() {
                     )}
                   </div>
                   <p className="text-sm text-gray-500 mt-1 line-clamp-2">{artikel.beschrijving}</p>
+                  {artikel.tagNamen && artikel.tagNamen.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {artikel.tagNamen.slice(0, 5).map((t, i) => (
+                        <span key={i} className="text-xs px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600">{t}</span>
+                      ))}
+                      {artikel.tagNamen.length > 5 && (
+                        <span className="text-xs text-gray-400">+{artikel.tagNamen.length - 5}</span>
+                      )}
+                    </div>
+                  )}
                   {artikel.publicatieDatum && (
                     <span className="text-xs text-gray-400">
                       Publicatie: {new Date(artikel.publicatieDatum).toLocaleDateString("nl-NL")}
@@ -550,7 +737,8 @@ export default function ArtikelenPage() {
                   </button>
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

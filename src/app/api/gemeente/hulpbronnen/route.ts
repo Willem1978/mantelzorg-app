@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getGemeenteSession, logGemeenteAudit } from "@/lib/gemeente-auth"
 import { gemeenteHulpbronInformatieSchema, gemeenteHulpbronHulpSchema, gemeenteHulpbronUpdateSchema, validateBody } from "@/lib/validations"
+import { generateEmbedding, toVectorSql } from "@/lib/ai/embeddings"
 
 export async function GET(request: NextRequest) {
   const { error, gemeenteNaam, userId } = await getGemeenteSession()
@@ -57,6 +58,50 @@ export async function GET(request: NextRequest) {
     const categorieFilter = onderdeelTest
       ? [{ onderdeelTest }]
       : []
+
+    // E.4: Gebruik semantisch zoeken als beschikbaar, anders tekst-fallback
+    if (zoek && process.env.OPENAI_API_KEY) {
+      try {
+        const embedding = await generateEmbedding(zoek)
+        const vectorSql = toVectorSql(embedding)
+        const semanticResults = await prisma.$queryRawUnsafe<{ id: string; similarity: number }[]>(
+          `SELECT id, 1 - (embedding <=> $1::vector) as similarity
+           FROM "Zorgorganisatie"
+           WHERE "isActief" = true AND embedding IS NOT NULL
+           AND 1 - (embedding <=> $1::vector) > 0.3
+           ORDER BY embedding <=> $1::vector
+           LIMIT 50`,
+          vectorSql
+        )
+
+        if (semanticResults.length > 0) {
+          const ids = semanticResults.map((r) => r.id)
+          const similarityMap = new Map(semanticResults.map((r) => [r.id, r.similarity]))
+
+          const hulpbronnen = await prisma.zorgorganisatie.findMany({
+            where: {
+              id: { in: ids },
+              isActief: true,
+              AND: [
+                { OR: gemeenteFilter },
+                ...doelgroepFilter,
+                ...categorieFilter,
+              ],
+            },
+          })
+
+          // Sorteer op relevantie
+          const gesorteerd = hulpbronnen
+            .map((h) => ({ ...h, relevantie: Math.round((similarityMap.get(h.id) || 0) * 100) }))
+            .sort((a, b) => b.relevantie - a.relevantie)
+
+          logGemeenteAudit(userId, "BEKEKEN", "Hulpbronnen-Hulp", { gemeente: gemeenteNaam, doelgroep, onderdeelTest, zoek, methode: "semantisch" })
+          return NextResponse.json({ gemeenteNaam, hulpbronnen: gesorteerd, methode: "semantisch" })
+        }
+      } catch {
+        // Fallback naar tekstzoek bij fout
+      }
+    }
 
     const zoekFilter = zoek
       ? [{ OR: [
