@@ -6,6 +6,7 @@ import { logAudit } from "./audit"
 import { checkRateLimit } from "./rate-limit"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
   // Don't use adapter with credentials provider + JWT
   session: {
     strategy: "jwt",
