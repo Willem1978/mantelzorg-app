@@ -1,6 +1,6 @@
 /**
  * Script om hulpbronnen te updaten:
- * 1. Verwijdert alle zorgorganisaties voor Arnhem, Nijmegen en Zutphen
+ * 1. Verwijdert alle zorgorganisaties voor Zutphen (Arnhem en Nijmegen zijn verwijderd per maart 2026)
  * 2. Voegt nieuwe Zutphen hulpbronnen toe op basis van de Sociale Kaart Zutphen 2026
  *
  * Landelijke bronnen (gemeente: null) blijven behouden.
@@ -622,12 +622,12 @@ async function updateHulpbronnen() {
   // ============================================
   // STAP 1: Verwijder alle gemeente-specifieke hulpbronnen
   // ============================================
-  console.log('\n📌 STAP 1: Verwijderen van hulpbronnen voor Arnhem, Nijmegen en Zutphen...')
+  console.log('\n📌 STAP 1: Verwijderen van bestaande Zutphen hulpbronnen...')
 
   // Eerst favorieten verwijderen die verwijzen naar deze organisaties
   const gemeenteOrgs = await prisma.zorgorganisatie.findMany({
     where: {
-      gemeente: { in: ['Arnhem', 'Nijmegen', 'Zutphen'] },
+      gemeente: 'Zutphen',
     },
     select: { id: true, naam: true },
   })
@@ -648,11 +648,11 @@ async function updateHulpbronnen() {
   // Verwijder de organisaties
   const deleted = await prisma.zorgorganisatie.deleteMany({
     where: {
-      gemeente: { in: ['Arnhem', 'Nijmegen', 'Zutphen'] },
+      gemeente: 'Zutphen',
     },
   })
 
-  console.log(`   ${deleted.count} organisaties verwijderd (Arnhem, Nijmegen, Zutphen)`)
+  console.log(`   ${deleted.count} organisaties verwijderd (Zutphen)`)
 
   // Controleer dat landelijke bronnen er nog zijn
   const landelijkCount = await prisma.zorgorganisatie.count({
@@ -701,7 +701,7 @@ async function updateHulpbronnen() {
   // ============================================
   console.log('\n' + '='.repeat(60))
   console.log('SAMENVATTING:')
-  console.log(`   Verwijderd: ${deleted.count} (Arnhem + Nijmegen + Zutphen)`)
+  console.log(`   Verwijderd: ${deleted.count} (Zutphen)`)
   console.log(`   Nieuw toegevoegd: ${created} (Zutphen)`)
   console.log(`   Fouten: ${errors}`)
   console.log(`   Landelijk behouden: ${landelijkCount}`)

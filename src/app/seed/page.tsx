@@ -3,9 +3,9 @@
 import { useState } from "react"
 
 const steps = [
-  { label: "Stap 1: Artikelen + Nieuws + Admin", endpoint: "/api/seed/artikelen", description: "Admin user, 44 artikelen, 6 gemeente nieuws items, intake vragen" },
+  { label: "Stap 1: Artikelen + Nieuws + Admin", endpoint: "/api/seed/artikelen", description: "Admin user, 44 artikelen, 2 Zutphen gemeente nieuws items, intake vragen" },
   { label: "Stap 2: Content", endpoint: "/api/seed/content", description: "Balanstest vragen, zorgtaken, categorieen, formulier opties, app content" },
-  { label: "Stap 3: Zorgorganisaties", endpoint: "/api/seed/organisaties", description: "195+ organisaties in Nijmegen, Arnhem en landelijk" },
+  { label: "Stap 3: Zorgorganisaties", endpoint: "/api/seed/organisaties", description: "Landelijke hulpbronnen (Zutphen via apart script)" },
 ]
 
 export default function SeedPage() {
