@@ -542,6 +542,52 @@ Geef:
 
   const aantalHiaten = (text.match(/ontbreekt|mist|geen content|onderbelicht|te weinig/gi) || []).length
 
+  // Sla hiaten-analyse op voor trending (C.2)
+  try {
+    const analyseData = JSON.stringify({
+      datum: new Date().toISOString(),
+      totaalArtikelen,
+      aantalCategorieen: categorieStats.length,
+      aantalGemeentes: gemeenteStats.length,
+      aantalHiaten,
+      categorieVerdeling: overzicht.categorieVerdeling,
+      tagVerdeling: overzicht.tagVerdeling,
+    })
+
+    await prisma.siteSettings.upsert({
+      where: { sleutel: "curator.hiaten.laatste" },
+      create: {
+        categorie: "curator",
+        sleutel: "curator.hiaten.laatste",
+        waarde: analyseData,
+        label: "Laatste hiaten-analyse",
+        type: "json",
+      },
+      update: { waarde: analyseData },
+    })
+
+    // Bewaar ook in historie (max 10 entries)
+    const historieSleutel = "curator.hiaten.historie"
+    const bestaand = await prisma.siteSettings.findUnique({ where: { sleutel: historieSleutel } })
+    const historie: unknown[] = bestaand ? JSON.parse(bestaand.waarde) : []
+    historie.unshift({ datum: new Date().toISOString(), aantalHiaten, totaalArtikelen })
+    const beperkt = historie.slice(0, 10)
+
+    await prisma.siteSettings.upsert({
+      where: { sleutel: historieSleutel },
+      create: {
+        categorie: "curator",
+        sleutel: historieSleutel,
+        waarde: JSON.stringify(beperkt),
+        label: "Hiaten-analyse historie",
+        type: "json",
+      },
+      update: { waarde: JSON.stringify(beperkt) },
+    })
+  } catch (err) {
+    console.error("[Curator] Hiaten opslaan mislukt:", err)
+  }
+
   return {
     type: "hiaten",
     totaalArtikelen,
@@ -590,6 +636,47 @@ export async function POST(req: Request) {
 
     if (type === "hiaten" || type === "alles") {
       resultaten.hiaten = await detecteerHiaten()
+    }
+
+    // D.2: Sla curator-resultaten op voor dashboard (laatste run)
+    try {
+      const samenvatting = {
+        datum: new Date().toISOString(),
+        type,
+        limiet: effectiefLimiet,
+        review: resultaten.review ? {
+          aantalItems: resultaten.review.aantalItems,
+          aantalVerbeteren: resultaten.review.aantalVerbeteren,
+          aantalHerschrijven: resultaten.review.aantalHerschrijven,
+        } : undefined,
+        b1check: resultaten.b1check ? {
+          aantalItems: resultaten.b1check.aantalItems,
+          aantalTeMoeilijk: resultaten.b1check.aantalTeMoeilijk,
+          aantalGrensgebied: resultaten.b1check.aantalGrensgebied,
+        } : undefined,
+        duplicaten: resultaten.duplicaten ? {
+          aantalItems: resultaten.duplicaten.aantalItems,
+          aantalDuplicaten: resultaten.duplicaten.aantalDuplicaten,
+        } : undefined,
+        hiaten: resultaten.hiaten ? {
+          totaalArtikelen: resultaten.hiaten.totaalArtikelen,
+          aantalHiaten: resultaten.hiaten.aantalHiaten,
+        } : undefined,
+      }
+
+      await prisma.siteSettings.upsert({
+        where: { sleutel: "curator.laatste-run" },
+        create: {
+          categorie: "curator",
+          sleutel: "curator.laatste-run",
+          waarde: JSON.stringify(samenvatting),
+          label: "Laatste curator-run samenvatting",
+          type: "json",
+        },
+        update: { waarde: JSON.stringify(samenvatting) },
+      })
+    } catch (err) {
+      console.error("[Curator] Resultaten opslaan mislukt:", err)
     }
 
     await logAudit({

@@ -8,6 +8,10 @@
     {
       "path": "/api/cron/valideer-hulpbronnen",
       "schedule": "0 3 * * 1"
+    },
+    {
+      "path": "/api/cron/embeddings",
+      "schedule": "0 4 * * *"
     }
   ]
 }

@@ -17,6 +17,17 @@ export async function PUT(
   try {
     const body = await request.json()
 
+    // Sync tags als tagIds meegegeven
+    const tagIds: string[] | undefined = body.tagIds
+    if (tagIds !== undefined) {
+      await prisma.artikelTag.deleteMany({ where: { artikelId: id } })
+      if (tagIds.length > 0) {
+        await prisma.artikelTag.createMany({
+          data: tagIds.map((tagId: string) => ({ artikelId: id, tagId })),
+        })
+      }
+    }
+
     const artikel = await prisma.artikel.update({
       where: { id },
       data: {
