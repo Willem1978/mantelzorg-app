@@ -5,8 +5,17 @@ import { prisma } from "./prisma"
 import { logAudit } from "./audit"
 import { checkRateLimit } from "./rate-limit"
 
+// AUTH_SECRET is vereist door NextAuth v5. Fallback voorkomt crash als env var ontbreekt.
+const authSecret = process.env.AUTH_SECRET
+  || process.env.NEXTAUTH_SECRET
+  || (() => {
+    console.warn("[AUTH] WAARSCHUWING: AUTH_SECRET niet gevonden in environment! " +
+      "Stel AUTH_SECRET in via Vercel Dashboard → Settings → Environment Variables.")
+    return "mantelzorg-app-fallback-secret-stel-auth-secret-in-op-vercel"
+  })()
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+  secret: authSecret,
   // Don't use adapter with credentials provider + JWT
   session: {
     strategy: "jwt",
