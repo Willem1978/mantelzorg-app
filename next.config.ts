@@ -32,6 +32,14 @@ const securityHeaders = [
     value: "1; mode=block",
   },
   {
+    key: "Cross-Origin-Opener-Policy",
+    value: "same-origin",
+  },
+  {
+    key: "Cross-Origin-Embedder-Policy",
+    value: "credentialless",
+  },
+  {
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
@@ -64,6 +72,17 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers,
+      },
+      // CORS: blokkeer cross-origin API requests (alleen eigen domein toegestaan)
+      {
+        source: "/api/:path*",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: process.env.NEXTAUTH_URL || "https://mantelbuddy.nl" },
+          { key: "Access-Control-Allow-Methods", value: "GET, POST, PUT, PATCH, DELETE, OPTIONS" },
+          { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization" },
+          { key: "Access-Control-Allow-Credentials", value: "true" },
+          { key: "Access-Control-Max-Age", value: "86400" },
+        ],
       },
     ];
   },

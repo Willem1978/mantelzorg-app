@@ -3,7 +3,10 @@
  * Beschermt tegen brute-force aanvallen op login, registratie en wachtwoord-reset.
  *
  * Limiet: configureerbaar per endpoint.
- * In productie kan dit vervangen worden door Redis-backed rate limiting.
+ *
+ * BEPERKING: In-memory store overleeft geen restart op Vercel serverless.
+ * TODO: Vervang door Upstash Redis (@upstash/ratelimit) voor persistente
+ * rate limiting in productie. Zie: https://upstash.com/docs/redis/sdks/ratelimit-ts/overview
  */
 
 interface RateLimitEntry {
@@ -31,11 +34,13 @@ interface RateLimitConfig {
 }
 
 const defaultConfigs: Record<string, RateLimitConfig> = {
-  login: { maxRequests: 5, windowSeconds: 300 },         // 5 pogingen per 5 min
-  register: { maxRequests: 3, windowSeconds: 600 },       // 3 per 10 min
+  login: { maxRequests: 5, windowSeconds: 300 },             // 5 pogingen per 5 min
+  register: { maxRequests: 3, windowSeconds: 600 },           // 3 per 10 min
   "forgot-password": { maxRequests: 3, windowSeconds: 600 }, // 3 per 10 min
   "reset-password": { maxRequests: 5, windowSeconds: 600 },  // 5 per 10 min
   "magic-link": { maxRequests: 3, windowSeconds: 600 },      // 3 per 10 min
+  "beheer-api": { maxRequests: 30, windowSeconds: 60 },      // 30 per min voor admin endpoints
+  "check-phone": { maxRequests: 5, windowSeconds: 300 },     // 5 per 5 min voor telefoon-check
 }
 
 export interface RateLimitResult {
