@@ -2,38 +2,83 @@
 
 **Datum:** 16 maart 2026
 **Versie:** 1.0
-**Dit plan vervangt alle eerdere planbestanden.**
+**Baseline:** v2.5.0 + MantelCoach + dashboard redesign + AI chatbot + Iteratie 1-3 afgerond + Iteratie 4 fase 1 (hulpbronnen) gebouwd
+**Dit plan vervangt ALLE eerdere planbestanden inclusief het Masterplan.**
 
 ---
 
 ## Inhoudsopgave
 
-1. [Prioriteit 1: Tags, Profiel & Wizard Herstructurering](#prioriteit-1)
-2. [Prioriteit 2: Aanbevelingen op basis van Tags](#prioriteit-2)
-3. [Prioriteit 3: Content Kwaliteit & Generatie](#prioriteit-3)
-4. [Prioriteit 4: Zoeken & Vindbaarheid](#prioriteit-4)
-5. [Prioriteit 5: Performance & Schaalbaarheid](#prioriteit-5)
-6. [Wat is al af?](#wat-is-al-af)
+1. [Wat is al af?](#wat-is-al-af)
+2. [Prioriteit 1: Tags, Profiel & Wizard Herstructurering](#prioriteit-1)
+3. [Prioriteit 2: Aanbevelingen op basis van Tags](#prioriteit-2)
+4. [Prioriteit 3: Content Kwaliteit & Generatie](#prioriteit-3)
+5. [Prioriteit 4: Zoeken & Vindbaarheid](#prioriteit-4)
+6. [Prioriteit 5: Gemeente Opvolging & Automatisering](#prioriteit-5)
+7. [Prioriteit 6: Content uit Code naar Database](#prioriteit-6)
+8. [Prioriteit 7: Performance, Caching & Monitoring](#prioriteit-7)
+9. [Prioriteit 8: Toegankelijkheid & UX voor Ouderen](#prioriteit-8)
+10. [Prioriteit 9: Schaalbaarheid & Toekomst](#prioriteit-9)
+11. [Blokkerende Items](#blokkerende-items)
+12. [Totaaloverzicht](#totaaloverzicht)
 
 ---
 
+## Tech Stack
+
+| Component | Versie |
+|-----------|--------|
+| Frontend | Next.js 16.1.4, React 19.2.3, TailwindCSS 4 |
+| Backend | Next.js API Routes (124 endpoints), Prisma ORM |
+| Database | PostgreSQL (Supabase) + pgvector (40 modellen) |
+| Auth | NextAuth.js v5-beta (JWT, credentials, magic links) |
+| AI | Claude (Anthropic) — 8 AI agents, MantelCoach (Ger) |
+| Hosting | Vercel |
+| WhatsApp | Twilio |
+
+---
+
+<a name="wat-is-al-af"></a>
 ## Wat is al af?
+
+### Afgeronde iteraties
+
+| Iteratie | Onderwerp | Status | Details |
+|----------|-----------|--------|---------|
+| **1** | Beveiliging Dichtmaken | 11/12 afgerond | isActief, XSS, CSP, CORS, audit logging. Rate limiting nog in-memory (Redis TODO) |
+| **2** | Input Validatie & Stabiliteit | 6/6 afgerond | Zod op 45+ routes, DOMPurify, 0x `as any`, cascade deletes, 200+ tests |
+| **3** | Klantreis Verbeteren | 8/8 afgerond | Persoonlijk advies, SOS-knop, actiepunten, weekkaarten, profiel wizard, gastgebruiker flow |
+| **4 fase 1** | Hulpbronnen | Gebouwd | AI zoeker (15 cat.), validator (wekelijks), gemeente wizard stap 3 |
+
+### Wat werkt
 
 | Onderdeel | Status |
 |-----------|--------|
-| Iteratie 1: Beveiliging | Afgerond |
-| Iteratie 2: Input Validatie & Stabiliteit | Afgerond |
-| Iteratie 3: Klantreis Verbeteren | Afgerond |
-| Iteratie 4 fase 1: Hulpbronnen | Gebouwd |
-| Database schema (ContentTag, ArtikelTag, GebruikerVoorkeur) | Bestaat |
-| Tag-afleiding (`bepaalProfielTags()`) | Bestaat, maar frontend-only |
-| ProfielWizard (5 stappen) | Bestaat, maar rommelig |
-| Onboarding (5 stappen) | Bestaat, maar 3 stappen zonder data |
-| Voorkeuren-API (multi-aandoening) | Bestaat |
-| Content Agent pipeline | Bestaat |
-| Curator API (review, B1, duplicaten) | Bestaat |
-| Embeddings + pgvector + semantic search | Bestaat |
-| Hulpbronnen zoeker + validator | Bestaat |
+| 8 AI agents (Ger, Welkom, Balanscoach, Check-in, Analytics, Moderatie, Curator, Content) | 100% |
+| MantelCoach (Ger) met context, actiepunten, stille-nood herkenning | 100% |
+| Belastbaarheidstest (11 vragen, 10 zorgtaken, scoring) | 95% |
+| Dashboard (Ger-chat, BalansThermometer, weekkaarten, actiepunten) | 95% |
+| Leren/Informatie (47 artikelen, 7 categorieën, 21 tags) | 95% |
+| Content Pipeline (6-staps AI workflow) | 90% |
+| Beheerportaal | 90% |
+| Hulpvragen (gemeente-filtering, 2 tabs) | 90% |
+| Check-in systeem | 80% |
+| Gemeenteportaal (dashboard, trends, rapportages) | 80% |
+| Auth & rollen (login, register, magic links) | 85% |
+| WhatsApp integratie | 75% |
+| Onboarding (5 stappen) | 80% — maar rommelig, zie P1 |
+| MantelBuddy's (matching, hulpvraag, chat) | 75% |
+| PWA | 60% |
+
+### Bestaande systemen relevant voor P1
+
+| Systeem | Status | Probleem |
+|---------|--------|----------|
+| Database schema (ContentTag, ArtikelTag, GebruikerVoorkeur) | Bestaat | ArtikelTag tabel is LEEG |
+| Tag-afleiding (`bepaalProfielTags()`) | Bestaat | Alleen frontend, niet server-side |
+| ProfielWizard (5 stappen) | Bestaat | Rommelig, niet afgestemd op onboarding |
+| Onboarding (5 stappen) | Bestaat | 3 stappen zonder data-invoer |
+| Voorkeuren-API (multi-aandoening) | Bestaat | Werkt maar is onoverzichtelijk |
 
 ---
 
@@ -257,7 +302,7 @@ Tags zijn alleen nuttig als ze content filteren. Huidige staat: **0 artikelen zi
 | 1.5 | **Voorkeuren-API opschonen** — Duidelijk onderscheid tussen automatische tags (uit profiel) en handmatige tags. Categorieën apart | 2 uur |
 | 1.6 | **Bestaande artikelen taggen** — AI bulk-tagging van alle artikelen via ArtikelTag | 3 uur |
 | 1.7 | **Profiel-completeness indicator** — Voortgangsbalk op profielpagina | 1 uur |
-| 1.8 | **Dashboard herinnering** — "Vul je profiel aan" kaart (max 3×) | 1 uur |
+| 1.8 | **Dashboard herinnering** — "Vul je profiel aan" kaart (max 3x) | 1 uur |
 | | **Totaal** | **~22 uur** |
 
 ### 1.7 Database-wijzigingen
@@ -302,7 +347,7 @@ model ContentTag {
 
 > **Doel:** Artikelen en hulpbronnen proactief aanbevelen op basis van het profiel. "Van zoek zelf naar aanbevolen voor jou."
 
-### 2.1 Bouwstappen
+### Bouwstappen
 
 | # | Taak | Geschat |
 |---|------|---------|
@@ -314,7 +359,7 @@ model ContentTag {
 | 2.6 | **Ger AI integratie** — Gebruiker-tags meegeven als context aan Ger | 1 uur |
 | | **Totaal** | **~14 uur** |
 
-### 2.2 Acceptatiecriteria
+### Acceptatiecriteria
 
 - [ ] Dashboard toont "Aanbevolen voor jou" met 3-5 artikelen
 - [ ] Werkende mantelzorger ziet andere artikelen dan gepensioneerde
@@ -329,7 +374,7 @@ model ContentTag {
 
 > **Doel:** Content compleet, kwalitatief en gericht genereren voor specifieke doelgroepen.
 
-### 3.1 Bouwstappen
+### Bouwstappen
 
 | # | Taak | Geschat |
 |---|------|---------|
@@ -349,7 +394,7 @@ model ContentTag {
 
 > **Doel:** Mantelzorgers kunnen zoeken op betekenis, niet alleen op exacte woorden.
 
-### 4.1 Bouwstappen
+### Bouwstappen
 
 | # | Taak | Geschat |
 |---|------|---------|
@@ -362,43 +407,176 @@ model ContentTag {
 ---
 
 <a name="prioriteit-5"></a>
-## Prioriteit 5: Performance & Schaalbaarheid
+## Prioriteit 5: Gemeente Opvolging & Automatisering
 
-> **Uit het masterplan, nog niet gestart.**
+> **Uit Iteratie 4 fase 2 (was ON HOLD). Proactieve opvolging van mantelzorgers.**
+
+### Bouwstappen
 
 | # | Taak | Geschat |
 |---|------|---------|
-| 5.1 | Caching strategie (Redis/in-memory) | 4 uur |
-| 5.2 | API response times optimaliseren | 3 uur |
-| 5.3 | Database query optimalisatie | 3 uur |
-| 5.4 | Toegankelijkheid & UX voor ouderen | 6 uur |
-| | **Totaal** | **~16 uur** |
+| 5.1 | **Automatische check-in planning** — Na balanstest automatisch check-in plannen. HOOG=1 week, GEMIDDELD=2 weken, LAAG=4 weken. GeplandCheckin model | 8 uur |
+| 5.2 | **Gemeente-alarmnotificatie** — Bij HIGH/CRITICAL alarm: geanonimiseerde e-mail naar gemeente (opt-in). Geen PII, alleen type + niveau + gemeente | 6 uur |
+| 5.3 | **Gemeente opvolgingsdashboard** — Anoniem overzicht: tests deze week, alarmen, geplande/gemiste check-ins, trends | 10 uur |
+| 5.4 | **WhatsApp check-in herinneringen** — Geplande herinneringen via WhatsApp (als gekoppeld) of in-app. Template met 3 snelantwoorden | 8 uur |
+| | **Totaal** | **~32 uur** |
+
+### Database-uitbreiding (uit masterplan)
+
+```prisma
+model GeplandCheckin {
+  id            String    @id @default(cuid())
+  caregiverId   String
+  geplandOp     DateTime
+  verstuurdOp   DateTime?
+  kanaal        String    @default("IN_APP") // IN_APP, WHATSAPP
+  aanleiding    String    // "balanstest", "check-in", "alarm"
+  status        String    @default("GEPLAND") // GEPLAND, VERSTUURD, VOLTOOID, VERLOPEN
+  testId        String?
+  createdAt     DateTime  @default(now())
+  caregiver     Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  @@index([caregiverId, geplandOp])
+  @@index([status, geplandOp])
+}
+```
 
 ---
 
+<a name="prioriteit-6"></a>
+## Prioriteit 6: Content uit Code naar Database
+
+> **170+ hardcoded content items naar de database verplaatsen. "Geen tekst meer in de code."**
+
+### Bouwstappen
+
+| # | Taak | Geschat |
+|---|------|---------|
+| 6.1 | **Content migreren** — 170+ items uit config-bestanden naar database. Balanstest vragen, zorgtaken, formulier-opties, onboarding teksten, navigatie labels, dashboard teksten, auth teksten, WhatsApp menu's | 16 uur |
+| 6.2 | **Frontend omzetten** — 8+ bestanden van hardcoded imports naar API calls / database queries | 12 uur |
+| 6.3 | **WhatsApp sessies naar database** — In-memory `Map` vervangen door Prisma model met TTL | 4 uur |
+| 6.4 | **Beheer pagina's bouwen** — `/beheer/balanstest-vragen`, `/beheer/zorgtaken`, `/beheer/categorieen`, `/beheer/formulier-opties`, `/beheer/app-content` | 12 uur |
+| 6.5 | **Seed script** — `seed-full-content.ts` voor eenmalige migratie + validatie | 4 uur |
+| | **Totaal** | **~48 uur** |
+
+---
+
+<a name="prioriteit-7"></a>
+## Prioriteit 7: Performance, Caching & Monitoring
+
+> **App snel maken en zicht krijgen op fouten. "Wat je niet meet, kun je niet verbeteren."**
+
+### Bouwstappen
+
+| # | Taak | Geschat |
+|---|------|---------|
+| 7.1 | **Caching strategie** — 94/96 routes zijn nu `force-dynamic`. Gedifferentieerde caching: statische content (1u), per-gebruiker (60s), gemeente stats (5min), mutaties blijven dynamic | 8 uur |
+| 7.2 | **N+1 queries oplossen** — Diepe Prisma queries opsplitsen, database-aggregatie, paginatie, parallelle queries in `prefetchUserContext` | 8 uur |
+| 7.3 | **Sentry error tracking** — Automatische error capture, user context (zonder PII), performance tracing, alerts | 4 uur |
+| 7.4 | **Structured logging** — Pino consistent doorvoeren in alle API routes. Request logging, error context, AI tool logging. Geen PII | 4 uur |
+| 7.5 | **Health monitoring** — `/api/health` uitbreiden: DB latency, AI bereikbaarheid, WhatsApp status, cron status, uptime monitoring | 4 uur |
+| | **Totaal** | **~28 uur** |
+
+---
+
+<a name="prioriteit-8"></a>
+## Prioriteit 8: Toegankelijkheid & UX voor Ouderen
+
+> **App optimaliseren voor de doelgroep: oudere, vaak vermoeide mantelzorgers.**
+
+### Bouwstappen
+
+| # | Taak | Geschat |
+|---|------|---------|
+| 8.1 | **WCAG 2.1 AA compliance** — Screen reader support, keyboard navigatie, focus management, skip-to-content, formulier labels | 8 uur |
+| 8.2 | **Contrast en leesbaarheid** — WCAG AAA contrast (7:1), B1-taalaudit, min fontgrootte 16px mobiel, regelafstand 1.5, max 70 karakters | 6 uur |
+| 8.3 | **PWA verbeteren** — Echte app-iconen, offline fallback, cache-first voor statische content, install prompt | 4 uur |
+| 8.4 | **Loading states** — Skeleton loaders, optimistic updates, feedback bij acties, voortgangsbalken | 6 uur |
+| 8.5 | **Service layer** — Prisma queries centraliseren in service modules (caregiver, belastbaarheid, gemeente, hulpbron, notificatie) | 8 uur |
+| | **Totaal** | **~32 uur** |
+
+---
+
+<a name="prioriteit-9"></a>
+## Prioriteit 9: Schaalbaarheid & Toekomst
+
+> **Platform klaar maken voor groei.**
+
+### Backlog
+
+| Feature | Complexiteit | Waarde |
+|---------|-------------|--------|
+| Progressieve onboarding (week 1-4 flow) | Hoog | Hoog |
+| Push notificaties (VAPID + service worker) | Gemiddeld | Hoog |
+| 2FA voor admin (TOTP + backup codes) | Gemiddeld | Hoog |
+| Contactstatus bij hulporganisaties | Gemiddeld | Hoog |
+| Slimme aanbevelingsengine | Hoog | Hoog |
+| Weekplan met favorieten | Gemiddeld | Gemiddeld |
+| Email-templates beheer | Gemiddeld | Gemiddeld |
+| Media-upload (S3/Cloudinary) | Gemiddeld | Gemiddeld |
+| Seizoensgebonden content-suggesties | Laag | Gemiddeld |
+| Zorgtaken pagina (`/zorgtaken`) | Laag | Gemiddeld |
+| Real-time notificaties (WebSocket) | Hoog | Gemiddeld |
+| Rich text editor uitbreiden (TipTap) | Laag | Laag |
+| Dark mode | Laag | Laag |
+
+---
+
+<a name="blokkerende-items"></a>
+## Blokkerende Items
+
+```
+SECURITY (restpunt uit Iteratie 1):
+- ⚠️ Rate limiting in-memory — Werkt, maar overleeft geen Vercel serverless restart
+  → Oplossing: Vercel KV of Upstash Redis als backing store
+
+E-MAIL:
+- ⚠️ SMTP configuratie nodig — sendBalanstestResultEmail bestaat, maar SMTP moet opgezet
+  → Blokkeert: e-mail na balanstest, gemeente-alarmnotificatie, 2FA
+
+COMPLIANCE (wettelijke verplichting):
+- ❌ Verwerkersovereenkomsten — Juridisch traject niet gestart
+  → Supabase, Vercel, Anthropic, OpenAI, Twilio: allemaal verwerkers van persoonsgegevens
+- ❌ DPIA — Vereist voor Art. 9 gezondheidsdata (AVG)
+- ❌ Privacy policy updaten
+- ❌ Register van verwerkingsactiviteiten (Art. 30 AVG)
+
+BEVEILIGING:
+- ❌ 2FA voor admin — Geblokkeerd door ontbrekende mailserver
+```
+
+---
+
+<a name="totaaloverzicht"></a>
 ## Totaaloverzicht
 
-| Prioriteit | Onderwerp | Geschat | Status |
-|---|---|---|---|
-| **1** | Tags, Profiel & Wizard Herstructurering | ~22 uur | **Te starten** |
-| **2** | Aanbevelingen op basis van Tags | ~14 uur | Wacht op P1 |
-| **3** | Content Kwaliteit & Generatie | ~21 uur | Wacht op P1 |
-| **4** | Zoeken & Vindbaarheid | ~6 uur | Onafhankelijk |
-| **5** | Performance & Schaalbaarheid | ~16 uur | Onafhankelijk |
-| | **Totaal** | **~79 uur** | |
+| Prio | Onderwerp | Geschat | Status | Afhankelijk van |
+|---|---|---|---|---|
+| **1** | **Tags, Profiel & Wizard Herstructurering** | ~22 uur | **TE STARTEN** | — |
+| **2** | Aanbevelingen op basis van Tags | ~14 uur | Wacht op P1 | P1 |
+| **3** | Content Kwaliteit & Generatie | ~21 uur | Wacht op P1 | P1 |
+| **4** | Zoeken & Vindbaarheid | ~6 uur | Onafhankelijk | — |
+| **5** | Gemeente Opvolging & Automatisering | ~32 uur | Onafhankelijk | — |
+| **6** | Content uit Code naar Database | ~48 uur | Onafhankelijk | — |
+| **7** | Performance, Caching & Monitoring | ~28 uur | Onafhankelijk | — |
+| **8** | Toegankelijkheid & UX voor Ouderen | ~32 uur | Onafhankelijk | — |
+| **9** | Schaalbaarheid & Toekomst | — | Backlog | Alles |
+| | **Totaal (P1-P8)** | **~203 uur** | | |
 
 ### Afhankelijkheden
 
 ```
-P1 (Tags & Profiel) ──→ P2 (Aanbevelingen)
-                    ──→ P3 (Content Kwaliteit)
+P1 (Tags & Profiel) ──→ P2 (Aanbevelingen) ──→ P3 (Content Kwaliteit)
 
-P4 (Zoeken) ──── onafhankelijk, kan parallel
-P5 (Performance) ── onafhankelijk, kan parallel
+P4 (Zoeken)       ─── onafhankelijk, kan parallel
+P5 (Gemeente)     ─── onafhankelijk, kan parallel
+P6 (Content→DB)   ─── onafhankelijk, kan parallel
+P7 (Performance)  ─── onafhankelijk, kan parallel
+P8 (UX/A11y)      ─── onafhankelijk, kan parallel
 ```
 
 **Prioriteit 1 is het absolute fundament.** Zonder gestructureerde tags en een opgeschoond profielscherm werken aanbevelingen en gerichte content niet.
 
 ---
 
-*Dit plan is opgesteld op 16 maart 2026 en vervangt alle eerdere planbestanden.*
+*Dit plan is opgesteld op 16 maart 2026 en vervangt alle eerdere planbestanden (MASTERPLAN-MANTELBUDDY.md, plan-content-en-zoek-fundament.md, plan-profiel-en-onboarding.md, plan-iteratie-bcde.md).*
