@@ -17,6 +17,16 @@ Dit plan integreert het bestaande Projectplan 2026 (P1-P9, ~203 uur) met de **27
 
 Het plan is opgedeeld in **10 iteraties** die elk voor een AI-agent (of developer) in één sessie behapbaar zijn. Iteraties zijn geordend op urgentie en afhankelijkheden.
 
+### Standaard controleopdracht per iteratie
+
+Elke iteratie sluit af met een **verplichte controleopdracht** (sectie "Afsluiting"). Deze opdracht zorgt ervoor dat:
+
+1. **Database-check:** Het Prisma schema (`prisma/schema.prisma`) wordt gecontroleerd op noodzakelijke aanpassingen — nieuwe modellen, gewijzigde velden, ontbrekende indexen, relaties die niet kloppen.
+2. **Projectplan bijwerken:** Dit projectplan (`docs/PROJECTPLAN-2026-GEINTEGREERD.md`) wordt bijgewerkt met: afgeronde taken afvinken, geschatte uren bijstellen, nieuwe bevindingen of risico's documenteren.
+3. **Aanvullen waar nodig:** Eventuele ontdekkingen tijdens de iteratie (nieuwe technische schuld, ontbrekende requirements, bijkomende taken) worden toegevoegd aan de juiste iteratie of backlog.
+
+De controleopdracht is als volgt geformuleerd zodat deze direct als instructie aan een AI-agent kan worden meegegeven.
+
 ---
 
 ## Inhoudsopgave
@@ -121,6 +131,30 @@ model WhatsAppSessie {
 - `prisma/schema.prisma` — WhatsAppSessie model
 - `package.json` — Upstash Redis dependency
 
+### Afsluiting Iteratie 0 — Controleopdracht
+
+> **Opdracht aan de agent/developer:**
+>
+> Na afronding van alle taken in Iteratie 0, voer de volgende controles uit:
+>
+> 1. **Database-check:** Open `prisma/schema.prisma` en controleer:
+>    - Is het `WhatsAppSessie` model correct toegevoegd met alle velden, indexen en types?
+>    - Zijn er relaties met bestaande modellen (bijv. `User`, `Caregiver`) die ontbreken?
+>    - Draai `npx prisma validate` om het schema te valideren.
+>    - Draai `npx prisma migrate dev` om de migratie te genereren en te testen.
+>    - Controleer of bestaande modellen niet per ongeluk zijn gewijzigd.
+>
+> 2. **Projectplan bijwerken:** Open `docs/PROJECTPLAN-2026-GEINTEGREERD.md` en:
+>    - Vink afgeronde acceptatiecriteria af (wijzig `- [ ]` naar `- [x]`).
+>    - Pas geschatte uren aan als de werkelijke tijd significant afweek.
+>    - Noteer eventuele blokkades of risico's die zijn ontdekt bij "Blokkerende Items".
+>
+> 3. **Aanvullen waar nodig:**
+>    - Zijn er nieuwe `$queryRawUnsafe` instanties gevonden buiten de 2 bekende? Voeg ze toe.
+>    - Zijn er andere in-memory stores ontdekt (naast rate-limit en WhatsApp)? Documenteer ze.
+>    - Zijn er environment variables bijgekomen die in `.env.example` moeten? Voeg ze toe.
+>    - Commit alle wijzigingen met een duidelijke boodschap.
+
 ---
 
 <a name="iteratie-1"></a>
@@ -171,6 +205,29 @@ Daarnaast identificeert §5.2 **N+1 query risico's**: bij lijstweergaven kan Pri
 - `src/middleware.ts` — Request logging
 - `src/app/api/health/route.ts` — Health checks uitbreiden
 - `prisma/schema.prisma` of `src/lib/prisma.ts` — Query logging
+
+### Afsluiting Iteratie 1 — Controleopdracht
+
+> **Opdracht aan de agent/developer:**
+>
+> Na afronding van alle taken in Iteratie 1, voer de volgende controles uit:
+>
+> 1. **Database-check:** Open `prisma/schema.prisma` en controleer:
+>    - Zijn er modellen nodig voor het opslaan van error logs of monitoring data in de eigen database? (Normaal niet — Sentry is extern — maar verifieer.)
+>    - Is de Prisma client configuratie aangepast voor query logging (`src/lib/prisma.ts`)?
+>    - Draai `npx prisma validate` om te bevestigen dat het schema nog klopt.
+>
+> 2. **Projectplan bijwerken:** Open `docs/PROJECTPLAN-2026-GEINTEGREERD.md` en:
+>    - Vink afgeronde acceptatiecriteria af.
+>    - Documenteer de Sentry project-URL en eventuele dashboard-links.
+>    - Noteer hoeveel `console.log`/`console.error` instanties zijn gemigreerd naar Pino.
+>    - Pas geschatte uren aan als de werkelijke tijd significant afweek.
+>
+> 3. **Aanvullen waar nodig:**
+>    - Zijn er routes gevonden die geen error handling hebben? Voeg ze toe aan de takenlijst.
+>    - Heeft de Prisma query logging N+1 problemen zichtbaar gemaakt? Documenteer ze voor Iteratie 4.
+>    - Zijn er nieuwe environment variables (SENTRY_DSN, etc.) die in `.env.example` moeten?
+>    - Commit alle wijzigingen met een duidelijke boodschap.
 
 ---
 
@@ -226,6 +283,33 @@ model ContentTag {
 - [ ] Profiel-completeness indicator werkt
 - [ ] "Later invullen" optie in onboarding
 
+### Afsluiting Iteratie 2 — Controleopdracht
+
+> **Opdracht aan de agent/developer:**
+>
+> Na afronding van alle taken in Iteratie 2, voer de volgende controles uit:
+>
+> 1. **Database-check:** Open `prisma/schema.prisma` en controleer:
+>    - Is het `groep` veld correct toegevoegd aan het `ContentTag` model?
+>    - Zijn er nieuwe indexen nodig op `ContentTag.groep` voor performante queries?
+>    - Is het `GebruikerVoorkeur` model nog correct afgestemd op de nieuwe tag-structuur?
+>    - Zijn de `ArtikelTag` records correct aangemaakt voor alle 47 artikelen?
+>    - Draai `npx prisma validate` en `npx prisma migrate dev`.
+>    - Controleer of de seed-data compatibel is met de nieuwe tag-groepen.
+>
+> 2. **Projectplan bijwerken:** Open `docs/PROJECTPLAN-2026-GEINTEGREERD.md` en:
+>    - Vink afgeronde acceptatiecriteria af.
+>    - Documenteer het exacte aantal getagde artikelen en de verdeling over tag-groepen.
+>    - Markeer P1 als afgerond in het totaaloverzicht.
+>    - Update de afhankelijkheden: Iteratie 5 en 8 zijn nu deblocked.
+>
+> 3. **Aanvullen waar nodig:**
+>    - Zijn er tag-groepen ontdekt die ontbreken in de definitie? Voeg ze toe.
+>    - Zijn er onboarding-stappen die niet goed aansluiten op het nieuwe profiel? Documenteer.
+>    - Zijn er artikelen die niet goed te taggen zijn? Voeg "content hiaten" toe aan Iteratie 8.
+>    - Werkt de guided first session goed op mobiel? Noteer UX-bevindingen voor Iteratie 6.
+>    - Commit alle wijzigingen met een duidelijke boodschap.
+
 ---
 
 <a name="iteratie-3"></a>
@@ -270,6 +354,31 @@ De analyse identificeert twee fundamentele architectuurproblemen:
 - `src/app/api/` — Refactoring van routes naar service calls
 - `package.json` — SWR of @tanstack/react-query dependency
 
+### Afsluiting Iteratie 3 — Controleopdracht
+
+> **Opdracht aan de agent/developer:**
+>
+> Na afronding van alle taken in Iteratie 3, voer de volgende controles uit:
+>
+> 1. **Database-check:** Open `prisma/schema.prisma` en controleer:
+>    - Zijn er modellen die een service layer nodig hadden maar nog niet gerefactored zijn?
+>    - Zijn er nieuwe queries in services die indexen vereisen die nog niet bestaan?
+>    - Controleer of de service layer geen directe schema-wijzigingen vereist (zou niet moeten, maar verifieer).
+>    - Draai `npx prisma validate`.
+>
+> 2. **Projectplan bijwerken:** Open `docs/PROJECTPLAN-2026-GEINTEGREERD.md` en:
+>    - Vink afgeronde acceptatiecriteria af.
+>    - Documenteer welke 5 domeinen een service layer hebben gekregen.
+>    - Noteer hoeveel API routes zijn gerefactored en hoeveel er nog resteren.
+>    - Noteer op welke pagina's SWR/TanStack Query is geïntegreerd.
+>    - Pas geschatte uren aan.
+>
+> 3. **Aanvullen waar nodig:**
+>    - Zijn er API routes ontdekt die te complex zijn om in deze iteratie te refactoren? Voeg ze toe aan de backlog.
+>    - Zijn er pagina's die baat zouden hebben bij SWR maar nog niet zijn gemigreerd? Documenteer ze.
+>    - Heeft de refactoring nieuwe bugs of regressies geïntroduceerd? Voeg test-taken toe.
+>    - Commit alle wijzigingen met een duidelijke boodschap.
+
 ---
 
 <a name="iteratie-4"></a>
@@ -313,6 +422,32 @@ De analyse identificeert twee fundamentele architectuurproblemen:
 - [ ] Zoekbalk is toegankelijk vanuit elke pagina
 - [ ] dangerouslySetInnerHTML gebruik is gehalveerd
 
+### Afsluiting Iteratie 4 — Controleopdracht
+
+> **Opdracht aan de agent/developer:**
+>
+> Na afronding van alle taken in Iteratie 4, voer de volgende controles uit:
+>
+> 1. **Database-check:** Open `prisma/schema.prisma` en controleer:
+>    - Zijn er nieuwe modellen of velden nodig voor de zoekfunctionaliteit (bijv. zoekgeschiedenis, populaire zoekopdrachten)?
+>    - Zijn de pgvector indexen optimaal geconfigureerd voor semantic search performance?
+>    - Zijn er indexen nodig op velden die nu gecached worden (voor efficiënte revalidatie)?
+>    - Is de embeddings cron route (`/api/cron/embeddings`) correct gekoppeld aan de juiste modellen?
+>    - Draai `npx prisma validate`.
+>
+> 2. **Projectplan bijwerken:** Open `docs/PROJECTPLAN-2026-GEINTEGREERD.md` en:
+>    - Vink afgeronde acceptatiecriteria af.
+>    - Documenteer hoeveel routes zijn gemigreerd van `force-dynamic` naar caching.
+>    - Noteer de gemeten laadtijdverbetering (voor/na caching).
+>    - Documenteer welke N+1 queries zijn opgelost en welke er nog resteren.
+>    - Noteer hoeveel `dangerouslySetInnerHTML` instanties zijn vervangen.
+>
+> 3. **Aanvullen waar nodig:**
+>    - Zijn er routes die niet gecached kunnen worden vanwege onverwachte dynamische data? Documenteer waarom.
+>    - Zijn er AI-endpoints die niet naar streaming gemigreerd konden worden? Voeg ze toe aan backlog.
+>    - Zijn er performance-metingen uit Sentry (Iteratie 1) die nieuwe bottlenecks tonen? Documenteer ze.
+>    - Commit alle wijzigingen met een duidelijke boodschap.
+
 ---
 
 <a name="iteratie-5"></a>
@@ -344,6 +479,30 @@ Dit is de kern van de waardepropositie: **"Van zoek zelf naar aanbevolen voor jo
 - [ ] Match-reden is zichtbaar per aanbeveling
 - [ ] Weekkaarten zijn gepersonaliseerd
 - [ ] Ger gebruikt profiel-tags in gesprekken
+
+### Afsluiting Iteratie 5 — Controleopdracht
+
+> **Opdracht aan de agent/developer:**
+>
+> Na afronding van alle taken in Iteratie 5, voer de volgende controles uit:
+>
+> 1. **Database-check:** Open `prisma/schema.prisma` en controleer:
+>    - Is er een model of tabel nodig voor het opslaan van relevantie-scores (cache) of moeten deze altijd on-the-fly berekend worden?
+>    - Zijn er indexen nodig op `ArtikelTag` voor performante relevantie-queries (bijv. composite index op `artikelId` + `tagId`)?
+>    - Is het `GebruikerVoorkeur` model efficiënt genoeg voor de aanbevelingen-query (tag-overlap join)?
+>    - Draai `npx prisma validate`.
+>
+> 2. **Projectplan bijwerken:** Open `docs/PROJECTPLAN-2026-GEINTEGREERD.md` en:
+>    - Vink afgeronde acceptatiecriteria af.
+>    - Markeer P2 als afgerond in het totaaloverzicht.
+>    - Documenteer de relevantie-score formule en eventuele aanpassingen t.o.v. het plan.
+>    - Noteer of weekkaart-personalisatie daadwerkelijk betere content oplevert.
+>
+> 3. **Aanvullen waar nodig:**
+>    - Zijn er tag-combinaties die geen artikelen opleveren (lege aanbevelingen)? Documenteer voor Iteratie 8 (content hiaten).
+>    - Is de relevantie-score performance acceptabel bij veel artikelen? Zo niet, overweeg caching.
+>    - Zijn er edge cases bij gebruikers zonder profiel/tags? Documenteer fallback-gedrag.
+>    - Commit alle wijzigingen met een duidelijke boodschap.
 
 ---
 
@@ -385,6 +544,31 @@ De analyse is helder over de urgentie:
 - [ ] Kritieke UI-componenten draaien op Radix UI / React Aria
 - [ ] PWA installeerbaar op iOS en Android
 - [ ] Contrast ratio ≥7:1 voor tekst
+
+### Afsluiting Iteratie 6 — Controleopdracht
+
+> **Opdracht aan de agent/developer:**
+>
+> Na afronding van alle taken in Iteratie 6, voer de volgende controles uit:
+>
+> 1. **Database-check:** Open `prisma/schema.prisma` en controleer:
+>    - Zijn er modellen nodig voor het opslaan van accessibility-instellingen per gebruiker (bijv. voorkeur voor hoog contrast, grote tekst)?
+>    - Als er een `UserPreferences` model bestaat: is het uitgebreid met accessibility-velden?
+>    - Zijn er wijzigingen nodig voor de PWA offline-cache (service worker data)?
+>    - Draai `npx prisma validate`.
+>
+> 2. **Projectplan bijwerken:** Open `docs/PROJECTPLAN-2026-GEINTEGREERD.md` en:
+>    - Vink afgeronde acceptatiecriteria af.
+>    - Markeer P8 als afgerond in het totaaloverzicht.
+>    - Documenteer de axe-core audit resultaten (aantal violations voor/na).
+>    - Noteer welke componenten naar Radix UI zijn gemigreerd en welke nog custom zijn.
+>
+> 3. **Aanvullen waar nodig:**
+>    - Zijn er componenten die niet naar Radix UI gemigreerd konden worden? Documenteer waarom en voeg toe aan backlog.
+>    - Zijn er accessibility-problemen gevonden die buiten scope vallen? Voeg ze toe.
+>    - Is de PWA getest op zowel iOS als Android? Noteer platform-specifieke issues.
+>    - Zijn er skeleton screens die niet goed werken bij trage verbindingen? Documenteer.
+>    - Commit alle wijzigingen met een duidelijke boodschap.
 
 ---
 
@@ -431,6 +615,33 @@ De analyse waarschuwt nadrukkelijk over de AI-implementatie in een zorgcontext:
 - [ ] Per-user budget limiet werkt
 - [ ] Prompts zijn gecentraliseerd met versienummering
 - [ ] Cost dashboard toont kosten per agent
+
+### Afsluiting Iteratie 7 — Controleopdracht
+
+> **Opdracht aan de agent/developer:**
+>
+> Na afronding van alle taken in Iteratie 7, voer de volgende controles uit:
+>
+> 1. **Database-check:** Open `prisma/schema.prisma` en controleer:
+>    - Is er een model nodig voor het opslaan van AI token-gebruik per gebruiker (bijv. `AITokenUsage` met `userId`, `agentType`, `tokensUsed`, `date`)?
+>    - Is er een model nodig voor het loggen van crisis-interacties (bijv. `CrisisLog` met `userId`, `message`, `detectedAt`, `reviewedBy`, `reviewedAt`)?
+>    - Is er een model voor prompt-versies (bijv. `PromptVersion` met `agentType`, `version`, `content`, `activeFrom`)?
+>    - Is er een model voor gecachte AI-responses (bijv. `AIResponseCache` met `cacheKey`, `response`, `expiresAt`)?
+>    - Draai `npx prisma validate` en `npx prisma migrate dev`.
+>
+> 2. **Projectplan bijwerken:** Open `docs/PROJECTPLAN-2026-GEINTEGREERD.md` en:
+>    - Vink afgeronde acceptatiecriteria af.
+>    - Documenteer welk model per AI-agent is geconfigureerd (Haiku/Sonnet/Opus).
+>    - Noteer de crisis-detectie keywords en het vast protocol.
+>    - Documenteer de token-budgetlimieten per gebruikerstype.
+>    - Noteer welke prompts zijn gecentraliseerd en hun huidige versienummers.
+>
+> 3. **Aanvullen waar nodig:**
+>    - Zijn er AI-agents die niet in het model-tiering schema passen? Documenteer waarom.
+>    - Zijn er edge cases in crisis-detectie (false positives/negatives)? Voeg test-cases toe.
+>    - Is de fallback-content voldoende voor alle contexten (dashboard, chat, weekkaarten)? Vul aan.
+>    - Zijn er kosten-schattingen gemaakt voor de verwachte token-usage bij 100/1000 gebruikers?
+>    - Commit alle wijzigingen met een duidelijke boodschap.
 
 ---
 
@@ -505,6 +716,35 @@ model CuratorReview {
 - [ ] Curator-reviews worden opgeslagen
 - [ ] Data retention: automatische opruiming van oude data
 
+### Afsluiting Iteratie 8 — Controleopdracht
+
+> **Opdracht aan de agent/developer:**
+>
+> Na afronding van alle taken in Iteratie 8, voer de volgende controles uit:
+>
+> 1. **Database-check:** Open `prisma/schema.prisma` en controleer:
+>    - Zijn de modellen `ArtikelBron` en `CuratorReview` correct toegevoegd met juiste relaties naar `Artikel`?
+>    - Zijn er modellen nodig voor de nieuwe beheer-pagina's (balanstest-vragen, zorgtaken, formulier-opties, app-content)? Verifieer dat `BalanstestVraag`, `Zorgtaak`, `FormulierOptie`, `AppContent` (of equivalenten) bestaan.
+>    - Zijn de cascade deletes correct geconfigureerd (bij verwijdering artikel → bronnen + reviews mee)?
+>    - Is er een index nodig op `AppContent` voor snelle lookups per sleutel/categorie?
+>    - Is de data retention logica (cron job voor opruiming) correct gekoppeld aan de juiste modellen en hun `createdAt`/`updatedAt` velden?
+>    - Draai `npx prisma validate` en `npx prisma migrate dev`.
+>    - Draai het seed script en verifieer dat alle 170+ items correct zijn gemigreerd.
+>
+> 2. **Projectplan bijwerken:** Open `docs/PROJECTPLAN-2026-GEINTEGREERD.md` en:
+>    - Vink afgeronde acceptatiecriteria af.
+>    - Markeer P3 en P6 als afgerond in het totaaloverzicht.
+>    - Documenteer het exacte aantal gemigreerde content items per categorie.
+>    - Noteer welke config-bestanden nu leeg of verwijderd zijn.
+>    - Documenteer de data retention periodes zoals geïmplementeerd.
+>
+> 3. **Aanvullen waar nodig:**
+>    - Zijn er config-bestanden die niet gemigreerd konden worden? Documenteer waarom.
+>    - Zijn er content items die in de database anders gestructureerd moesten worden dan gepland?
+>    - Zijn er beheer-pagina's die extra CRUD-operaties nodig hebben (bijv. herordenen, bulk-acties)?
+>    - Is de fallback naar defaults (als DB leeg is) getest en werkend?
+>    - Commit alle wijzigingen met een duidelijke boodschap.
+
 ---
 
 <a name="iteratie-9"></a>
@@ -565,6 +805,41 @@ model GeplandCheckin {
 - [ ] WhatsApp herinneringen werken
 - [ ] Buddy's hebben een eigen onboarding-flow
 - [ ] Re-engagement berichten worden verstuurd bij inactiviteit
+
+### Afsluiting Iteratie 9 — Controleopdracht
+
+> **Opdracht aan de agent/developer:**
+>
+> Na afronding van alle taken in Iteratie 9, voer de volgende controles uit:
+>
+> 1. **Database-check:** Open `prisma/schema.prisma` en controleer:
+>    - Is het `GeplandCheckin` model correct toegevoegd met juiste relatie naar `Caregiver`?
+>    - Zijn er modellen nodig voor de buddy onboarding (bijv. `BuddyOnboarding` met motivatie, skills, trainingstatus)?
+>    - Zijn er modellen nodig voor re-engagement tracking (bijv. `ReEngagementBericht` met `userId`, `type`, `verstuurdOp`, `kanaal`, `geopend`)?
+>    - Is er een model nodig voor gemeente alarm-notificatie logging?
+>    - Zijn de SMTP-gerelateerde instellingen opgeslagen in de database of in environment variables?
+>    - Draai `npx prisma validate` en `npx prisma migrate dev`.
+>
+> 2. **Projectplan bijwerken:** Open `docs/PROJECTPLAN-2026-GEINTEGREERD.md` en:
+>    - Vink afgeronde acceptatiecriteria af.
+>    - Markeer P5 als afgerond in het totaaloverzicht.
+>    - Documenteer de check-in frequenties zoals geïmplementeerd.
+>    - Noteer of de buddy onboarding-flow compleet is of dat er vervolgwerk is.
+>    - Documenteer de re-engagement cadans en kanalen.
+>    - Maak een eindbalans: welke iteraties zijn volledig af, welke hebben restwerk?
+>
+> 3. **Aanvullen waar nodig:**
+>    - Zijn er SMTP-configuratieproblemen gevonden? Documenteer en escaleer.
+>    - Zijn er WhatsApp-template goedkeuringen nodig bij Twilio voor de herinneringen?
+>    - Zijn er privacy-overwegingen bij re-engagement (opt-out mogelijkheid)?
+>    - Is de buddy onboarding getest met echte vrijwilligers? Noteer feedback.
+>    - Update de backlog met alle items die uit Iteratie 0-9 zijn voortgekomen.
+>    - Commit alle wijzigingen met een duidelijke boodschap.
+>
+> **Dit is de laatste reguliere iteratie. Na afronding:**
+> - Voer een volledige database-audit uit: alle modellen, relaties, indexen.
+> - Verifieer dat `prisma/schema.prisma` overeenkomt met de productie-database.
+> - Update het projectplan met een eindstatus en start de backlog-prioritering.
 
 ---
 
