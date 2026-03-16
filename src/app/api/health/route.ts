@@ -18,6 +18,16 @@ export async function GET() {
     dbStatus = "error"
   }
 
+  // Test of NextAuth configuratie correct laadt
+  let authStatus: "ok" | "error" = "error"
+  let authError: string | null = null
+  try {
+    await import("@/lib/auth")
+    authStatus = "ok"
+  } catch (e) {
+    authError = e instanceof Error ? e.message : "Onbekende fout bij laden auth config"
+  }
+
   const totalMs = Date.now() - start
 
   // Check kritieke environment variabelen (alleen of ze bestaan, niet de waarden)
@@ -28,7 +38,7 @@ export async function GET() {
   }
 
   const allEnvOk = Object.values(envChecks).every(Boolean)
-  const healthy = dbStatus === "ok" && allEnvOk
+  const healthy = dbStatus === "ok" && allEnvOk && authStatus === "ok"
 
   return NextResponse.json(
     {
@@ -38,6 +48,10 @@ export async function GET() {
       database: {
         status: dbStatus,
         latencyMs: dbLatencyMs,
+      },
+      auth: {
+        status: authStatus,
+        ...(authError && { error: authError }),
       },
       environment: envChecks,
       responseTimeMs: totalMs,

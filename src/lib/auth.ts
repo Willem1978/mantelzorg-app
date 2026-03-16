@@ -1,9 +1,5 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import bcrypt from "bcryptjs"
-import { prisma } from "./prisma"
-import { logAudit } from "./audit"
-import { checkRateLimit } from "./rate-limit"
 
 // AUTH_SECRET is vereist door NextAuth v5. Fallback voorkomt crash als env var ontbreekt.
 const authSecret = process.env.AUTH_SECRET
@@ -34,6 +30,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         phoneNumber: { label: "Phone", type: "text" },
       },
       async authorize(credentials) {
+        // Dynamische imports — deze modules worden ALLEEN geladen bij daadwerkelijke login
+        // (Node.js runtime), niet wanneer de middleware de auth config importeert (Edge Runtime).
+        // Dit voorkomt dat Prisma, bcrypt en setInterval in de Edge Runtime worden uitgevoerd.
+        const bcrypt = await import("bcryptjs")
+        const { prisma } = await import("./prisma")
+        const { logAudit } = await import("./audit")
+        const { checkRateLimit } = await import("./rate-limit")
+
         if (!credentials?.email || !credentials?.password) {
           console.error("[AUTH] Geen email of wachtwoord meegegeven")
           throw new Error("Email en wachtwoord zijn verplicht")
