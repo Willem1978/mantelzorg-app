@@ -27,6 +27,18 @@ Elke iteratie sluit af met een **verplichte controleopdracht** (sectie "Afsluiti
 
 De controleopdracht is als volgt geformuleerd zodat deze direct als instructie aan een AI-agent kan worden meegegeven.
 
+### Standaard startbriefing per iteratie
+
+Elke iteratie opent met een **verplichte startbriefing** (sectie "Startbriefing"). Deze briefing is bedoeld om vóór aanvang van de iteratie door te nemen en bevat:
+
+1. **Samenvatting:** Wat deze iteratie in één alinea inhoudt — het doel en de scope.
+2. **Waarom nu:** Waarom deze iteratie op dit moment in de volgorde zit — de urgentie, de risico's als het niet wordt opgepakt, en de waarde die het oplevert.
+3. **Wat verandert er:** Concrete beschrijving van wat er na afloop anders is aan het platform — zichtbaar voor gebruikers, beheerders en/of technisch.
+4. **Voorwaarden:** Wat er af moet zijn voordat deze iteratie kan starten (afhankelijkheden van eerdere iteraties).
+5. **Aandachtspunten:** Specifieke risico's, valkuilen of beslissingen die tijdens de iteratie genomen moeten worden.
+
+De startbriefing is zo geschreven dat een AI-agent of developer direct kan beginnen zonder eerst het hele plan te hoeven lezen.
+
 ---
 
 ## Inhoudsopgave
@@ -75,6 +87,25 @@ De kritische analyse identificeerde items die **onmiddellijk** aandacht vereisen
 **Urgentie:** ONMIDDELLIJK
 **Afhankelijkheden:** Geen
 **Analyse-referenties:** §3.1, §3.2, §3.5
+
+### Startbriefing Iteratie 0
+
+> **Samenvatting:** Deze iteratie dicht de drie meest kritieke beveiligingsgaten in het platform: een hardcoded authenticatie-secret, een rate limiter die niet werkt in productie, en SQL-queries die kwetsbaar zijn voor toekomstige injectie. Daarnaast worden WhatsApp-sessies persistent gemaakt.
+>
+> **Waarom nu:** Dit zijn geen verbeteringen — dit zijn **actieve kwetsbaarheden**. Het AUTH_SECRET staat letterlijk in de broncode op GitHub. De rate limiter doet in Vercel's serverless omgeving effectief niets: elke cold start begint met een schone Map. Een aanvaller kan vandaag onbeperkt brute-force aanvallen uitvoeren. Deze iteratie heeft de hoogste prioriteit omdat het platform niet live mag gaan (of blijven) met deze gaten open.
+>
+> **Wat verandert er na afloop:**
+> - De app weigert op te starten zonder een geldig AUTH_SECRET (geen stille fallback meer)
+> - Brute-force bescherming werkt daadwerkelijk, ook na serverless restarts (Redis-backed)
+> - SQL-queries zijn beschermd tegen toekomstige injection door automatische escaping
+> - WhatsApp-gesprekken gaan niet meer verloren bij server-restarts
+>
+> **Voorwaarden:** Geen — dit is de eerste iteratie en kan onmiddellijk starten.
+>
+> **Aandachtspunten:**
+> - Voor de Redis rate limiter moet een Upstash account aangemaakt worden (of Vercel KV). Dit vereist een account-keuze en API keys.
+> - Het WhatsApp sessie-model moet zorgvuldig getest worden zodat lopende gesprekken niet breken.
+> - Na de AUTH_SECRET fix moet je verifiëren dat de productie-omgeving de environment variable correct heeft ingesteld, anders start de app niet meer.
 
 ### Waarom deze iteratie?
 
@@ -165,6 +196,25 @@ model WhatsAppSessie {
 **Afhankelijkheden:** Geen
 **Analyse-referenties:** §5.1, §5.2
 
+### Startbriefing Iteratie 1
+
+> **Samenvatting:** Deze iteratie voegt "ogen en oren" toe aan het platform. We integreren Sentry voor automatische foutdetectie, Pino voor gestructureerde logging, breiden de health-endpoint uit, en activeren Prisma query logging om database-bottlenecks zichtbaar te maken.
+>
+> **Waarom nu:** Het platform draait nu blind. Als een gebruiker een fout tegenkomt, als een API route traag is, of als de database overbelast raakt — niemand ziet het. Elke volgende iteratie (caching, service layer, performance) heeft monitoring nodig om te meten of de verandering werkt. Dit is het fundament onder alle verbeteringen. Zonder dit bouw je in het donker.
+>
+> **Wat verandert er na afloop:**
+> - Fouten in productie worden automatisch gemeld via Sentry (met alerts)
+> - Alle API requests worden gelogd met request-id, duration en status (doorzoekbaar)
+> - De health-endpoint toont in één oogopslag of DB, AI en WhatsApp bereikbaar zijn
+> - In development zie je precies welke SQL queries Prisma uitvoert (voor N+1 detectie in Iteratie 4)
+>
+> **Voorwaarden:** Geen — kan parallel met Iteratie 0 of direct erna starten.
+>
+> **Aandachtspunten:**
+> - Sentry vereist een account (gratis tier volstaat) en een `SENTRY_DSN` environment variable.
+> - Bij het vervangen van `console.log`/`console.error` door Pino: zorg dat je geen PII (namen, emails, telefoonnummers) logt. Dit is AVG-gevoelig.
+> - De Prisma query logging moet ALLEEN in development actief zijn — in productie genereert het te veel output.
+
 ### Waarom deze iteratie?
 
 > "Wat je niet meet, kun je niet verbeteren."
@@ -238,6 +288,28 @@ Daarnaast identificeert §5.2 **N+1 query risico's**: bij lijstweergaven kan Pri
 **Afhankelijkheden:** Geen (Iteratie 0 en 1 zijn onafhankelijk)
 **Blokkeert:** Iteratie 5 (Aanbevelingen), Iteratie 8 (Content Kwaliteit)
 **Analyse-referenties:** §1.1, §1.2 (gedeeltelijk)
+
+### Startbriefing Iteratie 2
+
+> **Samenvatting:** Deze iteratie herstructureert de kern van het platform: hoe we weten wie de mantelzorger is. Het chaotische tag-systeem (20+ losse chips zonder groepering) wordt vervangen door een gestructureerd profiel met 7 duidelijke secties. Tags worden niet meer handmatig gekozen maar automatisch afgeleid uit profielantwoorden. De onboarding wordt verlicht en de wizard samengevoegd met het profielscherm. Alle 47 bestaande artikelen worden getagd.
+>
+> **Waarom nu:** Dit is het **kritieke pad** van het hele projectplan. Twee latere iteraties (Personalisatie en Content Kwaliteit) zijn volledig afhankelijk van werkende tags. Momenteel is de ArtikelTag tabel **leeg** — er zijn letterlijk 0 artikelen gekoppeld aan tags. Dat betekent dat het hele aanbevelingssysteem niet kan functioneren. Daarnaast is de huidige onboarding te zwaar: mantelzorgers zijn overbelast en haken af bij uitgebreide registratieformulieren (SCP: 1 op 3 voelt zich "zwaar belast"). Door de registratie te verlichten en direct naar de balanstest te leiden, krijgt de gebruiker binnen 60 seconden waarde.
+>
+> **Wat verandert er na afloop:**
+> - Het profielscherm is één overzichtelijk, scrollbaar scherm met radio buttons en chips (geen chaos meer)
+> - Tags worden automatisch afgeleid: kies "Partner" → systeem maakt tag `partner-zorg` aan
+> - Registratie is verlicht: email + wachtwoord → direct het platform in
+> - Nieuwe gebruikers gaan na registratie naar de balanstest (guided first session)
+> - Alle 47 artikelen zijn getagd en klaar voor aanbevelingen
+> - De aparte wizard is verdwenen — profiel en onboarding zijn één flow
+>
+> **Voorwaarden:** Geen harde afhankelijkheden, maar Iteratie 0 (security) zou idealiter eerst af moeten zijn.
+>
+> **Aandachtspunten:**
+> - Dit is de grootste functionele wijziging tot nu toe — test grondig op mobiel (doelgroep gebruikt vooral telefoon).
+> - De bulk-tagging van 47 artikelen vereist AI-calls. Controleer of de Anthropic API key werkt en of er budget is.
+> - "Later invullen" moet echt werken — dwing niets af. De doelgroep haakt anders af.
+> - Let op de bestaande `bepaalProfielTags()` functie: die moet van client naar server, niet gedupliceerd worden.
 
 ### Waarom deze iteratie?
 
@@ -319,6 +391,27 @@ model ContentTag {
 **Afhankelijkheden:** Iteratie 1 (monitoring nodig om verbetering te meten)
 **Analyse-referenties:** §4.1, §4.3
 
+### Startbriefing Iteratie 3
+
+> **Samenvatting:** Deze iteratie voert twee grote architectuurwijzigingen door die het platform klaar maken voor groei. Ten eerste: een service layer die business logic uit API routes haalt en centraal plaatst. Ten tweede: SWR of TanStack Query op de frontend voor automatische caching, revalidatie en betere gebruikerservaring.
+>
+> **Waarom nu:** De huidige architectuur schaalt niet. API routes zijn 100-300 regels lang met Prisma queries, validatie, autorisatie en business logic door elkaar. Dit maakt het onmogelijk om dezelfde logica te hergebruiken (bijv. "maak balanstest" is nodig via API én via WhatsApp webhook) en unit tests te schrijven zonder HTTP context. Op de frontend veroorzaken 10+ useState hooks per pagina race conditions, geen cache invalidatie, en onnodige re-renders. Bij 134 routes en groeiende complexiteit wordt dit snel onhoudbaar.
+>
+> **Wat verandert er na afloop:**
+> - API routes zijn slank: alleen validatie → service call → response
+> - Business logic zit in testbare service modules (`src/services/`)
+> - De frontend cached data automatisch en invalideert bij mutaties
+> - Pagina's laden sneller door stale-while-revalidate pattern
+> - Race conditions bij snelle navigatie zijn opgelost
+>
+> **Voorwaarden:** Iteratie 1 (monitoring) moet af zijn — we hebben Sentry en logging nodig om te verifiëren dat de refactoring geen regressies introduceert.
+>
+> **Aandachtspunten:**
+> - Begin met de 5 meest complexe domeinen, niet alle 134 routes. Perfectie is de vijand hier.
+> - De keuze tussen SWR en TanStack Query moet vroeg gemaakt worden. SWR is simpeler, TanStack Query is krachtiger.
+> - Test na elke service-migratie of de bestaande API-contracten ongewijzigd blijven (geen breaking changes voor de frontend).
+> - De WhatsApp webhook routes gebruiken mogelijk dezelfde business logic — verifieer dat de service layer dit ondersteunt.
+
 ### Waarom deze iteratie?
 
 De analyse identificeert twee fundamentele architectuurproblemen:
@@ -387,6 +480,28 @@ De analyse identificeert twee fundamentele architectuurproblemen:
 **Geschatte tijd:** ~22 uur
 **Afhankelijkheden:** Iteratie 1 (monitoring), Iteratie 3 (state management maakt caching effectiever)
 **Analyse-referenties:** §4.2, §5.2, §5.3, P4, P7
+
+### Startbriefing Iteratie 4
+
+> **Samenvatting:** Deze iteratie maakt het platform sneller en vindbaarder. We implementeren een gedifferentieerde caching strategie (94 van 96 routes zijn nu force-dynamic), lossen N+1 database queries op, zorgen dat alle AI-endpoints streaming gebruiken, bouwen een zoekpagina met semantic search, en reduceren het gebruik van dangerouslySetInnerHTML.
+>
+> **Waarom nu:** Elke pageload genereert nu een database query — ook voor content die zelden verandert (artikelen, categorieën). Bij groei wordt dit een performance-muur. Daarnaast missen gebruikers een zoekfunctie: mantelzorgers zoeken op gevoel ("ik ben zo moe") en niet op exacte woorden. Semantic search via pgvector lost dit op. AI-endpoints zonder streaming hebben een 30s timeout op Vercel — complexe antwoorden kunnen daardoor afgekapt worden.
+>
+> **Wat verandert er na afloop:**
+> - Statische content (artikelen, categorieën) wordt gecached en niet bij elke request opnieuw opgehaald
+> - Database-load daalt met 60-70%
+> - Lijstweergaven laden sneller door opgeloste N+1 queries
+> - AI-antwoorden streamen real-time naar de gebruiker (geen wachten tot het hele antwoord klaar is)
+> - Gebruikers kunnen zoeken op betekenis vanuit elke pagina
+> - Minder XSS-aanvalsvectors door minder dangerouslySetInnerHTML
+>
+> **Voorwaarden:** Iteratie 1 (monitoring — om performance-verbetering te meten) en bij voorkeur Iteratie 3 (SWR/TanStack Query maakt client-side caching effectiever).
+>
+> **Aandachtspunten:**
+> - Caching is een balans: te agressief en gebruikers zien verouderde data, te weinig en de database blijft belast. Begin conservatief.
+> - De N+1 audit hangt af van de Prisma query logging uit Iteratie 1 — zorg dat die data beschikbaar is.
+> - Semantic search vereist dat embeddings bestaan in de database. Verifieer dat de embedding-pipeline werkt.
+> - Bij het vervangen van dangerouslySetInnerHTML door react-markdown: controleer of de opmaak van artikelen behouden blijft.
 
 ### Waarom deze iteratie?
 
@@ -457,6 +572,26 @@ De analyse identificeert twee fundamentele architectuurproblemen:
 **Afhankelijkheden:** Iteratie 2 (tags moeten werken)
 **Analyse-referenties:** P2
 
+### Startbriefing Iteratie 5
+
+> **Samenvatting:** Deze iteratie maakt het platform persoonlijk. Op basis van de tags uit Iteratie 2 worden artikelen, weekkaarten en hulpbronnen gepersonaliseerd aanbevolen. Het dashboard toont "Aanbevolen voor jou", de leren-pagina sorteert op relevantie, en Ger (de AI-coach) krijgt profiel-context mee in gesprekken.
+>
+> **Waarom nu:** Personalisatie is de kern van de waardepropositie. Een werkende mantelzorger met een dementerende ouder heeft compleet andere behoeften dan een gepensioneerde die voor een partner met kanker zorgt. Zonder aanbevelingen moet de gebruiker zelf zoeken in 47 artikelen — dat doet een overbelaste mantelzorger niet. Met het tag-systeem uit Iteratie 2 op zijn plek, kan de relevantie-score nu berekend worden. Dit is ook cruciaal voor retentie: gebruikers die direct relevante content zien, komen terug.
+>
+> **Wat verandert er na afloop:**
+> - Het dashboard toont 3-5 artikelen die passen bij het profiel, met uitleg waarom
+> - De leren-pagina sorteert artikelen op relevantie met "Aanbevolen" badges
+> - Weekkaarten zijn gepersonaliseerd (niet meer random)
+> - Elk artikel toont onderaan gerelateerde suggesties
+> - Ger weet bij elk gesprek wie de gebruiker is en welke situatie er speelt
+>
+> **Voorwaarden:** Iteratie 2 (Tags & Profiel) moet volledig af zijn — de ArtikelTag tabel moet gevuld zijn en de tag-afleiding server-side moet werken.
+>
+> **Aandachtspunten:**
+> - De relevantie-score formule (AANDOENING=3pt, SITUATIE=2pt, CATEGORIE=1pt) is een startpunt. Test met echte profielen of de resultaten logisch aanvoelen.
+> - Gebruikers zonder profiel/tags moeten een fallback krijgen (populairste artikelen, of een nudge om profiel in te vullen).
+> - De Ger-integratie (taak 5.6) raakt AI-prompts — houd rekening met prompt-wijzigingen die in Iteratie 7 gecentraliseerd worden.
+
 ### Waarom deze iteratie?
 
 Dit is de kern van de waardepropositie: **"Van zoek zelf naar aanbevolen voor jou."** Met het tag-systeem uit Iteratie 2 op zijn plek, kan content nu gepersonaliseerd worden. Dit is cruciaal voor de "time to first value" (§1.2) — gebruikers moeten direct zien dat het platform relevant is voor hun situatie.
@@ -512,6 +647,28 @@ Dit is de kern van de waardepropositie: **"Van zoek zelf naar aanbevolen voor jo
 **Geschatte tijd:** ~30 uur
 **Afhankelijkheden:** Geen (kan parallel met Iteratie 3-5)
 **Analyse-referenties:** §2.1, §2.2, §2.3, P8
+
+### Startbriefing Iteratie 6
+
+> **Samenvatting:** Deze iteratie maakt het platform toegankelijk voor iedereen — met name voor de primaire doelgroep: oudere, vaak vermoeide mantelzorgers die niet altijd digitaal vaardig zijn. We voeren een WCAG 2.1 AA audit uit en lossen alle violations op, migreren kritieke componenten naar Radix UI voor betrouwbare accessibility, vervangen spinners door skeleton screens, en verbeteren de PWA.
+>
+> **Waarom nu:** De **European Accessibility Act** is sinds juni 2025 van kracht — WCAG 2.1 AA is wettelijk verplicht. Als je publiek geld ontvangt (gemeente-subsidie), is dit een harde eis. Maar los van de wet: de doelgroep bevat ouderen, mensen met verminderd zicht, en mensen die moe en gestrest zijn. Een knop die niet met keyboard bereikbaar is, een modal die de focus niet vangt, of een spinner zonder context — het zijn allemaal drempels die gebruikers wegjagen. Custom UI-componenten zijn bovendien moeilijk WCAG-compliant te houden; headless libraries als Radix UI lossen dit structureel op.
+>
+> **Wat verandert er na afloop:**
+> - axe-core audit op alle hoofdpagina's: 0 critical/serious violations
+> - Elke pagina heeft een skip-to-content link
+> - Alle modals vangen focus correct
+> - Spinners zijn vervangen door skeleton screens (gepercipieerde laadtijd -30%)
+> - Kritieke componenten (modals, dropdowns, tabs) draaien op bewezen accessible libraries
+> - PWA is installeerbaar op iOS en Android met correcte iconen
+>
+> **Voorwaarden:** Geen harde afhankelijkheden. Kan parallel lopen met Iteratie 3-5. Als Iteratie 3 (SWR/TanStack) af is, kunnen optimistic updates direct geïntegreerd worden.
+>
+> **Aandachtspunten:**
+> - De migratie naar Radix UI is de grootste taak. Begin met modals (meeste impact op accessibility) en werk vandaaruit.
+> - Screen reader testing moet met een echte screen reader (NVDA op Windows, VoiceOver op Mac) — geautomatiseerde tools vangen maar ~30% van accessibility-issues.
+> - De B1-taalaudit is belangrijk: controleer of teksten begrijpelijk zijn op laag taalniveau.
+> - PWA op iOS heeft beperkingen (geen push notifications, beperkte service worker support) — documenteer wat wel en niet werkt.
 
 ### Waarom deze iteratie?
 
@@ -578,6 +735,28 @@ De analyse is helder over de urgentie:
 **Geschatte tijd:** ~24 uur
 **Afhankelijkheden:** Iteratie 1 (monitoring voor AI logging), Iteratie 3 (service layer voor AI)
 **Analyse-referenties:** §6.1, §6.2, §6.3, §6.4
+
+### Startbriefing Iteratie 7
+
+> **Samenvatting:** Deze iteratie maakt de AI-componenten van het platform veilig, betrouwbaar en betaalbaar. We bouwen een crisis-detectiesysteem dat herkent wanneer een mantelzorger in nood is, voegen fallback-content toe voor wanneer de AI-service uitvalt, implementeren model-tiering om kosten te beheersen, en centraliseren alle prompts met versiebeheer.
+>
+> **Waarom nu:** MantelBuddy is geen gewone chatbot — het communiceert met mensen die emotioneel kwetsbaar zijn. Een mantelzorger die typt "ik kan niet meer" mag geen vrolijk AI-antwoord krijgen. Zonder guardrails kan Ger onbedoeld schade aanrichten. Daarnaast is het platform volledig afhankelijk van één AI-provider (Anthropic): als die uitvalt, is het dashboard half leeg. En zonder kostenbeheersing kan één actieve gebruiker honderden euro's per maand aan API-calls genereren. Bij schaling naar meerdere gemeenten worden de AI-kosten onvoorspelbaar zonder tiering en budgetlimieten.
+>
+> **Wat verandert er na afloop:**
+> - Bij crisis-signalen (zelfmoordgedachten, extreme uitputting) schakelt het systeem over naar een vast protocol met professionele hulplijnnummers
+> - Alle crisis-interacties worden gelogd voor menselijke review
+> - Als Anthropic down is, toont het platform vriendelijke fallback-content in plaats van errors
+> - Eenvoudige AI-taken (welkom, weekkaarten) draaien op goedkopere modellen (Haiku)
+> - Elke gebruiker heeft een maandelijks token-budget
+> - Prompts zijn gecentraliseerd en geversioned — wijzigingen zijn traceerbaar en terug te draaien
+>
+> **Voorwaarden:** Iteratie 1 (logging voor crisis-monitoring) en Iteratie 3 (service layer om AI-logica centraal te beheren).
+>
+> **Aandachtspunten:**
+> - Crisis-detectie is gevoelig: te streng = false positives (normale frustratie wordt als crisis gezien), te soepel = gemiste noodsignalen. Start met een conservatieve lijst en verfijn op basis van logs.
+> - De hulplijnnummers (113, huisartsenpost, SOS Mantelzorg) moeten actueel en correct zijn — verifieer ze.
+> - Model-tiering vereist dat je per agent bepaalt welk model geschikt is. Test de kwaliteit van Haiku-responses voor eenvoudige taken voordat je switcht.
+> - De prompt-centralisatie raakt alle 8 AI-agents. Dit is een risicovolle refactoring — test elk agent-gedrag na migratie.
 
 ### Waarom deze iteratie?
 
@@ -651,6 +830,29 @@ De analyse waarschuwt nadrukkelijk over de AI-implementatie in een zorgcontext:
 **Geschatte tijd:** ~69 uur
 **Afhankelijkheden:** Iteratie 2 (tags), Iteratie 3 (service layer)
 **Analyse-referenties:** §4.4, P3, P6
+
+### Startbriefing Iteratie 8
+
+> **Samenvatting:** Dit is de grootste iteratie: alle 170+ hardcoded content items (testvragen, zorgtaken, formulier-opties, onboarding-teksten, navigatie, WhatsApp-menu's) worden van code naar database verplaatst met bijbehorende beheer-pagina's. Daarnaast worden content-kwaliteitstools gebouwd: AI tag-suggesties, hiaten-analyse, bronvermelding, curator-workflow, en data retention.
+>
+> **Waarom nu:** Zolang teksten in code staan, vereist elke tekstwijziging een deployment door een developer. Dit maakt het platform onschaalbaar: een gemeente-admin die een zorgtaak wil toevoegen of een balanstestvraag wil aanpassen, kan dat niet. Bij uitrol naar meerdere gemeenten is dit onhoudbaar. De content-kwaliteitstools zijn nodig omdat het tag-systeem (Iteratie 2) en de aanbevelingen (Iteratie 5) alleen werken als de content compleet en goed getagd is. Hiaten-analyse toont welke doelgroepen geen artikelen hebben. Data retention is een AVG-vereiste.
+>
+> **Wat verandert er na afloop:**
+> - Beheerders kunnen via het beheerportaal zelf alle content aanpassen zonder code-wijzigingen
+> - Balanstest-vragen, zorgtaken, formulier-opties en app-teksten zijn CRUD-beheerbaar
+> - Het beheerportaal toont welke tag-combinaties geen artikelen hebben (hiaten)
+> - Artikelen hebben bronvermeldingen en een completeness-score
+> - Curator-reviews worden opgeslagen met actieknoppen ("Herschrijf", "Opgelost")
+> - Oude data wordt automatisch opgeruimd conform bewaartermijnen
+>
+> **Voorwaarden:** Iteratie 2 (tags — nodig voor content-kwaliteitstools) en Iteratie 3 (service layer — zodat de nieuwe beheer-API's via services lopen).
+>
+> **Aandachtspunten:**
+> - Dit is ~69 uur. Overweeg om het in twee delen te splitsen: eerst de database-migratie (P6), dan de kwaliteitstools (P3).
+> - Het seed script is kritiek: het moet alle 170+ items foutloos migreren. Bouw een rollback-mogelijkheid in.
+> - Zorg voor een fallback: als de database leeg is (bijv. bij een nieuwe installatie), moet de app nog werken met defaults.
+> - De beheer-pagina's hoeven niet mooi te zijn — functionaliteit eerst.
+> - Data retention raakt juridische keuzes (bewaartermijnen). Stem af met de compliance track.
 
 ### Waarom deze iteratie?
 
@@ -753,6 +955,33 @@ model CuratorReview {
 **Geschatte tijd:** ~48 uur
 **Afhankelijkheden:** Iteratie 3 (service layer), SMTP configuratie
 **Analyse-referenties:** §1.3, §1.4, P5
+
+### Startbriefing Iteratie 9
+
+> **Samenvatting:** De afsluitende iteratie verbindt drie lijnen: gemeente-automatisering (proactieve opvolging van mantelzorgers), een volwaardige buddy onboarding-flow, en een re-engagement systeem dat inactieve gebruikers terughaalt. Dit maakt het platform compleet als tweezijdige marktplaats (mantelzorger + buddy) met proactieve gemeente-ondersteuning.
+>
+> **Waarom nu:** Het platform is nu technisch solide (security, monitoring, architecture), persoonlijk (tags, aanbevelingen), toegankelijk (WCAG), en beheersbaar (content in database). Maar er ontbreken drie cruciale stukken voor een levensvatbaar product:
+> - **Gemeente:** Zonder proactieve opvolging is de gemeente-waardepropositie zwak. Gemeenten willen niet alleen inzicht maar ook actie: automatische check-ins, alarmnotificaties, een opvolgingsdashboard.
+> - **Buddy's:** Het buddy-systeem staat op 75% zonder eigen onboarding. Zonder vrijwilligers werkt het matchingsysteem niet — een platform dat van twee zijden afhankelijk is, moet beide gelijkwaardig bedienen.
+> - **Retentie:** Zonder re-engagement verlies je 70%+ van gebruikers binnen 30 dagen. Mantelzorgers raken overweldigd en stoppen. Een warme herinnering van Ger via WhatsApp of email kan ze terughalen.
+>
+> **Wat verandert er na afloop:**
+> - Na elke balanstest wordt automatisch een check-in gepland (frequentie op basis van belasting)
+> - Gemeenten ontvangen geanonimiseerde alarm-emails bij kritieke situaties
+> - Het gemeenteportaal toont een opvolgingsdashboard met trends en statistieken
+> - WhatsApp stuurt geplande herinneringen met snelantwoorden
+> - Buddy's hebben een eigen landingspagina, motivatie-vragenlijst en skill-matching
+> - Inactieve gebruikers ontvangen warme, gepersonaliseerde herinneringen
+>
+> **Voorwaarden:** Iteratie 3 (service layer) en SMTP configuratie (uit compliance track). Zonder werkende e-mail kunnen gemeente-notificaties en re-engagement emails niet verstuurd worden.
+>
+> **Aandachtspunten:**
+> - SMTP moet geconfigureerd zijn vóór start. Als dit nog niet geregeld is, begin dan met de WhatsApp- en in-app onderdelen.
+> - Gemeente-alarmnotificaties mogen GEEN persoonsgegevens bevatten — alleen type, niveau en gemeente. Dit is een AVG-vereiste.
+> - WhatsApp-herinneringen vereisen goedgekeurde Twilio-templates. Dien deze vroeg in — goedkeuring kan dagen duren.
+> - De buddy onboarding is een complete nieuwe flow. Test met echte vrijwilligers als dat mogelijk is.
+> - Re-engagement berichten moeten een opt-out mogelijkheid hebben (AVG).
+> - Dit is de laatste reguliere iteratie. Na afloop: volledige database-audit en eindstatus van het projectplan.
 
 ### Waarom deze iteratie?
 
