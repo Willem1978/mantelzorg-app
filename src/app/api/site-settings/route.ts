@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
 
 /**
  * Publieke API route om site-instellingen op te halen.
@@ -8,6 +7,7 @@ import { prisma } from "@/lib/prisma"
  */
 export async function GET() {
   try {
+    const { prisma } = await import("@/lib/prisma")
     const settings = await prisma.siteSettings.findMany({
       select: {
         sleutel: true,
@@ -28,7 +28,7 @@ export async function GET() {
       },
     })
   } catch {
-    // Als de tabel nog niet bestaat, return leeg object
+    // Als de tabel nog niet bestaat of database niet bereikbaar, return leeg object
     return NextResponse.json({})
   }
 }
