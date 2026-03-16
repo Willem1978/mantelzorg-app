@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
 
 export const dynamic = "force-dynamic"
 
@@ -10,6 +9,7 @@ export async function GET() {
   let dbLatencyMs = 0
 
   try {
+    const { prisma } = await import("@/lib/prisma")
     const dbStart = Date.now()
     await prisma.$queryRaw`SELECT 1`
     dbLatencyMs = Date.now() - dbStart
