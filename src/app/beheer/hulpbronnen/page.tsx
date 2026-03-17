@@ -3,6 +3,8 @@
 import { useSession } from "next-auth/react"
 import { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { ensureAbsoluteUrl } from "@/lib/utils"
+import { HulpbronWizard } from "@/components/admin/HulpbronWizard"
+import { KwaliteitsDashboard } from "@/components/admin/KwaliteitsDashboard"
 
 // Types
 interface Hulpbron {
@@ -218,6 +220,10 @@ export default function BeheerHulpbronnenPage() {
   // Delete confirm
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
+  // AI Auto-fill
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiSuggesties, setAiSuggesties] = useState<Record<string, unknown> | null>(null)
+
   // CSV Import
   const csvInputRef = useRef<HTMLInputElement>(null)
   const [importing, setImporting] = useState(false)
@@ -226,6 +232,15 @@ export default function BeheerHulpbronnenPage() {
   // Data enrichment
   const [verrijking, setVerrijking] = useState(false)
   const [verrijkResult, setVerrijkResult] = useState<{ updated: number; total: number; log: string[] } | null>(null)
+
+  // Wizard
+  const [showWizard, setShowWizard] = useState(false)
+
+  // Kwaliteitsdashboard & bulk AI
+  const [kwaliteitsFilter, setKwaliteitsFilter] = useState<string | null>(null)
+  const [bulkAiLoading, setBulkAiLoading] = useState(false)
+  const [bulkAiProgress, setBulkAiProgress] = useState<{ verwerkt: number; totaal: number } | null>(null)
+  const [bulkAiResult, setBulkAiResult] = useState<{ bijgewerkt: number; fouten: number; totaal: number } | null>(null)
 
   // Location hierarchy (PDOK)
   const [provincies, setProvincies] = useState<string[]>([])
@@ -446,6 +461,89 @@ export default function BeheerHulpbronnenPage() {
   }
 
   // CRUD
+  // AI auto-fill: all fields
+  const handleAiInvullen = async () => {
+    setAiLoading(true)
+    setAiSuggesties(null)
+    try {
+      const res = await fetch("/api/beheer/hulpbronnen/ai-invullen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ formulier: editItem, modus: "alles" }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.suggesties) {
+          setAiSuggesties(data.suggesties)
+          // Auto-apply suggestions to empty fields only
+          const updates: Partial<Hulpbron> = {}
+          for (const [key, value] of Object.entries(data.suggesties)) {
+            if (value && key in editItem) {
+              const currentVal = editItem[key as keyof Hulpbron]
+              // Apply to empty fields, or always apply beschrijving (B1 rewrite)
+              if (!currentVal || currentVal === "" || currentVal === "OVERIG" || key === "beschrijving") {
+                (updates as Record<string, unknown>)[key] = value
+              }
+            }
+          }
+          setEditItem(prev => ({ ...prev, ...updates }))
+        }
+      } else {
+        const err = await res.json()
+        alert(`AI-invulling mislukt: ${err.error || "Onbekende fout"}`)
+      }
+    } catch (e: unknown) {
+      alert(`Fout: ${e instanceof Error ? e.message : "Onbekend"}`)
+    }
+    setAiLoading(false)
+  }
+
+  // AI B1 rewrite: only description
+  const handleB1Herschrijf = async () => {
+    if (!editItem.beschrijving) return
+    setAiLoading(true)
+    try {
+      const res = await fetch("/api/beheer/hulpbronnen/ai-invullen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ formulier: editItem, modus: "b1" }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.suggesties?.beschrijving) {
+          setEditItem(prev => ({ ...prev, beschrijving: data.suggesties.beschrijving }))
+        }
+      }
+    } catch {
+      // silent fail for B1
+    }
+    setAiLoading(false)
+  }
+
+  // Count empty important fields for completeness indicator
+  const completenessFields = [
+    { key: "naam", label: "Naam" },
+    { key: "dienst", label: "Naam dienst" },
+    { key: "beschrijving", label: "Omschrijving" },
+    { key: "doelgroep", label: "Doelgroep" },
+    { key: "onderdeelTest", label: "Categorie" },
+    { key: "soortHulp", label: "Soort hulp" },
+    { key: "kosten", label: "Kosten" },
+    { key: "eersteStap", label: "Eerste stap" },
+    { key: "verwachtingTekst", label: "Wat kan je verwachten" },
+    { key: "telefoon", label: "Telefoon" },
+    { key: "website", label: "Website" },
+  ] as const
+  const filledCount = completenessFields.filter(f => {
+    const val = editItem[f.key as keyof Hulpbron]
+    return val && val !== "" && val !== "OVERIG"
+  }).length
+  const completenessPercent = Math.round((filledCount / completenessFields.length) * 100)
+  const emptyFields = completenessFields.filter(f => {
+    const val = editItem[f.key as keyof Hulpbron]
+    return !val || val === "" || val === "OVERIG"
+  })
+
   const handleSave = async () => {
     setSaving(true)
     const isEdit = !!editItem.id
@@ -498,6 +596,7 @@ export default function BeheerHulpbronnenPage() {
     if (res.ok) {
       setShowForm(false)
       setEditItem(EMPTY_FORM)
+      setAiSuggesties(null)
       fetchData()
     }
     setSaving(false)
@@ -594,6 +693,110 @@ export default function BeheerHulpbronnenPage() {
     setVerrijking(false)
   }
 
+  // Wizard save handler
+  const handleWizardSave = async (wizardItem: Partial<Hulpbron>) => {
+    const body = {
+      naam: wizardItem.naam,
+      beschrijving: wizardItem.beschrijving || null,
+      type: wizardItem.type || "OVERIG",
+      dienst: wizardItem.dienst || null,
+      telefoon: wizardItem.telefoon || null,
+      email: wizardItem.email || null,
+      website: wizardItem.website || null,
+      adres: wizardItem.adres || null,
+      postcode: wizardItem.postcode || null,
+      woonplaats: wizardItem.woonplaats || null,
+      gemeente: wizardItem.gemeente || null,
+      provincie: wizardItem.provincie || null,
+      dekkingNiveau: wizardItem.dekkingNiveau || "GEMEENTE",
+      dekkingWoonplaatsen: wizardItem.dekkingWoonplaatsen && wizardItem.dekkingWoonplaatsen.length > 0
+        ? wizardItem.dekkingWoonplaatsen : null,
+      dekkingWijken: wizardItem.dekkingWijken && wizardItem.dekkingWijken.length > 0
+        ? wizardItem.dekkingWijken : null,
+      isActief: wizardItem.isActief ?? false,
+      onderdeelTest: wizardItem.onderdeelTest || null,
+      soortHulp: wizardItem.soortHulp || null,
+      openingstijden: wizardItem.openingstijden || null,
+      zichtbaarBijLaag: wizardItem.zichtbaarBijLaag ?? false,
+      zichtbaarBijGemiddeld: wizardItem.zichtbaarBijGemiddeld ?? false,
+      zichtbaarBijHoog: wizardItem.zichtbaarBijHoog ?? true,
+      kosten: wizardItem.kosten || null,
+      doelgroep: wizardItem.doelgroep || null,
+      aanmeldprocedure: wizardItem.aanmeldprocedure || null,
+      eersteStap: wizardItem.eersteStap || null,
+      verwachtingTekst: wizardItem.verwachtingTekst || null,
+      bronLabel: wizardItem.bronLabel || null,
+      zorgverzekeraar: wizardItem.zorgverzekeraar ?? false,
+    }
+
+    const res = await fetch("/api/beheer/hulpbronnen", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+
+    if (res.ok) {
+      setShowWizard(false)
+      fetchData()
+    }
+  }
+
+  // Bulk AI invullen
+  const handleBulkAiInvullen = async () => {
+    setBulkAiLoading(true)
+    setBulkAiProgress(null)
+    setBulkAiResult(null)
+    try {
+      const res = await fetch("/api/beheer/hulpbronnen/bulk-ai-invullen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}), // Alle onvolledige
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        alert(`Fout: ${err.error || "Onbekende fout"}`)
+        setBulkAiLoading(false)
+        return
+      }
+
+      const reader = res.body?.getReader()
+      if (!reader) { setBulkAiLoading(false); return }
+
+      const decoder = new TextDecoder()
+      let buffer = ""
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split("\n")
+        buffer = lines.pop() || ""
+
+        for (const line of lines) {
+          if (!line.trim()) continue
+          try {
+            const event = JSON.parse(line)
+            if (event.type === "start") {
+              setBulkAiProgress({ verwerkt: 0, totaal: event.totaal })
+            } else if (event.type === "progress") {
+              setBulkAiProgress(prev => prev ? { ...prev, verwerkt: event.verwerkt } : null)
+            } else if (event.type === "done") {
+              setBulkAiResult({ bijgewerkt: event.bijgewerkt, fouten: event.fouten, totaal: event.totaal })
+            }
+          } catch { /* skip unparseable lines */ }
+        }
+      }
+
+      fetchData() // Refresh
+    } catch (e: unknown) {
+      alert(`Fout: ${e instanceof Error ? e.message : "Onbekend"}`)
+    }
+    setBulkAiLoading(false)
+    setBulkAiProgress(null)
+  }
+
   // Scraper
   const handleScrape = async () => {
     setScraping(true)
@@ -647,40 +850,59 @@ export default function BeheerHulpbronnenPage() {
   const isLoggedIn = status === "authenticated"
 
   // Filter hulpbronnen op geselecteerde woonplaatsen/wijken
+  // Compleetheid berekening voor kwaliteitsfilter
+  const berekenCompleetheid = useCallback((h: Hulpbron): number => {
+    const fields = ["naam", "dienst", "beschrijving", "doelgroep", "onderdeelTest",
+      "soortHulp", "kosten", "eersteStap", "verwachtingTekst", "telefoon", "website"] as const
+    const filled = fields.filter(key => {
+      const val = h[key as keyof Hulpbron]
+      return val && val !== "" && val !== "OVERIG"
+    }).length
+    return Math.round((filled / fields.length) * 100)
+  }, [])
+
   const gefilterdeHulpbronnen = useMemo(() => {
     try {
-      if (beheerModus !== "gemeentelijk") return hulpbronnen
+      let result = hulpbronnen
 
-      if (beheerDekkingFilter === "WOONPLAATS" && beheerSelectedWoonplaatsen.length > 0) {
-        return hulpbronnen.filter((h) => {
-          // Breed dekkende niveaus altijd tonen
-          if (!h.dekkingNiveau || h.dekkingNiveau === "LANDELIJK" || h.dekkingNiveau === "PROVINCIE" || h.dekkingNiveau === "GEMEENTE") return true
-          // WOONPLAATS: alleen als er overlap is met geselecteerde woonplaatsen
-          if (h.dekkingNiveau === "WOONPLAATS" && Array.isArray(h.dekkingWoonplaatsen)) {
-            return h.dekkingWoonplaatsen.some((wp) => beheerSelectedWoonplaatsen.includes(wp))
-          }
-          // WIJK: tonen (zit in dezelfde gemeente)
-          return true
-        })
+      // Locatiefilters (gemeentelijk)
+      if (beheerModus === "gemeentelijk") {
+        if (beheerDekkingFilter === "WOONPLAATS" && beheerSelectedWoonplaatsen.length > 0) {
+          result = result.filter((h) => {
+            if (!h.dekkingNiveau || h.dekkingNiveau === "LANDELIJK" || h.dekkingNiveau === "PROVINCIE" || h.dekkingNiveau === "GEMEENTE") return true
+            if (h.dekkingNiveau === "WOONPLAATS" && Array.isArray(h.dekkingWoonplaatsen)) {
+              return h.dekkingWoonplaatsen.some((wp) => beheerSelectedWoonplaatsen.includes(wp))
+            }
+            return true
+          })
+        }
+
+        if (beheerDekkingFilter === "WIJK" && beheerSelectedWijken.length > 0) {
+          result = result.filter((h) => {
+            if (!h.dekkingNiveau || h.dekkingNiveau === "LANDELIJK" || h.dekkingNiveau === "PROVINCIE" || h.dekkingNiveau === "GEMEENTE") return true
+            if (h.dekkingNiveau === "WOONPLAATS") return true
+            if (h.dekkingNiveau === "WIJK" && Array.isArray(h.dekkingWijken)) {
+              return h.dekkingWijken.some((wk) => beheerSelectedWijken.includes(wk))
+            }
+            return true
+          })
+        }
       }
 
-      if (beheerDekkingFilter === "WIJK" && beheerSelectedWijken.length > 0) {
-        return hulpbronnen.filter((h) => {
-          if (!h.dekkingNiveau || h.dekkingNiveau === "LANDELIJK" || h.dekkingNiveau === "PROVINCIE" || h.dekkingNiveau === "GEMEENTE") return true
-          if (h.dekkingNiveau === "WOONPLAATS") return true
-          // WIJK: alleen als er overlap is met geselecteerde wijken
-          if (h.dekkingNiveau === "WIJK" && Array.isArray(h.dekkingWijken)) {
-            return h.dekkingWijken.some((wk) => beheerSelectedWijken.includes(wk))
-          }
-          return true
-        })
+      // Kwaliteitsfilters
+      if (kwaliteitsFilter === "onvolledig") {
+        result = result.filter(h => berekenCompleetheid(h) < 70)
+      } else if (kwaliteitsFilter === "zonderBeschrijving") {
+        result = result.filter(h => !h.beschrijving || h.beschrijving.trim() === "")
+      } else if (kwaliteitsFilter === "zonderCategorie") {
+        result = result.filter(h => !h.onderdeelTest || h.onderdeelTest.trim() === "")
       }
 
-      return hulpbronnen
+      return result
     } catch {
       return hulpbronnen
     }
-  }, [hulpbronnen, beheerDekkingFilter, beheerSelectedWoonplaatsen, beheerSelectedWijken, beheerModus])
+  }, [hulpbronnen, beheerDekkingFilter, beheerSelectedWoonplaatsen, beheerSelectedWijken, beheerModus, kwaliteitsFilter, berekenCompleetheid])
 
   const actiefCount = gefilterdeHulpbronnen.filter((h) => h.isActief).length
   const inactiefCount = gefilterdeHulpbronnen.filter((h) => !h.isActief).length
@@ -775,6 +997,16 @@ export default function BeheerHulpbronnenPage() {
               </span>
             </button>
             <button
+              onClick={() => setShowWizard(true)}
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition"
+              title="Wizard: voeg stap-voor-stap een nieuwe hulpbron toe met AI-ondersteuning"
+            >
+              <span className="flex items-center gap-1.5">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                + Wizard toevoegen
+              </span>
+            </button>
+            <button
               onClick={() => {
                 const dekkingNiveau = beheerModus === "landelijk" ? "LANDELIJK" : beheerDekkingFilter
                 setEditItem({
@@ -791,10 +1023,9 @@ export default function BeheerHulpbronnenPage() {
                 setShowForm(true)
               }}
               className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--primary)] text-white hover:opacity-90 transition"
-              title="Voeg handmatig een nieuwe hulporganisatie toe"
+              title="Voeg handmatig een nieuwe hulporganisatie toe (volledig formulier)"
             >
               <span className="flex items-center gap-1.5">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                 Handmatig toevoegen
               </span>
             </button>
@@ -808,7 +1039,7 @@ export default function BeheerHulpbronnenPage() {
           <div><strong className="text-foreground">Bestand importeren:</strong> Upload een CSV/Excel-bestand met organisaties</div>
           <div><strong className="text-foreground">Locaties aanvullen:</strong> Vul automatisch ontbrekende gemeente/provincie aan</div>
           <div><strong className="text-foreground">Organisaties zoeken:</strong> Zoek online naar hulpdiensten per gemeente of onderwerp</div>
-          <div><strong className="text-foreground">Handmatig toevoegen:</strong> Voeg zelf een organisatie toe met naam, adres en dienst</div>
+          <div><strong className="text-foreground">Wizard toevoegen:</strong> Stap-voor-stap met AI-ondersteuning (naam + website invoeren, AI doet de rest)</div>
         </div>
       )}
 
@@ -1862,6 +2093,58 @@ export default function BeheerHulpbronnenPage() {
         </div>
       )}
 
+      {/* Kwaliteitsdashboard */}
+      {beheerModus && hulpbronnen.length > 0 && !(beheerModus === "gemeentelijk" && !beheerGemeente) && (
+        <>
+          <KwaliteitsDashboard
+            hulpbronnen={hulpbronnen}
+            onFilterOnvolledig={() => setKwaliteitsFilter(prev => prev === "onvolledig" ? null : "onvolledig")}
+            onFilterZonderCategorie={() => setKwaliteitsFilter(prev => prev === "zonderCategorie" ? null : "zonderCategorie")}
+            onFilterZonderBeschrijving={() => setKwaliteitsFilter(prev => prev === "zonderBeschrijving" ? null : "zonderBeschrijving")}
+            actieveFilter={kwaliteitsFilter}
+            bulkAiLoading={bulkAiLoading}
+            onBulkAiInvullen={handleBulkAiInvullen}
+            bulkAiProgress={bulkAiProgress}
+          />
+
+          {/* Bulk AI resultaat banner */}
+          {bulkAiResult && (
+            <div className="ker-card mb-4 border-l-4 border-blue-400">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="font-medium text-foreground">
+                    Bulk AI-invulling afgerond: {bulkAiResult.bijgewerkt} van {bulkAiResult.totaal} hulpbronnen bijgewerkt
+                    {bulkAiResult.fouten > 0 && ` (${bulkAiResult.fouten} fouten)`}
+                  </p>
+                </div>
+                <button onClick={() => setBulkAiResult(null)} className="text-muted-foreground hover:text-foreground text-lg leading-none">&times;</button>
+              </div>
+            </div>
+          )}
+
+          {/* Actieve kwaliteitsfilter indicator */}
+          {kwaliteitsFilter && (
+            <div className="mb-4 flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Filter actief:</span>
+              <span className="text-xs font-medium px-2 py-1 rounded bg-[var(--primary)] text-white">
+                {kwaliteitsFilter === "onvolledig" && "< 70% compleet"}
+                {kwaliteitsFilter === "zonderBeschrijving" && "Zonder beschrijving"}
+                {kwaliteitsFilter === "zonderCategorie" && "Zonder categorie"}
+              </span>
+              <button
+                onClick={() => setKwaliteitsFilter(null)}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Wis filter
+              </button>
+              <span className="text-xs text-muted-foreground">
+                ({gefilterdeHulpbronnen.length} resultaten)
+              </span>
+            </div>
+          )}
+        </>
+      )}
+
       {/* Table — toon altijd behalve wanneer gemeentelijk zonder gemeente */}
       {!(beheerModus === "gemeentelijk" && !beheerGemeente) && (loading ? (
         <div className="text-center py-12 text-muted-foreground">Laden...</div>
@@ -2435,6 +2718,79 @@ export default function BeheerHulpbronnenPage() {
             </div>
             {/* Einde locatie sectie */}
 
+            {/* AI Assistent + Compleetheid indicator */}
+            <div className="p-4 rounded-lg border-2 border-blue-300 bg-blue-50 dark:bg-blue-950/20 mb-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  AI Assistent
+                </h4>
+                <div className="flex items-center gap-2">
+                  <div className="text-xs text-muted-foreground">
+                    Compleet: {filledCount}/{completenessFields.length}
+                  </div>
+                  <div className="w-24 h-2 bg-[var(--muted)] rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        completenessPercent === 100
+                          ? "bg-emerald-500"
+                          : completenessPercent >= 70
+                          ? "bg-amber-500"
+                          : "bg-red-400"
+                      }`}
+                      style={{ width: `${completenessPercent}%` }}
+                    />
+                  </div>
+                  <span className={`text-xs font-bold ${
+                    completenessPercent === 100
+                      ? "text-emerald-600"
+                      : completenessPercent >= 70
+                      ? "text-amber-600"
+                      : "text-red-500"
+                  }`}>
+                    {completenessPercent}%
+                  </span>
+                </div>
+              </div>
+
+              {emptyFields.length > 0 && (
+                <div className="mb-3 text-xs text-muted-foreground">
+                  Nog invullen: {emptyFields.map(f => f.label).join(", ")}
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handleAiInvullen}
+                  disabled={aiLoading || (!editItem.naam && !editItem.website && !editItem.beschrijving)}
+                  className="px-4 py-2 rounded-lg text-xs font-medium bg-blue-600 text-white hover:bg-blue-700 transition disabled:opacity-50 flex items-center gap-2"
+                >
+                  {aiLoading ? (
+                    <>
+                      <span className="inline-block w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Bezig...
+                    </>
+                  ) : (
+                    <>AI: Vul alle velden in</>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleB1Herschrijf}
+                  disabled={aiLoading || !editItem.beschrijving}
+                  className="px-4 py-2 rounded-lg text-xs font-medium bg-purple-600 text-white hover:bg-purple-700 transition disabled:opacity-50 flex items-center gap-2"
+                >
+                  {aiLoading ? "Bezig..." : "B1 Herschrijven"}
+                </button>
+              </div>
+
+              {aiSuggesties && (
+                <div className="mt-3 p-2 rounded bg-blue-100 dark:bg-blue-900/30 text-xs text-foreground">
+                  AI heeft {Object.keys(aiSuggesties).length} veld(en) ingevuld. Controleer de waarden hieronder.
+                </div>
+              )}
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* Naam */}
               <div className="sm:col-span-2">
@@ -2468,17 +2824,36 @@ export default function BeheerHulpbronnenPage() {
 
               {/* Omschrijving dienst */}
               <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-muted-foreground mb-1">
-                  Omschrijving dienst
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-medium text-muted-foreground">
+                    Omschrijving dienst
+                  </label>
+                  {editItem.beschrijving && (
+                    <button
+                      type="button"
+                      onClick={handleB1Herschrijf}
+                      disabled={aiLoading}
+                      className="text-[10px] px-2 py-0.5 rounded bg-purple-100 text-purple-700 hover:bg-purple-200 transition disabled:opacity-50"
+                    >
+                      {aiLoading ? "..." : "Herschrijf B1"}
+                    </button>
+                  )}
+                </div>
                 <textarea
                   value={editItem.beschrijving || ""}
                   onChange={(e) =>
                     setEditItem({ ...editItem, beschrijving: e.target.value })
                   }
                   rows={2}
-                  className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm"
+                  className={`w-full px-3 py-2 rounded-lg border bg-[var(--background)] text-foreground text-sm ${
+                    aiSuggesties?.beschrijving ? "border-blue-400 ring-1 ring-blue-200" : "border-[var(--border)]"
+                  }`}
                 />
+              </div>
+
+              {/* === SECTIE: Classificatie === */}
+              <div className="sm:col-span-2 mt-2 pt-3 border-t border-[var(--border)]">
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Classificatie</h4>
               </div>
 
               {/* Doelgroep */}
@@ -2600,6 +2975,11 @@ export default function BeheerHulpbronnenPage() {
                 </select>
               </div>
 
+              {/* === SECTIE: Financieel & Zorgverzekering === */}
+              <div className="sm:col-span-2 mt-2 pt-3 border-t border-[var(--border)]">
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Financieel</h4>
+              </div>
+
               {/* Zorgverzekeraar */}
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1">
@@ -2615,6 +2995,11 @@ export default function BeheerHulpbronnenPage() {
                   <option value="nee">Nee</option>
                   <option value="ja">Ja</option>
                 </select>
+              </div>
+
+              {/* === SECTIE: Contact === */}
+              <div className="sm:col-span-2 mt-2 pt-3 border-t border-[var(--border)]">
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Contactgegevens</h4>
               </div>
 
               {/* Telefoon */}
@@ -2678,6 +3063,11 @@ export default function BeheerHulpbronnenPage() {
                 />
               </div>
 
+              {/* === SECTIE: Praktische informatie === */}
+              <div className="sm:col-span-2 mt-2 pt-3 border-t border-[var(--border)]">
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Praktische informatie</h4>
+              </div>
+
               {/* Kosten */}
               <div className="sm:col-span-2">
                 <label className="block text-xs font-medium text-muted-foreground mb-1">
@@ -2726,6 +3116,11 @@ export default function BeheerHulpbronnenPage() {
                 />
               </div>
 
+              {/* === SECTIE: Adres === */}
+              <div className="sm:col-span-2 mt-2 pt-3 border-t border-[var(--border)]">
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Vestigingsadres</h4>
+              </div>
+
               {/* Adres */}
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1">
@@ -2754,6 +3149,11 @@ export default function BeheerHulpbronnenPage() {
                   }
                   className="w-full px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--background)] text-foreground text-sm min-h-[44px]"
                 />
+              </div>
+
+              {/* === SECTIE: Zichtbaarheid === */}
+              <div className="sm:col-span-2 mt-2 pt-3 border-t border-[var(--border)]">
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Zichtbaarheid & Status</h4>
               </div>
 
               {/* Zichtbaarheid */}
@@ -2820,6 +3220,7 @@ export default function BeheerHulpbronnenPage() {
                 onClick={() => {
                   setShowForm(false)
                   setEditItem(EMPTY_FORM)
+                  setAiSuggesties(null)
                 }}
                 className="px-4 py-2 rounded-lg text-sm bg-[var(--muted)] text-foreground hover:bg-[var(--border)] transition min-h-[44px]"
               >
@@ -2836,6 +3237,17 @@ export default function BeheerHulpbronnenPage() {
           </div>
         </div>
       )}
+
+      {/* Wizard */}
+      <HulpbronWizard
+        isOpen={showWizard}
+        onClose={() => setShowWizard(false)}
+        onSave={handleWizardSave}
+        initialData={{
+          dekkingNiveau: beheerModus === "landelijk" ? "LANDELIJK" : "GEMEENTE",
+          gemeente: beheerModus === "gemeentelijk" ? beheerGemeente : "",
+        }}
+      />
     </div>
   )
 }
