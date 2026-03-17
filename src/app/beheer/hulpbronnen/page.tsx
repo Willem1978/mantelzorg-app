@@ -3,6 +3,8 @@
 import { useSession } from "next-auth/react"
 import { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { ensureAbsoluteUrl } from "@/lib/utils"
+import { HulpbronWizard } from "@/components/admin/HulpbronWizard"
+import { KwaliteitsDashboard } from "@/components/admin/KwaliteitsDashboard"
 
 // Types
 interface Hulpbron {
@@ -230,6 +232,15 @@ export default function BeheerHulpbronnenPage() {
   // Data enrichment
   const [verrijking, setVerrijking] = useState(false)
   const [verrijkResult, setVerrijkResult] = useState<{ updated: number; total: number; log: string[] } | null>(null)
+
+  // Wizard
+  const [showWizard, setShowWizard] = useState(false)
+
+  // Kwaliteitsdashboard & bulk AI
+  const [kwaliteitsFilter, setKwaliteitsFilter] = useState<string | null>(null)
+  const [bulkAiLoading, setBulkAiLoading] = useState(false)
+  const [bulkAiProgress, setBulkAiProgress] = useState<{ verwerkt: number; totaal: number } | null>(null)
+  const [bulkAiResult, setBulkAiResult] = useState<{ bijgewerkt: number; fouten: number; totaal: number } | null>(null)
 
   // Location hierarchy (PDOK)
   const [provincies, setProvincies] = useState<string[]>([])
@@ -682,6 +693,110 @@ export default function BeheerHulpbronnenPage() {
     setVerrijking(false)
   }
 
+  // Wizard save handler
+  const handleWizardSave = async (wizardItem: Partial<Hulpbron>) => {
+    const body = {
+      naam: wizardItem.naam,
+      beschrijving: wizardItem.beschrijving || null,
+      type: wizardItem.type || "OVERIG",
+      dienst: wizardItem.dienst || null,
+      telefoon: wizardItem.telefoon || null,
+      email: wizardItem.email || null,
+      website: wizardItem.website || null,
+      adres: wizardItem.adres || null,
+      postcode: wizardItem.postcode || null,
+      woonplaats: wizardItem.woonplaats || null,
+      gemeente: wizardItem.gemeente || null,
+      provincie: wizardItem.provincie || null,
+      dekkingNiveau: wizardItem.dekkingNiveau || "GEMEENTE",
+      dekkingWoonplaatsen: wizardItem.dekkingWoonplaatsen && wizardItem.dekkingWoonplaatsen.length > 0
+        ? wizardItem.dekkingWoonplaatsen : null,
+      dekkingWijken: wizardItem.dekkingWijken && wizardItem.dekkingWijken.length > 0
+        ? wizardItem.dekkingWijken : null,
+      isActief: wizardItem.isActief ?? false,
+      onderdeelTest: wizardItem.onderdeelTest || null,
+      soortHulp: wizardItem.soortHulp || null,
+      openingstijden: wizardItem.openingstijden || null,
+      zichtbaarBijLaag: wizardItem.zichtbaarBijLaag ?? false,
+      zichtbaarBijGemiddeld: wizardItem.zichtbaarBijGemiddeld ?? false,
+      zichtbaarBijHoog: wizardItem.zichtbaarBijHoog ?? true,
+      kosten: wizardItem.kosten || null,
+      doelgroep: wizardItem.doelgroep || null,
+      aanmeldprocedure: wizardItem.aanmeldprocedure || null,
+      eersteStap: wizardItem.eersteStap || null,
+      verwachtingTekst: wizardItem.verwachtingTekst || null,
+      bronLabel: wizardItem.bronLabel || null,
+      zorgverzekeraar: wizardItem.zorgverzekeraar ?? false,
+    }
+
+    const res = await fetch("/api/beheer/hulpbronnen", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+
+    if (res.ok) {
+      setShowWizard(false)
+      fetchData()
+    }
+  }
+
+  // Bulk AI invullen
+  const handleBulkAiInvullen = async () => {
+    setBulkAiLoading(true)
+    setBulkAiProgress(null)
+    setBulkAiResult(null)
+    try {
+      const res = await fetch("/api/beheer/hulpbronnen/bulk-ai-invullen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}), // Alle onvolledige
+      })
+
+      if (!res.ok) {
+        const err = await res.json()
+        alert(`Fout: ${err.error || "Onbekende fout"}`)
+        setBulkAiLoading(false)
+        return
+      }
+
+      const reader = res.body?.getReader()
+      if (!reader) { setBulkAiLoading(false); return }
+
+      const decoder = new TextDecoder()
+      let buffer = ""
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split("\n")
+        buffer = lines.pop() || ""
+
+        for (const line of lines) {
+          if (!line.trim()) continue
+          try {
+            const event = JSON.parse(line)
+            if (event.type === "start") {
+              setBulkAiProgress({ verwerkt: 0, totaal: event.totaal })
+            } else if (event.type === "progress") {
+              setBulkAiProgress(prev => prev ? { ...prev, verwerkt: event.verwerkt } : null)
+            } else if (event.type === "done") {
+              setBulkAiResult({ bijgewerkt: event.bijgewerkt, fouten: event.fouten, totaal: event.totaal })
+            }
+          } catch { /* skip unparseable lines */ }
+        }
+      }
+
+      fetchData() // Refresh
+    } catch (e: unknown) {
+      alert(`Fout: ${e instanceof Error ? e.message : "Onbekend"}`)
+    }
+    setBulkAiLoading(false)
+    setBulkAiProgress(null)
+  }
+
   // Scraper
   const handleScrape = async () => {
     setScraping(true)
@@ -735,40 +850,59 @@ export default function BeheerHulpbronnenPage() {
   const isLoggedIn = status === "authenticated"
 
   // Filter hulpbronnen op geselecteerde woonplaatsen/wijken
+  // Compleetheid berekening voor kwaliteitsfilter
+  const berekenCompleetheid = useCallback((h: Hulpbron): number => {
+    const fields = ["naam", "dienst", "beschrijving", "doelgroep", "onderdeelTest",
+      "soortHulp", "kosten", "eersteStap", "verwachtingTekst", "telefoon", "website"] as const
+    const filled = fields.filter(key => {
+      const val = h[key as keyof Hulpbron]
+      return val && val !== "" && val !== "OVERIG"
+    }).length
+    return Math.round((filled / fields.length) * 100)
+  }, [])
+
   const gefilterdeHulpbronnen = useMemo(() => {
     try {
-      if (beheerModus !== "gemeentelijk") return hulpbronnen
+      let result = hulpbronnen
 
-      if (beheerDekkingFilter === "WOONPLAATS" && beheerSelectedWoonplaatsen.length > 0) {
-        return hulpbronnen.filter((h) => {
-          // Breed dekkende niveaus altijd tonen
-          if (!h.dekkingNiveau || h.dekkingNiveau === "LANDELIJK" || h.dekkingNiveau === "PROVINCIE" || h.dekkingNiveau === "GEMEENTE") return true
-          // WOONPLAATS: alleen als er overlap is met geselecteerde woonplaatsen
-          if (h.dekkingNiveau === "WOONPLAATS" && Array.isArray(h.dekkingWoonplaatsen)) {
-            return h.dekkingWoonplaatsen.some((wp) => beheerSelectedWoonplaatsen.includes(wp))
-          }
-          // WIJK: tonen (zit in dezelfde gemeente)
-          return true
-        })
+      // Locatiefilters (gemeentelijk)
+      if (beheerModus === "gemeentelijk") {
+        if (beheerDekkingFilter === "WOONPLAATS" && beheerSelectedWoonplaatsen.length > 0) {
+          result = result.filter((h) => {
+            if (!h.dekkingNiveau || h.dekkingNiveau === "LANDELIJK" || h.dekkingNiveau === "PROVINCIE" || h.dekkingNiveau === "GEMEENTE") return true
+            if (h.dekkingNiveau === "WOONPLAATS" && Array.isArray(h.dekkingWoonplaatsen)) {
+              return h.dekkingWoonplaatsen.some((wp) => beheerSelectedWoonplaatsen.includes(wp))
+            }
+            return true
+          })
+        }
+
+        if (beheerDekkingFilter === "WIJK" && beheerSelectedWijken.length > 0) {
+          result = result.filter((h) => {
+            if (!h.dekkingNiveau || h.dekkingNiveau === "LANDELIJK" || h.dekkingNiveau === "PROVINCIE" || h.dekkingNiveau === "GEMEENTE") return true
+            if (h.dekkingNiveau === "WOONPLAATS") return true
+            if (h.dekkingNiveau === "WIJK" && Array.isArray(h.dekkingWijken)) {
+              return h.dekkingWijken.some((wk) => beheerSelectedWijken.includes(wk))
+            }
+            return true
+          })
+        }
       }
 
-      if (beheerDekkingFilter === "WIJK" && beheerSelectedWijken.length > 0) {
-        return hulpbronnen.filter((h) => {
-          if (!h.dekkingNiveau || h.dekkingNiveau === "LANDELIJK" || h.dekkingNiveau === "PROVINCIE" || h.dekkingNiveau === "GEMEENTE") return true
-          if (h.dekkingNiveau === "WOONPLAATS") return true
-          // WIJK: alleen als er overlap is met geselecteerde wijken
-          if (h.dekkingNiveau === "WIJK" && Array.isArray(h.dekkingWijken)) {
-            return h.dekkingWijken.some((wk) => beheerSelectedWijken.includes(wk))
-          }
-          return true
-        })
+      // Kwaliteitsfilters
+      if (kwaliteitsFilter === "onvolledig") {
+        result = result.filter(h => berekenCompleetheid(h) < 70)
+      } else if (kwaliteitsFilter === "zonderBeschrijving") {
+        result = result.filter(h => !h.beschrijving || h.beschrijving.trim() === "")
+      } else if (kwaliteitsFilter === "zonderCategorie") {
+        result = result.filter(h => !h.onderdeelTest || h.onderdeelTest.trim() === "")
       }
 
-      return hulpbronnen
+      return result
     } catch {
       return hulpbronnen
     }
-  }, [hulpbronnen, beheerDekkingFilter, beheerSelectedWoonplaatsen, beheerSelectedWijken, beheerModus])
+  }, [hulpbronnen, beheerDekkingFilter, beheerSelectedWoonplaatsen, beheerSelectedWijken, beheerModus, kwaliteitsFilter, berekenCompleetheid])
 
   const actiefCount = gefilterdeHulpbronnen.filter((h) => h.isActief).length
   const inactiefCount = gefilterdeHulpbronnen.filter((h) => !h.isActief).length
@@ -863,6 +997,16 @@ export default function BeheerHulpbronnenPage() {
               </span>
             </button>
             <button
+              onClick={() => setShowWizard(true)}
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition"
+              title="Wizard: voeg stap-voor-stap een nieuwe hulpbron toe met AI-ondersteuning"
+            >
+              <span className="flex items-center gap-1.5">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                + Wizard toevoegen
+              </span>
+            </button>
+            <button
               onClick={() => {
                 const dekkingNiveau = beheerModus === "landelijk" ? "LANDELIJK" : beheerDekkingFilter
                 setEditItem({
@@ -879,10 +1023,9 @@ export default function BeheerHulpbronnenPage() {
                 setShowForm(true)
               }}
               className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--primary)] text-white hover:opacity-90 transition"
-              title="Voeg handmatig een nieuwe hulporganisatie toe"
+              title="Voeg handmatig een nieuwe hulporganisatie toe (volledig formulier)"
             >
               <span className="flex items-center gap-1.5">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                 Handmatig toevoegen
               </span>
             </button>
@@ -896,7 +1039,7 @@ export default function BeheerHulpbronnenPage() {
           <div><strong className="text-foreground">Bestand importeren:</strong> Upload een CSV/Excel-bestand met organisaties</div>
           <div><strong className="text-foreground">Locaties aanvullen:</strong> Vul automatisch ontbrekende gemeente/provincie aan</div>
           <div><strong className="text-foreground">Organisaties zoeken:</strong> Zoek online naar hulpdiensten per gemeente of onderwerp</div>
-          <div><strong className="text-foreground">Handmatig toevoegen:</strong> Voeg zelf een organisatie toe met naam, adres en dienst</div>
+          <div><strong className="text-foreground">Wizard toevoegen:</strong> Stap-voor-stap met AI-ondersteuning (naam + website invoeren, AI doet de rest)</div>
         </div>
       )}
 
@@ -1948,6 +2091,58 @@ export default function BeheerHulpbronnenPage() {
         <div className="ker-card text-center py-12">
           <p className="text-muted-foreground">Selecteer hierboven een gemeente om de hulpbronnen te bekijken.</p>
         </div>
+      )}
+
+      {/* Kwaliteitsdashboard */}
+      {beheerModus && hulpbronnen.length > 0 && !(beheerModus === "gemeentelijk" && !beheerGemeente) && (
+        <>
+          <KwaliteitsDashboard
+            hulpbronnen={hulpbronnen}
+            onFilterOnvolledig={() => setKwaliteitsFilter(prev => prev === "onvolledig" ? null : "onvolledig")}
+            onFilterZonderCategorie={() => setKwaliteitsFilter(prev => prev === "zonderCategorie" ? null : "zonderCategorie")}
+            onFilterZonderBeschrijving={() => setKwaliteitsFilter(prev => prev === "zonderBeschrijving" ? null : "zonderBeschrijving")}
+            actieveFilter={kwaliteitsFilter}
+            bulkAiLoading={bulkAiLoading}
+            onBulkAiInvullen={handleBulkAiInvullen}
+            bulkAiProgress={bulkAiProgress}
+          />
+
+          {/* Bulk AI resultaat banner */}
+          {bulkAiResult && (
+            <div className="ker-card mb-4 border-l-4 border-blue-400">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="font-medium text-foreground">
+                    Bulk AI-invulling afgerond: {bulkAiResult.bijgewerkt} van {bulkAiResult.totaal} hulpbronnen bijgewerkt
+                    {bulkAiResult.fouten > 0 && ` (${bulkAiResult.fouten} fouten)`}
+                  </p>
+                </div>
+                <button onClick={() => setBulkAiResult(null)} className="text-muted-foreground hover:text-foreground text-lg leading-none">&times;</button>
+              </div>
+            </div>
+          )}
+
+          {/* Actieve kwaliteitsfilter indicator */}
+          {kwaliteitsFilter && (
+            <div className="mb-4 flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Filter actief:</span>
+              <span className="text-xs font-medium px-2 py-1 rounded bg-[var(--primary)] text-white">
+                {kwaliteitsFilter === "onvolledig" && "< 70% compleet"}
+                {kwaliteitsFilter === "zonderBeschrijving" && "Zonder beschrijving"}
+                {kwaliteitsFilter === "zonderCategorie" && "Zonder categorie"}
+              </span>
+              <button
+                onClick={() => setKwaliteitsFilter(null)}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Wis filter
+              </button>
+              <span className="text-xs text-muted-foreground">
+                ({gefilterdeHulpbronnen.length} resultaten)
+              </span>
+            </div>
+          )}
+        </>
       )}
 
       {/* Table — toon altijd behalve wanneer gemeentelijk zonder gemeente */}
@@ -3042,6 +3237,17 @@ export default function BeheerHulpbronnenPage() {
           </div>
         </div>
       )}
+
+      {/* Wizard */}
+      <HulpbronWizard
+        isOpen={showWizard}
+        onClose={() => setShowWizard(false)}
+        onSave={handleWizardSave}
+        initialData={{
+          dekkingNiveau: beheerModus === "landelijk" ? "LANDELIJK" : "GEMEENTE",
+          gemeente: beheerModus === "gemeentelijk" ? beheerGemeente : "",
+        }}
+      />
     </div>
   )
 }
