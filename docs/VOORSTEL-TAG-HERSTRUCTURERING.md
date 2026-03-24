@@ -66,13 +66,14 @@ In plaats van 12 specifieke ziektes → **6 overkoepelende zorgthema's** gebasee
 | 1 | `geheugen-cognitie` | Geheugen & denken | Dementie, NAH, cognitieve achteruitgang bij ouderdom | 🧠 |
 | 2 | `lichamelijk` | Lichamelijke zorg | Hartfalen, COPD, CVA, diabetes, lichamelijke beperking, revalidatie | 💪 |
 | 3 | `psychisch-emotioneel` | Psychisch & emotioneel | Psychische aandoeningen, depressie, angst, verslaving | 💚 |
-| 4 | `ontwikkeling` | Ontwikkeling & groei | Verstandelijke beperking, autisme, ontwikkelingsstoornis | 🌱 |
+| 4 | `beperking-begeleiding` | Beperking & begeleiding | Verstandelijke beperking, autisme, ontwikkelingsstoornis | 🧩 |
 | 5 | `ouder-worden` | Ouder worden | Algemene ouderdomsklachten, kwetsbaarheid, vallen, eenzaamheid | 👴 |
 | 6 | `ernstig-ziek` | Ernstig of langdurig ziek | Kanker, terminale fase, palliatief, chronisch ernstig ziek | 🕊️ |
 
 **Waarom dit werkt:**
 - "Mijn vader heeft geheugenproblemen" is veel minder confronterend dan "Mijn vader heeft dementie"
 - "Ik geef lichamelijke zorg" dekt 6 oude tags in één keuze
+- "Beperking & begeleiding" is direct herkenbaar voor mantelzorgers in die situatie
 - **Multi-select mogelijk** — veel mantelzorgers herkennen zich in 2-3 thema's
 - Content is gemakkelijker te taggen op thema dan op diagnose
 - De lijst is uitbreidbaar zonder te lang te worden
@@ -117,7 +118,20 @@ In plaats van 18 losse chips → **5 gestructureerde profielvragen** die automat
 | Ik heb ook kinderen om voor te zorgen | `met-kinderen` |
 | Ik zorg voor meerdere mensen | `meerdere-naasten` |
 | Ik doe het alleen (geen hulp van anderen) | `alleenstaand` |
-| Mijn naaste is recent overleden | `rouw` |
+
+#### B6. Rouw — eigen sectie in het profiel
+Rouw krijgt een **eigen, aparte plek** in het profiel. Het is geen "extra" maar een ingrijpende verandering in de zorgsituatie die specifieke content en ondersteuning vraagt.
+
+| Status | Afgeleide tag | Toelichting |
+|--------|--------------|-------------|
+| Mijn naaste is overleden | `rouw` | Ontgrendelt rouw-specifieke content, tips en lotgenotencontact |
+| *(niet geselecteerd)* | — | Standaard: actieve zorgsituatie |
+
+**Waarom een eigen plek:**
+- Rouw verandert de hele context van de mantelzorger — van "zorgen voor" naar "loslaten"
+- Rouw-content is fundamenteel anders dan actieve-zorg-content
+- Het verdient een respectvolle, rustige plek — niet weggestopt als checkbox tussen andere opties
+- Het profiel kan na selectie verschuiven: minder "hoe zorg je" en meer "hoe gaat het met jou"
 
 ### Dimensie C: Onderwerp (voor content-tagging, niet voor gebruikers)
 
@@ -154,17 +168,19 @@ Blijft grotendeels hetzelfde, maar wordt uitgebreid en afgestemd op de nieuwe st
 ### Situatie → Rol
 | Aspect | Oud | Nieuw |
 |--------|-----|-------|
-| Aantal | 18 losse tags | 5 gestructureerde vragen → max 9 tags |
-| Structuur | Vlakke lijst | Gegroepeerd per thema (B1-B5) |
-| Invoer | Mix van auto + handmatig | Helder: B1-B4 auto, B5 optioneel handmatig |
+| Aantal | 18 losse tags | 6 gestructureerde secties → max 10 tags |
+| Structuur | Vlakke lijst | Gegroepeerd per thema (B1-B6) |
+| Invoer | Mix van auto + handmatig | Helder: B1-B4 auto, B5-B6 optioneel handmatig |
 | UX | 20+ chips tegelijk | Per vraag 3-4 opties (radio buttons) |
+| Rouw | Weggestopt als chip | Eigen respectvolle sectie (B6) |
 
 ### Totaal tags op een profiel
 | | Oud | Nieuw |
 |--|-----|-------|
 | Zorgthema/Aandoening | 0-12 (chip wall) | 1-3 (multi-select) |
-| Rol/Situatie | 0-18 (chaos) | 4-8 (gestructureerd) |
-| **Totaal per gebruiker** | **Onvoorspelbaar** | **5-11 (voorspelbaar)** |
+| Rol/Situatie | 0-18 (chaos) | 4-9 (gestructureerd) |
+| Rouw | Optionele chip | Eigen sectie (0-1 tag) |
+| **Totaal per gebruiker** | **Onvoorspelbaar** | **5-12 (voorspelbaar)** |
 
 ---
 
@@ -261,7 +277,7 @@ In plaats van: "Tags: dementie, werkend-parttime, samenwonend, langdurig"
 | diabetes | lichamelijk |
 | lichamelijke-beperking | lichamelijk |
 | psychisch | psychisch-emotioneel |
-| verstandelijke-beperking | ontwikkeling |
+| verstandelijke-beperking | beperking-begeleiding |
 | ouderdom | ouder-worden |
 
 ### Mapping situatie-tags → rol-tags
@@ -284,7 +300,7 @@ In plaats van: "Tags: dementie, werkend-parttime, samenwonend, langdurig"
 | met-kinderen | Behouden |
 | meerdere-zorgvragers | Hernoemd naar `meerdere-naasten` |
 | alleenstaand | Behouden |
-| rouwverwerking | Hernoemd naar `rouw` |
+| rouwverwerking | Hernoemd naar `rouw` — verplaatst naar eigen sectie (B6) |
 
 ---
 
@@ -302,7 +318,7 @@ Zo ziet de ervaring eruit voor een nieuwe gebruiker:
 > 🧠 Geheugen & denken
 > 💪 Lichamelijke zorg
 > 💚 Psychisch & emotioneel
-> 🌱 Ontwikkeling & groei
+> 🧩 Beperking & begeleiding
 > 👴 Ouder worden
 > 🕊️ Ernstig of langdurig ziek
 >
@@ -329,7 +345,7 @@ Zo ziet de ervaring eruit voor een nieuwe gebruiker:
 | Aspect | Nu | Straks |
 |--------|-----|--------|
 | Ziektes | 12 confronterende labels | 6 herkenbare zorgthema's |
-| Situatie | 18 losse chips | 5 duidelijke vragen |
+| Situatie | 18 losse chips | 6 duidelijke secties (incl. rouw) |
 | Onboarding | Zwaar, veel vragen | 3 schermen, dan balanstest |
 | Content-matching | 0 artikelen getagd | Alle artikelen getagd op 3 dimensies |
 | Aanbevelingen | Niet mogelijk | Score-based matching op profiel |
@@ -337,19 +353,14 @@ Zo ziet de ervaring eruit voor een nieuwe gebruiker:
 
 ---
 
-## 9. Beslispunten voor eigenaar
+## 9. Genomen beslissingen (24 maart 2026)
 
-Voordat we implementeren, graag jouw akkoord op:
-
-1. **Zijn de 6 zorgthema's compleet?** Missen er thema's, of zijn er thema's die je anders zou benoemen?
-
-2. **Zorgthema "Ontwikkeling & groei"** — is dit herkenbaar voor mantelzorgers van iemand met een verstandelijke beperking? Of beter: "Beperking & begeleiding"?
-
-3. **Rouw als losse tag** — nu staat het bij "wat speelt er nog meer?". Sommige platforms geven dit een eigen plek. Jouw voorkeur?
-
-4. **Schermen in de onboarding** — akkoord met 3 schermen vóór de balanstest? Of nog korter (alleen zorgthema → balanstest)?
-
-5. **Tag "fulltime-zorger"** (B2) — is dit een relevante groep om apart aan te spreken met content?
+| # | Beslispunt | Beslissing |
+|---|-----------|------------|
+| 1 | Zorgthema's compleet? | **Ja, 6 thema's zijn akkoord** |
+| 2 | Naam "Ontwikkeling & groei" | **Gewijzigd naar "Beperking & begeleiding"** — directer en herkenbaarder |
+| 3 | Plek van rouw | **Eigen sectie in profiel (B6)** — geen weggestopte checkbox |
+| 4 | Onboarding-schermen | **3 schermen** vóór de balanstest (welkom → zorgthema → voorstellen → balanstest) |
 
 ---
 
