@@ -249,7 +249,7 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
         const vData = await voorkeurRes.json()
         setData((prev) => ({
           ...prev,
-          zorgthemas: vData.zorgthemas?.length > 0 ? vData.zorgthemas : vData.aandoening ? [vData.aandoening] : prev.zorgthemas,
+          zorgthemas: vData.zorgthemas?.length > 0 ? vData.zorgthemas : prev.zorgthemas,
           situatieTags: vData.voorkeuren?.filter((v: { type: string }) => v.type === "TAG").map((v: { slug: string }) => v.slug) || prev.situatieTags,
           interesseCategorieen: vData.voorkeuren?.filter((v: { type: string }) => v.type === "CATEGORIE").map((v: { slug: string }) => v.slug) || prev.interesseCategorieen,
         }))
@@ -295,7 +295,7 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        aandoeningen: data.zorgthemas,
+        zorgthemas: data.zorgthemas,
         voorkeuren,
       }),
     })

@@ -94,7 +94,7 @@ export default function ArtikelenPage() {
   const [gemeenteZoek, setGemeenteZoek] = useState("")
   const [gemeenteOpties, setGemeenteOpties] = useState<string[]>([])
   const [showGemeenteDropdown, setShowGemeenteDropdown] = useState(false)
-  const [beschikbareTags, setBeschikbareTags] = useState<{ aandoeningen: ContentTag[]; situaties: ContentTag[]; onderwerpen: ContentTag[] }>({ aandoeningen: [], situaties: [], onderwerpen: [] })
+  const [beschikbareTags, setBeschikbareTags] = useState<{ zorgthemas: ContentTag[]; situaties: ContentTag[]; onderwerpen: ContentTag[] }>({ zorgthemas: [], situaties: [], onderwerpen: [] })
   const [geselecteerdeTags, setGeselecteerdeTags] = useState<string[]>([])
   const [tagSuggestieLoading, setTagSuggestieLoading] = useState(false)
   const [filterCompleteness, setFilterCompleteness] = useState<"" | "incompleet" | "gedeeltelijk" | "compleet">("")
@@ -616,10 +616,10 @@ export default function ArtikelenPage() {
                   </button>
                 </div>
 
-                {(["aandoeningen", "situaties", "onderwerpen"] as const).map((groep) => {
+                {(["zorgthemas", "situaties", "onderwerpen"] as const).map((groep) => {
                   const tags = beschikbareTags[groep]
                   if (!tags?.length) return null
-                  const label = groep === "aandoeningen" ? "Aandoeningen" : groep === "situaties" ? "Situaties" : "Onderwerpen"
+                  const label = groep === "zorgthemas" ? "Zorgthema's" : groep === "situaties" ? "Situaties" : "Onderwerpen"
                   return (
                     <div key={groep} className="mb-3">
                       <p className="text-xs font-medium text-gray-500 mb-1">{label}</p>

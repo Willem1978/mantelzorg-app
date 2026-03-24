@@ -300,7 +300,7 @@ export function ProfielFormulier({ onSave, onSkip, showSkip = false, variant = "
         // Zorgthema's als array (nieuw) of fallback naar single
         const loadedZorgthemas = vData.zorgthemas?.length > 0
           ? vData.zorgthemas
-          : vData.aandoening ? [vData.aandoening] : []
+          : []
 
         // Situatie-tags: filter zorgthema's eruit (die zitten nu apart)
         const zorgthemaSlugs = new Set(loadedZorgthemas)
@@ -375,7 +375,7 @@ export function ProfielFormulier({ onSave, onSkip, showSkip = false, variant = "
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          aandoeningen: data.zorgthemas,
+          zorgthemas: data.zorgthemas,
           voorkeuren,
         }),
       })

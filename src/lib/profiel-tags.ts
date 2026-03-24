@@ -27,7 +27,7 @@ export function bepaalProfielTags(profiel: ProfielData): string[] {
     tags.push("werkend")
   }
   if (profiel.werkstatus === "parttime") {
-    tags.push("werkend", "werkend-parttime")
+    tags.push("werkend")
   }
   if (profiel.werkstatus === "student") {
     tags.push("student")
@@ -58,24 +58,12 @@ export function bepaalProfielTags(profiel: ProfielData): string[] {
     tags.push("kind-zorg")
   }
 
-  // Zorgintensiteit
-  if (profiel.careHoursPerWeek && profiel.careHoursPerWeek >= 20) {
-    tags.push("intensief")
-  }
-
   // Zorgduur
   if (profiel.careSince) {
     const since = profiel.careSince instanceof Date ? profiel.careSince : new Date(profiel.careSince)
     const jarenBezig = (Date.now() - since.getTime()) / (1000 * 60 * 60 * 24 * 365.25)
     if (jarenBezig < 1) tags.push("beginnend")
     if (jarenBezig > 5) tags.push("langdurig")
-  }
-
-  // Leeftijd
-  if (profiel.dateOfBirth) {
-    const dob = profiel.dateOfBirth instanceof Date ? profiel.dateOfBirth : new Date(profiel.dateOfBirth)
-    const leeftijd = (Date.now() - dob.getTime()) / (1000 * 60 * 60 * 24 * 365.25)
-    if (leeftijd < 25) tags.push("jong")
   }
 
   return [...new Set(tags)] // dedupliceren
@@ -98,7 +86,6 @@ export function mergeProfielTags(
  */
 export const AUTOMATISCHE_TAG_SLUGS = [
   "werkend",
-  "werkend-parttime",
   "student",
   "gepensioneerd",
   "samenwonend",
@@ -107,10 +94,8 @@ export const AUTOMATISCHE_TAG_SLUGS = [
   "partner-zorg",
   "ouder-zorg",
   "kind-zorg",
-  "intensief",
   "beginnend",
   "langdurig",
-  "jong",
 ] as const
 
 /**
@@ -118,7 +103,5 @@ export const AUTOMATISCHE_TAG_SLUGS = [
  */
 export const HANDMATIGE_TAG_SLUGS = [
   "met-kinderen",
-  "meerdere-zorgvragers",
   "alleenstaand",
-  "rouwverwerking",
 ] as const
