@@ -38,7 +38,17 @@ interface Tag {
   naam: string
   emoji?: string
   type: string
+  groep?: string | null
 }
+
+const SITUATIE_GROEPEN = [
+  { key: "relatie", label: "Jouw relatie met je naaste" },
+  { key: "wonen", label: "Woonsituatie" },
+  { key: "weekinvulling", label: "Weekinvulling" },
+  { key: "zorgduur", label: "Hoe lang zorg je al?" },
+  { key: "extra", label: "Extra" },
+  { key: "rouw", label: "Rouw & verlies" },
+]
 
 // ============================================
 // 5 STAPPEN + BEDANKPAGINA
@@ -576,8 +586,8 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
               </p>
             </div>
 
-            {/* Situatietags */}
-            <div className="ker-card space-y-3">
+            {/* Situatietags per groep */}
+            <div className="ker-card space-y-4">
               <h3 className="font-semibold text-foreground">
                 Herken je jezelf in een van deze situaties?
               </h3>
@@ -586,30 +596,39 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
                 zorgen op afstand. Door te weten wat op jou van toepassing is, kunnen we je
                 gerichter helpen. Je mag er meerdere kiezen.
               </p>
-              <div className="flex flex-wrap gap-2">
-                {situaties.map((tag) => {
-                  const selected = data.situatieTags.includes(tag.slug)
-                  return (
-                    <button
-                      key={tag.slug}
-                      onClick={() => setData({
-                        ...data,
-                        situatieTags: selected
-                          ? data.situatieTags.filter((s) => s !== tag.slug)
-                          : [...data.situatieTags, tag.slug],
+              {SITUATIE_GROEPEN.map((groep) => {
+                const groepTags = situaties.filter((t) => t.groep === groep.key)
+                if (groepTags.length === 0) return null
+                return (
+                  <div key={groep.key}>
+                    <p className="text-sm font-medium text-foreground mb-2">{groep.label}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {groepTags.map((tag) => {
+                        const selected = data.situatieTags.includes(tag.slug)
+                        return (
+                          <button
+                            key={tag.slug}
+                            onClick={() => setData({
+                              ...data,
+                              situatieTags: selected
+                                ? data.situatieTags.filter((s) => s !== tag.slug)
+                                : [...data.situatieTags, tag.slug],
+                            })}
+                            className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all border-2 ${
+                              selected
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-card border-border text-foreground hover:border-primary/30"
+                            }`}
+                          >
+                            {tag.emoji && <span className="mr-1.5">{tag.emoji}</span>}
+                            {tag.naam}
+                          </button>
+                        )
                       })}
-                      className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all border-2 ${
-                        selected
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-card border-border text-foreground hover:border-primary/30"
-                      }`}
-                    >
-                      {tag.emoji && <span className="mr-1.5">{tag.emoji}</span>}
-                      {tag.naam}
-                    </button>
-                  )
-                })}
-              </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}
