@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function main() {
-  console.log('=== Content Herstructurering ===')
+  console.log('=== Content Herstructurering v2 — Tag-herstructurering ===')
   console.log('Start migratie van categorieën, subcategorieën en tags...\n')
 
   // ============================================
@@ -141,103 +141,146 @@ async function main() {
   console.log(`  ✓ ${subcategorieen.length} subcategorieën aangemaakt/bijgewerkt`)
 
   // ============================================
-  // 4. CONTENT TAGS SEEDEN (aandoeningen + situaties)
+  // 4. ZORGTHEMA TAGS (was: AANDOENING — nu 6 overkoepelende thema's)
   // ============================================
-  console.log('\n4. Content tags seeden...')
+  console.log('\n4. Zorgthema-tags seeden (vervangt 12 aandoening-tags)...')
 
-  const aandoeningTags = [
-    { slug: 'dementie', naam: 'Dementie', emoji: '🧠', volgorde: 1 },
-    { slug: 'kanker', naam: 'Kanker', emoji: '🎗️', volgorde: 2 },
-    { slug: 'cva-beroerte', naam: 'CVA / Beroerte', emoji: '🫀', volgorde: 3 },
-    { slug: 'hartfalen', naam: 'Hartfalen', emoji: '❤️', volgorde: 4 },
-    { slug: 'copd', naam: 'COPD', emoji: '🫁', volgorde: 5 },
-    { slug: 'diabetes', naam: 'Diabetes', emoji: '💉', volgorde: 6 },
-    { slug: 'psychisch', naam: 'Psychische aandoening', emoji: '🧩', volgorde: 7 },
-    { slug: 'verstandelijke-beperking', naam: 'Verstandelijke beperking', emoji: '🌈', volgorde: 8 },
-    { slug: 'lichamelijke-beperking', naam: 'Lichamelijke beperking', emoji: '♿', volgorde: 9 },
-    { slug: 'nah', naam: 'NAH (niet-aangeboren hersenletsel)', emoji: '🧠', volgorde: 10 },
-    { slug: 'ouderdom', naam: 'Ouderdom / Kwetsbaarheid', emoji: '👴', volgorde: 11 },
-    { slug: 'terminaal', naam: 'Terminale fase / Palliatief', emoji: '🕊️', volgorde: 12 },
+  const zorgthemaTags = [
+    { slug: 'geheugen-cognitie', naam: 'Geheugen & denken', emoji: '🧠', volgorde: 1, beschrijving: 'Dementie, NAH, cognitieve achteruitgang bij ouderdom' },
+    { slug: 'lichamelijk', naam: 'Lichamelijke zorg', emoji: '💪', volgorde: 2, beschrijving: 'Hartfalen, COPD, CVA, diabetes, lichamelijke beperking, revalidatie' },
+    { slug: 'psychisch-emotioneel', naam: 'Psychisch & emotioneel', emoji: '💚', volgorde: 3, beschrijving: 'Psychische aandoeningen, depressie, angst, verslaving' },
+    { slug: 'beperking-begeleiding', naam: 'Beperking & begeleiding', emoji: '🧩', volgorde: 4, beschrijving: 'Verstandelijke beperking, autisme, ontwikkelingsstoornis' },
+    { slug: 'ouder-worden', naam: 'Ouder worden', emoji: '👴', volgorde: 5, beschrijving: 'Algemene ouderdomsklachten, kwetsbaarheid, vallen, eenzaamheid' },
+    { slug: 'ernstig-ziek', naam: 'Ernstig of langdurig ziek', emoji: '🕊️', volgorde: 6, beschrijving: 'Kanker, terminale fase, palliatief, chronisch ernstig ziek' },
   ]
 
-  const situatieTags = [
-    { slug: 'jong', naam: 'Jonge mantelzorger (< 25)', emoji: '🎓', volgorde: 1 },
-    { slug: 'werkend', naam: 'Werkende mantelzorger', emoji: '💼', volgorde: 2 },
-    { slug: 'werkend-parttime', naam: 'Parttime werkend', emoji: '🕐', volgorde: 3 },
-    { slug: 'student', naam: 'Studerende mantelzorger', emoji: '🎓', volgorde: 4 },
-    { slug: 'gepensioneerd', naam: 'Gepensioneerde mantelzorger', emoji: '👴', volgorde: 5 },
-    { slug: 'samenwonend', naam: 'Samenwonend met naaste', emoji: '🏠', volgorde: 6 },
-    { slug: 'dichtbij', naam: 'Naaste woont dichtbij', emoji: '📍', volgorde: 7 },
-    { slug: 'op-afstand', naam: 'Mantelzorg op afstand', emoji: '🚗', volgorde: 8 },
-    { slug: 'met-kinderen', naam: 'Mantelzorg naast eigen kinderen', emoji: '👨‍👩‍👧', volgorde: 9 },
-    { slug: 'beginnend', naam: 'Net begonnen (< 1 jaar)', emoji: '🌱', volgorde: 10 },
-    { slug: 'langdurig', naam: 'Al jaren bezig (> 5 jaar)', emoji: '⏳', volgorde: 11 },
-    { slug: 'intensief', naam: 'Intensieve zorg (20+ uur/week)', emoji: '⏰', volgorde: 12 },
-    { slug: 'partner-zorg', naam: 'Partnerzorg', emoji: '💑', volgorde: 13 },
-    { slug: 'ouder-zorg', naam: 'Kind zorgt voor ouder', emoji: '👵', volgorde: 14 },
-    { slug: 'kind-zorg', naam: 'Ouder zorgt voor kind', emoji: '👧', volgorde: 15 },
-    { slug: 'meerdere-zorgvragers', naam: 'Meerdere naasten', emoji: '👥', volgorde: 16 },
-    { slug: 'alleenstaand', naam: 'Alleenstaande mantelzorger', emoji: '🏚️', volgorde: 17 },
-    { slug: 'rouwverwerking', naam: 'Na het overlijden', emoji: '🕊️', volgorde: 18 },
-  ]
-
-  for (const tag of aandoeningTags) {
+  for (const tag of zorgthemaTags) {
     await prisma.contentTag.upsert({
       where: { slug: tag.slug },
-      update: { naam: tag.naam, emoji: tag.emoji, volgorde: tag.volgorde },
+      update: { naam: tag.naam, emoji: tag.emoji, volgorde: tag.volgorde, beschrijving: tag.beschrijving, groep: 'zorgthema' },
       create: {
-        type: 'AANDOENING',
+        type: 'ZORGTHEMA',
         slug: tag.slug,
         naam: tag.naam,
         emoji: tag.emoji,
+        beschrijving: tag.beschrijving,
+        groep: 'zorgthema',
         volgorde: tag.volgorde,
         isActief: true,
       },
     })
+    console.log(`  ✓ ${tag.emoji} ${tag.naam} (${tag.slug})`)
   }
-  console.log(`  ✓ ${aandoeningTags.length} aandoening-tags aangemaakt/bijgewerkt`)
+
+  // Oude aandoening-tags deactiveren (niet verwijderen vanwege FK constraints)
+  const oudeAandoeningen = [
+    'dementie', 'kanker', 'cva-beroerte', 'hartfalen', 'copd', 'diabetes',
+    'psychisch', 'verstandelijke-beperking', 'lichamelijke-beperking',
+    'nah', 'ouderdom', 'terminaal',
+  ]
+  for (const slug of oudeAandoeningen) {
+    await prisma.contentTag.updateMany({
+      where: { slug },
+      data: { isActief: false },
+    })
+  }
+  console.log(`  ✗ ${oudeAandoeningen.length} oude aandoening-tags gedeactiveerd`)
+
+  // ============================================
+  // 5. SITUATIE TAGS (geschoond: 18 → 14 actief, gegroepeerd)
+  // ============================================
+  console.log('\n5. Situatie-tags seeden (gegroepeerd)...')
+
+  const situatieTags = [
+    // Groep: relatie (B1)
+    { slug: 'partner-zorg', naam: 'Zorgt voor partner', emoji: '💑', groep: 'relatie', volgorde: 1 },
+    { slug: 'ouder-zorg', naam: 'Zorgt voor ouder(s)', emoji: '👵', groep: 'relatie', volgorde: 2 },
+    { slug: 'kind-zorg', naam: 'Zorgt voor kind', emoji: '👧', groep: 'relatie', volgorde: 3 },
+    { slug: 'netwerk-zorg', naam: 'Zorgt voor iemand anders', emoji: '🤝', groep: 'relatie', volgorde: 4 },
+    // Groep: weekinvulling (B2)
+    { slug: 'werkend', naam: 'Werkt (fulltime of parttime)', emoji: '💼', groep: 'weekinvulling', volgorde: 1 },
+    { slug: 'student', naam: 'Studeert', emoji: '🎓', groep: 'weekinvulling', volgorde: 2 },
+    { slug: 'gepensioneerd', naam: 'Met pensioen', emoji: '👴', groep: 'weekinvulling', volgorde: 3 },
+    { slug: 'fulltime-zorger', naam: 'Zorgt fulltime / werkt niet', emoji: '🏠', groep: 'weekinvulling', volgorde: 4 },
+    // Groep: wonen (B3)
+    { slug: 'samenwonend', naam: 'Woont samen met naaste', emoji: '🏠', groep: 'wonen', volgorde: 1 },
+    { slug: 'dichtbij', naam: 'Naaste woont dichtbij', emoji: '📍', groep: 'wonen', volgorde: 2 },
+    { slug: 'op-afstand', naam: 'Zorgt op afstand', emoji: '🚗', groep: 'wonen', volgorde: 3 },
+    // Groep: zorgduur (B4)
+    { slug: 'beginnend', naam: 'Kort (minder dan 1 jaar)', emoji: '🌱', groep: 'zorgduur', volgorde: 1 },
+    { slug: 'ervaren', naam: 'Een paar jaar (1-5 jaar)', emoji: '📅', groep: 'zorgduur', volgorde: 2 },
+    { slug: 'langdurig', naam: 'Al lang (meer dan 5 jaar)', emoji: '⏳', groep: 'zorgduur', volgorde: 3 },
+    // Groep: extra (B5)
+    { slug: 'met-kinderen', naam: 'Heeft ook kinderen', emoji: '👨‍👩‍👧', groep: 'extra', volgorde: 1 },
+    { slug: 'meerdere-naasten', naam: 'Zorgt voor meerdere mensen', emoji: '👥', groep: 'extra', volgorde: 2 },
+    { slug: 'alleenstaand', naam: 'Doet het alleen', emoji: '🏚️', groep: 'extra', volgorde: 3 },
+    // Groep: rouw (B6 — eigen sectie)
+    { slug: 'rouw', naam: 'Naaste is overleden', emoji: '🕊️', groep: 'rouw', volgorde: 1 },
+  ]
 
   for (const tag of situatieTags) {
     await prisma.contentTag.upsert({
       where: { slug: tag.slug },
-      update: { naam: tag.naam, emoji: tag.emoji, volgorde: tag.volgorde },
+      update: { naam: tag.naam, emoji: tag.emoji, volgorde: tag.volgorde, groep: tag.groep },
       create: {
         type: 'SITUATIE',
         slug: tag.slug,
         naam: tag.naam,
         emoji: tag.emoji,
+        groep: tag.groep,
         volgorde: tag.volgorde,
         isActief: true,
       },
     })
   }
-  console.log(`  ✓ ${situatieTags.length} situatie-tags aangemaakt/bijgewerkt`)
+  console.log(`  ✓ ${situatieTags.length} situatie-tags aangemaakt/bijgewerkt (gegroepeerd)`)
 
-  // ONDERWERP-tags (voor artikel-tagging, niet door gebruiker gekozen)
+  // Oude situatie-tags deactiveren
+  const oudeSituaties = ['jong', 'intensief', 'werkend-parttime', 'meerdere-zorgvragers', 'rouwverwerking']
+  for (const slug of oudeSituaties) {
+    await prisma.contentTag.updateMany({
+      where: { slug },
+      data: { isActief: false },
+    })
+  }
+  console.log(`  ✗ ${oudeSituaties.length} oude situatie-tags gedeactiveerd`)
+
+  // ============================================
+  // 6. ONDERWERP TAGS (vernieuwd: meer overkoepelend)
+  // ============================================
+  console.log('\n6. Onderwerp-tags seeden (vernieuwd)...')
+
   const onderwerpTags = [
-    { slug: 'financien', naam: 'Financiën & vergoedingen', emoji: '💰', volgorde: 1 },
-    { slug: 'wmo-aanvragen', naam: 'Wmo aanvragen', emoji: '📋', volgorde: 2 },
-    { slug: 'pgb', naam: 'Persoonsgebonden budget', emoji: '💳', volgorde: 3, synoniemen: ['PGB', 'persoonsgebonden budget'] },
-    { slug: 'medicatie', naam: 'Medicatie & medicijnbeheer', emoji: '💊', volgorde: 4 },
-    { slug: 'nachtrust', naam: 'Slaap & nachtrust', emoji: '😴', volgorde: 5 },
-    { slug: 'voeding', naam: 'Voeding & maaltijden', emoji: '🍽️', volgorde: 6 },
-    { slug: 'veiligheid-thuis', naam: 'Veiligheid in huis', emoji: '🏠', volgorde: 7 },
-    { slug: 'dagbesteding', naam: 'Dagbesteding', emoji: '🎨', volgorde: 8 },
-    { slug: 'vervoer', naam: 'Vervoer & mobiliteit', emoji: '🚗', volgorde: 9 },
-    { slug: 'respijtzorg', naam: 'Respijtzorg', emoji: '🌿', volgorde: 10, synoniemen: ['respijt', 'vervangende zorg', 'logeervoorziening'] },
-    { slug: 'werk-zorg-balans', naam: 'Werk-zorgbalans', emoji: '⚖️', volgorde: 11 },
-    { slug: 'emotionele-steun', naam: 'Emotionele steun', emoji: '💚', volgorde: 12 },
+    { slug: 'financien-regelingen', naam: 'Financiën & regelingen', emoji: '💰', volgorde: 1 },
+    { slug: 'wmo-wlz-zvw', naam: 'Wmo, Wlz & zorgverzekering', emoji: '📋', volgorde: 2 },
+    { slug: 'pgb', naam: 'PGB', emoji: '💳', volgorde: 3, synoniemen: ['PGB', 'persoonsgebonden budget'] },
+    { slug: 'medicatie-behandeling', naam: 'Medicatie & behandeling', emoji: '💊', volgorde: 4 },
+    { slug: 'dagelijks-zorgen', naam: 'Dagelijks zorgen', emoji: '🏠', volgorde: 5 },
+    { slug: 'zelfzorg-balans', naam: 'Zelfzorg & balans', emoji: '💆', volgorde: 6 },
+    { slug: 'respijtzorg', naam: 'Respijtzorg & vervanging', emoji: '🌿', volgorde: 7, synoniemen: ['respijt', 'vervangende zorg', 'logeervoorziening'] },
+    { slug: 'werk-zorg', naam: 'Werk & zorg combineren', emoji: '⚖️', volgorde: 8 },
+    { slug: 'hulpmiddelen', naam: 'Hulpmiddelen & technologie', emoji: '🔧', volgorde: 9 },
+    { slug: 'emotioneel', naam: 'Emotioneel & mentaal', emoji: '💚', volgorde: 10 },
+    { slug: 'netwerk-hulp', naam: 'Netwerk & hulp organiseren', emoji: '🤝', volgorde: 11 },
+    { slug: 'veiligheid', naam: 'Veiligheid thuis', emoji: '🏡', volgorde: 12 },
   ]
 
   for (const tag of onderwerpTags) {
     await prisma.contentTag.upsert({
       where: { slug: tag.slug },
-      update: { naam: tag.naam, emoji: tag.emoji, volgorde: tag.volgorde, synoniemen: (tag as any).synoniemen || [] },
+      update: {
+        naam: tag.naam,
+        emoji: tag.emoji,
+        volgorde: tag.volgorde,
+        groep: 'onderwerp',
+        synoniemen: (tag as any).synoniemen || [],
+      },
       create: {
         type: 'ONDERWERP',
         slug: tag.slug,
         naam: tag.naam,
         emoji: tag.emoji,
+        groep: 'onderwerp',
         volgorde: tag.volgorde,
         synoniemen: (tag as any).synoniemen || [],
         isActief: true,
@@ -246,7 +289,27 @@ async function main() {
   }
   console.log(`  ✓ ${onderwerpTags.length} onderwerp-tags aangemaakt/bijgewerkt`)
 
-  console.log('\n=== Content Herstructurering voltooid! ===')
+  // Oude onderwerp-tags deactiveren (vervangen door nieuwe slugs)
+  const oudeOnderwerpen = ['financien', 'wmo-aanvragen', 'medicatie', 'nachtrust', 'voeding',
+    'veiligheid-thuis', 'dagbesteding', 'vervoer', 'werk-zorg-balans', 'emotionele-steun']
+  for (const slug of oudeOnderwerpen) {
+    await prisma.contentTag.updateMany({
+      where: { slug },
+      data: { isActief: false },
+    })
+  }
+  console.log(`  ✗ ${oudeOnderwerpen.length} oude onderwerp-tags gedeactiveerd`)
+
+  // ============================================
+  // 7. SAMENVATTING
+  // ============================================
+  const actieveTags = await prisma.contentTag.count({ where: { isActief: true } })
+  const inactieveTags = await prisma.contentTag.count({ where: { isActief: false } })
+
+  console.log('\n=== Content Herstructurering v2 voltooid! ===')
+  console.log(`  Actieve tags: ${actieveTags}`)
+  console.log(`  Gedeactiveerde tags: ${inactieveTags}`)
+  console.log('\nVolgende stap: draai seed-artikel-tags.ts om artikelen te taggen met de nieuwe structuur')
 }
 
 main()

@@ -992,6 +992,7 @@ model ContentTag {
   naam         String
   beschrijving String?
   emoji        String?
+  groep        String?      // Dimensie: "zorgthema" | "relatie" | "weekinvulling" | "wonen" | "zorgduur" | "extra" | "rouw" | "onderwerp"
   synoniemen   String[]     @default([]) // Synoniemen voor zoeken, bijv. ["PGB", "persoonsgebonden budget"]
   volgorde     Int          @default(0)
   isActief     Boolean      @default(true)
@@ -1000,6 +1001,7 @@ model ContentTag {
   artikelTags  ArtikelTag[]
 
   @@index([type, isActief])
+  @@index([groep])
 }
 
 model ArtikelTag {
@@ -1026,9 +1028,9 @@ model GebruikerVoorkeur {
 }
 
 enum TagType {
-  AANDOENING    // Bijv. dementie, kanker, CVA
-  SITUATIE      // Bijv. werkend, jong, op-afstand
-  ONDERWERP     // Bijv. financien, respijtzorg, medicatie
+  ZORGTHEMA     // Bijv. geheugen-cognitie, lichamelijk, ernstig-ziek (was: AANDOENING)
+  SITUATIE      // Bijv. werkend, partner-zorg, samenwonend
+  ONDERWERP     // Bijv. financien-regelingen, respijtzorg, medicatie-behandeling
 }
 
 enum VoorkeurType {
