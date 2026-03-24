@@ -67,7 +67,7 @@ async function haalTags() {
     select: { slug: true, naam: true, type: true },
   })
   return {
-    aandoeningen: tags.filter((t) => t.type === "AANDOENING"),
+    zorgthemas: tags.filter((t) => t.type === "ZORGTHEMA"),
     situaties: tags.filter((t) => t.type === "SITUATIE"),
   }
 }
@@ -246,7 +246,7 @@ SCHRIJFREGELS:
 - Geef het artikel als HTML (gebruik <h2>, <h3>, <p>, <ul>, <li>, <strong>)
 - GEEN <h1> gebruiken (die wordt apart getoond)
 - Verwijs waar mogelijk naar betrouwbare bronnen
-- Kies relevante tags (aandoeningen en/of situaties) die bij het artikel passen
+- Kies relevante tags (zorgthema's en/of situaties) die bij het artikel passen
 
 ANTWOORD IN JSON-FORMAT:
 \`\`\`json
@@ -803,7 +803,7 @@ async function hiatenAnalyse() {
   ])
 
   // Bouw matrix: categorie × tag → aantal artikelen
-  const alleTags = [...beschikbareTags.aandoeningen, ...beschikbareTags.situaties]
+  const alleTags = [...beschikbareTags.zorgthemas, ...beschikbareTags.situaties]
   const rawMatrix: Record<string, Record<string, number>> = {}
 
   for (const cat of categorieen) {
