@@ -364,4 +364,316 @@ Zo ziet de ervaring eruit voor een nieuwe gebruiker:
 
 ---
 
+## 10. Volledige impactanalyse: Database, Content & Code
+
+### 10.1 Database-wijzigingen (Prisma schema)
+
+#### A. TagType enum aanpassen
+```prisma
+// OUD:
+enum TagType {
+  AANDOENING
+  SITUATIE
+  ONDERWERP
+}
+
+// NIEUW:
+enum TagType {
+  ZORGTHEMA      // ← was AANDOENING
+  SITUATIE       // blijft
+  ONDERWERP      // blijft
+}
+```
+**Impact:** Elke query die `type: "AANDOENING"` filtert moet naar `type: "ZORGTHEMA"`.
+
+#### B. ContentTag model — groep veld toevoegen
+```prisma
+model ContentTag {
+  // bestaande velden...
+  groep     String?   // "zorgthema" | "relatie" | "weekinvulling" | "wonen" | "zorgduur" | "extra" | "rouw" | "onderwerp"
+}
+```
+**Impact:** Nieuw veld, geen breaking change. Seed-scripts moeten groep meesturen.
+
+#### C. Caregiver model — `aandoening` veld
+```prisma
+model Caregiver {
+  // OUD:
+  aandoening    String?    // "dementie", "kanker", etc.
+
+  // NIEUW:
+  aandoening    String?    // Backward compat — wordt gemigreerd naar GebruikerVoorkeur
+  // Op termijn: veld verwijderen, alleen GebruikerVoorkeur gebruiken
+}
+```
+**Impact:**
+- Bestaande waarden moeten gemigreerd worden: `dementie` → `geheugen-cognitie`, etc.
+- Veld voorlopig behouden voor backward compat, maar schrijflogica aanpassen
+
+#### D. Migratie-SQL voor bestaande data
+
+```sql
+-- STAP 1: ContentTag type AANDOENING → ZORGTHEMA
+-- (eerst nieuwe tags aanmaken, dan oude verwijderen)
+
+-- STAP 2: Caregiver.aandoening waarden migreren
+UPDATE "Caregiver" SET aandoening = 'geheugen-cognitie' WHERE aandoening IN ('dementie', 'nah');
+UPDATE "Caregiver" SET aandoening = 'lichamelijk' WHERE aandoening IN ('cva-beroerte', 'hartfalen', 'copd', 'diabetes', 'lichamelijke-beperking');
+UPDATE "Caregiver" SET aandoening = 'psychisch-emotioneel' WHERE aandoening = 'psychisch';
+UPDATE "Caregiver" SET aandoening = 'beperking-begeleiding' WHERE aandoening = 'verstandelijke-beperking';
+UPDATE "Caregiver" SET aandoening = 'ouder-worden' WHERE aandoening = 'ouderdom';
+UPDATE "Caregiver" SET aandoening = 'ernstig-ziek' WHERE aandoening IN ('kanker', 'terminaal');
+
+-- STAP 3: GebruikerVoorkeur slug-waarden migreren
+UPDATE "GebruikerVoorkeur" SET slug = 'geheugen-cognitie' WHERE slug IN ('dementie', 'nah') AND type = 'TAG';
+UPDATE "GebruikerVoorkeur" SET slug = 'lichamelijk' WHERE slug IN ('cva-beroerte', 'hartfalen', 'copd', 'diabetes', 'lichamelijke-beperking') AND type = 'TAG';
+UPDATE "GebruikerVoorkeur" SET slug = 'psychisch-emotioneel' WHERE slug = 'psychisch' AND type = 'TAG';
+UPDATE "GebruikerVoorkeur" SET slug = 'beperking-begeleiding' WHERE slug = 'verstandelijke-beperking' AND type = 'TAG';
+UPDATE "GebruikerVoorkeur" SET slug = 'ouder-worden' WHERE slug = 'ouderdom' AND type = 'TAG';
+UPDATE "GebruikerVoorkeur" SET slug = 'ernstig-ziek' WHERE slug IN ('kanker', 'terminaal') AND type = 'TAG';
+UPDATE "GebruikerVoorkeur" SET slug = 'meerdere-naasten' WHERE slug = 'meerdere-zorgvragers' AND type = 'TAG';
+UPDATE "GebruikerVoorkeur" SET slug = 'rouw' WHERE slug = 'rouwverwerking' AND type = 'TAG';
+-- Verwijder tags die niet meer bestaan:
+DELETE FROM "GebruikerVoorkeur" WHERE slug IN ('werkend-parttime', 'jong', 'intensief') AND type = 'TAG';
+
+-- STAP 4: ArtikelTag records migreren (via ContentTag ID lookup)
+-- Dit gaat via de seed-scripts: oude tags verwijderen, nieuwe tags aanmaken, artikelen opnieuw taggen
+
+-- STAP 5: Oude ContentTag records verwijderen
+-- Pas na succesvolle migratie van ArtikelTag en GebruikerVoorkeur
+```
+
+---
+
+### 10.2 Impact op alle 44 artikelen
+
+Elk artikel moet opnieuw getagd worden met de nieuwe zorgthema's en onderwerp-tags. Hieronder de volledige mapping:
+
+#### Praktische tips (9 artikelen)
+| ID | Titel | Nieuwe zorgthema-tags | Nieuwe onderwerp-tags |
+|----|-------|----------------------|----------------------|
+| pt-1 | Dagstructuur en weekplanning | *(alle thema's relevant)* | dagelijks-zorgen |
+| pt-2 | Tips voor veilig medicijngebruik | lichamelijk, ouder-worden | medicatie-behandeling |
+| pt-3 | Samenwerken met de thuiszorg | *(alle)* | netwerk-hulp |
+| pt-4 | Communiceren met je naaste | geheugen-cognitie, psychisch-emotioneel | dagelijks-zorgen, emotioneel |
+| pt-5 | Veilig tillen en verplaatsen | lichamelijk, ouder-worden | dagelijks-zorgen, veiligheid |
+| pt-6 | Zorgrooster maken met familie | *(alle)* | netwerk-hulp |
+| pt-7 | Hulp vragen aan je omgeving | *(alle)* | netwerk-hulp |
+| pt-8 | Valpreventie in huis | lichamelijk, ouder-worden | veiligheid |
+| pt-9 | Dagstructuur bij dementie | geheugen-cognitie | dagelijks-zorgen |
+
+#### Zelfzorg (8 artikelen)
+| ID | Titel | Nieuwe zorgthema-tags | Nieuwe onderwerp-tags |
+|----|-------|----------------------|----------------------|
+| zz-1 | Herken overbelasting op tijd | *(alle)* | zelfzorg-balans |
+| zz-2 | Grenzen stellen als mantelzorger | *(alle)* | zelfzorg-balans, emotioneel |
+| zz-3 | Vervangende mantelzorg: even vrij | *(alle)* | respijtzorg |
+| zz-4 | Werk en mantelzorg combineren | *(alle)* | werk-zorg |
+| zz-5 | De Mantelzorglijn: praat met iemand | *(alle)* | emotioneel |
+| zz-6 | De mantelzorgtest: hoe belast ben jij? | *(alle)* | zelfzorg-balans |
+| zz-7 | Logeeropvang en vakantiemogelijkheden | *(alle)* | respijtzorg |
+| zz-8 | Lotgenotencontact | *(alle)* | emotioneel, netwerk-hulp |
+
+#### Rechten (9 artikelen)
+| ID | Titel | Nieuwe zorgthema-tags | Nieuwe onderwerp-tags |
+|----|-------|----------------------|----------------------|
+| re-1 | De Wmo: hulp via je gemeente | *(alle)* | wmo-wlz-zvw, financien-regelingen |
+| re-2 | Mantelzorg is altijd vrijwillig | *(alle)* | financien-regelingen |
+| re-3 | Het keukentafelgesprek | *(alle)* | wmo-wlz-zvw |
+| re-4 | Recht op zorgverlof van je werk | *(alle)* | werk-zorg, financien-regelingen |
+| re-5 | Gratis onafhankelijke cliëntondersteuning | *(alle)* | wmo-wlz-zvw, financien-regelingen |
+| re-6 | Recht op vervangende mantelzorg | *(alle)* | respijtzorg, financien-regelingen |
+| re-7 | De Wlz: langdurige zorg | *(alle)* | wmo-wlz-zvw |
+| re-8 | Bezwaar maken tegen een beslissing | *(alle)* | financien-regelingen |
+| re-9 | Regelhulp: welke zorg past bij jou? | *(alle)* | wmo-wlz-zvw |
+
+#### Financieel (9 artikelen)
+| ID | Titel | Nieuwe zorgthema-tags | Nieuwe onderwerp-tags |
+|----|-------|----------------------|----------------------|
+| fi-1 | Eigen bijdrage en kosten (CAK) | *(alle)* | financien-regelingen |
+| fi-2 | Mantelzorgwaardering van je gemeente | *(alle)* | financien-regelingen |
+| fi-3 | Betaald worden via een PGB | *(alle)* | pgb, financien-regelingen |
+| fi-4 | Belasting en PGB-inkomen | *(alle)* | pgb, financien-regelingen |
+| fi-5 | Vergoedingen hulpmiddelen | lichamelijk, ouder-worden | financien-regelingen, hulpmiddelen |
+| fi-6 | Zorgkosten aftrekken bij de belasting | *(alle)* | financien-regelingen |
+| fi-7 | Mantelzorgcompliment aanvragen | *(alle)* | financien-regelingen |
+| fi-8 | PGB declareren via de SVB | *(alle)* | pgb, financien-regelingen |
+| fi-9 | Zorgtoeslag en huurtoeslag | *(alle)* | financien-regelingen |
+
+#### Hulpmiddelen (7 artikelen)
+| ID | Titel | Nieuwe zorgthema-tags | Nieuwe onderwerp-tags |
+|----|-------|----------------------|----------------------|
+| hp-1 | Hulpmiddelenwijzer | lichamelijk, ouder-worden | hulpmiddelen |
+| hp-2 | Woningaanpassingen via de Wmo | lichamelijk, ouder-worden | hulpmiddelen, wmo-wlz-zvw |
+| hp-3 | Welk hulpmiddel via welke wet? | lichamelijk, ouder-worden | hulpmiddelen, financien-regelingen |
+| hp-4 | Douchestoel, toiletverhoger en badlift | lichamelijk, ouder-worden | hulpmiddelen, veiligheid |
+| hp-5 | Rollator, rolstoel en scootmobiel | lichamelijk | hulpmiddelen |
+| hp-6 | Personenalarmering en GPS-tracker | geheugen-cognitie, ouder-worden | hulpmiddelen, veiligheid |
+| hp-7 | Hulpmiddelen via je zorgverzekeraar | lichamelijk, ouder-worden | hulpmiddelen, wmo-wlz-zvw |
+
+#### Gemeente nieuws (2 artikelen)
+| ID | Titel | Nieuwe zorgthema-tags | Nieuwe onderwerp-tags |
+|----|-------|----------------------|----------------------|
+| gn-zutphen-1 | Lotgenotengroep mantelzorgers Zutphen | *(alle)* | emotioneel, netwerk-hulp |
+| gn-zutphen-2 | Mantelzorgcompliment Zutphen | *(alle)* | financien-regelingen |
+
+> **Opmerking:** Artikelen gemarkeerd met *(alle)* zijn generiek relevant voor alle zorgthema's. Deze krijgen **geen** zorgthema-tag — ze worden getoond aan iedereen. Alleen artikelen die specifiek relevant zijn voor bepaalde zorgsituaties krijgen zorgthema-tags. Dit voorkomt dat alles aan alles getagd wordt.
+
+---
+
+### 10.3 Keyword-matching aanpassen (seed-artikel-tags.ts)
+
+Het huidige keyword-systeem in `scripts/seed-artikel-tags.ts` moet volledig herschreven worden:
+
+```typescript
+// OUD: 12 aandoening keywords + 12 situatie keywords + 12 onderwerp keywords
+// NIEUW: 6 zorgthema keywords + 9 situatie keywords + 12 onderwerp keywords
+
+const TAG_KEYWORDS_NIEUW: Record<string, string[]> = {
+  // ZORGTHEMA tags (was: AANDOENING)
+  "geheugen-cognitie": ["dementie", "alzheimer", "geheugen", "vergeetachtig", "nah", "hersenletsel", "cognitie"],
+  "lichamelijk": ["lichamelijk", "hartfalen", "copd", "cva", "beroerte", "diabetes", "revalidatie", "rolstoel", "mobiliteit", "tillen", "vallen"],
+  "psychisch-emotioneel": ["psychisch", "depressie", "angst", "ggz", "psychiatrisch", "mentaal", "verslaving"],
+  "beperking-begeleiding": ["verstandelijke beperking", "lvb", "downsyndroom", "autisme", "begeleiding"],
+  "ouder-worden": ["ouderdom", "kwetsbaar", "vergrijzing", "senioren", "bejaarden", "ouder worden"],
+  "ernstig-ziek": ["kanker", "terminaal", "palliatief", "levenseinde", "oncologie", "tumor", "chemo"],
+
+  // SITUATIE tags (geschoond)
+  "werkend": ["werk", "werkgever", "collega", "kantoor", "baan", "arbeids"],
+  "student": ["student", "studie", "opleiding"],
+  "partner-zorg": ["partner", "echtgenoot", "echtgenote"],
+  "ouder-zorg": ["ouder", "moeder", "vader", "ouders"],
+  "kind-zorg": ["kind", "zoon", "dochter"],
+  "samenwonend": ["samenwonend", "inwonend", "samen wonen"],
+  "op-afstand": ["afstand", "ver weg", "reizen", "andere stad"],
+  "rouw": ["rouw", "overlijden", "verlies", "afscheid"],
+  "meerdere-naasten": ["meerdere", "twee naasten"],
+
+  // ONDERWERP tags (vernieuwd)
+  "financien-regelingen": ["financ", "kosten", "geld", "vergoeding", "toelage", "budget", "eigen bijdrage"],
+  "wmo-wlz-zvw": ["wmo", "wlz", "zvw", "gemeente", "indicatie", "zorgverzeker"],
+  "pgb": ["pgb", "persoonsgebonden budget", "svb"],
+  "medicatie-behandeling": ["medicijn", "medicatie", "pillen", "apotheek"],
+  "dagelijks-zorgen": ["dagstructuur", "dagritme", "dagelijks", "maaltijd", "koken", "huishoud"],
+  "zelfzorg-balans": ["overbelast", "burn-out", "burnout", "zelfzorg", "grenzen stellen"],
+  "respijtzorg": ["respijt", "logeer", "vervanging", "adempauze", "even vrij"],
+  "werk-zorg": ["werk-zorg", "zorgverlof", "combineren werk"],
+  "hulpmiddelen": ["hulpmiddel", "rollator", "rolstoel", "scootmobiel", "douchestoel", "woningaanpass"],
+  "emotioneel": ["emotioneel", "steun", "luisterend oor", "lotgenoten", "praatgroep", "mantelzorglijn"],
+  "netwerk-hulp": ["samenwerk", "thuiszorg", "familie", "netwerk", "hulp vragen", "zorgrooster"],
+  "veiligheid": ["veiligheid", "valpreventie", "domotica", "alarm", "personenalarm", "gps-tracker"],
+}
+```
+
+---
+
+### 10.4 Alle bestanden die aangepast moeten worden
+
+#### Prisma & Database (3 bestanden)
+| Bestand | Wijziging | Risico |
+|---------|-----------|--------|
+| `prisma/schema.prisma` | TagType enum: AANDOENING→ZORGTHEMA, groep veld op ContentTag | **HOOG** — migratie nodig |
+| `prisma/migrations/[nieuw]` | Migratie-SQL voor enum + veld + data | **HOOG** — productiedata |
+| `prisma/seed.ts` | Entry point updaten | Laag |
+
+#### Seed-scripts (3 bestanden)
+| Bestand | Wijziging | Risico |
+|---------|-----------|--------|
+| `scripts/seed-content-herstructurering.ts` | 12 aandoening-tags → 6 zorgthema's, 18 situatie-tags → 13, groep veld toevoegen | **HOOG** — bron van alle tags |
+| `scripts/seed-artikel-tags.ts` | Keyword-mapping volledig herschrijven (zie 10.3) | **HOOG** — bepaalt artikel-tags |
+| `scripts/seed-content.ts` | Controleren op verwijzingen naar oude tag-slugs | Middel |
+
+#### API Routes (6 bestanden)
+| Bestand | Wijziging | Risico |
+|---------|-----------|--------|
+| `src/app/api/content/tags/route.ts` | Response groepering: `aandoeningen` → `zorgthemas` | **HOOG** — breekt frontend |
+| `src/app/api/user/voorkeuren/route.ts` | GET: aandoening→zorgthema velden. POST: primary aandoening logica aanpassen | **HOOG** — breekt profiel opslaan |
+| `src/app/api/artikelen/route.ts` | Filter `?tag=slug` werkt al generiek, maar controleren | Laag |
+| `src/app/api/beheer/artikelen/[id]/route.ts` | Tag-sync werkt al generiek via tagIds | Laag |
+| `src/app/api/ai/admin/tag-suggestie/route.ts` | "BESCHIKBARE TAGS" lijst updaten, type check aanpassen | Middel |
+| `src/app/api/ai/admin/content-agent/route.ts` | `haalTags()` functie: type "AANDOENING"→"ZORGTHEMA" | Middel |
+| `src/app/api/profile/route.ts` | Caregiver.aandoening veld: nieuwe slugs | Middel |
+
+#### UI Componenten (4 bestanden)
+| Bestand | Wijziging | Risico |
+|---------|-----------|--------|
+| `src/components/profiel/ProfielFormulier.tsx` | **Volledig herschrijven**: chip-wall → gestructureerde secties (B1-B6). Tag-type check `AANDOENING`→`ZORGTHEMA`. Rouw-sectie toevoegen | **HOOG** — kern van profiel |
+| `src/components/profiel/ProfielWizard.tsx` | **Volledig herschrijven**: 3-schermen flow. Zorgthema multi-select. Verwijzing naar `INTERESSE_CATEGORIEEN` updaten | **HOOG** — kern van onboarding |
+| `src/app/(dashboard)/leren/[categorie]/page.tsx` | Relevantie-filter: `gebruikerTags` matching logica | Middel |
+| `src/app/beheer/artikelen/page.tsx` | Admin tag-selectie: groepering `aandoeningen`→`zorgthemas` | Middel |
+
+#### Libraries (3 bestanden)
+| Bestand | Wijziging | Risico |
+|---------|-----------|--------|
+| `src/lib/profiel-tags.ts` | **Herschrijven**: `bepaalProfielTags()` uitbreiden met `fulltime-zorger`, `ervaren`, `netwerk-zorg`. `AUTOMATISCHE_TAG_SLUGS` updaten. `HANDMATIGE_TAG_SLUGS` updaten (rouw apart) | **HOOG** — kern van tag-afleiding |
+| `src/lib/validations.ts` | `voorkeurenSchema`: veld `aandoeningen`→`zorgthemas` | Middel |
+| `src/lib/artikel-completeness.ts` | Geen wijziging nodig (telt alleen tagCount) | Geen |
+
+#### Config (1 bestand)
+| Bestand | Wijziging | Risico |
+|---------|-----------|--------|
+| `src/config/options.ts` | `RELATIE_OPTIES` uitbreiden met "Iemand anders". Geen directe tag-verwijzingen maar indirect via formulieropties | Laag |
+
+---
+
+### 10.5 Afhankelijkheden en volgorde van wijzigingen
+
+```
+FASE 1: Database & Tags (moet eerst)
+├── 1a. prisma/schema.prisma — enum + groep veld
+├── 1b. Prisma migratie genereren en draaien
+├── 1c. seed-content-herstructurering.ts — nieuwe tags seeden
+└── 1d. Data-migratie SQL — bestaande Caregiver + GebruikerVoorkeur
+
+FASE 2: Backend (daarna)
+├── 2a. profiel-tags.ts — bepaalProfielTags() herschrijven
+├── 2b. api/content/tags — response format
+├── 2c. api/user/voorkeuren — GET + POST
+├── 2d. api/ai/admin/* — tag-suggestie + content-agent
+└── 2e. validations.ts — schema's updaten
+
+FASE 3: Content (kan parallel met fase 2)
+├── 3a. seed-artikel-tags.ts — keyword-mapping herschrijven
+├── 3b. Alle 44 artikelen opnieuw taggen (script draaien)
+└── 3c. Handmatige controle: zijn tags logisch?
+
+FASE 4: Frontend (laatst, want afhankelijk van backend)
+├── 4a. ProfielFormulier.tsx — gestructureerde secties
+├── 4b. ProfielWizard.tsx — 3-schermen onboarding
+├── 4c. leren/[categorie]/page.tsx — relevantie-filter
+└── 4d. beheer/artikelen/page.tsx — admin tag-UI
+```
+
+---
+
+### 10.6 Risico's en aandachtspunten
+
+| Risico | Impact | Mitigatie |
+|--------|--------|-----------|
+| **Productiedata verloren** bij migratie | HOOG | Backup maken vóór migratie. Migratie-SQL eerst testen op staging |
+| **ArtikelTag tabel is leeg** — geen data om te migreren | GEEN | Alleen nieuwe tags seeden, dan artikelen taggen |
+| **GebruikerVoorkeur met oude slugs** | MIDDEL | UPDATE query's migreren. Deduplicatie na merge (bijv. 2x `lichamelijk`) |
+| **Caregiver.aandoening met oude waarden** | MIDDEL | UPDATE query's. NULL-waarden (geen aandoening gekozen) hoeven niets |
+| **Frontend toont lege tags na deploy** | HOOG | Seed-scripts draaien vóór frontend deploy |
+| **AI-prompts verwijzen naar oude tag-namen** | LAAG | Tag-suggestie haalt dynamisch uit DB, niet hardcoded |
+| **Artikel keyword-matching mist artikelen** | MIDDEL | Handmatige review na bulk-tagging. Content gap analyse |
+
+---
+
+### 10.7 Wat NIET verandert
+
+Deze onderdelen zijn **niet geraakt** door de tag-herstructurering:
+
+- **ContentCategorie** (LEREN, SUB_HOOFDSTUK, etc.) — structuur blijft hetzelfde
+- **Zorgtaken** (t1-t10) — ongewijzigd
+- **Balanstest vragen** (q1-q12) — ongewijzigd
+- **Check-in vragen** (c1-c5) — ongewijzigd
+- **Buddy-systeem** (BuddyTaakCategorie, matching) — ongewijzigd
+- **Hulpvraag categorieën** — ongewijzigd
+- **Zorgorganisaties** (landelijk + gemeente) — ongewijzigd
+- **Artikel inhoud** (markdown teksten) — ongewijzigd, alleen tags wijzigen
+- **Artikel categorieën** (praktische-tips→dagelijks-zorgen mapping) — al gemigreerd in herstructurering
+
+---
+
 *Dit voorstel is de basis voor de implementatie in Iteratie 2 van het projectplan. Na goedkeuring wordt het vertaald naar database-migraties, seed-scripts en UI-wijzigingen.*
