@@ -25,7 +25,17 @@ interface Tag {
   naam: string
   emoji?: string
   type: string
+  groep?: string | null
 }
+
+const SITUATIE_GROEPEN = [
+  { key: "relatie", label: "Jouw relatie met je naaste" },
+  { key: "wonen", label: "Woonsituatie" },
+  { key: "weekinvulling", label: "Weekinvulling" },
+  { key: "zorgduur", label: "Hoe lang zorg je al?" },
+  { key: "extra", label: "Extra" },
+  { key: "rouw", label: "Rouw & verlies" },
+]
 
 export interface ProfielFormulierData {
   // Over jou
@@ -607,32 +617,41 @@ export function ProfielFormulier({ onSave, onSkip, showSkip = false, variant = "
           </div>
         )}
 
-        {/* Handmatige situatie-tags */}
-        <div className="flex flex-wrap gap-2">
-          {handmatigeSituaties.map((tag) => {
-            const selected = data.situatieTags.includes(tag.slug)
-            return (
-              <button
-                key={tag.slug}
-                type="button"
-                onClick={() => setData({
-                  ...data,
-                  situatieTags: selected
-                    ? data.situatieTags.filter((s) => s !== tag.slug)
-                    : [...data.situatieTags, tag.slug],
+        {/* Handmatige situatie-tags per groep */}
+        {SITUATIE_GROEPEN.map((groep) => {
+          const groepTags = handmatigeSituaties.filter((t) => t.groep === groep.key)
+          if (groepTags.length === 0) return null
+          return (
+            <div key={groep.key}>
+              <p className="text-sm font-medium text-foreground mb-2">{groep.label}</p>
+              <div className="flex flex-wrap gap-2">
+                {groepTags.map((tag) => {
+                  const selected = data.situatieTags.includes(tag.slug)
+                  return (
+                    <button
+                      key={tag.slug}
+                      type="button"
+                      onClick={() => setData({
+                        ...data,
+                        situatieTags: selected
+                          ? data.situatieTags.filter((s) => s !== tag.slug)
+                          : [...data.situatieTags, tag.slug],
+                      })}
+                      className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all border-2 ${
+                        selected
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-card border-border text-foreground hover:border-primary/30"
+                      }`}
+                    >
+                      {tag.emoji && <span className="mr-1.5">{tag.emoji}</span>}
+                      {tag.naam}
+                    </button>
+                  )
                 })}
-                className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all border-2 ${
-                  selected
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-card border-border text-foreground hover:border-primary/30"
-                }`}
-              >
-                {tag.emoji && <span className="mr-1.5">{tag.emoji}</span>}
-                {tag.naam}
-              </button>
-            )
-          })}
-        </div>
+              </div>
+            </div>
+          )
+        })}
       </section>
 
       {/* ============================================ */}
