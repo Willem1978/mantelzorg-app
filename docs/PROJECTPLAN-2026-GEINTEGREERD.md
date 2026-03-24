@@ -1,7 +1,7 @@
 # MantelBuddy — Geïntegreerd Projectplan 2026
 
-**Datum:** 16 maart 2026
-**Versie:** 2.0 — Geïntegreerd met Kritische Analyse
+**Datum:** 24 maart 2026
+**Versie:** 2.1 — Geïntegreerd met Kritische Analyse + Tag-opruiming & Content Filtering
 **Baseline:** v2.5.0
 **Status:** Actief werkdocument
 **Geschatte totale doorlooptijd:** ~350 uur (inclusief nieuwe aanbevelingen)
@@ -323,16 +323,20 @@ De analyse voegt hier twee extra inzichten aan toe:
 
 ### Taken (uit bestaand plan + aanvullingen)
 
-| # | Taak | Uur | Bron |
-|---|------|-----|------|
-| 2.1 | **Tag-groepen definiëren** — `groep` veld op ContentTag. Groepen: relatie, wonen, werk, zorgduur, zorgintensiteit, levensfase, extra | 2 | P1 bestaand |
-| 2.2 | **Profielscherm herstructureren** — Eén scrollbaar scherm met 7 secties. Radio buttons voor exclusieve keuzes, chips voor multi-select | 6 | P1 bestaand |
-| 2.3 | **Tag-afleiding server-side** — `bepaalProfielTags()` naar backend. Bij opslaan profiel automatisch tags berekenen | 3 | P1 bestaand |
-| 2.4 | **Wizard en onboarding samenvoegen** — Eén flow: welkom → profiel → balanstest. "Later invullen" optie. Registratie verlichten (§1.1) | 4 | P1 + §1.1 |
-| 2.5 | **Guided first session** — Na registratie direct naar balanstest, niet dashboard. Resultaat toont 3 actiepunten. Pas dan dashboard | 2 | §1.2 (nieuw) |
-| 2.6 | **Voorkeuren-API opschonen** — Duidelijk onderscheid automatische vs handmatige tags | 2 | P1 bestaand |
-| 2.7 | **Bestaande artikelen taggen** — AI bulk-tagging van 47 artikelen | 3 | P1 bestaand |
-| 2.8 | **Profiel-completeness + dashboard reminder** — Voortgangsbalk + "Vul je profiel aan" kaart (max 3x) | 2 | P1 bestaand |
+| # | Taak | Uur | Bron | Status |
+|---|------|-----|------|--------|
+| 2.1 | **Tag-groepen definiëren** — `groep` veld op ContentTag. Groepen: relatie, wonen, werk, zorgduur, zorgintensiteit, levensfase, extra | 2 | P1 bestaand | |
+| 2.2 | **Profielscherm herstructureren** — Eén scrollbaar scherm met 7 secties. Radio buttons voor exclusieve keuzes, chips voor multi-select | 6 | P1 bestaand | |
+| 2.3 | **Tag-afleiding server-side** — `bepaalProfielTags()` naar backend. Bij opslaan profiel automatisch tags berekenen | 3 | P1 bestaand | |
+| 2.4 | **Wizard en onboarding samenvoegen** — Eén flow: welkom → profiel → balanstest. "Later invullen" optie. Registratie verlichten (§1.1) | 4 | P1 + §1.1 | |
+| 2.5 | **Guided first session** — Na registratie direct naar balanstest, niet dashboard. Resultaat toont 3 actiepunten. Pas dan dashboard | 2 | §1.2 (nieuw) | |
+| 2.6 | **Voorkeuren-API opschonen** — Duidelijk onderscheid automatische vs handmatige tags. Backward-compat aliassen verwijderd, `zorgthemas` als enige veldnaam | 2 | P1 bestaand | **DONE** (24-03-2026) |
+| 2.7 | **Bestaande artikelen taggen** — AI bulk-tagging van 47 artikelen | 3 | P1 bestaand | |
+| 2.8 | **Profiel-completeness + dashboard reminder** — Voortgangsbalk + "Vul je profiel aan" kaart (max 3x) | 2 | P1 bestaand | |
+| 2.9 | **Admin UI terminologie updaten** — `aandoeningen` → `zorgthemas` in beheer/artikelen tag-groepen | 0.5 | Opruimtaak | **DONE** (24-03-2026) |
+| 2.10 | **Verouderde tag-slugs opruimen** — `jong`, `intensief`, `werkend-parttime` verwijderd uit `profiel-tags.ts`. Sync met seed-herstructurering | 0.5 | Opruimtaak | **DONE** (24-03-2026) |
+| 2.11 | **Multi-select zorgthemas volledig integreren** — ProfielWizard + ProfielFormulier sturen `zorgthemas` array, API valideert correct, Caregiver.aandoening slaat primaire waarde op | 1 | Integratie | **DONE** (24-03-2026) |
+| 2.12 | **Content filtering op tags** — Tag-filter chips in artikellijsten (`leren/[categorie]`). Gebruikers kunnen artikelen filteren per tag | 1 | Nieuw | **DONE** (24-03-2026) |
 
 ### Database-wijzigingen
 
@@ -354,6 +358,11 @@ model ContentTag {
 - [ ] Alle 47 artikelen zijn getagd via ArtikelTag
 - [ ] Profiel-completeness indicator werkt
 - [ ] "Later invullen" optie in onboarding
+- [x] Alle API's gebruiken `zorgthemas` als veldnaam (geen `aandoeningen`/`aandoening` aliassen meer)
+- [x] Multi-select zorgthemas werkt in ProfielWizard en ProfielFormulier
+- [x] Verouderde tag-slugs (`jong`, `intensief`, `werkend-parttime`) zijn verwijderd uit profiel-tags.ts
+- [x] Admin artikelen-pagina toont "Zorgthema's" in plaats van "Aandoeningen"
+- [x] Artikellijsten (leren) hebben tag-filter chips voor content filtering
 
 ### Afsluiting Iteratie 2 — Controleopdracht
 
@@ -1188,7 +1197,7 @@ Elke aanbeveling uit de kritische analyse is traceerbaar naar een specifieke taa
 |---|----------|------|----------|-------------------|
 | **0** | Security Hotfixes | ~6 | ONMIDDELLIJK | Nee — eerst doen |
 | **1** | Monitoring & Observability | ~12 | DEZE WEEK | Ja (parallel met 2) |
-| **2** | Tags, Profiel & Wizard (P1) | ~22 | DEZE WEEK | Ja (parallel met 1) |
+| **2** | Tags, Profiel & Wizard (P1) | ~25 (~3 afgerond) | DEZE WEEK | Ja (parallel met 1) |
 | **3** | Service Layer & State Management | ~28 | Sprint 1 | Na 1 |
 | **4** | Zoeken, Caching & Performance | ~22 | Sprint 1 | Na 1, eventueel parallel met 3 |
 | **5** | Personalisatie (P2) | ~14 | Sprint 2 | Na 2 |
@@ -1253,6 +1262,38 @@ SMTP configuratie ────────→ Iteratie 9 (Gemeente notificaties)
 | ✅ | Afgerond |
 | ⚠️ | Aandachtspunt / deels af |
 | ❌ | Niet gestart / blokkerend |
+
+---
+
+## Changelog
+
+### v2.1 — 24 maart 2026
+
+**Afgeronde taken (Iteratie 2):**
+
+1. **2.9 — Admin UI terminologie** — `aandoeningen` → `zorgthemas` in beheer/artikelen. State-variabele, tag-groep labels en iteratie-loop aangepast.
+2. **2.10 — Verouderde tag-slugs opruimen** — `jong`, `intensief`, `werkend-parttime` verwijderd uit `profiel-tags.ts` (sync met seed-herstructurering die deze al deactiveerde in de database). `meerdere-zorgvragers` en `rouwverwerking` verwijderd uit HANDMATIGE_TAG_SLUGS.
+3. **2.6 — Voorkeuren-API opschonen** — Backward-compat aliassen (`aandoening`, `aandoeningen`) volledig verwijderd uit:
+   - `GET /api/user/voorkeuren` — retourneert nu alleen `voorkeuren` + `zorgthemas`
+   - `POST /api/user/voorkeuren` — accepteert nu `zorgthemas` i.p.v. `aandoening`/`aandoeningen`
+   - `GET /api/content/tags` — retourneert nu alleen `zorgthemas`, `situaties`, `onderwerpen`
+   - Validatieschema (`voorkeurenSchema`) geüpdatet: `aandoening`/`aandoeningen` → `zorgthemas`
+   - Consumers geüpdatet: ProfielWizard, ProfielFormulier, leren/[categorie]
+   - AI curator prompt: `aandoeningen` → `zorgthemas` in instructietekst
+4. **2.11 — Multi-select zorgthemas** — Geverifieerd en geïntegreerd. ProfielWizard en ProfielFormulier sturen `zorgthemas` array correct door. `Caregiver.aandoening` (legacy DB-veld) slaat eerste waarde op voor backward-compatibiliteit op DB-niveau.
+5. **2.12 — Content filtering op tags** — Tag-filter chips toegevoegd aan `leren/[categorie]/page.tsx`. Gebruikers zien alle beschikbare tags als klikbare chips met count, en kunnen artikelen per tag filteren. Werkt gecombineerd met de bestaande relevantie-toggle.
+
+**Gewijzigde bestanden:**
+- `src/app/beheer/artikelen/page.tsx`
+- `src/lib/profiel-tags.ts`
+- `src/app/api/user/voorkeuren/route.ts`
+- `src/app/api/content/tags/route.ts`
+- `src/lib/validations.ts`
+- `src/components/profiel/ProfielWizard.tsx`
+- `src/components/profiel/ProfielFormulier.tsx`
+- `src/app/(dashboard)/leren/[categorie]/page.tsx`
+- `src/app/api/ai/admin/curator/route.ts`
+- `docs/PROJECTPLAN-2026-GEINTEGREERD.md`
 
 ---
 

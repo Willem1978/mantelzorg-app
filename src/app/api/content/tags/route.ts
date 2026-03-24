@@ -24,8 +24,6 @@ export async function GET() {
       zorgthemas,
       situaties,
       onderwerpen,
-      // backward-compat alias
-      aandoeningen: zorgthemas,
     })
   } catch (error) {
     console.error("Tags ophalen mislukt:", error)

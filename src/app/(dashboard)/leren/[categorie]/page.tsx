@@ -43,10 +43,13 @@ export default function CategoriePage() {
   const [favorieten, setFavorieten] = useState<Record<string, string>>({})
   const hasFetched = useRef(false)
 
-  // Relevantie filter (vervangt tag-chips)
+  // Relevantie filter
   const [alleenRelevant, setAlleenRelevant] = useState(false)
   const [gebruikerTags, setGebruikerTags] = useState<string[]>([])
   const [heeftVoorkeuren, setHeeftVoorkeuren] = useState(false)
+
+  // Tag filter
+  const [filterTag, setFilterTag] = useState<string | null>(null)
 
   // Inklapbare secties
   const [openSecties, setOpenSecties] = useState<Set<string>>(new Set())
@@ -82,8 +85,12 @@ export default function CategoriePage() {
           const tagSlugs = (voorkeurData.voorkeuren || [])
             .filter((v: { type: string }) => v.type === "TAG")
             .map((v: { slug: string }) => v.slug)
-          // Voeg aandoening toe als die er is
-          if (voorkeurData.aandoening) tagSlugs.push(voorkeurData.aandoening)
+          // Voeg zorgthemas toe
+          if (voorkeurData.zorgthemas?.length > 0) {
+            for (const slug of voorkeurData.zorgthemas) {
+              if (!tagSlugs.includes(slug)) tagSlugs.push(slug)
+            }
+          }
           setGebruikerTags(tagSlugs)
           setHeeftVoorkeuren(tagSlugs.length > 0)
         }
@@ -163,13 +170,35 @@ export default function CategoriePage() {
     loadData()
   }, [categorie, contentLoading, categorieInfo])
 
-  // Filter artikelen op basis van relevantie
-  const gefilterdeItems = alleenRelevant && gebruikerTags.length > 0
-    ? items.filter(artikel => {
-        if (!artikel.tags || artikel.tags.length === 0) return false
-        return artikel.tags.some(at => gebruikerTags.includes(at.tag.slug))
-      })
-    : items
+  // Verzamel unieke tags uit alle artikelen voor filter-chips
+  const beschikbareFilterTags = (() => {
+    const tagMap = new Map<string, { slug: string; naam: string; count: number }>()
+    for (const artikel of items) {
+      if (!artikel.tags) continue
+      for (const at of artikel.tags) {
+        const existing = tagMap.get(at.tag.slug)
+        if (existing) {
+          existing.count++
+        } else {
+          tagMap.set(at.tag.slug, { slug: at.tag.slug, naam: at.tag.naam, count: 1 })
+        }
+      }
+    }
+    return Array.from(tagMap.values()).sort((a, b) => b.count - a.count)
+  })()
+
+  // Filter artikelen op basis van relevantie en/of tag
+  const gefilterdeItems = items.filter(artikel => {
+    if (alleenRelevant && gebruikerTags.length > 0) {
+      if (!artikel.tags || artikel.tags.length === 0) return false
+      if (!artikel.tags.some(at => gebruikerTags.includes(at.tag.slug))) return false
+    }
+    if (filterTag) {
+      if (!artikel.tags || artikel.tags.length === 0) return false
+      if (!artikel.tags.some(at => at.tag.slug === filterTag)) return false
+    }
+    return true
+  })
 
   // Loading state
   if (contentLoading) {
@@ -292,6 +321,34 @@ export default function CategoriePage() {
           </div>
         )}
       </div>
+
+      {/* Tag filter chips */}
+      {!loading && beschikbareFilterTags.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {beschikbareFilterTags.map((tag) => (
+            <button
+              key={tag.slug}
+              onClick={() => setFilterTag(filterTag === tag.slug ? null : tag.slug)}
+              className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
+                filterTag === tag.slug
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-card border-border text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              {tag.naam}
+              <span className="ml-1 opacity-60">{tag.count}</span>
+            </button>
+          ))}
+          {filterTag && (
+            <button
+              onClick={() => setFilterTag(null)}
+              className="px-3 py-1.5 text-xs rounded-full border border-border text-muted-foreground hover:bg-muted"
+            >
+              Wis filter
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Loading state */}
       {loading && (

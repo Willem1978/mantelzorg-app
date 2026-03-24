@@ -519,9 +519,9 @@ HULPCATEGORIEËN VOOR MANTELZORGERS ZELF:
 REGELS:
 - Schrijf in het Nederlands, zakelijk en objectief
 - Identificeer concrete hiaten: welke onderwerpen missen volledig of zijn onderbelicht
-- Kijk naar: zorgtaken zonder content, gemeentes zonder lokale hulp, ontbrekende tags (aandoeningen/situaties)
+- Kijk naar: zorgtaken zonder content, gemeentes zonder lokale hulp, ontbrekende tags (zorgthemas/situaties)
 - Kijk ook naar: veelvoorkomende scenario's die niet gedekt zijn (bijv. dementie, terminale zorg, jonge mantelzorgers, werkende mantelzorgers)
-- Let op de tag-verdeling: welke aandoeningen en situaties hebben te weinig getagde content
+- Let op de tag-verdeling: welke zorgthemas en situaties hebben te weinig getagde content
 - Prioriteer hiaten op impact: wat raakt de meeste mantelzorgers
 - Geef concrete suggesties voor nieuwe artikelen
 - Gebruik markdown tabellen voor overzichten`,
@@ -535,7 +535,7 @@ Geef:
 2. Zorgtaken die GEEN of te weinig content hebben
 3. Belangrijke mantelzorg-onderwerpen die volledig ontbreken (bijv. specifieke doelgroepen, scenario's)
 4. Gemeentes/regio's met weinig lokale content
-5. Tags (aandoeningen/situaties) die ondervertegenwoordigd zijn
+5. Tags (zorgthemas/situaties) die ondervertegenwoordigd zijn
 6. Top 10 concrete artikelen die geschreven moeten worden (met titel, categorie, tags, en korte beschrijving)
 7. Prioritering: welke hiaten zijn het meest urgent`,
   })

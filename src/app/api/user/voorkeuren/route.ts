@@ -13,11 +13,11 @@ export async function GET() {
   try {
     const caregiver = await prisma.caregiver.findUnique({
       where: { userId: session.user.id },
-      select: { id: true, aandoening: true },
+      select: { id: true },
     })
 
     if (!caregiver) {
-      return NextResponse.json({ voorkeuren: [], aandoening: null })
+      return NextResponse.json({ voorkeuren: [], zorgthemas: [] })
     }
 
     const voorkeuren = await prisma.gebruikerVoorkeur.findMany({
@@ -39,9 +39,7 @@ export async function GET() {
 
     return NextResponse.json({
       voorkeuren,
-      aandoening: caregiver.aandoening, // backward-compat
-      aandoeningen: zorgthemas, // backward-compat alias
-      zorgthemas, // multi-select
+      zorgthemas,
     })
   } catch (error) {
     console.error("Voorkeuren ophalen mislukt:", error)
@@ -61,7 +59,7 @@ export async function POST(request: NextRequest) {
     if (!validated.success) {
       return NextResponse.json({ error: validated.error }, { status: 400 })
     }
-    const { voorkeuren, aandoening, aandoeningen } = validated.data
+    const { voorkeuren, zorgthemas } = validated.data
 
     const caregiver = await prisma.caregiver.findUnique({
       where: { userId: session.user.id },
@@ -72,21 +70,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Profiel niet gevonden" }, { status: 404 })
     }
 
-    // Multi-aandoening: sla primaire op in caregiver.aandoening (backward-compat)
-    const primaryAandoening = aandoeningen?.[0] || aandoening || null
-    if (aandoening !== undefined || aandoeningen !== undefined) {
+    // Sla primaire zorgthema op in caregiver.aandoening (legacy veld)
+    if (zorgthemas !== undefined) {
       await prisma.caregiver.update({
         where: { id: caregiver.id },
-        data: { aandoening: primaryAandoening },
+        data: { aandoening: zorgthemas?.[0] || null },
       })
     }
 
-    // Bouw de volledige voorkeuren-lijst: handmatige tags + categorieën + aandoeningen als TAG
+    // Bouw de volledige voorkeuren-lijst: handmatige tags + categorieën + zorgthemas als TAG
     const alleVoorkeuren = [...(voorkeuren || [])]
 
-    // Voeg multi-aandoeningen toe als TAG-voorkeuren
-    if (aandoeningen && aandoeningen.length > 0) {
-      for (const slug of aandoeningen) {
+    // Voeg zorgthemas toe als TAG-voorkeuren
+    if (zorgthemas && zorgthemas.length > 0) {
+      for (const slug of zorgthemas) {
         if (!alleVoorkeuren.some((v) => v.type === "TAG" && v.slug === slug)) {
           alleVoorkeuren.push({ type: "TAG", slug })
         }
