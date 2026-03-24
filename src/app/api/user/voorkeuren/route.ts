@@ -25,22 +25,23 @@ export async function GET() {
       select: { type: true, slug: true },
     })
 
-    // Haal aandoening-tag-slugs op uit ContentTag om te weten welke TAG-voorkeuren aandoeningen zijn
-    const aandoeningTagSlugs = await prisma.contentTag.findMany({
-      where: { type: "AANDOENING", isActief: true },
+    // Haal zorgthema-tag-slugs op uit ContentTag
+    const zorgthemaTagSlugs = await prisma.contentTag.findMany({
+      where: { type: "ZORGTHEMA", isActief: true },
       select: { slug: true },
     })
-    const aandoeningSlugs = new Set(aandoeningTagSlugs.map((t) => t.slug))
+    const zorgthemaSlugs = new Set(zorgthemaTagSlugs.map((t) => t.slug))
 
-    // Filter aandoeningen uit voorkeuren
-    const aandoeningen = voorkeuren
-      .filter((v) => v.type === "TAG" && aandoeningSlugs.has(v.slug))
+    // Filter zorgthema's uit voorkeuren
+    const zorgthemas = voorkeuren
+      .filter((v) => v.type === "TAG" && zorgthemaSlugs.has(v.slug))
       .map((v) => v.slug)
 
     return NextResponse.json({
       voorkeuren,
       aandoening: caregiver.aandoening, // backward-compat
-      aandoeningen, // multi-select
+      aandoeningen: zorgthemas, // backward-compat alias
+      zorgthemas, // multi-select
     })
   } catch (error) {
     console.error("Voorkeuren ophalen mislukt:", error)

@@ -12,7 +12,7 @@ interface ProfielVelden {
   naasteStraat?: string | null
   woonsituatie?: string | null
   werkstatus?: string | null
-  aandoeningen?: string[]
+  zorgthemas?: string[]
   situatieTags?: string[]
   interesseCategorieen?: string[]
 }
@@ -60,9 +60,9 @@ export function berekenProfielCompleteness(profiel: ProfielVelden): Completeness
       label: "Werk en studie",
     },
     {
-      naam: "aandoening",
-      compleet: !!(profiel.aandoeningen && profiel.aandoeningen.length > 0),
-      label: "Aandoening van je naaste",
+      naam: "zorgthema",
+      compleet: !!(profiel.zorgthemas && profiel.zorgthemas.length > 0),
+      label: "Zorgsituatie van je naaste",
     },
     {
       naam: "interesses",

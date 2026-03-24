@@ -28,7 +28,7 @@ interface WizardData {
   naasteNaam: string
   naasteRelatie: string
   naasteAdres: StreetResult | null
-  aandoening: string
+  zorgthemas: string[]
   situatieTags: string[]
   interesseCategorieen: string[]
 }
@@ -188,7 +188,7 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
     adres: null,
     naasteNaam: "", naasteRelatie: "",
     naasteAdres: null,
-    aandoening: "", situatieTags: [],
+    zorgthemas: [], situatieTags: [],
     interesseCategorieen: [],
   })
   const [isSaving, setIsSaving] = useState(false)
@@ -232,14 +232,14 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
 
       if (tagRes.ok) {
         const tagData = await tagRes.json()
-        setBeschikbareTags([...(tagData.aandoeningen || []), ...(tagData.situaties || [])])
+        setBeschikbareTags([...(tagData.zorgthemas || []), ...(tagData.situaties || [])])
       }
 
       if (voorkeurRes.ok) {
         const vData = await voorkeurRes.json()
         setData((prev) => ({
           ...prev,
-          aandoening: vData.aandoening || prev.aandoening,
+          zorgthemas: vData.zorgthemas?.length > 0 ? vData.zorgthemas : vData.aandoening ? [vData.aandoening] : prev.zorgthemas,
           situatieTags: vData.voorkeuren?.filter((v: { type: string }) => v.type === "TAG").map((v: { slug: string }) => v.slug) || prev.situatieTags,
           interesseCategorieen: vData.voorkeuren?.filter((v: { type: string }) => v.type === "CATEGORIE").map((v: { slug: string }) => v.slug) || prev.interesseCategorieen,
         }))
@@ -285,7 +285,7 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        aandoening: data.aandoening || null,
+        aandoeningen: data.zorgthemas,
         voorkeuren,
       }),
     })
@@ -334,8 +334,8 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
     return true
   }
 
-  // Aandoeningen en situaties apart
-  const aandoeningen = beschikbareTags.filter((t) => t.type === "AANDOENING")
+  // Zorgthema's en situaties apart
+  const zorgthemas = beschikbareTags.filter((t) => t.type === "ZORGTHEMA")
   const situaties = beschikbareTags.filter((t) => t.type === "SITUATIE")
 
   // ============================================
@@ -548,20 +548,28 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
                 Kies wat het meest van toepassing is. Je kunt dit altijd later nog wijzigen.
               </p>
               <div className="flex flex-wrap gap-2">
-                {aandoeningen.map((tag) => (
-                  <button
-                    key={tag.slug}
-                    onClick={() => setData({ ...data, aandoening: data.aandoening === tag.slug ? "" : tag.slug })}
-                    className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all border-2 ${
-                      data.aandoening === tag.slug
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-card border-border text-foreground hover:border-primary/30"
-                    }`}
-                  >
-                    {tag.emoji && <span className="mr-1.5">{tag.emoji}</span>}
-                    {tag.naam}
-                  </button>
-                ))}
+                {zorgthemas.map((tag) => {
+                  const selected = data.zorgthemas.includes(tag.slug)
+                  return (
+                    <button
+                      key={tag.slug}
+                      onClick={() => setData({
+                        ...data,
+                        zorgthemas: selected
+                          ? data.zorgthemas.filter((s) => s !== tag.slug)
+                          : [...data.zorgthemas, tag.slug],
+                      })}
+                      className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all border-2 ${
+                        selected
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-card border-border text-foreground hover:border-primary/30"
+                      }`}
+                    >
+                      {tag.emoji && <span className="mr-1.5">{tag.emoji}</span>}
+                      {tag.naam}
+                    </button>
+                  )
+                })}
               </div>
               <p className="text-xs text-muted-foreground">
                 Staat het er niet bij? Geen probleem. Je kunt gewoon doorgaan.
@@ -736,10 +744,10 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
                 )}
               </div>
               <div className="text-sm space-y-1 text-foreground/80">
-                {data.aandoening ? (
-                  <p><strong>Aandoening:</strong> {aandoeningen.find((a) => a.slug === data.aandoening)?.naam || data.aandoening}</p>
+                {data.zorgthemas.length > 0 ? (
+                  <p><strong>Zorgthema:</strong> {data.zorgthemas.map((s) => zorgthemas.find((t) => t.slug === s)?.naam || s).join(", ")}</p>
                 ) : (
-                  <p><strong>Aandoening:</strong> <span className="text-muted-foreground">Niet ingevuld</span></p>
+                  <p><strong>Zorgthema:</strong> <span className="text-muted-foreground">Niet ingevuld</span></p>
                 )}
                 {data.situatieTags.length > 0 ? (
                   <p><strong>Situatie:</strong> {data.situatieTags.map((s) => situaties.find((t) => t.slug === s)?.naam || s).join(", ")}</p>

@@ -326,7 +326,7 @@ export default function ProfielPage() {
         ])
         if (tagRes.ok) {
           const tagData = await tagRes.json()
-          setBeschikbareTags([...(tagData.aandoeningen || []), ...(tagData.situaties || [])])
+          setBeschikbareTags([...(tagData.zorgthemas || []), ...(tagData.situaties || [])])
         }
         if (voorkeurRes.ok) {
           const voorkeurData = await voorkeurRes.json()
@@ -920,7 +920,7 @@ export default function ProfielPage() {
           naasteNaam: profile.naasteNaam,
           naasteRelatie: profile.naasteRelatie,
           naasteStraat: profile.naasteAdres?.straat,
-          aandoeningen: aandoening ? [aandoening] : [],
+          zorgthemas: aandoening ? [aandoening] : [],
           interesseCategorieen: situatieTags, // approximation from loaded data
         }}
         onEditClick={() => setIsWizardMode(true)}
@@ -1410,7 +1410,7 @@ export default function ProfielPage() {
 // ============================================
 
 function JouwSituatieBlok() {
-  const [aandoeningen, setAandoeningen] = useState<Array<{ slug: string; naam: string; emoji: string | null }>>([])
+  const [zorgthemas, setZorgthemas] = useState<Array<{ slug: string; naam: string; emoji: string | null }>>([])
   const [situaties, setSituaties] = useState<Array<{ slug: string; naam: string; emoji: string | null }>>([])
   const [voorkeuren, setVoorkeuren] = useState<Array<{ type: string; slug: string }>>([])
   const [aandoening, setAandoening] = useState("")
@@ -1420,11 +1420,11 @@ function JouwSituatieBlok() {
   useEffect(() => {
     // Laad tags en voorkeuren parallel
     Promise.all([
-      fetch("/api/content/tags").then(r => r.json()).catch(() => ({ aandoeningen: [], situaties: [] })),
+      fetch("/api/content/tags").then(r => r.json()).catch(() => ({ zorgthemas: [], situaties: [] })),
       fetch("/api/user/voorkeuren").then(r => r.json()).catch(() => ({ voorkeuren: [] })),
       fetch("/api/profile").then(r => r.json()).catch(() => ({})),
     ]).then(([tagData, voorkeurData, profileData]) => {
-      setAandoeningen(tagData.aandoeningen || [])
+      setZorgthemas(tagData.zorgthemas || [])
       setSituaties(tagData.situaties || [])
       setVoorkeuren(voorkeurData.voorkeuren || [])
       setAandoening(profileData.aandoening || "")
@@ -1478,10 +1478,10 @@ function JouwSituatieBlok() {
         Selecteer wat op jou van toepassing is. Zo kunnen we content beter op jou afstemmen.
       </p>
 
-      {/* Aandoening zorgvrager */}
+      {/* Zorgthema zorgvrager */}
       <div className="mb-4">
         <label className="block text-sm font-medium text-foreground mb-2">
-          Aandoening/beperking van je naaste
+          Zorgsituatie van je naaste
         </label>
         <select
           value={aandoening}
@@ -1489,7 +1489,7 @@ function JouwSituatieBlok() {
           className="w-full px-3 py-2 border border-border rounded-xl text-sm bg-background"
         >
           <option value="">-- Selecteer --</option>
-          {aandoeningen.map(a => (
+          {zorgthemas.map(a => (
             <option key={a.slug} value={a.slug}>{a.emoji} {a.naam}</option>
           ))}
         </select>

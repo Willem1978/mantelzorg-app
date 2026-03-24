@@ -40,8 +40,8 @@ export interface ProfielFormulierData {
   // Zorgsituatie
   woonsituatie: string
   werkstatus: string
-  // Aandoeningen (multi-select)
-  aandoeningen: string[]
+  // Zorgthema's (multi-select)
+  zorgthemas: string[]
   // Situatie-tags
   situatieTags: string[]
   // Interesses
@@ -220,7 +220,7 @@ export function ProfielFormulier({ onSave, onSkip, showSkip = false, variant = "
     naasteNaam: "", naasteRelatie: "",
     naasteAdres: null,
     woonsituatie: "", werkstatus: "",
-    aandoeningen: [],
+    zorgthemas: [],
     situatieTags: [],
     interesseCategorieen: [],
   })
@@ -282,21 +282,21 @@ export function ProfielFormulier({ onSave, onSkip, showSkip = false, variant = "
 
       if (tagRes.ok) {
         const tagData = await tagRes.json()
-        setBeschikbareTags([...(tagData.aandoeningen || []), ...(tagData.situaties || [])])
+        setBeschikbareTags([...(tagData.zorgthemas || []), ...(tagData.situaties || [])])
       }
 
       if (voorkeurRes.ok) {
         const vData = await voorkeurRes.json()
-        // Aandoeningen als array (nieuw) of fallback naar single
-        const loadedAandoeningen = vData.aandoeningen?.length > 0
-          ? vData.aandoeningen
+        // Zorgthema's als array (nieuw) of fallback naar single
+        const loadedZorgthemas = vData.zorgthemas?.length > 0
+          ? vData.zorgthemas
           : vData.aandoening ? [vData.aandoening] : []
 
-        // Situatie-tags: filter aandoeningen eruit (die zitten nu apart)
-        const aandoeningSlugs = new Set(loadedAandoeningen)
+        // Situatie-tags: filter zorgthema's eruit (die zitten nu apart)
+        const zorgthemaSlugs = new Set(loadedZorgthemas)
         const loadedSituatieTags = vData.voorkeuren
           ?.filter((v: { type: string; slug: string }) =>
-            v.type === "TAG" && !aandoeningSlugs.has(v.slug)
+            v.type === "TAG" && !zorgthemaSlugs.has(v.slug)
           )
           .map((v: { slug: string }) => v.slug) || []
 
@@ -306,7 +306,7 @@ export function ProfielFormulier({ onSave, onSkip, showSkip = false, variant = "
 
         setData((prev) => ({
           ...prev,
-          aandoeningen: loadedAandoeningen,
+          zorgthemas: loadedZorgthemas,
           situatieTags: loadedSituatieTags,
           interesseCategorieen: loadedInteresses,
         }))
@@ -365,7 +365,7 @@ export function ProfielFormulier({ onSave, onSkip, showSkip = false, variant = "
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          aandoeningen: data.aandoeningen,
+          aandoeningen: data.zorgthemas,
           voorkeuren,
         }),
       })
@@ -388,7 +388,7 @@ export function ProfielFormulier({ onSave, onSkip, showSkip = false, variant = "
   }
 
   // Tags filteren
-  const aandoeningen = beschikbareTags.filter((t) => t.type === "AANDOENING")
+  const zorgthemas = beschikbareTags.filter((t) => t.type === "ZORGTHEMA")
   const situaties = beschikbareTags.filter((t) => t.type === "SITUATIE")
 
   // Handmatige situatie-tags: filter automatische tags eruit voor weergave
@@ -535,28 +535,28 @@ export function ProfielFormulier({ onSave, onSkip, showSkip = false, variant = "
       </section>
 
       {/* ============================================ */}
-      {/* SECTIE 5: Aandoening (multi-select) */}
+      {/* SECTIE 5: Zorgthema (multi-select) */}
       {/* ============================================ */}
       <section className="ker-card space-y-4">
         <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-          <span>&#129658;</span> Aandoening van {data.naasteNaam || "je naaste"}
+          <span>&#129658;</span> Zorgsituatie van {data.naasteNaam || "je naaste"}
         </h2>
         <p className="text-sm text-foreground/70 leading-relaxed">
           Waarmee heeft {data.naasteNaam || "je naaste"} te maken?
           Je mag er meerdere kiezen.
         </p>
         <div className="flex flex-wrap gap-2">
-          {aandoeningen.map((tag) => {
-            const selected = data.aandoeningen.includes(tag.slug)
+          {zorgthemas.map((tag) => {
+            const selected = data.zorgthemas.includes(tag.slug)
             return (
               <button
                 key={tag.slug}
                 type="button"
                 onClick={() => setData({
                   ...data,
-                  aandoeningen: selected
-                    ? data.aandoeningen.filter((s) => s !== tag.slug)
-                    : [...data.aandoeningen, tag.slug],
+                  zorgthemas: selected
+                    ? data.zorgthemas.filter((s) => s !== tag.slug)
+                    : [...data.zorgthemas, tag.slug],
                 })}
                 className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all border-2 ${
                   selected
