@@ -31,6 +31,7 @@ const menuGroepen: { label: string; items: { href: string; label: string; icon: 
       { href: "/beheer/hulpbronnen", label: "Beheren", icon: "🏥" },
       { href: "/beheer/hulpbronnen/ai-zoeken", label: "AI Zoeker", icon: "🔍" },
       { href: "/beheer/hulpbronnen/validatie", label: "Validatie", icon: "✅" },
+      { href: "/beheer/activiteiten", label: "Activiteiten", icon: "🎯" },
     ],
   },
   {
