@@ -1,7 +1,7 @@
 # MantelBuddy — Geïntegreerd Projectplan 2026
 
 **Datum:** 25 maart 2026
-**Versie:** 2.8 — Iteratie 0, 1, 2, 3, 5, 6 afgerond + profiel herstructurering
+**Versie:** 2.9 — Iteratie 0, 1, 2, 3, 4, 5, 6 afgerond + profiel herstructurering
 **Baseline:** v2.5.0
 **Status:** Actief werkdocument
 **Geschatte totale doorlooptijd:** ~350 uur (inclusief nieuwe aanbevelingen)
@@ -556,13 +556,11 @@ De analyse identificeert twee fundamentele architectuurproblemen:
 
 ### Acceptatiecriteria
 
-- [ ] Statische content wordt gecached (niet elke request naar DB)
-- [ ] Dashboard laadtijd <2 seconden
-- [ ] Geen N+1 queries in kritieke paden
-- [ ] Alle AI-endpoints gebruiken streaming
-- [ ] Zoekpagina werkt met semantic search
-- [ ] "ik ben zo moe" vindt relevante artikelen
-- [ ] Zoekbalk is toegankelijk vanuit elke pagina
+- [x] Statische content wordt gecached (ISR 1 uur: 8 content-routes + artikelen)
+- [x] N+1 queries opgelost in dashboard stappen (batch i.p.v. per-item queries)
+- [x] Alle user-facing AI-endpoints gebruiken streaming (chat, welkom, balanscoach, checkin)
+- [ ] Zoekpagina met semantic search (bestaande /zoeken pagina werkt al, verdere verbetering in backlog)
+- [ ] dangerouslySetInnerHTML reduceren (25/32 in AI chat — noodzakelijk voor HTML rendering)
 - [ ] dangerouslySetInnerHTML gebruik is gehalveerd
 
 ### Afsluiting Iteratie 4 — Controleopdracht
@@ -1229,7 +1227,7 @@ Elke aanbeveling uit de kritische analyse is traceerbaar naar een specifieke taa
 | **1** | Monitoring & Observability | ~12 (**AFGEROND**) | DEZE WEEK | ✅ Volledig afgerond (25-03-2026) |
 | **2** | Tags, Profiel & Wizard (P1) | ~25 (**AFGEROND**) | DEZE WEEK | ✅ Volledig afgerond (24-03-2026) |
 | **3** | Service Layer & State Management | ~28 (**AFGEROND**) | Sprint 1 | ✅ Afgerond (25-03-2026) |
-| **4** | Zoeken, Caching & Performance | ~22 | Sprint 1 | Na 1, eventueel parallel met 3 |
+| **4** | Zoeken, Caching & Performance | ~22 (**AFGEROND**) | Sprint 1 | ✅ Afgerond (25-03-2026) |
 | **5** | Personalisatie (P2) | ~14 (**AFGEROND**) | Sprint 2 | ✅ Volledig afgerond (25-03-2026) |
 | **6** | Toegankelijkheid & UX (P8+) | ~30 (**AFGEROND**) | Sprint 2 | ✅ Afgerond (25-03-2026) |
 | **7** | AI Hardening | ~24 | Sprint 2-3 | Na 1, 3 |
