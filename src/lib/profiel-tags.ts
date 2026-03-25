@@ -13,6 +13,7 @@ interface ProfielData {
   careHoursPerWeek?: number | null
   careSince?: Date | string | null
   dateOfBirth?: Date | string | null
+  zorgduur?: string | null // "kort" | "paar-jaar" | "lang"
 }
 
 /**
@@ -47,23 +48,37 @@ export function bepaalProfielTags(profiel: ProfielData): string[] {
     tags.push("op-afstand")
   }
 
+  // Werkstatus → fulltime-zorger
+  if (profiel.werkstatus === "niet-werkend") {
+    tags.push("fulltime-zorger")
+  }
+
   // Relatie met naaste → relatie-tags
   if (profiel.careRecipient === "partner") {
     tags.push("partner-zorg")
-  }
-  if (profiel.careRecipient === "ouder") {
+  } else if (profiel.careRecipient === "ouder") {
     tags.push("ouder-zorg")
-  }
-  if (profiel.careRecipient === "kind") {
+  } else if (profiel.careRecipient === "kind") {
     tags.push("kind-zorg")
+  } else if (profiel.careRecipient && profiel.careRecipient !== "") {
+    // broer_zus, vriend, buur, anders → netwerk-zorg
+    tags.push("netwerk-zorg")
   }
 
-  // Zorgduur
-  if (profiel.careSince) {
+  // Zorgduur — via directe keuze (B4 radio buttons) of berekend uit careSince
+  if (profiel.zorgduur === "kort") {
+    tags.push("beginnend")
+  } else if (profiel.zorgduur === "paar-jaar") {
+    tags.push("ervaren")
+  } else if (profiel.zorgduur === "lang") {
+    tags.push("langdurig")
+  } else if (profiel.careSince) {
+    // Fallback: bereken uit careSince als zorgduur niet expliciet gekozen is
     const since = profiel.careSince instanceof Date ? profiel.careSince : new Date(profiel.careSince)
     const jarenBezig = (Date.now() - since.getTime()) / (1000 * 60 * 60 * 24 * 365.25)
     if (jarenBezig < 1) tags.push("beginnend")
-    if (jarenBezig > 5) tags.push("langdurig")
+    else if (jarenBezig <= 5) tags.push("ervaren")
+    else tags.push("langdurig")
   }
 
   return [...new Set(tags)] // dedupliceren
@@ -88,13 +103,16 @@ export const AUTOMATISCHE_TAG_SLUGS = [
   "werkend",
   "student",
   "gepensioneerd",
+  "fulltime-zorger",
   "samenwonend",
   "dichtbij",
   "op-afstand",
   "partner-zorg",
   "ouder-zorg",
   "kind-zorg",
+  "netwerk-zorg",
   "beginnend",
+  "ervaren",
   "langdurig",
 ] as const
 
@@ -103,5 +121,6 @@ export const AUTOMATISCHE_TAG_SLUGS = [
  */
 export const HANDMATIGE_TAG_SLUGS = [
   "met-kinderen",
+  "meerdere-naasten",
   "alleenstaand",
 ] as const

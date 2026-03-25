@@ -3,9 +3,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { searchStreets } from "@/lib/pdok"
-import { profielContent } from "@/config/content"
-
-const c = profielContent
 
 // ============================================
 // TYPES
@@ -28,8 +25,12 @@ interface WizardData {
   naasteNaam: string
   naasteRelatie: string
   naasteAdres: StreetResult | null
+  woonsituatie: string
+  werkstatus: string
+  zorgduur: string
   zorgthemas: string[]
   situatieTags: string[]
+  isRouw: boolean
   interesseCategorieen: string[]
 }
 
@@ -41,13 +42,33 @@ interface Tag {
   groep?: string | null
 }
 
-const SITUATIE_GROEPEN = [
-  { key: "relatie", label: "Jouw relatie met je naaste" },
-  { key: "wonen", label: "Woonsituatie" },
-  { key: "weekinvulling", label: "Weekinvulling" },
-  { key: "zorgduur", label: "Hoe lang zorg je al?" },
-  { key: "extra", label: "Extra" },
-  { key: "rouw", label: "Rouw & verlies" },
+// B1: Relatie — radio buttons
+const RELATIE_OPTIES = [
+  { value: "partner", label: "Ik zorg voor mijn partner", emoji: "\uD83D\uDC91" },
+  { value: "ouder", label: "Ik zorg voor mijn ouder(s)", emoji: "\uD83D\uDC75" },
+  { value: "kind", label: "Ik zorg voor mijn kind", emoji: "\uD83D\uDC67" },
+  { value: "anders", label: "Ik zorg voor iemand anders (familie/vriend/buur)", emoji: "\uD83E\uDD1D" },
+]
+
+// B4: Zorgduur — radio buttons
+const ZORGDUUR_OPTIES = [
+  { value: "kort", label: "Kort (minder dan 1 jaar)", emoji: "\uD83C\uDF31" },
+  { value: "paar-jaar", label: "Een paar jaar (1\u20135 jaar)", emoji: "\uD83D\uDCC5" },
+  { value: "lang", label: "Al lang (meer dan 5 jaar)", emoji: "\u231B" },
+]
+
+const WOONSITUATIE_OPTIES = [
+  { value: "samen", label: "We wonen samen", emoji: "\uD83C\uDFE0" },
+  { value: "dichtbij", label: "Dichtbij (zelfde stad/dorp)", emoji: "\uD83D\uDCCD" },
+  { value: "op-afstand", label: "Op afstand (andere stad/regio)", emoji: "\uD83D\uDE97" },
+]
+
+const WERKSTATUS_OPTIES = [
+  { value: "fulltime", label: "Ja, ik werk fulltime", emoji: "\uD83D\uDCBC" },
+  { value: "parttime", label: "Ja, ik werk parttime", emoji: "\uD83D\uDD50" },
+  { value: "niet-werkend", label: "Nee, ik werk niet", emoji: "\uD83C\uDFE0" },
+  { value: "student", label: "Ik studeer", emoji: "\uD83C\uDF93" },
+  { value: "gepensioneerd", label: "Ik ben gepensioneerd", emoji: "\uD83D\uDC74" },
 ]
 
 // ============================================
@@ -181,6 +202,43 @@ function WizardStreetSearch({ label, value, onChange, placeholder }: {
 }
 
 // ============================================
+// RADIO GROUP
+// ============================================
+
+function RadioGroup({ value, options, onChange }: {
+  value: string
+  options: { value: string; label: string; emoji: string }[]
+  onChange: (value: string) => void
+}) {
+  return (
+    <div className="space-y-2">
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          onClick={() => onChange(value === option.value ? "" : option.value)}
+          className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+            value === option.value
+              ? "bg-primary/10 border-primary"
+              : "bg-card border-border hover:border-primary/30"
+          }`}
+        >
+          <span className="text-xl flex-shrink-0">{option.emoji}</span>
+          <span className={`font-medium ${value === option.value ? "text-primary" : "text-foreground"}`}>
+            {option.label}
+          </span>
+          <div className={`ml-auto w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+            value === option.value ? "border-primary bg-primary" : "border-muted-foreground/30"
+          }`}>
+            {value === option.value && <div className="w-2 h-2 rounded-full bg-white" />}
+          </div>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// ============================================
 // MAIN WIZARD
 // ============================================
 
@@ -198,7 +256,9 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
     adres: null,
     naasteNaam: "", naasteRelatie: "",
     naasteAdres: null,
+    woonsituatie: "", werkstatus: "", zorgduur: "",
     zorgthemas: [], situatieTags: [],
+    isRouw: false,
     interesseCategorieen: [],
   })
   const [isSaving, setIsSaving] = useState(false)
@@ -226,6 +286,8 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
           telefoon: p.telefoon || prev.telefoon,
           naasteNaam: p.naasteNaam || prev.naasteNaam,
           naasteRelatie: p.naasteRelatie || prev.naasteRelatie,
+          woonsituatie: p.woonsituatie || prev.woonsituatie,
+          werkstatus: p.werkstatus || prev.werkstatus,
           adres: hasAdres ? {
             weergavenaam: [p.straat, p.woonplaats].filter(Boolean).join(", "),
             straat: p.straat || "", woonplaats: p.woonplaats || "",
@@ -247,11 +309,33 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
 
       if (voorkeurRes.ok) {
         const vData = await voorkeurRes.json()
+        const loadedZorgthemas = vData.zorgthemas?.length > 0 ? vData.zorgthemas : []
+
+        const allTags = vData.voorkeuren
+          ?.filter((v: { type: string }) => v.type === "TAG")
+          .map((v: { slug: string }) => v.slug) || []
+
+        // Rouw apart herkennen
+        const hasRouw = allTags.includes("rouw")
+        const situatieTagsClean = allTags.filter((s: string) => s !== "rouw")
+
+        // Zorgduur afleiden uit opgeslagen tags
+        let zorgduurValue = ""
+        if (situatieTagsClean.includes("beginnend")) zorgduurValue = "kort"
+        else if (situatieTagsClean.includes("ervaren")) zorgduurValue = "paar-jaar"
+        else if (situatieTagsClean.includes("langdurig")) zorgduurValue = "lang"
+
+        const loadedInteresses = vData.voorkeuren
+          ?.filter((v: { type: string }) => v.type === "CATEGORIE")
+          .map((v: { slug: string }) => v.slug) || []
+
         setData((prev) => ({
           ...prev,
-          zorgthemas: vData.zorgthemas?.length > 0 ? vData.zorgthemas : prev.zorgthemas,
-          situatieTags: vData.voorkeuren?.filter((v: { type: string }) => v.type === "TAG").map((v: { slug: string }) => v.slug) || prev.situatieTags,
-          interesseCategorieen: vData.voorkeuren?.filter((v: { type: string }) => v.type === "CATEGORIE").map((v: { slug: string }) => v.slug) || prev.interesseCategorieen,
+          zorgthemas: loadedZorgthemas,
+          situatieTags: situatieTagsClean,
+          isRouw: hasRouw,
+          zorgduur: zorgduurValue || prev.zorgduur,
+          interesseCategorieen: loadedInteresses,
         }))
       }
     } catch {
@@ -282,13 +366,27 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
         naasteWoonplaats: data.naasteAdres?.woonplaats,
         naasteGemeente: data.naasteAdres?.gemeente,
         naasteWijk: data.naasteAdres?.wijknaam,
+        woonsituatie: data.woonsituatie || null,
+        werkstatus: data.werkstatus || null,
       }),
     })
   }
 
   const saveVoorkeurenData = async () => {
+    // Combineer handmatige situatie-tags + rouw + zorgduur-tag
+    const zorgduurTagMap: Record<string, string> = {
+      kort: "beginnend",
+      "paar-jaar": "ervaren",
+      lang: "langdurig",
+    }
+    const alleSituatieTags = [...new Set([
+      ...data.situatieTags,
+      ...(data.isRouw ? ["rouw"] : []),
+      ...(data.zorgduur && zorgduurTagMap[data.zorgduur] ? [zorgduurTagMap[data.zorgduur]] : []),
+    ])]
+
     const voorkeuren = [
-      ...data.situatieTags.map((slug) => ({ type: "TAG", slug })),
+      ...alleSituatieTags.map((slug) => ({ type: "TAG", slug })),
       ...data.interesseCategorieen.map((slug) => ({ type: "CATEGORIE", slug })),
     ]
     await fetch("/api/user/voorkeuren", {
@@ -494,20 +592,18 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
                   We gebruiken deze naam in onze gesprekken met jou. Zo voelt het persoonlijker.
                 </p>
               </div>
+              {/* B1: Relatie — radio buttons */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
+                <p className="text-sm font-medium text-foreground mb-2">
                   Wat is jullie relatie?
-                </label>
-                <select
-                  value={data.naasteRelatie}
-                  onChange={(e) => setData({ ...data, naasteRelatie: e.target.value })}
-                  className="ker-input"
-                >
-                  {c.relatieOpties.map((optie) => (
-                    <option key={optie.value} value={optie.value}>{optie.label}</option>
-                  ))}
-                </select>
-                <p className="text-xs text-muted-foreground mt-1">
+                </p>
+                <RadioGroup
+                  value={RELATIE_OPTIES.find((o) => o.value === data.naasteRelatie)?.value
+                    || (["broer_zus", "vriend", "buur"].includes(data.naasteRelatie) ? "anders" : data.naasteRelatie)}
+                  options={RELATIE_OPTIES}
+                  onChange={(v) => setData({ ...data, naasteRelatie: v })}
+                />
+                <p className="text-xs text-muted-foreground mt-2">
                   Dit helpt ons om te begrijpen hoe jouw zorgsituatie eruitziet.
                 </p>
               </div>
@@ -586,49 +682,131 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
               </p>
             </div>
 
-            {/* Situatietags per groep */}
-            <div className="ker-card space-y-4">
-              <h3 className="font-semibold text-foreground">
-                Herken je jezelf in een van deze situaties?
+            {/* Woonsituatie */}
+            <div className="ker-card space-y-3">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <span>&#127968;</span> Woonsituatie
               </h3>
-              <p className="text-sm text-foreground/70 leading-relaxed">
-                Mantelzorgers zijn heel verschillend. Sommigen combineren zorg met werk, anderen
-                zorgen op afstand. Door te weten wat op jou van toepassing is, kunnen we je
-                gerichter helpen. Je mag er meerdere kiezen.
+              <p className="text-sm text-foreground/70">
+                Waar woont {data.naasteNaam || "je naaste"} ten opzichte van jou?
               </p>
-              {SITUATIE_GROEPEN.map((groep) => {
-                const groepTags = situaties.filter((t) => t.groep === groep.key)
-                if (groepTags.length === 0) return null
-                return (
-                  <div key={groep.key}>
-                    <p className="text-sm font-medium text-foreground mb-2">{groep.label}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {groepTags.map((tag) => {
-                        const selected = data.situatieTags.includes(tag.slug)
-                        return (
-                          <button
-                            key={tag.slug}
-                            onClick={() => setData({
-                              ...data,
-                              situatieTags: selected
-                                ? data.situatieTags.filter((s) => s !== tag.slug)
-                                : [...data.situatieTags, tag.slug],
-                            })}
-                            className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all border-2 ${
-                              selected
-                                ? "bg-primary text-primary-foreground border-primary"
-                                : "bg-card border-border text-foreground hover:border-primary/30"
-                            }`}
-                          >
-                            {tag.emoji && <span className="mr-1.5">{tag.emoji}</span>}
-                            {tag.naam}
-                          </button>
-                        )
-                      })}
-                    </div>
+              <RadioGroup
+                value={data.woonsituatie}
+                options={WOONSITUATIE_OPTIES}
+                onChange={(v) => setData({ ...data, woonsituatie: v })}
+              />
+            </div>
+
+            {/* Werk */}
+            <div className="ker-card space-y-3">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <span>&#128188;</span> Werk
+              </h3>
+              <p className="text-sm text-foreground/70">
+                Werk je naast het zorgen?
+              </p>
+              <RadioGroup
+                value={data.werkstatus}
+                options={WERKSTATUS_OPTIES}
+                onChange={(v) => setData({ ...data, werkstatus: v })}
+              />
+            </div>
+
+            {/* Hoe lang zorg je al? */}
+            <div className="ker-card space-y-3">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <span>&#9203;</span> Hoe lang zorg je al?
+              </h3>
+              <RadioGroup
+                value={data.zorgduur}
+                options={ZORGDUUR_OPTIES}
+                onChange={(v) => setData({ ...data, zorgduur: v })}
+              />
+            </div>
+
+            {/* Extra situatietags (B5) */}
+            {situaties.filter((t) => t.groep === "extra").length > 0 && (
+              <div className="ker-card space-y-3">
+                <h3 className="font-semibold text-foreground flex items-center gap-2">
+                  <span>&#127991;&#65039;</span> Wat speelt er nog meer?
+                </h3>
+                <p className="text-sm text-foreground/70 leading-relaxed">
+                  Optioneel. Herken je jezelf hierin?
+                </p>
+                <div className="space-y-2">
+                  {situaties.filter((t) => t.groep === "extra").map((tag) => {
+                    const selected = data.situatieTags.includes(tag.slug)
+                    return (
+                      <button
+                        key={tag.slug}
+                        type="button"
+                        onClick={() => setData({
+                          ...data,
+                          situatieTags: selected
+                            ? data.situatieTags.filter((s) => s !== tag.slug)
+                            : [...data.situatieTags, tag.slug],
+                        })}
+                        className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                          selected
+                            ? "bg-primary/10 border-primary"
+                            : "bg-card border-border hover:border-primary/30"
+                        }`}
+                      >
+                        {tag.emoji && <span className="text-xl flex-shrink-0">{tag.emoji}</span>}
+                        <span className={`font-medium ${selected ? "text-primary" : "text-foreground"}`}>
+                          {tag.naam}
+                        </span>
+                        <div className={`ml-auto w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                          selected ? "bg-primary border-primary text-white" : "border-muted-foreground/30"
+                        }`}>
+                          {selected && (
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Rouw & verlies (B6) */}
+            <div className="ker-card space-y-3">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <span>&#128334;&#65039;</span> Rouw &amp; verlies
+              </h3>
+              <button
+                type="button"
+                onClick={() => setData({ ...data, isRouw: !data.isRouw })}
+                className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                  data.isRouw
+                    ? "bg-primary/10 border-primary"
+                    : "bg-card border-border hover:border-primary/30"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-xl flex-shrink-0">&#128334;&#65039;</span>
+                  <div className="flex-1">
+                    <p className={`font-medium ${data.isRouw ? "text-primary" : "text-foreground"}`}>
+                      Mijn naaste is overleden
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      We passen de content aan naar wat nu bij jou past.
+                    </p>
                   </div>
-                )
-              })}
+                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                    data.isRouw ? "bg-primary border-primary text-white" : "border-muted-foreground/30"
+                  }`}>
+                    {data.isRouw && (
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                </div>
+              </button>
             </div>
           </div>
         )}
@@ -748,7 +926,7 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
               </div>
               <div className="text-sm space-y-1 text-foreground/80">
                 <p><strong>Naam:</strong> {data.naasteNaam || "-"}</p>
-                <p><strong>Relatie:</strong> {data.naasteRelatie ? c.relatieOpties.find((o) => o.value === data.naasteRelatie)?.label || data.naasteRelatie : "-"}</p>
+                <p><strong>Relatie:</strong> {data.naasteRelatie ? RELATIE_OPTIES.find((o) => o.value === data.naasteRelatie)?.label || data.naasteRelatie : "-"}</p>
                 <p><strong>Adres:</strong> {data.naasteAdres ? `${data.naasteAdres.straat}, ${data.naasteAdres.woonplaats}` : "Nog niet ingevuld"}</p>
               </div>
             </div>
@@ -768,11 +946,13 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
                 ) : (
                   <p><strong>Zorgthema:</strong> <span className="text-muted-foreground">Niet ingevuld</span></p>
                 )}
-                {data.situatieTags.length > 0 ? (
-                  <p><strong>Situatie:</strong> {data.situatieTags.map((s) => situaties.find((t) => t.slug === s)?.naam || s).join(", ")}</p>
-                ) : (
-                  <p><strong>Situatie:</strong> <span className="text-muted-foreground">Niet ingevuld</span></p>
+                <p><strong>Woonsituatie:</strong> {WOONSITUATIE_OPTIES.find((o) => o.value === data.woonsituatie)?.label || <span className="text-muted-foreground">Niet ingevuld</span>}</p>
+                <p><strong>Werk:</strong> {WERKSTATUS_OPTIES.find((o) => o.value === data.werkstatus)?.label || <span className="text-muted-foreground">Niet ingevuld</span>}</p>
+                <p><strong>Zorgduur:</strong> {ZORGDUUR_OPTIES.find((o) => o.value === data.zorgduur)?.label || <span className="text-muted-foreground">Niet ingevuld</span>}</p>
+                {data.situatieTags.length > 0 && (
+                  <p><strong>Extra:</strong> {data.situatieTags.map((s) => situaties.find((t) => t.slug === s)?.naam || s).join(", ")}</p>
                 )}
+                {data.isRouw && <p><strong>Rouw:</strong> Mijn naaste is overleden</p>}
               </div>
             </div>
 
