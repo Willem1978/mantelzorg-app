@@ -1,7 +1,7 @@
 # MantelBuddy — Geïntegreerd Projectplan 2026
 
 **Datum:** 25 maart 2026
-**Versie:** 2.3 — Iteratie 0 (Security Hotfixes) volledig afgerond
+**Versie:** 2.4 — Iteratie 0 afgerond + Profiel herstructurering conform voorstel
 **Baseline:** v2.5.0
 **Status:** Actief werkdocument
 **Geschatte totale doorlooptijd:** ~350 uur (inclusief nieuwe aanbevelingen)
@@ -1284,6 +1284,23 @@ SMTP configuratie ────────→ Iteratie 9 (Gemeente notificaties)
 ---
 
 ## Changelog
+
+### v2.4 — 25 maart 2026
+
+**Profiel herstructurering conform VOORSTEL-TAG-HERSTRUCTURERING.md**
+
+Drie problemen opgelost die ervoor zorgden dat het profiel niet overeenkwam met het voorstel:
+
+1. **Oude ziekte-tags niet verwijderd** — `supabase-migration.sql` had 12+ specifieke ziektes (MS, ALS, Parkinson, COPD, Hart- en vaatziekten, etc.) ingevoegd die niet gedeactiveerd waren. Nu: alleen 6 overkoepelende zorgthema's actief. SQL-migratie uitgevoerd op productie-database.
+2. **Situatie-tags als vlakke chip-wall** — 18+ tags werden als ongestructureerde chips getoond. Nu: B1 (relatie), B2 (werk), B3 (wonen), B4 (zorgduur) als radio buttons; B5 (extra) als checkboxes; B6 (rouw) als eigen respectvolle sectie.
+3. **Relatie was dropdown** — Vervangen door radio buttons vanuit mantelzorger-perspectief ("Ik zorg voor mijn partner" i.p.v. "Partner" in dropdown).
+
+**Nieuw toegevoegd:**
+- Zorgduur (B4) als expliciete radio-vraag (kort / paar jaar / lang)
+- `ervaren` tag (1-5 jaar) en `netwerk-zorg` tag (familie/vriend/buur)
+- `fulltime-zorger` automatische tag-afleiding bij werkstatus "niet-werkend"
+
+**Gewijzigde bestanden:** ProfielFormulier.tsx, ProfielWizard.tsx, profiel-tags.ts, seed-content-herstructurering.ts
 
 ### v2.3 — 25 maart 2026
 
