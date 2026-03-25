@@ -18,6 +18,7 @@ const menuGroepen: { label: string; items: { href: string; label: string; icon: 
   {
     label: "Content",
     items: [
+      { href: "/beheer/content-werkbank", label: "Content Werkbank", icon: "📋" },
       { href: "/beheer/artikelen", label: "Artikelen & Tips", icon: "📝" },
       { href: "/beheer/curator", label: "Content Curator", icon: "✍️" },
       { href: "/beheer/content-agent", label: "Content Agent", icon: "🤖" },

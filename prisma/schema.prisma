@@ -146,6 +146,7 @@ model Caregiver {
   voorkeuren                GebruikerVoorkeur[]
   weekKaarten               WeekKaart[]
   geplandeCheckins          GeplandCheckin[]
+  artikelInteracties        ArtikelInteractie[]
   // Profiel uitbreiding (Iteratie A)
   woonsituatie              String?                 // "samen" | "dichtbij" | "op-afstand"
   werkstatus                String?                 // "fulltime" | "parttime" | "niet-werkend" | "student" | "gepensioneerd"
@@ -536,9 +537,10 @@ model Artikel {
   // Tags (many-to-many via ArtikelTag)
   tags            ArtikelTag[]
 
-  // Bronvermeldingen en curator reviews
-  bronnen         ArtikelBron[]
-  curatorReviews  CuratorReview[]
+  // Bronvermeldingen, curator reviews en gebruikersinteracties
+  bronnen           ArtikelBron[]
+  curatorReviews    CuratorReview[]
+  interacties       ArtikelInteractie[]
 
   // Vector embedding voor semantische zoek (pgvector, 1536 dimensies)
   // Gegenereerd door OpenAI text-embedding-3-small
@@ -1423,4 +1425,27 @@ model ReEngagementBericht {
 
   @@index([userId])
   @@index([verstuurdOp])
+}
+
+// ============================================
+// ARTIKEL INTERACTIE (gelezen/rating per gebruiker)
+// ============================================
+
+model ArtikelInteractie {
+  id          String    @id @default(cuid())
+  caregiverId String
+  artikelId   String
+  gelezen     Boolean   @default(false)
+  gelezenOp   DateTime?
+  rating      Int?      // 1 = duimpje omlaag, 2 = duimpje omhoog
+  ratingOp    DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  caregiver   Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+  artikel     Artikel   @relation(fields: [artikelId], references: [id], onDelete: Cascade)
+
+  @@unique([caregiverId, artikelId])
+  @@index([caregiverId])
+  @@index([artikelId])
+  @@index([rating])
 }
