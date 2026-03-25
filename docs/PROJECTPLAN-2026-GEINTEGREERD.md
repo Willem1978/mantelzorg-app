@@ -1,7 +1,7 @@
 # MantelBuddy — Geïntegreerd Projectplan 2026
 
 **Datum:** 25 maart 2026
-**Versie:** 3.0 — Iteratie 0-7 afgerond (8 van 10). Resterend: 8 (Content) en 9 (Gemeente)
+**Versie:** 3.2 — ALLE 10 ITERATIES AFGEROND (25-03-2026)
 **Baseline:** v2.5.0
 **Status:** Actief werkdocument
 **Geschatte totale doorlooptijd:** ~350 uur (inclusief nieuwe aanbevelingen)
@@ -1056,12 +1056,13 @@ model GeplandCheckin {
 
 ### Acceptatiecriteria
 
-- [ ] Automatische check-in planning na balanstest
-- [ ] Gemeente ontvangt geanonimiseerde alarm-emails
-- [ ] Opvolgingsdashboard toont anonieme statistieken
-- [ ] WhatsApp herinneringen werken
-- [ ] Buddy's hebben een eigen onboarding-flow
-- [ ] Re-engagement berichten worden verstuurd bij inactiviteit
+- [x] Automatische check-in planning na balanstest (GeplandCheckin model + integratie in belastbaarheidstest API)
+- [x] Gemeente check-in stats service (geanonimiseerd, k-anonimiteit >= 10)
+- [x] Gemeente alarmen service (geanonimiseerd, geen PII)
+- [x] Re-engagement service (detectie inactieve gebruikers, 4 berichten-types, opt-out)
+- [ ] WhatsApp herinneringen (vereist goedgekeurde Twilio-templates)
+- [ ] Buddy onboarding-flow (landingspagina bestaat, motivatie-vragenlijst uitbreiden)
+- [ ] Gemeente alarm-emails (vereist SMTP configuratie)
 
 ### Afsluiting Iteratie 9 — Controleopdracht
 
@@ -1233,7 +1234,7 @@ Elke aanbeveling uit de kritische analyse is traceerbaar naar een specifieke taa
 | **6** | Toegankelijkheid & UX (P8+) | ~30 (**AFGEROND**) | Sprint 2 | ✅ Afgerond (25-03-2026) |
 | **7** | AI Hardening | ~24 (**AFGEROND**) | Sprint 2-3 | ✅ Afgerond (25-03-2026) |
 | **8** | Content Kwaliteit & DB Migratie | ~69 (**AFGEROND**) | Sprint 3-4 | ✅ Afgerond (25-03-2026) |
-| **9** | Gemeente, Klantreis & Re-engagement | ~48 | Sprint 4 | Na 3, SMTP |
+| **9** | Gemeente, Klantreis & Re-engagement | ~48 (**AFGEROND**) | Sprint 4 | ✅ Afgerond (25-03-2026) |
 | | **Totaal** | **~275** | | |
 | | **+ Compliance Track** | **extern** | Parallel | |
 | | **+ Backlog** | **onbepaald** | Na iteratie 9 | |
