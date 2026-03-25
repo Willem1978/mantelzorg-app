@@ -14,10 +14,12 @@ function createPrismaClient(): PrismaClient {
     }
   }
   try {
-    const logConfig = process.env.NODE_ENV !== 'production'
-      ? { log: [{ emit: 'event' as const, level: 'query' as const }] }
-      : {}
-    return new PrismaClient(logConfig)
+    if (process.env.NODE_ENV !== 'production') {
+      return new PrismaClient({
+        log: [{ emit: 'event', level: 'query' }],
+      })
+    }
+    return new PrismaClient()
   } catch (e) {
     log.error({ err: e }, 'Fout bij aanmaken PrismaClient')
     // Return een client die bij elke query een duidelijke fout geeft
