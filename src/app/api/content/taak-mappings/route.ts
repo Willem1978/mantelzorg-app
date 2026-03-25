@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
+export const revalidate = 3600
+
 export async function GET(_request: NextRequest) {
   try {
     // Haal taak-categorie mappings op inclusief de zorgtaak (met taakId)
