@@ -121,6 +121,7 @@ export const AUTOMATISCHE_TAG_SLUGS = [
  */
 export const HANDMATIGE_TAG_SLUGS = [
   "met-kinderen",
+  "alleenstaand-met-kinderen",
   "meerdere-naasten",
   "alleenstaand",
   "mantelzorg-en-jong",

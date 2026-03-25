@@ -232,10 +232,11 @@ async function main() {
     { slug: 'langdurig', naam: 'Al lang (meer dan 5 jaar)', emoji: '⏳', groep: 'zorgduur', volgorde: 3 },
     // Groep: extra (B5 — wat speelt er nog meer?)
     { slug: 'met-kinderen', naam: 'Ik heb een gezin met kinderen', emoji: '👨‍👩‍👧', groep: 'extra', volgorde: 1 },
-    { slug: 'meerdere-naasten', naam: 'Ik zorg voor meerdere mensen', emoji: '👥', groep: 'extra', volgorde: 2 },
-    { slug: 'alleenstaand', naam: 'Ik doe het alleen (geen hulp van anderen)', emoji: '🏠', groep: 'extra', volgorde: 3 },
-    { slug: 'mantelzorg-en-jong', naam: 'Ik ben een jonge mantelzorger (onder 25)', emoji: '🧑', groep: 'extra', volgorde: 4 },
-    { slug: 'eigen-gezondheid', naam: 'Ik heb zelf ook gezondheidsklachten', emoji: '💊', groep: 'extra', volgorde: 5 },
+    { slug: 'alleenstaand-met-kinderen', naam: 'Ik ben alleenstaand met kinderen', emoji: '👩‍👧‍👦', groep: 'extra', volgorde: 2 },
+    { slug: 'meerdere-naasten', naam: 'Ik zorg voor meerdere mensen', emoji: '👥', groep: 'extra', volgorde: 3 },
+    { slug: 'alleenstaand', naam: 'Ik doe het alleen (geen hulp van anderen)', emoji: '🙋', groep: 'extra', volgorde: 4 },
+    { slug: 'mantelzorg-en-jong', naam: 'Ik ben een jonge mantelzorger (onder 25)', emoji: '🧑', groep: 'extra', volgorde: 5 },
+    { slug: 'eigen-gezondheid', naam: 'Ik heb zelf ook gezondheidsklachten', emoji: '💊', groep: 'extra', volgorde: 6 },
   ]
 
   for (const tag of situatieTags) {
