@@ -1,16 +1,23 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 
-// AUTH_SECRET is vereist door NextAuth v5. App weigert op te starten zonder geldig secret.
-const authSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET
-if (!authSecret) {
-  throw new Error(
-    "[AUTH] FATAL: AUTH_SECRET is niet ingesteld. " +
-    "De app kan niet veilig draaien zonder een geldig secret. " +
-    "Stel AUTH_SECRET in via Vercel Dashboard → Settings → Environment Variables. " +
-    "Genereer een secret met: openssl rand -base64 32"
-  )
-}
+// AUTH_SECRET is vereist door NextAuth v5.
+// Tijdens build (page data collection) is de env var niet altijd beschikbaar.
+// In dat geval gebruiken we een placeholder — bij runtime crasht de app als het secret ontbreekt.
+const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build"
+
+const authSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || (
+  isBuildPhase
+    ? "build-placeholder-not-used-at-runtime"
+    : (() => {
+        throw new Error(
+          "[AUTH] FATAL: AUTH_SECRET is niet ingesteld. " +
+          "De app kan niet veilig draaien zonder een geldig secret. " +
+          "Stel AUTH_SECRET in via Vercel Dashboard → Settings → Environment Variables. " +
+          "Genereer een secret met: openssl rand -base64 32"
+        )
+      })()
+)
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: authSecret,
