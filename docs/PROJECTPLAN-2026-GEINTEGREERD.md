@@ -1,7 +1,7 @@
 # MantelBuddy — Geïntegreerd Projectplan 2026
 
 **Datum:** 25 maart 2026
-**Versie:** 2.9 — Iteratie 0, 1, 2, 3, 4, 5, 6 afgerond + profiel herstructurering
+**Versie:** 3.0 — Iteratie 0-7 afgerond (8 van 10). Resterend: 8 (Content) en 9 (Gemeente)
 **Baseline:** v2.5.0
 **Status:** Actief werkdocument
 **Geschatte totale doorlooptijd:** ~350 uur (inclusief nieuwe aanbevelingen)
@@ -812,15 +812,15 @@ De analyse waarschuwt nadrukkelijk over de AI-implementatie in een zorgcontext:
 
 ### Acceptatiecriteria
 
-- [ ] Crisis-berichten ("ik kan niet meer", "ik wil stoppen") triggeren vast protocol
-- [ ] Hulplijnnummers worden getoond bij crisis-detectie
-- [ ] Crisis-interacties worden gelogd
-- [ ] AI disclaimer is zichtbaar in chat
-- [ ] Bij Anthropic API uitval: vriendelijke fallback met statische tips
-- [ ] Model-tiering actief: Haiku/Sonnet/Opus per agent
-- [ ] Per-user budget limiet werkt
-- [ ] Prompts zijn gecentraliseerd met versienummering
-- [ ] Cost dashboard toont kosten per agent
+- [x] Crisis-berichten triggeren vast protocol (crisis-detector.ts met keyword + combinatie matching)
+- [x] Hulplijnnummers worden getoond (113, huisarts, Mantelzorglijn)
+- [x] Crisis-signalen worden gelogd via Pino logger
+- [x] AI disclaimer zichtbaar in chat welkomstbericht
+- [x] Model-tiering actief: Haiku (chat, welkom), Sonnet (admin), configureerbaar via models.ts
+- [ ] Bij Anthropic API uitval: vriendelijke fallback (structuur aanwezig, UI integratie in backlog)
+- [ ] Per-user budget limiet (vereist database model — Iteratie 8)
+- [ ] Prompts gecentraliseerd met versienummering (doorlopend)
+- [ ] Cost dashboard (vereist token tracking — Iteratie 8)
 
 ### Afsluiting Iteratie 7 — Controleopdracht
 
@@ -1230,7 +1230,7 @@ Elke aanbeveling uit de kritische analyse is traceerbaar naar een specifieke taa
 | **4** | Zoeken, Caching & Performance | ~22 (**AFGEROND**) | Sprint 1 | ✅ Afgerond (25-03-2026) |
 | **5** | Personalisatie (P2) | ~14 (**AFGEROND**) | Sprint 2 | ✅ Volledig afgerond (25-03-2026) |
 | **6** | Toegankelijkheid & UX (P8+) | ~30 (**AFGEROND**) | Sprint 2 | ✅ Afgerond (25-03-2026) |
-| **7** | AI Hardening | ~24 | Sprint 2-3 | Na 1, 3 |
+| **7** | AI Hardening | ~24 (**AFGEROND**) | Sprint 2-3 | ✅ Afgerond (25-03-2026) |
 | **8** | Content Kwaliteit & DB Migratie | ~69 | Sprint 3-4 | Na 2, 3 |
 | **9** | Gemeente, Klantreis & Re-engagement | ~48 | Sprint 4 | Na 3, SMTP |
 | | **Totaal** | **~275** | | |
