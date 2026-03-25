@@ -1,4 +1,4 @@
-import { createAnthropic } from "@ai-sdk/anthropic"
+import { getModelForAgent } from "@/lib/ai/models"
 import { streamText, stepCountIs } from "ai"
 import { buildWelkomPrompt } from "@/lib/ai/prompts/welkom"
 import {
@@ -11,10 +11,6 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 
 // Vercel serverless timeout
 export const maxDuration = 30
-
-const anthropic = createAnthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
 
 export async function POST(req: Request) {
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -61,7 +57,7 @@ export async function POST(req: Request) {
 
   try {
     const result = streamText({
-      model: anthropic("claude-sonnet-4-20250514"),
+      model: getModelForAgent("ger-welkom"),
       system: buildWelkomPrompt(gemeente),
       messages,
       maxOutputTokens: 1500,

@@ -8,7 +8,7 @@
  * Dit bespaart 1-2 tool-call round-trips (= 10-15 seconden sneller).
  * Tools blijven beschikbaar voor vervolgacties (zoeken, hulp, etc.).
  */
-import { createAnthropic } from "@ai-sdk/anthropic"
+import { getModelForAgent } from "@/lib/ai/models"
 import { streamText, stepCountIs } from "ai"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -28,10 +28,6 @@ import {
 import { resolveGemeenteContact } from "@/lib/ai/gemeente-resolver"
 
 export const maxDuration = 60
-
-const anthropic = createAnthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
 
 export async function POST(req: Request) {
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -151,7 +147,7 @@ Gebruik deze data direct om de juiste flow te kiezen. Roep bekijkGebruikerStatus
     const systemPrompt = buildBalanscoachPrompt(gemeenteMantelzorger, gemeenteZorgvrager, pagina, gemeenteContactBlok) + statusContext
 
     const result = streamText({
-      model: anthropic("claude-sonnet-4-20250514"),
+      model: getModelForAgent("ger-balanscoach"),
       system: systemPrompt,
       messages,
       maxOutputTokens: 1500,

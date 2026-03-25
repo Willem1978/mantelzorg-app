@@ -9,7 +9,7 @@
  *
  * Het eerste bericht bevat de check-in antwoorden als context.
  */
-import { createAnthropic } from "@ai-sdk/anthropic"
+import { getModelForAgent } from "@/lib/ai/models"
 import { streamText, stepCountIs } from "ai"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -24,10 +24,6 @@ import {
 
 // Vercel serverless function timeout: AI tool calls + DB queries need more than default 10s
 export const maxDuration = 30
-
-const anthropic = createAnthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
 
 export async function POST(req: Request) {
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -72,7 +68,7 @@ export async function POST(req: Request) {
 
   try {
     const result = streamText({
-      model: anthropic("claude-sonnet-4-20250514"),
+      model: getModelForAgent("ger-checkin"),
       system: buildCheckinBuddyPrompt(gemeenteZorgvrager || gemeenteMantelzorger),
       messages,
       maxOutputTokens: 1500,

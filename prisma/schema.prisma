@@ -534,6 +534,10 @@ model Artikel {
   // Tags (many-to-many via ArtikelTag)
   tags            ArtikelTag[]
 
+  // Bronvermeldingen en curator reviews
+  bronnen         ArtikelBron[]
+  curatorReviews  CuratorReview[]
+
   // Vector embedding voor semantische zoek (pgvector, 1536 dimensies)
   // Gegenereerd door OpenAI text-embedding-3-small
   embedding             Unsupported("vector(1536)")?
@@ -1345,4 +1349,37 @@ enum WhatsAppSessieType {
   TEST
   ONBOARDING
   HULP
+}
+
+// ============================================
+// BRONVERMELDING (per artikel)
+// ============================================
+
+model ArtikelBron {
+  id          String   @id @default(cuid())
+  artikelId   String
+  naam        String
+  url         String?
+  type        String   // "website" | "overheid" | "onderzoek" | "organisatie"
+  createdAt   DateTime @default(now())
+  artikel     Artikel  @relation(fields: [artikelId], references: [id], onDelete: Cascade)
+
+  @@index([artikelId])
+}
+
+// ============================================
+// CURATOR REVIEWS (AI-gestuurde content reviews)
+// ============================================
+
+model CuratorReview {
+  id          String    @id @default(cuid())
+  artikelId   String
+  score       Int       // 0-100 kwaliteitsscore
+  feedback    String    @db.Text
+  issues      Json?     // Array van gevonden problemen
+  reviewedAt  DateTime  @default(now())
+  resolvedAt  DateTime? // Wanneer alle issues zijn opgelost
+  artikel     Artikel   @relation(fields: [artikelId], references: [id], onDelete: Cascade)
+
+  @@index([artikelId])
 }

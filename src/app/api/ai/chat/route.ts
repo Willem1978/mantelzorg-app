@@ -1,9 +1,10 @@
-import { createAnthropic } from "@ai-sdk/anthropic"
 import { streamText, stepCountIs } from "ai"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { buildAssistentPrompt } from "@/lib/ai/prompts/assistent"
 import { prefetchUserContext, buildContextBlock } from "@/lib/ai/prefetch-context"
+import { getModelForAgent } from "@/lib/ai/models"
+import { detecteerCrisis, buildCrisisResponse } from "@/lib/ai/crisis-detector"
 import {
   createBekijkTestTrendTool,
   createZoekHulpbronnenTool,
@@ -15,10 +16,6 @@ import {
 
 // Vercel serverless function timeout: AI tool calls + DB queries need more than default 10s
 export const maxDuration = 30
-
-const anthropic = createAnthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
 
 export async function POST(req: Request) {
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -67,6 +64,21 @@ export async function POST(req: Request) {
     return { role: msg.role, content: "" }
   }).filter((msg: { content: string }) => msg.content.trim() !== "")
 
+  // Crisis-detectie: check het laatste bericht van de gebruiker VOORDAT de AI antwoordt
+  const laatsteBericht = messages.filter((m: { role: string }) => m.role === "user").pop()
+  if (laatsteBericht) {
+    const crisisResult = detecteerCrisis(laatsteBericht.content)
+    if (crisisResult.isCrisis && crisisResult.niveau === "crisis") {
+      // Bij crisis: retourneer vast protocol, geen AI-call
+      const crisisResponse = buildCrisisResponse("crisis")
+      return new Response(
+        `0:"${crisisResponse.replace(/"/g, '\\"').replace(/\n/g, '\\n')}"\n`,
+        { headers: { "Content-Type": "text/plain; charset=utf-8" } }
+      )
+    }
+    // Bij aandacht-niveau: voeg crisis-context toe aan het systeem-prompt (hieronder)
+  }
+
   // Haal gebruikerscontext op — twee gemeenten: mantelzorger en zorgvrager
   // Hulp bij zorgtaken (verzorging, boodschappen, klusjes) → gemeente zorgvrager
   // Hulp voor de mantelzorger zelf (steunpunt, emotioneel) → gemeente mantelzorger
@@ -85,7 +97,7 @@ export async function POST(req: Request) {
     const contextBlock = buildContextBlock(userContext)
 
     const result = streamText({
-      model: anthropic("claude-sonnet-4-20250514"),
+      model: getModelForAgent("ger-chat"),
       system: buildAssistentPrompt(gemeenteMantelzorger, gemeenteZorgvrager, contextBlock),
       messages,
       maxOutputTokens: 2048,
