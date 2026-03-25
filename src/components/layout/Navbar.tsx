@@ -88,7 +88,7 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
   const links = userRole === "CAREGIVER" ? caregiverLinks : orgLinks
 
   return (
-    <nav className="bg-card border-b border-border sticky top-0 z-50" aria-label="Hoofdnavigatie">
+    <nav className="bg-card border-b border-border sticky top-0 z-50 shadow-sm" aria-label="Hoofdnavigatie">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-14 sm:h-16">
           <div className="flex items-center">
@@ -133,11 +133,28 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
           </div>
 
           <div className="flex items-center space-x-1 sm:space-x-2">
-            {/* Zoek-knop */}
+            {/* Zoekbalk — compact in header */}
+            <div className="hidden sm:block relative">
+              <Link
+                href="/zoeken"
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm transition-colors w-48 lg:w-56",
+                  pathname === "/zoeken"
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                )}
+              >
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <span className="truncate">Zoeken...</span>
+              </Link>
+            </div>
+            {/* Zoek-icoon voor mobiel */}
             <Link
               href="/zoeken"
               className={cn(
-                "p-2 rounded-lg transition-colors",
+                "sm:hidden p-2 rounded-lg transition-colors",
                 pathname === "/zoeken"
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:bg-secondary hover:text-foreground"

@@ -62,7 +62,7 @@ export const emoticonColors = {
 
 // Agenda event kleur
 export const eventTypeColors = {
-  CARE_TASK: "#B85636",
+  CARE_TASK: "#2D1B69",
 } as const
 
 // Urgentie kleuren (voor alarmen)
@@ -80,11 +80,11 @@ export const urgentieLabels: Record<string, string> = {
   CRITICAL: "Kritiek",
 }
 
-// Wellbeing chart kleuren — warmer palet
+// Wellbeing chart kleuren — paurs/navy palet
 export const wellbeingChartColors = {
-  algemeen: "#2E6B4F",
-  fysiek: "#3476A8",
-  emotioneel: "#7E5CA8",
+  algemeen: "#2D1B69",
+  fysiek: "#5A45A0",
+  emotioneel: "#9B8DD4",
 } as const
 
 // Niveau Tailwind klassen (voor badges etc.)
@@ -94,20 +94,20 @@ export const niveauBadgeClasses: Record<string, string> = {
   HOOG: "bg-accent-red-bg text-accent-red",
 }
 
-// PDF rapport kleuren (consistent met warm app-palet)
+// PDF rapport kleuren (consistent met paurs/navy app-palet)
 export const pdfColors = {
-  primary: [46, 107, 79] as const,   // #2E6B4F - consistent met app
-  primaryBg: [232, 242, 236] as const, // #E8F2EC
+  primary: [45, 27, 105] as const,   // #2D1B69 - consistent met app
+  primaryBg: [237, 232, 245] as const, // #EDE8F5
   groen: scoreColors.laag.rgb,
   groenBg: scoreColors.laag.rgbBg,
   oranje: scoreColors.gemiddeld.rgb,
   oranjeBg: scoreColors.gemiddeld.rgbBg,
   rood: scoreColors.hoog.rgb,
   roodBg: scoreColors.hoog.rgbBg,
-  donker: [45, 35, 25] as const,    // #2D2319 - consistent met --foreground
-  tekst: [92, 79, 66] as const,     // #5C4F42 - consistent met --muted-foreground
-  grijs: [128, 120, 110] as const,
-  lichtgrijs: [243, 235, 226] as const, // warm lichtgrijs
-  wit: [255, 251, 247] as const,
-  rand: [212, 200, 187] as const,   // #D4C8BB - consistent met --border
+  donker: [30, 21, 51] as const,    // #1E1533 - consistent met --foreground
+  tekst: [90, 77, 107] as const,    // #5A4D6B - consistent met --muted-foreground
+  grijs: [128, 120, 140] as const,
+  lichtgrijs: [240, 230, 239] as const, // zacht mauve lichtgrijs
+  wit: [255, 255, 255] as const,
+  rand: [212, 198, 217] as const,   // #D4C6D9 - consistent met --border
 } as const
