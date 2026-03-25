@@ -1,6 +1,10 @@
 /**
  * Sessie management voor WhatsApp conversaties
- * Houdt de staat bij van belastbaarheidstest flows en onboarding
+ * Houdt de staat bij van belastbaarheidstest flows, onboarding en hulp zoeken.
+ *
+ * Sessies worden opgeslagen in de database (WhatsAppSessie model) zodat ze
+ * persistent zijn over serverless cold starts. Bij database-fouten wordt
+ * een in-memory fallback gebruikt.
  *
  * Vragen en zorgtaken worden uit de database geladen via content-loader.ts
  * met in-memory cache (5 min TTL). Fallback naar config bij DB-fout.
@@ -11,9 +15,13 @@ export { HULP_VOOR_MANTELZORGER, HULP_BIJ_TAAK, HULP_CATEGORIEEN, ZORGTAKEN, URE
 export { BALANSTEST_VRAGEN as BELASTBAARHEID_QUESTIONS } from "@/config/options"
 import { BALANSTEST_VRAGEN, ZORGTAKEN as _ZORGTAKEN, getScoreLevel } from "@/config/options"
 import { loadBalanstestVragen, loadZorgtaken } from "@/lib/content-loader"
+import { prisma } from "@/lib/prisma"
+
+// TTL voor sessies: 2 uur (WhatsApp gesprekken duren normaal niet langer)
+const SESSION_TTL_MS = 2 * 60 * 60 * 1000
 
 // ===========================================
-// TEST SESSIE - voor balanstest flow
+// INTERFACES (ongewijzigd voor backward-compat)
 // ===========================================
 
 interface TestSession {
@@ -26,35 +34,28 @@ interface TestSession {
     | 'tasks_hours'
     | 'tasks_difficulty'
     | 'completed'
-    | 'ask_register' // Na test: vraag of ze willen registreren
+    | 'ask_register'
   currentQuestion: number
   answers: Record<string, string>
-  // Aanvullende vragen over zorgtaken
   selectedTasks: string[]
   currentTaskIndex: number
   taskDetails: Record<string, { hours?: string; difficulty?: string }>
   startedAt: Date
-  // Test resultaten voor later opslaan
   score?: number
   level?: string
 }
 
-// ===========================================
-// ONBOARDING SESSIE - voor registratie/login + locatie
-// ===========================================
-
 type OnboardingStep =
-  | 'choice' // Keuze: inloggen of registreren
+  | 'choice'
   | 'login_email'
   | 'login_password'
   | 'register_name'
   | 'register_email'
   | 'register_password'
-  // Na registratie/login: locatie vragen
   | 'location_own_postcode'
   | 'location_own_huisnummer'
-  | 'location_care_name' // Naam van naaste
-  | 'location_care_relation' // Relatie (partner, ouder, kind, etc.)
+  | 'location_care_name'
+  | 'location_care_relation'
   | 'location_care_postcode'
   | 'location_care_huisnummer'
   | 'completed'
@@ -63,17 +64,14 @@ interface OnboardingSession {
   phoneNumber: string
   currentStep: OnboardingStep
   data: {
-    // Login/registratie
     email?: string
     password?: string
     name?: string
-    // Eigen locatie
     ownPostcode?: string
     ownHuisnummer?: string
     ownStreet?: string
     ownCity?: string
     ownMunicipality?: string
-    // Naaste locatie
     careName?: string
     careRelation?: string
     carePostcode?: string
@@ -82,7 +80,6 @@ interface OnboardingSession {
     careCity?: string
     careMunicipality?: string
   }
-  // Na test resultaten opslaan voor later
   pendingTestResults?: {
     answers: Record<string, string>
     selectedTasks: string[]
@@ -93,38 +90,98 @@ interface OnboardingSession {
   startedAt: Date
 }
 
-// ===========================================
-// HULP SESSIE - voor hulp zoeken flow
-// ===========================================
-
 type HulpStep =
-  | 'main_choice' // Hoofdkeuze: hulp voor mij of hulp bij taak
-  | 'soort_hulp' // Subcategorie: soort hulp voor mantelzorger
-  | 'onderdeel_taak' // Subcategorie: onderdeel test/taak
-  | 'results' // Toon resultaten
+  | 'main_choice'
+  | 'soort_hulp'
+  | 'onderdeel_taak'
+  | 'results'
 
 interface HulpSession {
   phoneNumber: string
   currentStep: HulpStep
-  mainChoice?: 'mantelzorger' | 'taak' // Hoofd keuze
-  soortHulp?: string // Gekozen "Soort hulp" uit Excel
-  onderdeelTaak?: string // Gekozen "Onderdeel mantelzorgtest" uit Excel
+  mainChoice?: 'mantelzorger' | 'taak'
+  soortHulp?: string
+  onderdeelTaak?: string
   startedAt: Date
 }
 
+// ===========================================
+// IN-MEMORY FALLBACK (alleen bij DB-fouten)
+// ===========================================
 
-// In-memory store (in productie zou je Redis of database gebruiken)
-const sessions = new Map<string, TestSession>()
-const onboardingSessions = new Map<string, OnboardingSession>()
-const hulpSessions = new Map<string, HulpSession>()
+const memorySessions = new Map<string, TestSession>()
+const memoryOnboarding = new Map<string, OnboardingSession>()
+const memoryHulp = new Map<string, HulpSession>()
+
+// ===========================================
+// DATABASE HELPERS
+// ===========================================
+
+type SessionType = 'TEST' | 'ONBOARDING' | 'HULP'
+
+async function dbUpsertSession(
+  telefoonnr: string,
+  type: SessionType,
+  stap: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any
+): Promise<void> {
+  try {
+    await prisma.whatsAppSessie.upsert({
+      where: { telefoonnr_type: { telefoonnr, type } },
+      create: {
+        telefoonnr,
+        type,
+        stap,
+        data: JSON.parse(JSON.stringify(data)),
+        expiresAt: new Date(Date.now() + SESSION_TTL_MS),
+      },
+      update: {
+        stap,
+        data: JSON.parse(JSON.stringify(data)),
+        expiresAt: new Date(Date.now() + SESSION_TTL_MS),
+      },
+    })
+  } catch (error) {
+    console.error(`[WA-SESSION] DB upsert fout voor ${type}:${telefoonnr}:`, error)
+    // Silently fail — in-memory fallback wordt gebruikt
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function dbGetSession(telefoonnr: string, type: SessionType): Promise<any | null> {
+  try {
+    const sessie = await prisma.whatsAppSessie.findUnique({
+      where: { telefoonnr_type: { telefoonnr, type } },
+    })
+    if (!sessie) return null
+    // Verwijder verlopen sessies
+    if (sessie.expiresAt < new Date()) {
+      await prisma.whatsAppSessie.delete({
+        where: { id: sessie.id },
+      }).catch(() => {})
+      return null
+    }
+    return sessie.data
+  } catch (error) {
+    console.error(`[WA-SESSION] DB get fout voor ${type}:${telefoonnr}:`, error)
+    return null
+  }
+}
+
+async function dbDeleteSession(telefoonnr: string, type: SessionType): Promise<void> {
+  try {
+    await prisma.whatsAppSessie.deleteMany({
+      where: { telefoonnr, type },
+    })
+  } catch (error) {
+    console.error(`[WA-SESSION] DB delete fout voor ${type}:${telefoonnr}:`, error)
+  }
+}
 
 // ===========================================
 // CONSTANTEN
 // ===========================================
-
-
-
-
 
 // Lokale alias voor intern gebruik (BALANSTEST_VRAGEN uit config bevat ook weegfactor)
 const BELASTBAARHEID_QUESTIONS = BALANSTEST_VRAGEN
@@ -133,7 +190,7 @@ const BELASTBAARHEID_QUESTIONS = BALANSTEST_VRAGEN
 // TEST SESSIE FUNCTIES
 // ===========================================
 
-export function startTestSession(userId: string): TestSession {
+export async function startTestSession(userId: string): Promise<TestSession> {
   const session: TestSession = {
     userId,
     currentStep: 'intro',
@@ -144,42 +201,54 @@ export function startTestSession(userId: string): TestSession {
     taskDetails: {},
     startedAt: new Date(),
   }
-  sessions.set(userId, session)
+  memorySessions.set(userId, session)
+  await dbUpsertSession(userId, 'TEST', session.currentStep, session)
   return session
 }
 
-export function getTestSession(userId: string): TestSession | undefined {
-  return sessions.get(userId)
+export async function getTestSession(userId: string): Promise<TestSession | undefined> {
+  // Probeer in-memory eerst (snelst)
+  const memSession = memorySessions.get(userId)
+  if (memSession) return memSession
+
+  // Fallback naar database
+  const dbData = await dbGetSession(userId, 'TEST')
+  if (dbData) {
+    const session = dbData as TestSession
+    session.startedAt = new Date(session.startedAt)
+    memorySessions.set(userId, session) // Cache in memory
+    return session
+  }
+
+  return undefined
 }
 
-export function updateTestSession(userId: string, updates: Partial<TestSession>): TestSession | null {
-  const session = sessions.get(userId)
+export async function updateTestSession(userId: string, updates: Partial<TestSession>): Promise<TestSession | null> {
+  const session = await getTestSession(userId)
   if (!session) return null
 
   Object.assign(session, updates)
-  sessions.set(userId, session)
+  memorySessions.set(userId, session)
+  await dbUpsertSession(userId, 'TEST', session.currentStep, session)
   return session
 }
 
-export function updateTestAnswer(userId: string, answer: string): TestSession | null {
-  const session = sessions.get(userId)
+export async function updateTestAnswer(userId: string, answer: string): Promise<TestSession | null> {
+  const session = await getTestSession(userId)
   if (!session) return null
 
   const question = BELASTBAARHEID_QUESTIONS[session.currentQuestion]
   if (!question) return null
 
-  // Sla antwoord op
   session.answers[question.id] = answer
-
-  // Ga naar volgende vraag
   session.currentQuestion++
 
-  // Check of we klaar zijn
   if (session.currentQuestion >= BELASTBAARHEID_QUESTIONS.length) {
     session.currentStep = 'completed'
   }
 
-  sessions.set(userId, session)
+  memorySessions.set(userId, session)
+  await dbUpsertSession(userId, 'TEST', session.currentStep, session)
   return session
 }
 
@@ -191,19 +260,18 @@ export function calculateScore(answers: Record<string, string>): number {
 
     if (answer === 'ja') totalScore += 2
     else if (answer === 'soms') totalScore += 1
-    // nee = 0 punten
   })
 
-  return totalScore // Max = 12 vragen × 2 = 24
+  return totalScore
 }
 
-export function clearTestSession(userId: string): void {
-  sessions.delete(userId)
+export async function clearTestSession(userId: string): Promise<void> {
+  memorySessions.delete(userId)
+  await dbDeleteSession(userId, 'TEST')
 }
 
-// Functies voor aanvullende taken vragen
-export function startTasksFlow(userId: string): TestSession | null {
-  const session = sessions.get(userId)
+export async function startTasksFlow(userId: string): Promise<TestSession | null> {
+  const session = await getTestSession(userId)
   if (!session) return null
 
   session.currentStep = 'tasks_intro'
@@ -211,30 +279,31 @@ export function startTasksFlow(userId: string): TestSession | null {
   session.currentTaskIndex = 0
   session.taskDetails = {}
 
-  sessions.set(userId, session)
+  memorySessions.set(userId, session)
+  await dbUpsertSession(userId, 'TEST', session.currentStep, session)
   return session
 }
 
-export function setSelectedTasks(userId: string, taskIds: string[]): TestSession | null {
-  const session = sessions.get(userId)
+export async function setSelectedTasks(userId: string, taskIds: string[]): Promise<TestSession | null> {
+  const session = await getTestSession(userId)
   if (!session) return null
 
   session.selectedTasks = taskIds
   session.currentTaskIndex = 0
 
-  // Als er taken geselecteerd zijn, ga naar uren vraag
   if (taskIds.length > 0) {
     session.currentStep = 'tasks_hours'
   } else {
     session.currentStep = 'completed'
   }
 
-  sessions.set(userId, session)
+  memorySessions.set(userId, session)
+  await dbUpsertSession(userId, 'TEST', session.currentStep, session)
   return session
 }
 
-export function setTaskHours(userId: string, hours: string): TestSession | null {
-  const session = sessions.get(userId)
+export async function setTaskHours(userId: string, hours: string): Promise<TestSession | null> {
+  const session = await getTestSession(userId)
   if (!session || session.selectedTasks.length === 0) return null
 
   const currentTaskId = session.selectedTasks[session.currentTaskIndex]
@@ -242,16 +311,15 @@ export function setTaskHours(userId: string, hours: string): TestSession | null 
     session.taskDetails[currentTaskId] = {}
   }
   session.taskDetails[currentTaskId].hours = hours
-
-  // Ga naar moeilijkheid vraag
   session.currentStep = 'tasks_difficulty'
 
-  sessions.set(userId, session)
+  memorySessions.set(userId, session)
+  await dbUpsertSession(userId, 'TEST', session.currentStep, session)
   return session
 }
 
-export function setTaskDifficulty(userId: string, difficulty: string): TestSession | null {
-  const session = sessions.get(userId)
+export async function setTaskDifficulty(userId: string, difficulty: string): Promise<TestSession | null> {
+  const session = await getTestSession(userId)
   if (!session || session.selectedTasks.length === 0) return null
 
   const currentTaskId = session.selectedTasks[session.currentTaskIndex]
@@ -260,18 +328,16 @@ export function setTaskDifficulty(userId: string, difficulty: string): TestSessi
   }
   session.taskDetails[currentTaskId].difficulty = difficulty
 
-  // Ga naar volgende taak of completion
   session.currentTaskIndex++
 
   if (session.currentTaskIndex >= session.selectedTasks.length) {
-    // Alle taken doorgelopen
     session.currentStep = 'completed'
   } else {
-    // Volgende taak - vraag uren
     session.currentStep = 'tasks_hours'
   }
 
-  sessions.set(userId, session)
+  memorySessions.set(userId, session)
+  await dbUpsertSession(userId, 'TEST', session.currentStep, session)
   return session
 }
 
@@ -292,11 +358,11 @@ export function getCurrentQuestion(session: TestSession): (typeof BELASTBAARHEID
 // ONBOARDING SESSIE FUNCTIES
 // ===========================================
 
-export function startOnboardingSession(
+export async function startOnboardingSession(
   phoneNumber: string,
   startStep: OnboardingStep = 'choice',
   pendingTestResults?: OnboardingSession['pendingTestResults']
-): OnboardingSession {
+): Promise<OnboardingSession> {
   const session: OnboardingSession = {
     phoneNumber,
     currentStep: startStep,
@@ -304,20 +370,32 @@ export function startOnboardingSession(
     pendingTestResults,
     startedAt: new Date(),
   }
-  onboardingSessions.set(phoneNumber, session)
+  memoryOnboarding.set(phoneNumber, session)
+  await dbUpsertSession(phoneNumber, 'ONBOARDING', session.currentStep, session)
   return session
 }
 
-export function getOnboardingSession(phoneNumber: string): OnboardingSession | undefined {
-  return onboardingSessions.get(phoneNumber)
+export async function getOnboardingSession(phoneNumber: string): Promise<OnboardingSession | undefined> {
+  const memSession = memoryOnboarding.get(phoneNumber)
+  if (memSession) return memSession
+
+  const dbData = await dbGetSession(phoneNumber, 'ONBOARDING')
+  if (dbData) {
+    const session = dbData as OnboardingSession
+    session.startedAt = new Date(session.startedAt)
+    memoryOnboarding.set(phoneNumber, session)
+    return session
+  }
+
+  return undefined
 }
 
-export function updateOnboardingSession(
+export async function updateOnboardingSession(
   phoneNumber: string,
   step: OnboardingStep,
   data?: Partial<OnboardingSession['data']>
-): OnboardingSession | null {
-  const session = onboardingSessions.get(phoneNumber)
+): Promise<OnboardingSession | null> {
+  const session = await getOnboardingSession(phoneNumber)
   if (!session) return null
 
   session.currentStep = step
@@ -325,38 +403,52 @@ export function updateOnboardingSession(
     session.data = { ...session.data, ...data }
   }
 
-  onboardingSessions.set(phoneNumber, session)
+  memoryOnboarding.set(phoneNumber, session)
+  await dbUpsertSession(phoneNumber, 'ONBOARDING', session.currentStep, session)
   return session
 }
 
-export function clearOnboardingSession(phoneNumber: string): void {
-  onboardingSessions.delete(phoneNumber)
+export async function clearOnboardingSession(phoneNumber: string): Promise<void> {
+  memoryOnboarding.delete(phoneNumber)
+  await dbDeleteSession(phoneNumber, 'ONBOARDING')
 }
 
 // ===========================================
 // HULP SESSIE FUNCTIES
 // ===========================================
 
-export function startHulpSession(phoneNumber: string): HulpSession {
+export async function startHulpSession(phoneNumber: string): Promise<HulpSession> {
   const session: HulpSession = {
     phoneNumber,
     currentStep: 'main_choice',
     startedAt: new Date(),
   }
-  hulpSessions.set(phoneNumber, session)
+  memoryHulp.set(phoneNumber, session)
+  await dbUpsertSession(phoneNumber, 'HULP', session.currentStep, session)
   return session
 }
 
-export function getHulpSession(phoneNumber: string): HulpSession | undefined {
-  return hulpSessions.get(phoneNumber)
+export async function getHulpSession(phoneNumber: string): Promise<HulpSession | undefined> {
+  const memSession = memoryHulp.get(phoneNumber)
+  if (memSession) return memSession
+
+  const dbData = await dbGetSession(phoneNumber, 'HULP')
+  if (dbData) {
+    const session = dbData as HulpSession
+    session.startedAt = new Date(session.startedAt)
+    memoryHulp.set(phoneNumber, session)
+    return session
+  }
+
+  return undefined
 }
 
-export function updateHulpSession(
+export async function updateHulpSession(
   phoneNumber: string,
   step: HulpStep,
   data?: { mainChoice?: 'mantelzorger' | 'taak'; soortHulp?: string; onderdeelTaak?: string }
-): HulpSession | null {
-  const session = hulpSessions.get(phoneNumber)
+): Promise<HulpSession | null> {
+  const session = await getHulpSession(phoneNumber)
   if (!session) return null
 
   session.currentStep = step
@@ -364,12 +456,14 @@ export function updateHulpSession(
   if (data?.soortHulp) session.soortHulp = data.soortHulp
   if (data?.onderdeelTaak) session.onderdeelTaak = data.onderdeelTaak
 
-  hulpSessions.set(phoneNumber, session)
+  memoryHulp.set(phoneNumber, session)
+  await dbUpsertSession(phoneNumber, 'HULP', session.currentStep, session)
   return session
 }
 
-export function clearHulpSession(phoneNumber: string): void {
-  hulpSessions.delete(phoneNumber)
+export async function clearHulpSession(phoneNumber: string): Promise<void> {
+  memoryHulp.delete(phoneNumber)
+  await dbDeleteSession(phoneNumber, 'HULP')
 }
 
 // ===========================================
@@ -435,7 +529,6 @@ export async function getCurrentTaskFromDb(session: TestSession) {
  * Check of postcode geldig NL formaat is
  */
 export function isValidPostcode(postcode: string): boolean {
-  // Nederlands postcodeformaat: 1234 AB of 1234AB
   const cleanPostcode = postcode.replace(/\s/g, '').toUpperCase()
   return /^\d{4}[A-Z]{2}$/.test(cleanPostcode)
 }

@@ -26,7 +26,7 @@ export async function POST(req: Request) {
 
   // Rate limiting: 20 berichten per 10 minuten per IP
   const ip = getClientIp(req)
-  const rateCheck = checkRateLimit(ip, "ai-welkom", {
+  const rateCheck = await checkRateLimit(ip, "ai-welkom", {
     maxRequests: 20,
     windowSeconds: 600,
   })

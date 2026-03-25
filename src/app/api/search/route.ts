@@ -74,14 +74,9 @@ async function trySemanticSearch(
   const embedding = await generateEmbedding(q)
   const vectorSql = toVectorSql(embedding)
 
-  const rows = await prisma.$queryRawUnsafe<SemanticRow[]>(
-    `SELECT * FROM semantic_search($1::vector, $2, $3, $4, $5)`,
-    vectorSql,
-    0.3,
-    20,
-    gemeente,
-    type
-  )
+  const rows = await prisma.$queryRaw<SemanticRow[]>`
+    SELECT * FROM semantic_search(${vectorSql}::vector, ${0.3}, ${20}, ${gemeente}, ${type})
+  `
 
   if (!rows || rows.length === 0) {
     return null

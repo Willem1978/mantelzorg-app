@@ -6,12 +6,12 @@ import {
 import type { HandlerResult } from './types'
 import { TEST_ANSWER_BUTTONS } from './types'
 
-export function handleGuestMenu(phoneNumber: string, input: string): HandlerResult {
+export async function handleGuestMenu(phoneNumber: string, input: string): Promise<HandlerResult> {
   const command = input.toLowerCase().trim()
 
   // 1. Balanstest
   if (command === '1' || command === 'test' || command === 'balanstest') {
-    const session = startTestSession(phoneNumber)
+    const session = await startTestSession(phoneNumber)
     const firstQuestion = getCurrentQuestion(session)
     session.currentStep = 'questions'
 

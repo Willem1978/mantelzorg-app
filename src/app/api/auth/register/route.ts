@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   try {
     // Rate limiting
     const ip = getClientIp(request)
-    const limit = checkRateLimit(ip, "register")
+    const limit = await checkRateLimit(ip, "register")
     if (!limit.allowed) {
       return NextResponse.json(
         { error: `Te veel pogingen. Probeer het over ${Math.ceil(limit.resetIn / 60)} minuten opnieuw.` },

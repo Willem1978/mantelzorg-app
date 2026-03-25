@@ -50,14 +50,9 @@ export function createSemantischZoekenTool(gemeente?: string | null) {
         const threshold = 0.4
         const gemeenteParam = gemeente || null
 
-        const results = await prisma.$queryRawUnsafe<SemanticResult[]>(
-          `SELECT * FROM semantic_search($1::vector, $2, $3, $4, $5)`,
-          vectorSql,
-          threshold,
-          maxResultaten,
-          gemeenteParam,
-          type
-        )
+        const results = await prisma.$queryRaw<SemanticResult[]>`
+          SELECT * FROM semantic_search(${vectorSql}::vector, ${threshold}, ${maxResultaten}, ${gemeenteParam}, ${type})
+        `
 
         if (!results || results.length === 0) {
           return fallbackTextSearch(vraag, type, maxResultaten, gemeente)

@@ -5,7 +5,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
 export async function GET(request: Request) {
   // Rate limiting: 5 pogingen per 5 minuten
   const ip = getClientIp(request)
-  const rateLimit = checkRateLimit(ip, "check-phone", { maxRequests: 5, windowSeconds: 300 })
+  const rateLimit = await checkRateLimit(ip, "check-phone", { maxRequests: 5, windowSeconds: 300 })
   if (!rateLimit.allowed) {
     return NextResponse.json({ exists: false }, { status: 429 })
   }
