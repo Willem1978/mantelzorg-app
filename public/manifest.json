@@ -1,27 +1,42 @@
 {
   "name": "MantelBuddy - Samen lokaal sterk",
   "short_name": "MantelBuddy",
-  "description": "MantelBuddy verbindt mantelzorgers met vrijwilligers uit de buurt",
+  "description": "MantelBuddy verbindt mantelzorgers met vrijwilligers uit de buurt. Persoonlijke tips, hulpbronnen en een digitale coach.",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#F7FAFC",
-  "theme_color": "#2C7A7B",
+  "background_color": "#FDF8F3",
+  "theme_color": "#2E6B4F",
   "orientation": "portrait-primary",
   "lang": "nl",
+  "dir": "ltr",
+  "scope": "/",
+  "id": "/dashboard",
   "icons": [
     {
       "src": "/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
-  "categories": ["health", "lifestyle"],
-  "screenshots": []
+  "categories": ["health", "lifestyle", "medical"],
+  "prefer_related_applications": false
 }

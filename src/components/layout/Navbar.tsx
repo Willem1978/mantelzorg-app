@@ -88,7 +88,7 @@ export function Navbar({ userRole = "CAREGIVER", userName }: NavbarProps) {
   const links = userRole === "CAREGIVER" ? caregiverLinks : orgLinks
 
   return (
-    <nav className="bg-card border-b border-border sticky top-0 z-50">
+    <nav className="bg-card border-b border-border sticky top-0 z-50" aria-label="Hoofdnavigatie">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-14 sm:h-16">
           <div className="flex items-center">

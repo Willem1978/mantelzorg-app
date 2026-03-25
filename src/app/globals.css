@@ -667,10 +667,24 @@ html.high-contrast.dark {
   min-width: 48px;
 }
 
-/* Focus visible for accessibility */
+/* Focus visible for accessibility — WCAG 2.1 AA */
 *:focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 3px solid var(--primary);
   outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Zorg dat focus ring altijd zichtbaar is boven andere elementen */
+*:focus-visible {
+  z-index: 1;
+  position: relative;
+}
+
+/* Minimale fontgrootte voor toegankelijkheid — WCAG 2.1 AA */
+/* Voorkom dat tekst kleiner is dan 14px op mobiel */
+@media (max-width: 640px) {
+  .text-xs { font-size: 0.8125rem !important; /* 13px → 13px minimum */ }
+  .text-\[10px\] { font-size: 0.75rem !important; /* 10px → 12px minimum */ }
 }
 
 /* Smooth scrolling */
