@@ -22,6 +22,8 @@ interface Artikel {
   subHoofdstuk: string | null
   bronLabel: string | null
   tags?: ArtikelTag[]
+  relevantieScore?: number
+  matchRedenen?: string[]
 }
 
 
