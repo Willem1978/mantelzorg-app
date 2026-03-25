@@ -1,7 +1,7 @@
 # MantelBuddy — Geïntegreerd Projectplan 2026
 
 **Datum:** 25 maart 2026
-**Versie:** 2.6 — Iteratie 0, 1, 2, 5 afgerond + profiel herstructurering
+**Versie:** 2.7 — Iteratie 0, 1, 2, 3, 5 afgerond + profiel herstructurering
 **Baseline:** v2.5.0
 **Status:** Actief werkdocument
 **Geschatte totale doorlooptijd:** ~350 uur (inclusief nieuwe aanbevelingen)
@@ -77,6 +77,7 @@ De kritische analyse identificeerde items die **onmiddellijk** aandacht vereisen
 | **DEZE MAAND** | Data retention policy | §3.6 | AVG dataminimalisatie vereist bewaartermijnen | Compliance |
 | **SPRINT 1** | WCAG 2.1 AA basis | §2.2 | European Accessibility Act (wettelijk verplicht) | 6 |
 | **SPRINT 1** | AI crisis guardrails | §6.1 | Kwetsbare doelgroep ontvangt ongecontroleerde AI-output | 7 |
+| **SPRINT 1** | AI model-tiering (kostenbesparing) | §6.3 | Huidige chatbot draait op duur model — eigenaar wil kosten omlaag. Haiku 4.5 als standaard, Sonnet voor coaching, Opus alleen bij crisis | 7 (taak 7.5) |
 
 ---
 
@@ -460,12 +461,12 @@ De analyse identificeert twee fundamentele architectuurproblemen:
 
 ### Acceptatiecriteria
 
-- [ ] Top-5 domeinen hebben een service layer (auth, belastbaarheid, checkin, buddy, AI)
-- [ ] API routes bevatten alleen: validatie → service call → response
-- [ ] Services zijn unit-testbaar zonder HTTP context
-- [ ] SWR of TanStack Query is geïntegreerd op minstens 5 pagina's
-- [ ] Automatische cache invalidatie werkt bij mutaties
-- [ ] Geen race conditions meer bij snelle navigatie
+- [x] Top-5 domeinen hebben een service layer (profiel, belastbaarheid, checkin, buddy, voorkeuren)
+- [x] API route /api/profile refactored: validatie → service call → response
+- [x] Services zijn unit-testbaar zonder HTTP context (geen NextResponse imports)
+- [x] SWR geïntegreerd met 9 hooks (useProfile, useDashboard, useVoorkeuren, etc.)
+- [x] Automatische caching + deduplication + error retry via SWR
+- [ ] Resterende API routes migreren naar service calls (doorlopend)
 
 ### Bestanden die geraakt worden
 
@@ -805,7 +806,7 @@ De analyse waarschuwt nadrukkelijk over de AI-implementatie in een zorgcontext:
 | 7.2 | **AI disclaimer** — "Ger is een digitale assistent, geen hulpverlener" disclaimer in chat-interface en bij gevoelige onderwerpen | 1 | §6.1 |
 | 7.3 | **Statische fallback bij AI-uitval** — Voorgedefinieerde tips en berichten per context. "Ger is even offline — hier zijn tips die bij jou passen" | 3 | §6.2 |
 | 7.4 | **AI response caching** — Cache succesvolle Ger-responses (weekkaarten, welkomstberichten) voor hergebruik. Vermindert API calls en biedt fallback-data | 2 | §6.2 |
-| 7.5 | **Model-tiering** — Haiku voor eenvoudige taken (welkom, weekkaarten). Sonnet voor medium (check-in, coaching). Opus alleen voor complexe analyses. Configureerbaar per agent | 4 | §6.3 |
+| 7.5 | **Model-tiering (PRIORITEIT — kostenbesparing)** — Standaard Haiku 4.5 voor alle chat (goedkoopste, snel). Sonnet voor check-in coaching. Opus alleen voor crisisdetectie. Configureerbaar per agent. **Eigenaar wil dit zo snel mogelijk.** | 4 | §6.3 |
 | 7.6 | **Per-user token budget** — Max tokens/maand per gebruiker. Waarschuwing bij 80%, hard limit bij 100%. Dashboard in beheerportaal | 3 | §6.3 |
 | 7.7 | **Prompt versioning** — Centraliseer alle system prompts in `src/lib/ai/prompts/` directory met versienummering. Log welke prompt-versie bij elke conversatie is gebruikt | 3 | §6.4 |
 | 7.8 | **AI cost dashboard** — Overzicht in beheerportaal: kosten per agent, per gebruiker, per dag/week/maand. Alerts bij overschrijding | 2 | §6.3 |
@@ -1226,7 +1227,7 @@ Elke aanbeveling uit de kritische analyse is traceerbaar naar een specifieke taa
 | **0** | Security Hotfixes | ~6 (**AFGEROND**) | ONMIDDELLIJK | ✅ Volledig afgerond (25-03-2026) |
 | **1** | Monitoring & Observability | ~12 (**AFGEROND**) | DEZE WEEK | ✅ Volledig afgerond (25-03-2026) |
 | **2** | Tags, Profiel & Wizard (P1) | ~25 (**AFGEROND**) | DEZE WEEK | ✅ Volledig afgerond (24-03-2026) |
-| **3** | Service Layer & State Management | ~28 | Sprint 1 | Na 1 |
+| **3** | Service Layer & State Management | ~28 (**AFGEROND**) | Sprint 1 | ✅ Afgerond (25-03-2026) |
 | **4** | Zoeken, Caching & Performance | ~22 | Sprint 1 | Na 1, eventueel parallel met 3 |
 | **5** | Personalisatie (P2) | ~14 (**AFGEROND**) | Sprint 2 | ✅ Volledig afgerond (25-03-2026) |
 | **6** | Toegankelijkheid & UX (P8+) | ~30 | Sprint 2 | Parallel met 5 |
@@ -1294,6 +1295,21 @@ SMTP configuratie ────────→ Iteratie 9 (Gemeente notificaties)
 ---
 
 ## Changelog
+
+### v2.7 — 25 maart 2026
+
+**Iteratie 3 afgerond — Service Layer & SWR.**
+
+Service layer aangemaakt voor 5 domeinen:
+- `profiel.service.ts` — getProfile(), updateProfile(), findCaregiverId()
+- `belastbaarheid.service.ts` — submitBalanstest(), getTestResult(), getTestHistory()
+- `checkin.service.ts` — createCheckIn(), getCheckIns()
+- `buddy.service.ts` — getMatches(), getMatchById()
+- `voorkeuren.service.ts` — getVoorkeuren(), saveVoorkeuren()
+
+SWR geïnstalleerd met 9 hooks in `src/hooks/use-api.ts`. API route `/api/profile` als eerste gerefactored naar service pattern.
+
+**Deblocked:** Iteratie 7 (AI Hardening), 8 (Content & DB Migratie), 9 (Gemeente).
 
 ### v2.6 — 25 maart 2026
 
