@@ -60,7 +60,40 @@ export async function PATCH(req: NextRequest) {
       // Bij archiveren: deactiveren
       ...(status === "GEARCHIVEERD" ? { isActief: false } : {}),
     },
+    include: { tags: { select: { tag: { select: { slug: true } } } } },
   })
+
+  // Bij publicatie: verplichte tag-check
+  if (status === "GEPUBLICEERD") {
+    const heeftZorgthema = artikel.tags.some(t => {
+      const slug = t.tag.slug
+      return ["dementie", "kanker", "hart-vaat", "psychisch", "lichamelijk", "overig-aandoening"].includes(slug)
+    })
+    const heeftOnderwerp = artikel.tags.length > 0
+
+    if (!heeftOnderwerp) {
+      // Geen tags — waarschuwing teruggeven maar wel publiceren
+      return NextResponse.json({
+        artikel,
+        waarschuwing: "Dit artikel heeft geen tags. Overweeg om tags toe te voegen voor betere vindbaarheid.",
+        heeftZorgthema,
+      })
+    }
+  }
+
+  // Bij statuswijziging: trigger automatische tag-suggestie (async, niet blokkerend)
+  if (["CONCEPT", "HERSCHREVEN", "VERRIJKT"].includes(status) && artikel.tags.length === 0) {
+    // Fire-and-forget: suggereer tags als het artikel er geen heeft
+    const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || "http://localhost:3000"
+    fetch(`${baseUrl}/api/ai/admin/bulk-tag`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        cookie: req.headers.get("cookie") || "",
+      },
+      body: JSON.stringify({ artikelIds: [artikelId] }),
+    }).catch(() => {}) // fire-and-forget
+  }
 
   return NextResponse.json({ artikel })
 }
