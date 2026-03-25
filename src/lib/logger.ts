@@ -41,3 +41,49 @@ export const logger = pino({
 export function createLogger(domain: string) {
   return logger.child({ domain })
 }
+
+/**
+ * Log een API request met gestructureerde data.
+ * Gebruik aan het begin van een API route handler.
+ *
+ * Gebruik:
+ *   const requestId = logApiRequest(request, "POST", "/api/auth/register")
+ *   // ... handler logic ...
+ *   logApiResponse(requestId, 200, startTime)
+ */
+let requestCounter = 0
+
+export function logApiRequest(
+  request: Request,
+  method: string,
+  route: string,
+): string {
+  const requestId = `req_${Date.now()}_${++requestCounter}`
+  const forwarded = request.headers.get("x-forwarded-for")
+  const ip = forwarded?.split(",")[0]?.trim() || "unknown"
+
+  logger.info({
+    requestId,
+    method,
+    route,
+    ip,
+    userAgent: request.headers.get("user-agent")?.substring(0, 100),
+  }, `${method} ${route}`)
+
+  return requestId
+}
+
+export function logApiResponse(
+  requestId: string,
+  status: number,
+  startTime: number,
+): void {
+  const durationMs = Date.now() - startTime
+  const level = status >= 500 ? "error" : status >= 400 ? "warn" : "info"
+
+  logger[level]({
+    requestId,
+    status,
+    durationMs,
+  }, `Response ${status} (${durationMs}ms)`)
+}

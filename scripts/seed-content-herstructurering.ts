@@ -230,12 +230,12 @@ async function main() {
     { slug: 'beginnend', naam: 'Kort (minder dan 1 jaar)', emoji: '🌱', groep: 'zorgduur', volgorde: 1 },
     { slug: 'ervaren', naam: 'Een paar jaar (1-5 jaar)', emoji: '📅', groep: 'zorgduur', volgorde: 2 },
     { slug: 'langdurig', naam: 'Al lang (meer dan 5 jaar)', emoji: '⏳', groep: 'zorgduur', volgorde: 3 },
-    // Groep: extra (B5)
-    { slug: 'met-kinderen', naam: 'Heeft ook kinderen', emoji: '👨‍👩‍👧', groep: 'extra', volgorde: 1 },
-    { slug: 'meerdere-naasten', naam: 'Zorgt voor meerdere mensen', emoji: '👥', groep: 'extra', volgorde: 2 },
-    { slug: 'alleenstaand', naam: 'Doet het alleen', emoji: '🏚️', groep: 'extra', volgorde: 3 },
-    // Groep: rouw (B6 — eigen sectie)
-    { slug: 'rouw', naam: 'Naaste is overleden', emoji: '🕊️', groep: 'rouw', volgorde: 1 },
+    // Groep: extra (B5 — wat speelt er nog meer?)
+    { slug: 'met-kinderen', naam: 'Ik heb een gezin met kinderen', emoji: '👨‍👩‍👧', groep: 'extra', volgorde: 1 },
+    { slug: 'meerdere-naasten', naam: 'Ik zorg voor meerdere mensen', emoji: '👥', groep: 'extra', volgorde: 2 },
+    { slug: 'alleenstaand', naam: 'Ik doe het alleen (geen hulp van anderen)', emoji: '🏠', groep: 'extra', volgorde: 3 },
+    { slug: 'mantelzorg-en-jong', naam: 'Ik ben een jonge mantelzorger (onder 25)', emoji: '🧑', groep: 'extra', volgorde: 4 },
+    { slug: 'eigen-gezondheid', naam: 'Ik heb zelf ook gezondheidsklachten', emoji: '💊', groep: 'extra', volgorde: 5 },
   ]
 
   for (const tag of situatieTags) {
@@ -255,8 +255,8 @@ async function main() {
   }
   console.log(`  ✓ ${situatieTags.length} situatie-tags aangemaakt/bijgewerkt (gegroepeerd)`)
 
-  // Oude situatie-tags deactiveren
-  const oudeSituaties = ['jong', 'intensief', 'werkend-parttime', 'meerdere-zorgvragers', 'rouwverwerking']
+  // Oude situatie-tags deactiveren (inclusief rouw — verwijderd uit UI)
+  const oudeSituaties = ['jong', 'intensief', 'werkend-parttime', 'meerdere-zorgvragers', 'rouwverwerking', 'rouw']
   for (const slug of oudeSituaties) {
     await prisma.contentTag.updateMany({
       where: { slug },

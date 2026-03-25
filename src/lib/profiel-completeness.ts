@@ -1,6 +1,9 @@
 /**
  * Profiel-completeness berekening.
  * Geeft percentage en ontbrekende secties terug.
+ *
+ * Alleen essentiële velden tellen mee. Optionele velden (telefoon, interesses)
+ * worden niet meegeteld om te voorkomen dat het percentage onterecht laag is.
  */
 
 interface ProfielVelden {
@@ -12,6 +15,7 @@ interface ProfielVelden {
   naasteStraat?: string | null
   woonsituatie?: string | null
   werkstatus?: string | null
+  zorgduur?: string | null
   zorgthemas?: string[]
   situatieTags?: string[]
   interesseCategorieen?: string[]
@@ -63,11 +67,6 @@ export function berekenProfielCompleteness(profiel: ProfielVelden): Completeness
       naam: "zorgthema",
       compleet: !!(profiel.zorgthemas && profiel.zorgthemas.length > 0),
       label: "Zorgsituatie van je naaste",
-    },
-    {
-      naam: "interesses",
-      compleet: !!(profiel.interesseCategorieen && profiel.interesseCategorieen.length > 0),
-      label: "Leesinteresses",
     },
   ]
 

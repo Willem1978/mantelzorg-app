@@ -224,10 +224,11 @@ export default function ProfielPage() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("")
   const [isDeleting, setIsDeleting] = useState(false)
   const [mijlpalen, setMijlpalen] = useState<Mijlpaal[]>([])
-  const [aandoening, setAandoening] = useState("")
-  const [situatieTags, setSituatieTags] = useState<string[]>([])
-  const [beschikbareTags, setBeschikbareTags] = useState<{ slug: string; naam: string; emoji?: string; type: string }[]>([])
-  const [savingSituatie, setSavingSituatie] = useState(false)
+  const [zorgthemaNames, setZorgthemaNames] = useState<string[]>([])
+  const [situatieTagNames, setSituatieTagNames] = useState<string[]>([])
+  const [woonsituatie, setWoonsituatie] = useState("")
+  const [werkstatus, setWerkstatus] = useState("")
+  const [completenessData, setCompletenessData] = useState<{ zorgthemas: string[]; woonsituatie: string; werkstatus: string }>({ zorgthemas: [], woonsituatie: "", werkstatus: "" })
 
   useEffect(() => {
     // Laad profiel uit API
@@ -317,24 +318,44 @@ export default function ProfielPage() {
     }
     loadMijlpalen()
 
-    // Laad beschikbare tags en gebruiker-voorkeuren
+    // Laad voorkeuren voor weergave en completeness
     const loadSituatie = async () => {
       try {
-        const [tagRes, voorkeurRes] = await Promise.all([
+        const [tagRes, voorkeurRes, profileRes2] = await Promise.all([
           fetch("/api/content/tags"),
           fetch("/api/user/voorkeuren"),
+          fetch("/api/profile"),
         ])
-        if (tagRes.ok) {
-          const tagData = await tagRes.json()
-          setBeschikbareTags([...(tagData.zorgthemas || []), ...(tagData.situaties || [])])
-        }
-        if (voorkeurRes.ok) {
-          const voorkeurData = await voorkeurRes.json()
-          if (voorkeurData.aandoening) setAandoening(voorkeurData.aandoening)
-          if (voorkeurData.voorkeuren) {
-            setSituatieTags(voorkeurData.voorkeuren.filter((v: { type: string }) => v.type === "TAG").map((v: { slug: string }) => v.slug))
-          }
-        }
+        const tagData = tagRes.ok ? await tagRes.json() : { zorgthemas: [], situaties: [] }
+        const voorkeurData = voorkeurRes.ok ? await voorkeurRes.json() : { zorgthemas: [], voorkeuren: [] }
+        const profileData2 = profileRes2.ok ? await profileRes2.json() : {}
+
+        // Zorgthema namen ophalen
+        const zorgthemaSlugs: string[] = voorkeurData.zorgthemas || []
+        const allZorgthemas = tagData.zorgthemas || []
+        setZorgthemaNames(zorgthemaSlugs.map((slug: string) => {
+          const tag = allZorgthemas.find((t: { slug: string; naam: string }) => t.slug === slug)
+          return tag ? `${tag.emoji || ""} ${tag.naam}`.trim() : slug
+        }))
+
+        // Situatie-tag namen ophalen
+        const allSituaties = tagData.situaties || []
+        const tagSlugs = (voorkeurData.voorkeuren || [])
+          .filter((v: { type: string }) => v.type === "TAG")
+          .map((v: { slug: string }) => v.slug)
+        setSituatieTagNames(tagSlugs.map((slug: string) => {
+          const tag = allSituaties.find((t: { slug: string; naam: string }) => t.slug === slug)
+          return tag ? `${tag.emoji || ""} ${tag.naam}`.trim() : slug
+        }))
+
+        setWoonsituatie(profileData2.woonsituatie || "")
+        setWerkstatus(profileData2.werkstatus || "")
+
+        setCompletenessData({
+          zorgthemas: zorgthemaSlugs,
+          woonsituatie: profileData2.woonsituatie || "",
+          werkstatus: profileData2.werkstatus || "",
+        })
       } catch {
         // Stille fout
       }
@@ -920,8 +941,9 @@ export default function ProfielPage() {
           naasteNaam: profile.naasteNaam,
           naasteRelatie: profile.naasteRelatie,
           naasteStraat: profile.naasteAdres?.straat,
-          zorgthemas: aandoening ? [aandoening] : [],
-          interesseCategorieen: situatieTags, // approximation from loaded data
+          woonsituatie: completenessData.woonsituatie,
+          werkstatus: completenessData.werkstatus,
+          zorgthemas: completenessData.zorgthemas,
         }}
         onEditClick={() => setIsWizardMode(true)}
       />
@@ -1050,8 +1072,72 @@ export default function ProfielPage() {
           </div>
         </div>
 
-        {/* Jouw situatie - Aandoening & voorkeuren */}
-        <JouwSituatieBlok />
+        {/* Jouw zorgsituatie */}
+        <div className="ker-card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-bold text-foreground flex items-center gap-2">
+              <span className="text-xl">&#128171;</span> Jouw zorgsituatie
+            </h2>
+            <button
+              onClick={() => setIsWizardMode(true)}
+              className="text-primary text-sm font-medium hover:underline"
+            >
+              Aanpassen
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            {woonsituatie && (
+              <div className="flex justify-between items-center py-2 border-b border-border">
+                <span className="text-muted-foreground">Woonsituatie</span>
+                <span className="font-medium text-foreground">
+                  {woonsituatie === "samen" ? "Wonen samen" : woonsituatie === "dichtbij" ? "Naaste woont dichtbij" : woonsituatie === "op-afstand" ? "Op afstand" : woonsituatie}
+                </span>
+              </div>
+            )}
+
+            {werkstatus && (
+              <div className="flex justify-between items-center py-2 border-b border-border">
+                <span className="text-muted-foreground">Werk</span>
+                <span className="font-medium text-foreground">
+                  {werkstatus === "fulltime" ? "Werkt fulltime" : werkstatus === "parttime" ? "Werkt parttime" : werkstatus === "student" ? "Studeert" : werkstatus === "gepensioneerd" ? "Gepensioneerd" : werkstatus === "niet-werkend" ? "Werkt niet" : werkstatus}
+                </span>
+              </div>
+            )}
+
+            {zorgthemaNames.length > 0 && (
+              <div className="py-2 border-b border-border">
+                <span className="text-muted-foreground text-sm">Zorgsituatie van je naaste</span>
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  {zorgthemaNames.map((name) => (
+                    <span key={name} className="px-2.5 py-1 bg-primary/10 text-primary rounded-lg text-xs font-medium">
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {situatieTagNames.length > 0 && (
+              <div className="py-2">
+                <span className="text-muted-foreground text-sm">Extra</span>
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  {situatieTagNames.map((name) => (
+                    <span key={name} className="px-2.5 py-1 bg-muted text-foreground rounded-lg text-xs font-medium">
+                      {name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {!woonsituatie && !werkstatus && zorgthemaNames.length === 0 && (
+              <p className="text-sm text-muted-foreground italic">
+                Nog niet ingevuld. Klik op &quot;Aanpassen&quot; om je situatie in te vullen.
+              </p>
+            )}
+          </div>
+        </div>
 
         {/* Test resultaat */}
         {profile.testScore !== undefined && niveau && (
@@ -1353,26 +1439,6 @@ export default function ProfielPage() {
           </div>
         )}
 
-        {/* Hulp */}
-        <div className="ker-card bg-muted">
-          <h2 className="font-bold text-foreground mb-3 flex items-center gap-2">
-            <span className="text-xl">{c.hulp.emoji}</span>
-            {c.hulp.title}
-          </h2>
-          <p className="text-sm text-foreground mb-3">
-            {c.hulp.tekst}
-          </p>
-          <a
-            href="tel:0302059059"
-            className="ker-btn ker-btn-secondary w-full flex items-center justify-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-            </svg>
-            {c.hulp.telefoon}
-          </a>
-        </div>
-
         {/* Uitloggen */}
         <button
           onClick={handleLogout}
@@ -1405,158 +1471,6 @@ export default function ProfielPage() {
   )
 }
 
-// ============================================
-// JOUW SITUATIE BLOK
-// ============================================
-
-function JouwSituatieBlok() {
-  const [zorgthemas, setZorgthemas] = useState<Array<{ slug: string; naam: string; emoji: string | null }>>([])
-  const [situaties, setSituaties] = useState<Array<{ slug: string; naam: string; emoji: string | null }>>([])
-  const [voorkeuren, setVoorkeuren] = useState<Array<{ type: string; slug: string }>>([])
-  const [aandoening, setAandoening] = useState("")
-  const [saving, setSaving] = useState(false)
-  const [loaded, setLoaded] = useState(false)
-
-  useEffect(() => {
-    // Laad tags en voorkeuren parallel
-    Promise.all([
-      fetch("/api/content/tags").then(r => r.json()).catch(() => ({ zorgthemas: [], situaties: [] })),
-      fetch("/api/user/voorkeuren").then(r => r.json()).catch(() => ({ voorkeuren: [] })),
-      fetch("/api/profile").then(r => r.json()).catch(() => ({})),
-    ]).then(([tagData, voorkeurData, profileData]) => {
-      setZorgthemas(tagData.zorgthemas || [])
-      setSituaties(tagData.situaties || [])
-      setVoorkeuren(voorkeurData.voorkeuren || [])
-      setAandoening(profileData.aandoening || "")
-      setLoaded(true)
-    })
-  }, [])
-
-  const toggleVoorkeur = (type: string, slug: string) => {
-    const exists = voorkeuren.some(v => v.type === type && v.slug === slug)
-    if (exists) {
-      setVoorkeuren(voorkeuren.filter(v => !(v.type === type && v.slug === slug)))
-    } else {
-      setVoorkeuren([...voorkeuren, { type, slug }])
-    }
-  }
-
-  const isSelected = (type: string, slug: string) =>
-    voorkeuren.some(v => v.type === type && v.slug === slug)
-
-  const handleOpslaan = async () => {
-    setSaving(true)
-    try {
-      // Sla voorkeuren op
-      await fetch("/api/user/voorkeuren", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ voorkeuren }),
-      })
-      // Sla aandoening op in profiel
-      await fetch("/api/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ aandoening: aandoening || null }),
-      })
-    } catch {
-      // stil
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  if (!loaded) return null
-
-  return (
-    <div className="ker-card">
-      <h2 className="font-bold text-foreground mb-4 flex items-center gap-2">
-        <span className="text-xl">🎯</span>
-        Jouw situatie
-      </h2>
-      <p className="text-sm text-muted-foreground mb-4">
-        Selecteer wat op jou van toepassing is. Zo kunnen we content beter op jou afstemmen.
-      </p>
-
-      {/* Zorgthema zorgvrager */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-foreground mb-2">
-          Zorgsituatie van je naaste
-        </label>
-        <select
-          value={aandoening}
-          onChange={(e) => setAandoening(e.target.value)}
-          className="w-full px-3 py-2 border border-border rounded-xl text-sm bg-background"
-        >
-          <option value="">-- Selecteer --</option>
-          {zorgthemas.map(a => (
-            <option key={a.slug} value={a.slug}>{a.emoji} {a.naam}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Situatie tags */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-foreground mb-2">
-          Jouw situatie
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {situaties.map(s => (
-            <button
-              key={s.slug}
-              onClick={() => toggleVoorkeur("TAG", s.slug)}
-              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                isSelected("TAG", s.slug)
-                  ? "bg-primary text-white border-primary"
-                  : "bg-background text-muted-foreground border-border hover:border-primary"
-              }`}
-            >
-              {s.emoji} {s.naam}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Interesse categorieën */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-foreground mb-2">
-          Categorieën die je interesseren
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {[
-            { slug: "praktische-tips", naam: "Praktische tips", emoji: "📋" },
-            { slug: "zelfzorg-balans", naam: "Zelfzorg & balans", emoji: "🧘" },
-            { slug: "rechten-regelingen", naam: "Rechten & regelingen", emoji: "⚖️" },
-            { slug: "geld-financien", naam: "Geld & financiën", emoji: "💰" },
-            { slug: "hulpmiddelen-technologie", naam: "Hulpmiddelen & technologie", emoji: "🔧" },
-            { slug: "werk-mantelzorg", naam: "Werk & mantelzorg", emoji: "💼" },
-            { slug: "samenwerken-netwerk", naam: "Samenwerken & netwerk", emoji: "🤝" },
-          ].map(cat => (
-            <button
-              key={cat.slug}
-              onClick={() => toggleVoorkeur("CATEGORIE", cat.slug)}
-              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                isSelected("CATEGORIE", cat.slug)
-                  ? "bg-primary text-white border-primary"
-                  : "bg-background text-muted-foreground border-border hover:border-primary"
-              }`}
-            >
-              {cat.emoji} {cat.naam}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <button
-        onClick={handleOpslaan}
-        disabled={saving}
-        className="w-full py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
-      >
-        {saving ? "Opslaan..." : "Voorkeuren opslaan"}
-      </button>
-    </div>
-  )
-}
 
 // ============================================
 // PROFIEL COMPLETENESS BAR

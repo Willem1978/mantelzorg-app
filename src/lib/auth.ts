@@ -1,5 +1,8 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
+import { createLogger } from "@/lib/logger"
+
+const log = createLogger("auth")
 
 // AUTH_SECRET is vereist door NextAuth v5.
 // Tijdens build (page data collection) is de env var niet altijd beschikbaar.
@@ -48,7 +51,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const { checkRateLimit } = await import("./rate-limit")
 
         if (!credentials?.email || !credentials?.password) {
-          console.error("[AUTH] Geen email of wachtwoord meegegeven")
+          log.warn("Login poging zonder email of wachtwoord")
           throw new Error("Email en wachtwoord zijn verplicht")
         }
 
@@ -70,12 +73,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           })
 
           if (!user || !user.password) {
-            console.error("[AUTH] Gebruiker niet gevonden of geen wachtwoord")
+            log.warn({ email: credentials.email }, "Gebruiker niet gevonden of geen wachtwoord")
             throw new Error("Onjuist e-mailadres of wachtwoord")
           }
 
           if (!user.isActive) {
-            console.error("[AUTH] Inactief account login poging")
+            log.warn({ userId: user.id }, "Inactief account login poging")
             throw new Error("Account is niet actief")
           }
 
@@ -85,7 +88,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           )
 
           if (!isPasswordValid) {
-            console.error("[AUTH] Wachtwoord onjuist voor gebruiker")
+            log.warn("Wachtwoord onjuist")
             throw new Error("Onjuist e-mailadres of wachtwoord")
           }
 
@@ -105,7 +108,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 data: { phoneNumber: phoneNumber },
               })
             } catch (error) {
-              console.error("Failed to link phone number:", error)
+              log.error({ err: error }, "Telefoonnummer koppelen mislukt")
             }
           }
 
@@ -146,7 +149,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             throw error
           }
           // Database/connectie fouten: log en geef duidelijke melding
-          console.error("[AUTH] Database/connectie fout:", error)
+          log.error({ err: error }, "Database/connectie fout bij login")
           throw new Error("Kan niet inloggen door een serverfout. Probeer het later opnieuw.")
         }
       },

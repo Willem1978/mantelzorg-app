@@ -123,4 +123,6 @@ export const HANDMATIGE_TAG_SLUGS = [
   "met-kinderen",
   "meerdere-naasten",
   "alleenstaand",
+  "mantelzorg-en-jong",
+  "eigen-gezondheid",
 ] as const

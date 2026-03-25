@@ -56,10 +56,8 @@ export interface ProfielFormulierData {
   zorgduur: string
   // Zorgthema's (multi-select)
   zorgthemas: string[]
-  // Situatie-tags (handmatig: B5 extra + B6 rouw)
+  // Situatie-tags (handmatig: B5 extra)
   situatieTags: string[]
-  // Rouw — apart veld
-  isRouw: boolean
   // Interesses
   interesseCategorieen: string[]
   // Bestaande data (voor tag-afleiding)
@@ -238,7 +236,6 @@ export function ProfielFormulier({ onSave, onSkip, showSkip = false, variant = "
     woonsituatie: "", werkstatus: "", zorgduur: "",
     zorgthemas: [],
     situatieTags: [],
-    isRouw: false,
     interesseCategorieen: [],
   })
   const [isSaving, setIsSaving] = useState(false)
@@ -318,18 +315,14 @@ export function ProfielFormulier({ onSave, onSkip, showSkip = false, variant = "
           )
           .map((v: { slug: string }) => v.slug) || []
 
-        // Rouw apart herkennen
-        const hasRouw = allTags.includes("rouw")
-        const situatieTagsClean = allTags.filter((s: string) => s !== "rouw")
-
         // Zorgduur afleiden uit opgeslagen tags
         let zorgduurValue = ""
-        if (situatieTagsClean.includes("beginnend")) zorgduurValue = "kort"
-        else if (situatieTagsClean.includes("ervaren")) zorgduurValue = "paar-jaar"
-        else if (situatieTagsClean.includes("langdurig")) zorgduurValue = "lang"
+        if (allTags.includes("beginnend")) zorgduurValue = "kort"
+        else if (allTags.includes("ervaren")) zorgduurValue = "paar-jaar"
+        else if (allTags.includes("langdurig")) zorgduurValue = "lang"
 
         // Filter automatische tags eruit — die worden berekend
-        const handmatigeTags = situatieTagsClean.filter(
+        const handmatigeTags = allTags.filter(
           (s: string) => !(AUTOMATISCHE_TAG_SLUGS as readonly string[]).includes(s)
         )
 
@@ -341,7 +334,6 @@ export function ProfielFormulier({ onSave, onSkip, showSkip = false, variant = "
           ...prev,
           zorgthemas: loadedZorgthemas,
           situatieTags: handmatigeTags,
-          isRouw: hasRouw,
           zorgduur: zorgduurValue || prev.zorgduur,
           interesseCategorieen: loadedInteresses,
         }))
@@ -387,11 +379,10 @@ export function ProfielFormulier({ onSave, onSkip, showSkip = false, variant = "
         }),
       })
 
-      // 2. Combineer handmatige situatie-tags met automatische + rouw
+      // 2. Combineer handmatige situatie-tags met automatische
       const alleSituatieTags = [...new Set([
         ...automatischeTags,
         ...data.situatieTags,
-        ...(data.isRouw ? ["rouw"] : []),
       ])]
 
       // 3. Voorkeuren opslaan (situatie-tags + interesses)
@@ -677,46 +668,7 @@ export function ProfielFormulier({ onSave, onSkip, showSkip = false, variant = "
       )}
 
       {/* ============================================ */}
-      {/* SECTIE 8: Rouw & verlies (B6 — eigen respectvolle sectie) */}
-      {/* ============================================ */}
-      <section className="ker-card space-y-4">
-        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-          <span>&#128334;&#65039;</span> Rouw &amp; verlies
-        </h2>
-        <button
-          type="button"
-          onClick={() => setData({ ...data, isRouw: !data.isRouw })}
-          className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-            data.isRouw
-              ? "bg-primary/10 border-primary"
-              : "bg-card border-border hover:border-primary/30"
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-xl flex-shrink-0">&#128334;&#65039;</span>
-            <div className="flex-1">
-              <p className={`font-medium ${data.isRouw ? "text-primary" : "text-foreground"}`}>
-                Mijn naaste is overleden
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                We passen de content aan naar wat nu bij jou past.
-              </p>
-            </div>
-            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-              data.isRouw ? "bg-primary border-primary text-white" : "border-muted-foreground/30"
-            }`}>
-              {data.isRouw && (
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                </svg>
-              )}
-            </div>
-          </div>
-        </button>
-      </section>
-
-      {/* ============================================ */}
-      {/* SECTIE 7: Interesses */}
+      {/* SECTIE 8: Interesses */}
       {/* ============================================ */}
       <section className="ker-card space-y-4">
         <h2 className="text-lg font-bold text-foreground flex items-center gap-2">

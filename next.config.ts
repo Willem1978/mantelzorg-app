@@ -1,3 +1,4 @@
+import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV !== "production";
@@ -48,7 +49,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data: https://fonts.gstatic.com",
-      "connect-src 'self' https://*.supabase.co https://*.supabase.com https://api.pdok.nl",
+      "connect-src 'self' https://*.supabase.co https://*.supabase.com https://api.pdok.nl https://*.sentry.io https://*.ingest.sentry.io",
       "frame-ancestors 'self'",
       "base-uri 'self'",
       "form-action 'self'",
@@ -99,4 +100,13 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Sentry wrapping — alleen actief als NEXT_PUBLIC_SENTRY_DSN is geconfigureerd
+export default process.env.NEXT_PUBLIC_SENTRY_DSN
+  ? withSentryConfig(nextConfig, {
+      silent: true,
+      telemetry: false,
+      sourcemaps: {
+        disable: true,
+      },
+    })
+  : nextConfig;
