@@ -77,6 +77,7 @@ De kritische analyse identificeerde items die **onmiddellijk** aandacht vereisen
 | **DEZE MAAND** | Data retention policy | §3.6 | AVG dataminimalisatie vereist bewaartermijnen | Compliance |
 | **SPRINT 1** | WCAG 2.1 AA basis | §2.2 | European Accessibility Act (wettelijk verplicht) | 6 |
 | **SPRINT 1** | AI crisis guardrails | §6.1 | Kwetsbare doelgroep ontvangt ongecontroleerde AI-output | 7 |
+| **SPRINT 1** | AI model-tiering (kostenbesparing) | §6.3 | Huidige chatbot draait op duur model — eigenaar wil kosten omlaag. Haiku 4.5 als standaard, Sonnet voor coaching, Opus alleen bij crisis | 7 (taak 7.5) |
 
 ---
 
@@ -805,7 +806,7 @@ De analyse waarschuwt nadrukkelijk over de AI-implementatie in een zorgcontext:
 | 7.2 | **AI disclaimer** — "Ger is een digitale assistent, geen hulpverlener" disclaimer in chat-interface en bij gevoelige onderwerpen | 1 | §6.1 |
 | 7.3 | **Statische fallback bij AI-uitval** — Voorgedefinieerde tips en berichten per context. "Ger is even offline — hier zijn tips die bij jou passen" | 3 | §6.2 |
 | 7.4 | **AI response caching** — Cache succesvolle Ger-responses (weekkaarten, welkomstberichten) voor hergebruik. Vermindert API calls en biedt fallback-data | 2 | §6.2 |
-| 7.5 | **Model-tiering** — Haiku voor eenvoudige taken (welkom, weekkaarten). Sonnet voor medium (check-in, coaching). Opus alleen voor complexe analyses. Configureerbaar per agent | 4 | §6.3 |
+| 7.5 | **Model-tiering (PRIORITEIT — kostenbesparing)** — Standaard Haiku 4.5 voor alle chat (goedkoopste, snel). Sonnet voor check-in coaching. Opus alleen voor crisisdetectie. Configureerbaar per agent. **Eigenaar wil dit zo snel mogelijk.** | 4 | §6.3 |
 | 7.6 | **Per-user token budget** — Max tokens/maand per gebruiker. Waarschuwing bij 80%, hard limit bij 100%. Dashboard in beheerportaal | 3 | §6.3 |
 | 7.7 | **Prompt versioning** — Centraliseer alle system prompts in `src/lib/ai/prompts/` directory met versienummering. Log welke prompt-versie bij elke conversatie is gebruikt | 3 | §6.4 |
 | 7.8 | **AI cost dashboard** — Overzicht in beheerportaal: kosten per agent, per gebruiker, per dag/week/maand. Alerts bij overschrijding | 2 | §6.3 |
