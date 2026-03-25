@@ -2,10 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { searchStreets } from "@/lib/pdok"
-import { profielContent } from "@/config/content"
 import { bepaalProfielTags, AUTOMATISCHE_TAG_SLUGS } from "@/lib/profiel-tags"
-
-const c = profielContent
 
 // ============================================
 // TYPES
@@ -28,13 +25,19 @@ interface Tag {
   groep?: string | null
 }
 
-const SITUATIE_GROEPEN = [
-  { key: "relatie", label: "Jouw relatie met je naaste" },
-  { key: "wonen", label: "Woonsituatie" },
-  { key: "weekinvulling", label: "Weekinvulling" },
-  { key: "zorgduur", label: "Hoe lang zorg je al?" },
-  { key: "extra", label: "Extra" },
-  { key: "rouw", label: "Rouw & verlies" },
+// B1: Relatie — radio buttons (vervangt de oude dropdown)
+const RELATIE_OPTIES = [
+  { value: "partner", label: "Ik zorg voor mijn partner", emoji: "\uD83D\uDC91" },
+  { value: "ouder", label: "Ik zorg voor mijn ouder(s)", emoji: "\uD83D\uDC75" },
+  { value: "kind", label: "Ik zorg voor mijn kind", emoji: "\uD83D\uDC67" },
+  { value: "anders", label: "Ik zorg voor iemand anders (familie/vriend/buur)", emoji: "\uD83E\uDD1D" },
+]
+
+// B4: Zorgduur — radio buttons
+const ZORGDUUR_OPTIES = [
+  { value: "kort", label: "Kort (minder dan 1 jaar)", emoji: "\uD83C\uDF31" },
+  { value: "paar-jaar", label: "Een paar jaar (1\u20135 jaar)", emoji: "\uD83D\uDCC5" },
+  { value: "lang", label: "Al lang (meer dan 5 jaar)", emoji: "\u231B" },
 ]
 
 export interface ProfielFormulierData {
@@ -50,10 +53,13 @@ export interface ProfielFormulierData {
   // Zorgsituatie
   woonsituatie: string
   werkstatus: string
+  zorgduur: string
   // Zorgthema's (multi-select)
   zorgthemas: string[]
-  // Situatie-tags
+  // Situatie-tags (handmatig: B5 extra + B6 rouw)
   situatieTags: string[]
+  // Rouw — apart veld
+  isRouw: boolean
   // Interesses
   interesseCategorieen: string[]
   // Bestaande data (voor tag-afleiding)
@@ -229,9 +235,10 @@ export function ProfielFormulier({ onSave, onSkip, showSkip = false, variant = "
     adres: null,
     naasteNaam: "", naasteRelatie: "",
     naasteAdres: null,
-    woonsituatie: "", werkstatus: "",
+    woonsituatie: "", werkstatus: "", zorgduur: "",
     zorgthemas: [],
     situatieTags: [],
+    isRouw: false,
     interesseCategorieen: [],
   })
   const [isSaving, setIsSaving] = useState(false)
@@ -248,6 +255,7 @@ export function ProfielFormulier({ onSave, onSkip, showSkip = false, variant = "
     careHoursPerWeek: data.careHoursPerWeek,
     careSince: data.careSince ? new Date(data.careSince) : null,
     dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
+    zorgduur: data.zorgduur || null,
   })
 
   // Laad bestaande gegevens
@@ -302,13 +310,28 @@ export function ProfielFormulier({ onSave, onSkip, showSkip = false, variant = "
           ? vData.zorgthemas
           : []
 
-        // Situatie-tags: filter zorgthema's eruit (die zitten nu apart)
+        // Situatie-tags laden
         const zorgthemaSlugs = new Set(loadedZorgthemas)
-        const loadedSituatieTags = vData.voorkeuren
+        const allTags = vData.voorkeuren
           ?.filter((v: { type: string; slug: string }) =>
             v.type === "TAG" && !zorgthemaSlugs.has(v.slug)
           )
           .map((v: { slug: string }) => v.slug) || []
+
+        // Rouw apart herkennen
+        const hasRouw = allTags.includes("rouw")
+        const situatieTagsClean = allTags.filter((s: string) => s !== "rouw")
+
+        // Zorgduur afleiden uit opgeslagen tags
+        let zorgduurValue = ""
+        if (situatieTagsClean.includes("beginnend")) zorgduurValue = "kort"
+        else if (situatieTagsClean.includes("ervaren")) zorgduurValue = "paar-jaar"
+        else if (situatieTagsClean.includes("langdurig")) zorgduurValue = "lang"
+
+        // Filter automatische tags eruit — die worden berekend
+        const handmatigeTags = situatieTagsClean.filter(
+          (s: string) => !(AUTOMATISCHE_TAG_SLUGS as readonly string[]).includes(s)
+        )
 
         const loadedInteresses = vData.voorkeuren
           ?.filter((v: { type: string }) => v.type === "CATEGORIE")
@@ -317,7 +340,9 @@ export function ProfielFormulier({ onSave, onSkip, showSkip = false, variant = "
         setData((prev) => ({
           ...prev,
           zorgthemas: loadedZorgthemas,
-          situatieTags: loadedSituatieTags,
+          situatieTags: handmatigeTags,
+          isRouw: hasRouw,
+          zorgduur: zorgduurValue || prev.zorgduur,
           interesseCategorieen: loadedInteresses,
         }))
       }
@@ -362,8 +387,12 @@ export function ProfielFormulier({ onSave, onSkip, showSkip = false, variant = "
         }),
       })
 
-      // 2. Combineer handmatige situatie-tags met automatische
-      const alleSituatieTags = [...new Set([...automatischeTags, ...data.situatieTags])]
+      // 2. Combineer handmatige situatie-tags met automatische + rouw
+      const alleSituatieTags = [...new Set([
+        ...automatischeTags,
+        ...data.situatieTags,
+        ...(data.isRouw ? ["rouw"] : []),
+      ])]
 
       // 3. Voorkeuren opslaan (situatie-tags + interesses)
       const voorkeuren = [
@@ -401,9 +430,9 @@ export function ProfielFormulier({ onSave, onSkip, showSkip = false, variant = "
   const zorgthemas = beschikbareTags.filter((t) => t.type === "ZORGTHEMA")
   const situaties = beschikbareTags.filter((t) => t.type === "SITUATIE")
 
-  // Handmatige situatie-tags: filter automatische tags eruit voor weergave
-  const handmatigeSituaties = situaties.filter(
-    (t) => !(AUTOMATISCHE_TAG_SLUGS as readonly string[]).includes(t.slug)
+  // B5 extra-tags: alleen handmatige tags uit de groep "extra"
+  const extraTags = situaties.filter(
+    (t) => t.groep === "extra" && !(AUTOMATISCHE_TAG_SLUGS as readonly string[]).includes(t.slug)
   )
 
   if (isLoading) {
@@ -487,19 +516,17 @@ export function ProfielFormulier({ onSave, onSkip, showSkip = false, variant = "
           />
         </div>
 
+        {/* B1: Relatie — radio buttons */}
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
+          <p className="text-sm font-medium text-foreground mb-2">
             Wat is jullie relatie?
-          </label>
-          <select
-            value={data.naasteRelatie}
-            onChange={(e) => setData({ ...data, naasteRelatie: e.target.value })}
-            className="ker-input"
-          >
-            {c.relatieOpties.map((optie) => (
-              <option key={optie.value} value={optie.value}>{optie.label}</option>
-            ))}
-          </select>
+          </p>
+          <RadioGroup
+            value={RELATIE_OPTIES.find((o) => o.value === data.naasteRelatie)?.value
+              || (["broer_zus", "vriend", "buur"].includes(data.naasteRelatie) ? "anders" : data.naasteRelatie)}
+            options={RELATIE_OPTIES}
+            onChange={(v) => setData({ ...data, naasteRelatie: v })}
+          />
         </div>
 
         <FormStreetSearch
@@ -545,7 +572,21 @@ export function ProfielFormulier({ onSave, onSkip, showSkip = false, variant = "
       </section>
 
       {/* ============================================ */}
-      {/* SECTIE 5: Zorgthema (multi-select) */}
+      {/* SECTIE 5: Hoe lang zorg je al? (B4) */}
+      {/* ============================================ */}
+      <section className="ker-card space-y-4">
+        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+          <span>&#9203;</span> Hoe lang zorg je al?
+        </h2>
+        <RadioGroup
+          value={data.zorgduur}
+          options={ZORGDUUR_OPTIES}
+          onChange={(v) => setData({ ...data, zorgduur: v })}
+        />
+      </section>
+
+      {/* ============================================ */}
+      {/* SECTIE 6: Zorgthema (multi-select buttons) */}
       {/* ============================================ */}
       <section className="ker-card space-y-4">
         <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
@@ -586,72 +627,92 @@ export function ProfielFormulier({ onSave, onSkip, showSkip = false, variant = "
       </section>
 
       {/* ============================================ */}
-      {/* SECTIE 6: Jouw situatie (handmatige tags) */}
+      {/* SECTIE 7: Wat speelt er nog meer? (B5 extra) */}
+      {/* ============================================ */}
+      {extraTags.length > 0 && (
+        <section className="ker-card space-y-4">
+          <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <span>&#127991;&#65039;</span> Wat speelt er nog meer?
+          </h2>
+          <p className="text-sm text-foreground/70 leading-relaxed">
+            Optioneel. Herken je jezelf hierin?
+          </p>
+          <div className="space-y-2">
+            {extraTags.map((tag) => {
+              const selected = data.situatieTags.includes(tag.slug)
+              return (
+                <button
+                  key={tag.slug}
+                  type="button"
+                  onClick={() => setData({
+                    ...data,
+                    situatieTags: selected
+                      ? data.situatieTags.filter((s) => s !== tag.slug)
+                      : [...data.situatieTags, tag.slug],
+                  })}
+                  className={`w-full text-left p-3 rounded-xl border-2 transition-all flex items-center gap-3 ${
+                    selected
+                      ? "bg-primary/10 border-primary"
+                      : "bg-card border-border hover:border-primary/30"
+                  }`}
+                >
+                  {tag.emoji && <span className="text-xl flex-shrink-0">{tag.emoji}</span>}
+                  <span className={`font-medium ${selected ? "text-primary" : "text-foreground"}`}>
+                    {tag.naam}
+                  </span>
+                  <div className={`ml-auto w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                    selected ? "bg-primary border-primary text-white" : "border-muted-foreground/30"
+                  }`}>
+                    {selected && (
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* ============================================ */}
+      {/* SECTIE 8: Rouw & verlies (B6 — eigen respectvolle sectie) */}
       {/* ============================================ */}
       <section className="ker-card space-y-4">
         <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-          <span>&#127991;&#65039;</span> Jouw situatie
+          <span>&#128334;&#65039;</span> Rouw &amp; verlies
         </h2>
-        <p className="text-sm text-foreground/70 leading-relaxed">
-          Herken je jezelf hierin? Kies wat past. Je mag er meerdere kiezen.
-        </p>
-
-        {/* Automatisch afgeleide tags tonen als info */}
-        {automatischeTags.length > 0 && (
-          <div className="p-3 bg-primary/5 rounded-xl border border-primary/20">
-            <p className="text-xs font-medium text-primary mb-2">
-              Op basis van je profiel herkennen we:
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {automatischeTags.map((slug) => {
-                const tag = situaties.find((t) => t.slug === slug)
-                if (!tag) return null
-                return (
-                  <span key={slug} className="px-2 py-1 bg-primary/10 text-primary rounded-lg text-xs font-medium">
-                    {tag.emoji && <span className="mr-1">{tag.emoji}</span>}
-                    {tag.naam}
-                  </span>
-                )
-              })}
+        <button
+          type="button"
+          onClick={() => setData({ ...data, isRouw: !data.isRouw })}
+          className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+            data.isRouw
+              ? "bg-primary/10 border-primary"
+              : "bg-card border-border hover:border-primary/30"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-xl flex-shrink-0">&#128334;&#65039;</span>
+            <div className="flex-1">
+              <p className={`font-medium ${data.isRouw ? "text-primary" : "text-foreground"}`}>
+                Mijn naaste is overleden
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                We passen de content aan naar wat nu bij jou past.
+              </p>
+            </div>
+            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+              data.isRouw ? "bg-primary border-primary text-white" : "border-muted-foreground/30"
+            }`}>
+              {data.isRouw && (
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
             </div>
           </div>
-        )}
-
-        {/* Handmatige situatie-tags per groep */}
-        {SITUATIE_GROEPEN.map((groep) => {
-          const groepTags = handmatigeSituaties.filter((t) => t.groep === groep.key)
-          if (groepTags.length === 0) return null
-          return (
-            <div key={groep.key}>
-              <p className="text-sm font-medium text-foreground mb-2">{groep.label}</p>
-              <div className="flex flex-wrap gap-2">
-                {groepTags.map((tag) => {
-                  const selected = data.situatieTags.includes(tag.slug)
-                  return (
-                    <button
-                      key={tag.slug}
-                      type="button"
-                      onClick={() => setData({
-                        ...data,
-                        situatieTags: selected
-                          ? data.situatieTags.filter((s) => s !== tag.slug)
-                          : [...data.situatieTags, tag.slug],
-                      })}
-                      className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all border-2 ${
-                        selected
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-card border-border text-foreground hover:border-primary/30"
-                      }`}
-                    >
-                      {tag.emoji && <span className="mr-1.5">{tag.emoji}</span>}
-                      {tag.naam}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )
-        })}
+        </button>
       </section>
 
       {/* ============================================ */}

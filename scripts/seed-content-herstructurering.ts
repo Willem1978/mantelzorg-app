@@ -173,10 +173,16 @@ async function main() {
   }
 
   // Oude aandoening-tags deactiveren (niet verwijderen vanwege FK constraints)
+  // Inclusief tags uit supabase-migration.sql die niet in het oorspronkelijke seed-script zaten
   const oudeAandoeningen = [
     'dementie', 'kanker', 'cva-beroerte', 'hartfalen', 'copd', 'diabetes',
     'psychisch', 'verstandelijke-beperking', 'lichamelijke-beperking',
     'nah', 'ouderdom', 'terminaal',
+    // Extra tags uit supabase-migration.sql
+    'hart-vaatziekten', 'niet-aangeboren-hersenletsel', 'copd-longziekten',
+    'parkinson', 'ms', 'ouderdom-kwetsbaarheid',
+    // Eventuele varianten
+    'als', 'chronisch-ziek', 'hart-en-vaatziekten',
   ]
   for (const slug of oudeAandoeningen) {
     await prisma.contentTag.updateMany({
@@ -185,6 +191,20 @@ async function main() {
     })
   }
   console.log(`  ✗ ${oudeAandoeningen.length} oude aandoening-tags gedeactiveerd`)
+
+  // Veiligheidsnet: deactiveer ALLE zorgthema-tags die niet in de whitelist staan
+  const gewensteZorgthemas = zorgthemaTags.map((t) => t.slug)
+  const extraActief = await prisma.contentTag.updateMany({
+    where: {
+      type: 'ZORGTHEMA',
+      isActief: true,
+      slug: { notIn: gewensteZorgthemas },
+    },
+    data: { isActief: false },
+  })
+  if (extraActief.count > 0) {
+    console.log(`  ✗ ${extraActief.count} extra zorgthema-tags gedeactiveerd (niet in whitelist)`)
+  }
 
   // ============================================
   // 5. SITUATIE TAGS (geschoond: 18 → 14 actief, gegroepeerd)
