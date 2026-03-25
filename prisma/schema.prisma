@@ -32,6 +32,7 @@ model User {
   orgMember      OrganisationMember?
   sessions       Session[]
   berichten      Bericht[]
+  reEngagement   ReEngagementBericht[]
 
   @@index([gemeenteNaam])
   @@index([role])
@@ -144,6 +145,7 @@ model Caregiver {
   aandoening                String?                 // Primaire aandoening van zorgvrager (tag slug)
   voorkeuren                GebruikerVoorkeur[]
   weekKaarten               WeekKaart[]
+  geplandeCheckins          GeplandCheckin[]
   // Profiel uitbreiding (Iteratie A)
   woonsituatie              String?                 // "samen" | "dichtbij" | "op-afstand"
   werkstatus                String?                 // "fulltime" | "parttime" | "niet-werkend" | "student" | "gepensioneerd"
@@ -1382,4 +1384,43 @@ model CuratorReview {
   artikel     Artikel   @relation(fields: [artikelId], references: [id], onDelete: Cascade)
 
   @@index([artikelId])
+}
+
+// ============================================
+// GEPLANDE CHECK-INS (automatisch na balanstest)
+// ============================================
+
+model GeplandCheckin {
+  id            String    @id @default(cuid())
+  caregiverId   String
+  geplandOp     DateTime
+  verstuurdOp   DateTime?
+  kanaal        String    @default("IN_APP") // IN_APP, EMAIL, WHATSAPP
+  aanleiding    String    // "balanstest_hoog", "balanstest_gemiddeld", etc.
+  status        String    @default("GEPLAND") // GEPLAND, VERSTUURD, VOLTOOID, GEANNULEERD
+  testId        String?
+  createdAt     DateTime  @default(now())
+  caregiver     Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  @@index([caregiverId, geplandOp])
+  @@index([status, geplandOp])
+}
+
+// ============================================
+// RE-ENGAGEMENT BERICHTEN (retentie-loop)
+// ============================================
+
+model ReEngagementBericht {
+  id            String    @id @default(cuid())
+  userId        String
+  type          String    // "hoe_gaat_het", "tip", "check_in", "warm_bericht"
+  kanaal        String    @default("IN_APP") // IN_APP, EMAIL, WHATSAPP
+  verstuurdOp   DateTime  @default(now())
+  geopendOp     DateTime?
+  optedOut      Boolean   @default(false) // AVG: opt-out mogelijk
+  createdAt     DateTime  @default(now())
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([verstuurdOp])
 }
