@@ -1142,6 +1142,16 @@ model GeplandCheckin {
 | **Maand 2** | Data retention policy formaliseren | §3.6 — AVG dataminimalisatie. Bewaartermijnen: audit logs 2j, check-ins 5j, berichten 1j, accounts 2j inactief | Juridisch + technisch |
 | **Maand 3** | Anthropic DPA controleren | §3.4 — Claude onthoudt standaard conversaties voor training. Moet uit staan voor gezondheidsdata | Juridisch |
 
+### Configuratie-acties (wanneer gewenst, niet blokkerend)
+
+De volgende actiepunten zijn voorbereid in de code maar vereisen externe account-aanmaak. De app werkt volledig zonder — er zijn fallbacks ingebouwd.
+
+| Actie | Waarvoor | Fallback zonder | Hoe |
+|-------|----------|----------------|-----|
+| **Sentry DSN configureren** | Error tracking in productie, alerts bij spikes | Errors verschijnen in Vercel logs | Gratis account op sentry.io → Project aanmaken → DSN kopiëren → Vercel env var `NEXT_PUBLIC_SENTRY_DSN` |
+| **Upstash Redis configureren** | Rate limiting persistent over cold starts | In-memory rate limiting (reset bij elke cold start) | Gratis account op upstash.com → Database aanmaken → URL+Token kopiëren → Vercel env vars `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` |
+| **Sentry alerts instellen** | Automatische meldingen bij error spikes | Handmatig Sentry dashboard checken | Sentry → Alerts → New Alert Rule → "When there are more than X errors in Y minutes" |
+
 ---
 
 <a name="mapping"></a>
