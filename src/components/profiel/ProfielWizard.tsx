@@ -326,7 +326,7 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
         setData((prev) => ({
           ...prev,
           zorgthemas: loadedZorgthemas,
-          situatieTags: situatieTagsClean,
+          situatieTags: allTags,
           zorgduur: zorgduurValue || prev.zorgduur,
           interesseCategorieen: loadedInteresses,
         }))
