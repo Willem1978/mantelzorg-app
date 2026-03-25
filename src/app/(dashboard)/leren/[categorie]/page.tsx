@@ -503,7 +503,7 @@ function ArtikelCard({ artikel, categorieTitel, isFavorited, favorietId }: {
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xl">{artikel.emoji || "📄"}</span>
             <h2 className="font-semibold text-sm">{artikel.titel}</h2>
-            {artikel.relevantieScore > 0 && (
+            {(artikel.relevantieScore ?? 0) > 0 && (
               <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded-md flex-shrink-0">
                 Aanbevolen
               </span>
