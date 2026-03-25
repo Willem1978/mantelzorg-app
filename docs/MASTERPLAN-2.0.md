@@ -1,9 +1,9 @@
 # MantelBuddy — Masterplan 2.0
 
 **Datum:** 25 maart 2026
-**Versie:** 1.0
+**Versie:** 2.0 — Compleet iteratieplan
 **Status:** Ter bespreking
-**Scope:** Beheeromgeving, Content Workflow, Hulpbronnen, Activiteiten, UI/UX, Dashboard
+**Scope:** Beheeromgeving, Content, Hulpbronnen, Activiteiten, UI/UX, Dashboard, Design, WhatsApp, Buddy
 
 ---
 
@@ -11,309 +11,248 @@
 
 - **95% AI-gegenereerd** — AI schrijft, mens reviewt en publiceert
 - **Per woonplaats zoeken** — hulpbronnen én activiteiten, met deduplicatie
-- **Beheerder = jij of gemeente-medewerker die het snapt** — geen leek-proof nodig maar wel logisch
+- **Beheerder = jij of gemeente-medewerker** — niet leek-proof maar wel logisch
 - **Ger chatbot zoekt NIET op internet** — alleen beheer-agents gebruiken web research
+- **Design-stijl:** Geïnspireerd op "Ik Sta Sterk" (VeiligheidNL) — donker paars/navy primair, roze/mauve achtergronden, geel accent, grote vette koppen, witte kaarten op kleur-achtergrond, veel witruimte, professioneel maar warm
 - **On hold items blijven on hold** (SMTP, Sentry DSN, Upstash Redis, compliance track)
 
 ---
 
-## Deel 1: Content Werkbank (vervangt 3 losse pagina's)
+## Iteratie 1: Content Werkbank + Artikel Interactie (~39h)
 
-### Probleem nu
-Artikelen beheren, AI content genereren en content reviewen zitten op **3 verschillende pagina's** (Artikelen, Content Agent, Curator). De pipeline heeft 6 statussen maar de artikelen-pagina toont er maar 3. Artikelen raken "kwijt" tussen stappen.
+**Doel:** Eén plek voor alle content, gelezen/rating tracking, dashboard aanbevelingen.
 
-### Oplossing: Eén Content Werkbank met Kanban-bord
+### 1.1 ArtikelInteractie model + API (4h)
+- Database model: `ArtikelInteractie` (caregiverId, artikelId, gelezen, gelezenOp, rating, ratingOp)
+- API endpoints: GET/POST `/api/artikel-interactie`
+- Duimpje omhoog/omlaag per artikel
+- Gelezen afvinken
 
-**Eén pagina** `/beheer/content-werkbank` met:
+### 1.2 Dashboard "Artikelen voor jou" (6h)
+- Nieuwe sectie op dashboard: alle artikelen met 2+ tag-matches
+- Meeste matches bovenaan
+- Per artikel: categorie-label, emoji, titel, beschrijving
+- Afvinkbaar als gelezen (grijzer, zakt naar onder)
+- Duimpje omhoog/omlaag na lezen
+- "Je bent helemaal bij!" als alles gelezen
 
-1. **Visueel Kanban-bord** — 6 kolommen (VOORSTEL → CONCEPT → HERSCHREVEN → VERRIJKT → GEPUBLICEERD → GEARCHIVEERD) met artikel-kaartjes die je kunt verslepen
-2. **Per kolom**: aantal items, gemiddelde completeness-score
-3. **Filter bovenaan**: categorie, zorgthema, zoekterm
-4. **Voortgangsbalk per artikel**: visueel metertje dat toont in welke fase het artikel zit en hoeveel stappen nog resteren
-5. **Inline AI-acties**: klik op een kaartje → "Herschrijf naar B1", "Verrijk met FAQ", "Stel tags voor" — zonder pagina-wissel
+### 1.3 Content Werkbank — Kanban-bord (12h)
+- Eén pagina `/beheer/content-werkbank` vervangt Artikelen + Content Agent + Curator
+- 6 kolommen: VOORSTEL → CONCEPT → HERSCHREVEN → VERRIJKT → GEPUBLICEERD → GEARCHIVEERD
+- Drag-and-drop kaartjes tussen kolommen
+- Per kolom: aantal items + gemiddelde completeness
+- Filter: categorie, zorgthema, zoekterm
+- Voortgangsbalk per artikel (in welke fase, hoeveel stappen nog)
+- Inline AI-acties: "Herschrijf B1", "Verrijk met FAQ", "Stel tags voor"
 
-### Nieuw: "Slim Publiceren" flow
+### 1.4 "Slim Publiceren" wizard (8h)
+- Stap 1: Kies categorie (Praktische tips, Zelfzorg & balans, etc.)
+- Stap 2: Hiaten-analyse toont wat ontbreekt + verwachte vraag
+- Stap 3: AI stelt 3 onderwerpen voor (gerangschikt op vraag)
+- Stap 4: Beheerder kiest of typt eigen onderwerp
+- Stap 5: AI schrijft concept (juiste tags, B1, bronvermelding)
+- Stap 6: Preview + review
+- Stap 7: Publiceren met tag-check
+- Voortgangsbalk door alle 7 stappen
 
-Guided wizard voor nieuwe content:
-1. **Kies categorie** (Praktische tips, Zelfzorg & balans, Rechten & regelingen, etc.)
-2. **Hiaten-analyse** toont wat ontbreekt in die categorie + welke onderwerpen de meeste vraag hebben (op basis van zoekgedrag en artikelratings)
-3. **AI stelt 3 onderwerpen voor** — gerangschikt op verwachte vraag
-4. **Beheerder kiest er één** (of typt eigen onderwerp)
-5. **AI schrijft concept** met juiste tags, B1-taal, bronvermelding
-6. **Preview + review** — beheerder past aan
-7. **Eén klik publiceren** met automatische tag-koppeling
-
-**Voortgangsbalk** loopt mee door alle 7 stappen.
-
-### Duplicate-detectie
-
-- Bij aanmaken nieuw artikel: **automatische similarity-check** tegen bestaande artikelen
-- Toont waarschuwing: "Dit lijkt op: [titel bestaand artikel] (87% overlap)"
+### 1.5 Duplicate-detectie (4h)
+- Bij aanmaak: automatische similarity-check (vector embeddings)
+- Waarschuwing: "Dit lijkt op: [titel] (87% overlap)"
 - Beheerder kan doorgaan of samenvoegen
-- **Opschoonactie**: Bestaande duplicaten (vooral werk & mantelzorg) identificeren en samenvoegen
+- Opschoonactie voor bestaande duplicaten (werk & mantelzorg artikelen)
 
-### Tags automatisch koppelen
+### 1.6 Automatische tag-koppeling (3h)
+- Bij statuswijziging: AI herbeoordeelt tags
+- Bij publicatie: verplichte tag-check (min. 1 zorgthema + 1 onderwerp)
+- Tag-suggesties met uitleg waarom een tag past
 
-- Bij elke statuswijziging: AI herbeoordeelt tags
-- Bij publicatie: verplichte tag-check (artikel mag niet gepubliceerd worden zonder minimaal 1 zorgthema + 1 onderwerp tag)
-- Tag-suggesties tonen **waarom** een tag past (korte uitleg)
-
----
-
-## Deel 2: Dashboard "Aanbevolen voor jou"
-
-### Probleem nu
-Het dashboard berekent gepersonaliseerde artikelen maar **toont ze nergens**. Er is geen leesgeschiedenis, geen rating, geen "voor jou" sectie.
-
-### Oplossing
-
-**Nieuwe sectie op dashboard**: "Artikelen voor jou"
-
-- Toont **alle artikelen met minimaal 2+ tag-matches** met het profiel
-- Gesorteerd op meeste matches bovenaan
-- Per artikel: **categorie-label** (bijv. "Zelfzorg & balans"), emoji, titel, korte beschrijving
-- **Gelezen-status**: afvinkbaar vinkje — artikel gaat naar "Gelezen" maar blijft zichtbaar (grijzer, onderaan)
-- **Rating**: duimpje omhoog/omlaag na het lezen
-- Als alles gelezen: "Je bent helemaal bij! We laten je weten als er nieuwe artikelen zijn."
-
-### Database-wijzigingen
-
-```
-model ArtikelInteractie {
-  id          String   @id @default(cuid())
-  caregiverId String
-  artikelId   String
-  gelezen     Boolean  @default(false)
-  gelezenOp   DateTime?
-  rating      Int?     // 1 = duimpje omlaag, 2 = duimpje omhoog
-  ratingOp    DateTime?
-  createdAt   DateTime @default(now())
-
-  caregiver   Caregiver @relation(...)
-  artikel     Artikel   @relation(...)
-
-  @@unique([caregiverId, artikelId])
-}
-```
-
-### Beheerportaal: Artikel Analytics
-
-Nieuwe kaart op beheer-dashboard:
-- Top 10 meest gelezen artikelen
-- Top 10 hoogst gewaardeerde artikelen (meeste duimpjes omhoog)
-- Artikelen met veel duimpjes omlaag (actie nodig)
-- AI leert van ratings: hiaten-analyse weegt populaire onderwerpen zwaarder
+### 1.7 Duplicaten opschonen (2h)
+- Identificeer en merge bestaande duplicaten
+- Focus op werk & mantelzorg artikelen
 
 ---
 
-## Deel 3: Hulpbronnen Herontwerp
+## Iteratie 2: Activiteiten-agent + Hulpbronnen (~40h)
 
-### Probleem nu
-Het hulpbronnen-formulier is 600+ regels, te technisch, te veel velden tegelijk. De AI hulpbronnen-zoeker zoekt al op internet maar alleen bij gemeente-onboarding, niet per woonplaats.
+**Doel:** Lokale activiteiten ontdekken, hulpbronnen per woonplaats zoeken.
 
-### Oplossing
+### 2.1 Activiteit database model + API (4h)
+- Model: naam, beschrijving, locatie, woonplaats, gemeente, type, frequentie, dag, tijd, kosten, contact, etc.
+- CRUD endpoints
+- Indexen op woonplaats + gemeente + type
 
-**A. Zoeken per woonplaats (niet alleen gemeente)**
+### 2.2 Activiteiten-zoeker agent (8h)
+- web_search per woonplaats (Anthropic tool)
+- Zoektermen: "mantelzorg activiteiten [woonplaats]", "buurthuis [woonplaats]", "lotgenoten [woonplaats]", "wandelgroep senioren [woonplaats]"
+- Bronnen: gemeente-websites, socialekaart.nl, buurthuizen, sportverenigingen
+- Deduplicatie op naam + woonplaats
+- Opslaan als `isGevalideerd: false`
 
-De hulpbronnen-zoeker wordt uitgebreid:
-- Input: woonplaats (of postcode)
-- AI zoekt via web_search per woonplaats
-- Deduplicatie: als een landelijke organisatie al bestaat, niet opnieuw toevoegen
-- Resultaat: lijst met lokale + regionale + landelijke hulpbronnen
-
-**B. Vereenvoudigd beheerformulier**
-
-In plaats van 20+ velden tegelijk → **3-staps wizard**:
-
-1. **Stap 1: Basis** — Naam, website, telefoon, korte beschrijving
-2. **Stap 2: Locatie** — Niveau kiezen (landelijk/provincie/gemeente/woonplaats/wijk) + locatie selecteren via kaart of zoeken
-3. **Stap 3: AI verrijkt** — AI vult automatisch: categorieën, doelgroep, openingstijden, kosten, type hulp. Beheerder reviewt en past aan.
-
-**C. "Zoek & Voeg Toe" flow**
-
-Nieuwe flow voor het toevoegen van hulpbronnen per woonplaats:
-1. Beheerder kiest woonplaats
-2. AI zoekt op internet (deep research)
-3. Toont gevonden organisaties met "Toevoegen" knop per stuk
-4. Bij toevoegen: AI vult alle velden in, beheerder reviewt
-
----
-
-## Deel 4: Activiteiten-agent (NIEUW)
-
-### Wat het is
-Derde content-pijler naast Artikelen en Hulpbronnen. Lokale activiteiten en initiatieven die mantelzorgers kunnen helpen.
-
-### Voorbeelden
-- Alzheimer-café (wekelijks, buurthuis De Magneet)
-- Wandelgroep voor mantelzorgers (maandags 10:00)
-- Kaartclub senioren (woensdag, wijkcentrum)
-- Lotgenotengroep jonge mantelzorgers
-- Yoga voor stress (donderdagavond)
-- Koffieochtend mantelzorgers (gemeentehuis)
-- Respijtzorgdag (maandelijks)
-
-### Database model
-
-```
-model Activiteit {
-  id              String   @id @default(cuid())
-  naam            String
-  beschrijving    String   @db.Text
-  locatie         String   // Adres of naam locatie
-  woonplaats      String
-  gemeente        String
-  type            String   // "lotgenoten", "sport", "sociaal", "educatie", "respijt", "overig"
-  frequentie      String?  // "wekelijks", "maandelijks", "eenmalig", "dagelijks"
-  dag             String?  // "maandag", "dinsdag", etc.
-  tijd            String?  // "10:00-12:00"
-  kosten          String?  // "Gratis", "€5 per keer", etc.
-  contact         String?  // Naam contactpersoon
-  telefoon        String?
-  website         String?
-  email           String?
-  bronUrl         String?  // URL waar info gevonden is
-  doelgroep       String?  // "mantelzorgers", "ouderen", "iedereen"
-  isActief        Boolean  @default(true)
-  isGevalideerd   Boolean  @default(false)
-  laatsteCheck    DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@index([woonplaats])
-  @@index([gemeente])
-  @@index([type])
-}
-```
-
-### Activiteiten-zoeker agent
-
-- Zoekt via web_search per **woonplaats**
-- Bronnen: gemeente-websites, socialekaart.nl, buurthuizen, sportverenigingen, VNG, Mezzo
-- Per woonplaats zoekt op: "mantelzorg activiteiten [woonplaats]", "buurthuis [woonplaats]", "lotgenoten [woonplaats]", "wandelgroep senioren [woonplaats]"
-- Deduplicatie: als activiteit al bestaat (zelfde naam + woonplaats) → skip
-- Resultaten opslaan met `isGevalideerd: false` — beheerder reviewt
-
-### Weergave voor mantelzorger
-
-Nieuwe pagina `/activiteiten` of sectie in `/hulp`:
-- Gefilterd op woonplaats van de mantelzorger (automatisch)
-- Categorieën: Lotgenoten, Sport & beweging, Sociaal, Educatie, Respijtzorg, Overig
-- Per activiteit: naam, wanneer, waar, kosten, contact
-- Koppeling met profiel-tags: lotgenoten-groepen voor relevante zorgthema's
-
-### Beheer
-
-Nieuwe pagina `/beheer/activiteiten`:
-- Lijst + zoek/filter op woonplaats, type, gemeente
+### 2.3 Beheer-pagina activiteiten (8h)
+- Lijst + filter op woonplaats, type, gemeente
 - "Zoek activiteiten" knop → AI zoekt per woonplaats
 - Review-flow: AI vindt → beheerder valideert → gepubliceerd
-- Periodieke hervalidatie (maandelijks: bestaat de activiteit nog?)
+- Maandelijkse hervalidatie
+
+### 2.4 Gebruikerspagina activiteiten (6h)
+- Gefilterd op woonplaats mantelzorger (automatisch)
+- Categorieën: Lotgenoten, Sport, Sociaal, Educatie, Respijtzorg, Overig
+- Per activiteit: naam, wanneer, waar, kosten, contact
+- Lotgenoten voor iedereen (niet alleen alleenstaanden)
+
+### 2.5 Hulpbronnen-zoeker per woonplaats (4h)
+- Uitbreiden bestaande agent: input = woonplaats i.p.v. alleen gemeente
+- Deduplicatie landelijke organisaties
+- Resultaat: lokaal + regionaal + landelijk
+
+### 2.6 Hulpbronnen wizard vereenvoudigen (6h)
+- Van 20+ velden → 3 stappen: Basis → Locatie → AI verrijkt
+- Stap 1: naam, website, telefoon, beschrijving
+- Stap 2: dekkingsniveau + locatie (kaart/zoeken)
+- Stap 3: AI vult rest in, beheerder reviewt
+
+### 2.7 "Zoek & Voeg Toe" flow (4h)
+- Beheerder kiest woonplaats
+- AI zoekt op internet (deep research)
+- Toont gevonden organisaties met "Toevoegen" knop
+- Bij toevoegen: AI vult alle velden, beheerder reviewt
 
 ---
 
-## Deel 5: UI/UX Verbeteringen
+## Iteratie 3: Design System + UI/UX Herindeling (~38h)
 
-### Problemen geïdentificeerd
+**Doel:** Professionele uitstraling, consistente UI, betere navigatie.
 
-1. **TipsCard component bestaat maar wordt niet getoond op dashboard**
-2. **"Voor jou" betekent twee verschillende dingen** (aanbevelingen vs. opgeslagen favorieten)
-3. **Geen leesvoortgang** — gebruiker weet niet wat al gelezen is
-4. **Beheer-sidebar heeft 25+ items** — overweldigend
-5. **Inconsistente styling** — knoppen en spacing verschillen per pagina
-6. **Profiel-completeness op dashboard klopt niet altijd**
+### 3.1 Design system implementeren (10h)
+**Geïnspireerd op "Ik Sta Sterk" (VeiligheidNL):**
+- Kleurenpalet: donker paars/navy primair, mauve/roze achtergronden, geel/goud accent
+- Typografie: grote vette koppen (Nunito Black), rustige body tekst
+- Kaarten: witte kaarten met rounded corners op gekleurde achtergrond
+- Radio buttons: wit op kleur (zoals valrisico-test)
+- Resultaat-pagina's: illustraties in cirkels, tip-grid
+- Navigatie: "Terug" + "Volgende" balk onderaan bij flows
+- Veel witruimte, professioneel maar warm
+- CSS variabelen herschrijven in globals.css
+- Alle bestaande componenten (Button, Card, Input) aanpassen
 
-### Oplossingen
-
-**Dashboard herindeling:**
+### 3.2 Dashboard herindeling (6h)
 1. Welkom + Ger (compact)
-2. **"Artikelen voor jou"** (NIEUW — aanbevolen + lees/rating)
-3. Balansthermometer (als test gedaan)
+2. **"Artikelen voor jou"** (nieuw)
+3. Balansthermometer
 4. Weekkaarten
 5. Actiepunten
-6. **"Activiteiten bij jou in de buurt"** (NIEUW)
+6. **"Activiteiten bij jou in de buurt"** (nieuw)
+- Zoekbalk bovenaan elke pagina (niet alleen via Ger)
 
-**Beheer-sidebar vereenvoudigen:**
-Huidige 25+ items → **5 hoofdgroepen**:
-1. **Dashboard** (overzicht + analytics)
-2. **Content** (Content Werkbank — vervangt artikelen + content agent + curator)
-3. **Hulpbronnen** (zoeken + beheren + validatie)
-4. **Activiteiten** (NIEUW — zoeken + beheren)
-5. **Inrichting** (gemeenten, gebruikers, instellingen)
+### 3.3 Beheer-sidebar vereenvoudigen (4h)
+Van 25+ items → 5 hoofdgroepen:
+1. Dashboard (overzicht + analytics + artikel ratings)
+2. Content (Werkbank — één plek)
+3. Hulpbronnen (zoeken + beheren + validatie)
+4. Activiteiten (zoeken + beheren)
+5. Inrichting (gemeenten, gebruikers, instellingen)
 
-**Favorieten hernoemen:**
+### 3.4 Favorieten hernoemen (2h)
 - "Voor jou" tab → "Mijn hulpbronnen"
-- Geen verwarring meer met dashboard-aanbevelingen
+- Geen verwarring met dashboard-aanbevelingen
+
+### 3.5 Zoekbalk in navigatie (4h)
+- Compacte zoekbalk/icoon in header (elke pagina)
+- Semantic search via pgvector
+- Resultaten uit artikelen + hulpbronnen + activiteiten
+
+### 3.6 Consistente UI doorvoeren (6h)
+- Alle pagina's: zelfde spacing, knoppen, kaarten
+- Mobile-first check op alle pagina's
+- Loading states: skeleton screens i.p.v. spinners
+
+### 3.7 Balanstest restylen (6h)
+- Stijl zoals "Ik Sta Sterk" valrisico-test
+- Gekleurde achtergrond per vraag
+- Witte antwoord-kaarten met radio buttons
+- Voortgangsbalk onderaan
+- Resultaat-pagina met iconen in cirkels + tip-grid
 
 ---
 
-## Deel 6: AI Agent Upgrades
+## Iteratie 4: AI Agents + Analytics (~28h)
 
-### Content-agent: web research toevoegen
+**Doel:** Slimmere AI, betere inzichten, web research voor content.
 
-De content-agent moet bij "zoek-online" modus **daadwerkelijk** het internet doorzoeken:
-- Anthropic web_search tool toevoegen (zoals hulpbronnen-zoeker al heeft)
-- Zoekt op betrouwbare bronnen: mantelzorg.nl, rijksoverheid.nl, mezzo.nl, vilans.nl
-- Artikel bevat automatisch bronvermelding met URL
+### 4.1 Content-agent web research (4h)
+- Anthropic web_search tool toevoegen
+- Zoekt op betrouwbare bronnen bij artikel-generatie
+- Automatische bronvermelding met URL
 
-### Hiaten-analyse: gewogen op vraag
+### 4.2 Hiaten-analyse gewogen op vraag (6h)
+- Weeg op artikelratings (duimpjes)
+- Weeg op zoekgedrag (wat vraagt men aan Ger?)
+- Weeg op profieldata (welke zorgthema's meest voorkomend?)
+- Output: "0 artikelen over respijtzorg voor werkenden. 43% werkt — hoge prioriteit."
 
-Huidige hiaten-analyse telt alleen "hoeveel artikelen per categorie × tag".
+### 4.3 Artikel analytics in beheerportaal (4h)
+- Top 10 meest gelezen
+- Top 10 hoogst gewaardeerd (duimpjes omhoog)
+- Artikelen met veel duimpjes omlaag (actie nodig)
+- Trend over tijd
 
-Upgrade: **weeg op basis van**:
-- Artikelratings (duimpjes) — populaire onderwerpen zwaarder
-- Zoekgedrag — wat zoeken gebruikers in Ger-chat?
-- Profieldata — welke zorgthema's komen het meest voor?
-- Resultaat: "Er zijn 0 artikelen over respijtzorg voor werkende mantelzorgers. 43% van gebruikers werkt — dit is een hoge-prioriteit hiaat."
+### 4.4 WhatsApp uitbreiden (8h)
+- Dagelijks check-in via WhatsApp ("Hoe gaat het?" → smiley)
+- Weekkaarten sturen via WhatsApp
+- Activiteiten in de buurt delen
+- Artikelen als korte samenvatting + link
 
-### Activiteiten-agent (NIEUW)
-
-Zoals beschreven in Deel 4. Zoekt per woonplaats via web_search.
+### 4.5 Proactieve notificaties (6h)
+- "Je hebt 2 weken geen check-in gedaan"
+- Seizoensgebonden tips ("Winter — tips voor thuiszorg bij kou")
+- Milestone-vieringen ("Je gebruikt MantelBuddy al 3 maanden!")
+- Nieuwe artikelen die matchen met profiel
 
 ---
 
-## Deel 7: Prioritering & Fasering
+## Iteratie 5: Buddy-systeem + Gemeente (~30h)
 
-### Fase 1: Content Werkbank + Dashboard (hoogste impact)
+**Doel:** Buddy-werving verbeteren, gemeente-portaal actiever maken.
 
-| # | Taak | Geschatte tijd |
-|---|------|---------------|
-| 1.1 | ArtikelInteractie model + API (gelezen/rating) | 4h |
-| 1.2 | Dashboard "Artikelen voor jou" sectie | 6h |
-| 1.3 | Content Werkbank Kanban-bord (basis) | 12h |
-| 1.4 | "Slim Publiceren" wizard met voortgangsbalk | 8h |
-| 1.5 | Duplicate-detectie bij aanmaak | 4h |
-| 1.6 | Automatische tag-koppeling + verplichte check | 3h |
-| 1.7 | Bestaande duplicaten opschonen (werk & mantelzorg) | 2h |
-| | **Subtotaal Fase 1** | **~39h** |
+### 5.1 Buddy onboarding-flow (8h)
+- Motivatie-vragenlijst (waarom wil je helpen?)
+- Skill-matching profiel (wat kun je goed?)
+- Onboarding na acceptatie (verwachtingen, training)
+- Feedback-loop na matches (hoe ging het?)
 
-### Fase 2: Activiteiten-agent + Hulpbronnen herontwerp
+### 5.2 Gemeente-portaal call-to-action (6h)
+- "Stuur informatiepakket" workflow (geanonimiseerd)
+- "Plan informatiebijeenkomst" optie
+- Benchmark: vergelijking met andere gemeenten
 
-| # | Taak | Geschatte tijd |
-|---|------|---------------|
-| 2.1 | Activiteit database model + API | 4h |
-| 2.2 | Activiteiten-zoeker agent (web_search per woonplaats) | 8h |
-| 2.3 | Beheer-pagina activiteiten (zoek + review + CRUD) | 8h |
-| 2.4 | Gebruikerspagina activiteiten (gefilterd op woonplaats) | 6h |
-| 2.5 | Hulpbronnen-zoeker uitbreiden: per woonplaats | 4h |
-| 2.6 | Hulpbronnen wizard vereenvoudigen (3 stappen) | 6h |
-| 2.7 | "Zoek & Voeg Toe" flow voor hulpbronnen | 4h |
-| | **Subtotaal Fase 2** | **~40h** |
+### 5.3 Onboarding conversion verbeteren (4h)
+- "Probeer zonder account" prominenter (anonieme balanstest)
+- Tracking waar mensen afhaken
+- Versimpelde registratie (alleen email → direct waarde)
 
-### Fase 3: UI/UX + Beheer herindeling
+### 5.4 Data-export voor mantelzorger (4h)
+- PDF rapport: balanstest trend over tijd
+- Overzicht gelezen artikelen + favorieten
+- Exporteerbare hulpbronnenlijst (voor keukentafelgesprek)
 
-| # | Taak | Geschatte tijd |
-|---|------|---------------|
-| 3.1 | Dashboard herindeling + activiteiten sectie | 6h |
-| 3.2 | Beheer-sidebar vereenvoudigen (5 groepen) | 4h |
-| 3.3 | Content-agent web research toevoegen | 4h |
-| 3.4 | Hiaten-analyse wegen op vraag/ratings | 6h |
-| 3.5 | Favorieten hernoemen + opschonen | 2h |
-| 3.6 | Artikel analytics in beheerportaal | 4h |
-| 3.7 | Consistente UI componenten doorvoeren | 6h |
-| | **Subtotaal Fase 3** | **~32h** |
+### 5.5 Progressie-systeem (8h)
+- Visueel: "Je voortgang als mantelzorger"
+- Badges: eerste check-in, 10 artikelen gelezen, profiel compleet
+- Niet gamification maar erkenning
+- "Je doet het goed — vergeet niet voor jezelf te zorgen"
 
-### Totaal: ~111 uur (3 fasen)
+---
+
+## Totaaloverzicht
+
+| Iteratie | Focus | Uren |
+|----------|-------|------|
+| **1** | Content Werkbank + Artikel Interactie | ~39h |
+| **2** | Activiteiten + Hulpbronnen per woonplaats | ~40h |
+| **3** | Design System + UI/UX Herindeling | ~38h |
+| **4** | AI Agents + Analytics + WhatsApp | ~28h |
+| **5** | Buddy + Gemeente + Progressie | ~30h |
+| | **Totaal** | **~175h** |
 
 ---
 
@@ -327,29 +266,35 @@ Zoals beschreven in Deel 4. Zoekt per woonplaats via web_search.
 
 ## Backlog (na Masterplan 2.0)
 
+### Technisch
 - E2E tests met Playwright
 - Push notificaties (VAPID)
 - 2FA voor admin (TOTP)
-- ML-gebaseerde aanbevelingsengine
+- Per-user AI token budget + cost dashboard
+- Prompt versioning met rollback
+- Supabase disaster recovery
+
+### Features
+- ML-gebaseerde aanbevelingsengine (leren van ratings + gedrag)
 - Email-templates beheer
-- Media-upload (S3/Cloudinary)
+- Media-upload (S3/Cloudinary) voor artikelen
 - Dark mode
 - Multi-language support
-- Per-user AI token budget
-- AI cost dashboard
-- Prompt versioning met rollback
+- Progressieve onboarding (week 1-4 flow)
+- A/B testing framework
+- Contactstatus hulporganisaties (is deze organisatie nog bereikbaar?)
 
 ---
 
-## Database-wijzigingen overzicht
+## Database-wijzigingen
 
-| Model | Doel | Fase |
-|-------|------|------|
-| ArtikelInteractie | Gelezen/rating tracking per gebruiker | Fase 1 |
-| Activiteit | Lokale activiteiten en initiatieven | Fase 2 |
+| Model | Doel | Iteratie |
+|-------|------|----------|
+| ArtikelInteractie | Gelezen/rating per gebruiker per artikel | 1 |
+| Activiteit | Lokale activiteiten en initiatieven | 2 |
 
-SQL-scripts worden bij elke fase aangeleverd.
+SQL-scripts worden bij elke iteratie aangeleverd.
 
 ---
 
-*Dit plan vervangt het vorige projectplan als leidend document voor de volgende release.*
+*Dit plan vervangt MASTERPLAN-2.0.md v1 en het vorige projectplan als leidend document.*
