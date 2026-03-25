@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
-import { geocodeLocation } from "@/lib/pdok"
 import { z } from "zod"
 import { validateBody } from "@/lib/validations"
+import { findCaregiverId, getProfile, updateProfile } from "@/services/profiel.service"
+import { createLogger } from "@/lib/logger"
+
+const log = createLogger("api-profile")
 
 const profileUpdateSchema = z.object({
   naam: z.string().max(200).optional(),
@@ -23,107 +25,38 @@ const profileUpdateSchema = z.object({
   werkstatus: z.enum(["fulltime", "parttime", "niet-werkend", "student", "gepensioneerd"]).nullable().optional(),
 })
 
-// GET: Profiel ophalen
 export async function GET() {
   try {
     const session = await auth()
-
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 })
     }
 
-    // Zoek caregiver via caregiverId (snel) of via userId (fallback als session verouderd is)
-    let caregiver = session.user.caregiverId
-      ? await prisma.caregiver.findUnique({
-          where: { id: session.user.caregiverId },
-          include: { user: { select: { name: true, email: true } } },
-        })
-      : null
-
-    if (!caregiver) {
-      caregiver = await prisma.caregiver.findUnique({
-        where: { userId: session.user.id },
-        include: { user: { select: { name: true, email: true } } },
-      })
-    }
-
-    if (!caregiver) {
+    const caregiverId = await findCaregiverId(session.user.caregiverId, session.user.id)
+    if (!caregiverId) {
       return NextResponse.json({ error: "Profiel niet gevonden" }, { status: 404 })
     }
 
-    const caregiverId = caregiver.id
+    const profile = await getProfile(caregiverId)
+    if (!profile) {
+      return NextResponse.json({ error: "Profiel niet gevonden" }, { status: 404 })
+    }
 
-    // Haal zorgtaken op uit de meest recente balanstest
-    const latestTest = await prisma.belastbaarheidTest.findFirst({
-      where: { caregiverId, isCompleted: true },
-      orderBy: { completedAt: "desc" },
-      select: {
-        taakSelecties: {
-          where: { isGeselecteerd: true },
-          select: { taakNaam: true },
-        },
-      },
-    })
-
-    const zorgtaken = latestTest?.taakSelecties?.map((z) => z.taakNaam) || []
-
-    return NextResponse.json({
-      naam: caregiver.user.name,
-      email: caregiver.user.email,
-      telefoon: caregiver.phoneNumber,
-      // Locatie mantelzorger
-      straat: caregiver.street,
-      woonplaats: caregiver.city,
-      postcode: caregiver.postalCode,
-      gemeente: caregiver.municipality,
-      wijk: caregiver.neighborhood,
-      // Naaste
-      naasteNaam: caregiver.careRecipientName,
-      naasteRelatie: caregiver.careRecipient,
-      naasteStraat: caregiver.careRecipientStreet,
-      naasteWoonplaats: caregiver.careRecipientCity,
-      naasteGemeente: caregiver.careRecipientMunicipality,
-      naasteWijk: caregiver.careRecipientNeighborhood,
-      // Locatie coördinaten naaste
-      careRecipientLatitude: caregiver.careRecipientLatitude,
-      careRecipientLongitude: caregiver.careRecipientLongitude,
-      // Zorgsituatie
-      woonsituatie: caregiver.woonsituatie,
-      werkstatus: caregiver.werkstatus,
-      careHoursPerWeek: caregiver.careHoursPerWeek,
-      careSince: caregiver.careSince,
-      dateOfBirth: caregiver.dateOfBirth,
-      // Zorgtaken
-      zorgtaken,
-      // Status
-      profileCompleted: caregiver.profileCompleted,
-      intakeCompleted: caregiver.intakeCompleted,
-    })
+    return NextResponse.json(profile)
   } catch (error) {
-    console.error("Profile GET error:", error)
+    log.error({ err: error }, "Profile GET error")
     return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }
 
-// PUT: Profiel updaten
 export async function PUT(request: Request) {
   try {
     const session = await auth()
-
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 })
     }
 
-    // Zoek caregiverId met fallback op userId
-    let caregiverId = session.user.caregiverId
-    if (!caregiverId) {
-      const found = await prisma.caregiver.findUnique({
-        where: { userId: session.user.id },
-        select: { id: true },
-      })
-      caregiverId = found?.id || null
-    }
-
+    const caregiverId = await findCaregiverId(session.user.caregiverId, session.user.id)
     if (!caregiverId) {
       return NextResponse.json({ error: "Profiel niet gevonden" }, { status: 404 })
     }
@@ -133,83 +66,11 @@ export async function PUT(request: Request) {
     if (!validation.success) {
       return NextResponse.json({ error: validation.error }, { status: 400 })
     }
-    const body = validation.data
 
-    // Update user name if provided
-    if (body.naam) {
-      await prisma.user.update({
-        where: { id: session.user.id },
-        data: { name: body.naam }
-      })
-    }
-
-    // Check of profiel compleet is (beide locaties ingevuld)
-    const profileCompleted = !!(
-      body.straat && body.woonplaats &&
-      body.naasteStraat && body.naasteWoonplaats
-    )
-
-    // Valideer telefoonnummer - alleen updaten als expliciet meegestuurd
-    // undefined = niet meegestuurd, behoud huidige waarde
-    // null of lege string = bewust verwijderen
-    let phoneUpdate: { phoneNumber?: string | null } = {}
-    if (body.telefoon !== undefined) {
-      const telefoon = body.telefoon
-      const validPhone = telefoon &&
-        telefoon !== "undefined" &&
-        telefoon !== "null" &&
-        telefoon.trim() !== ""
-          ? telefoon
-          : null
-      phoneUpdate = { phoneNumber: validPhone }
-    }
-
-    // Geocodeer naaste-adres naar coördinaten (voor buddy-kaart)
-    let careRecipientCoords: { careRecipientLatitude?: number; careRecipientLongitude?: number } = {}
-    if (body.naasteWoonplaats) {
-      const coords = await geocodeLocation(body.naasteWoonplaats, body.naasteStraat || undefined)
-      if (coords) {
-        careRecipientCoords = {
-          careRecipientLatitude: coords.latitude,
-          careRecipientLongitude: coords.longitude,
-        }
-      }
-    }
-
-    // Update caregiver
-    const caregiver = await prisma.caregiver.update({
-      where: { id: caregiverId },
-      data: {
-        ...phoneUpdate,
-        // Locatie mantelzorger
-        street: body.straat,
-        city: body.woonplaats,
-        postalCode: body.postcode,
-        municipality: body.gemeente,
-        neighborhood: body.wijk,
-        // Naaste
-        careRecipientName: body.naasteNaam,
-        careRecipient: body.naasteRelatie,
-        careRecipientStreet: body.naasteStraat,
-        careRecipientCity: body.naasteWoonplaats,
-        careRecipientMunicipality: body.naasteGemeente,
-        careRecipientNeighborhood: body.naasteWijk,
-        // Naaste coördinaten
-        ...careRecipientCoords,
-        // Zorgsituatie
-        ...(body.woonsituatie !== undefined ? { woonsituatie: body.woonsituatie } : {}),
-        ...(body.werkstatus !== undefined ? { werkstatus: body.werkstatus } : {}),
-        // Status
-        profileCompleted,
-      }
-    })
-
-    return NextResponse.json({
-      success: true,
-      profileCompleted: caregiver.profileCompleted
-    })
+    const result = await updateProfile(caregiverId, session.user.id, validation.data)
+    return NextResponse.json(result)
   } catch (error) {
-    console.error("Profile PUT error:", error)
+    log.error({ err: error }, "Profile PUT error")
     return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }
