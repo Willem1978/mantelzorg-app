@@ -1231,7 +1231,7 @@ Elke aanbeveling uit de kritische analyse is traceerbaar naar een specifieke taa
 | **5** | Personalisatie (P2) | ~14 (**AFGEROND**) | Sprint 2 | ✅ Volledig afgerond (25-03-2026) |
 | **6** | Toegankelijkheid & UX (P8+) | ~30 (**AFGEROND**) | Sprint 2 | ✅ Afgerond (25-03-2026) |
 | **7** | AI Hardening | ~24 (**AFGEROND**) | Sprint 2-3 | ✅ Afgerond (25-03-2026) |
-| **8** | Content Kwaliteit & DB Migratie | ~69 | Sprint 3-4 | Na 2, 3 |
+| **8** | Content Kwaliteit & DB Migratie | ~69 (**8A AFGEROND**) | Sprint 3-4 | 8A (DB migratie) afgerond, 8B (kwaliteitstools) resterend |
 | **9** | Gemeente, Klantreis & Re-engagement | ~48 | Sprint 4 | Na 3, SMTP |
 | | **Totaal** | **~275** | | |
 | | **+ Compliance Track** | **extern** | Parallel | |
