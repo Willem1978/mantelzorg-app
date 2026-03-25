@@ -425,7 +425,8 @@ export async function GET() {
 
       aanbevolenArtikelen: await getAanbevolenArtikelen(
         latestTest?.belastingNiveau || null,
-        caregiver.municipality
+        caregiver.municipality,
+        caregiverId
       ),
 
       mijlpalen: buildMijlpalen(

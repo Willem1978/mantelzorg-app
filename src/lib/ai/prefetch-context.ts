@@ -519,19 +519,45 @@ function buildHulpPerCategorieBlock(perCategorie: Record<string, any[]>): string
 function buildVoorkeurenBlock(aandoening: string | null, voorkeuren: { type: string; slug: string }[]): string {
   if (!aandoening && voorkeuren.length === 0) return ""
 
-  let block = `\n\nGEBRUIKERSVOORKEUREN:`
-  if (aandoening) {
-    block += `\n- Aandoening naaste: ${aandoening}`
+  let block = `\n\nPROFIEL & VOORKEUREN VAN DEZE MANTELZORGER:`
+
+  // Zorgthema's (wat voor zorg geeft deze persoon?)
+  const zorgthemaSlugs = ["geheugen-cognitie", "lichamelijk", "psychisch-emotioneel", "beperking-begeleiding", "ouder-worden", "ernstig-ziek"]
+  const zorgthemaNamen: Record<string, string> = {
+    "geheugen-cognitie": "geheugen & denken (dementie, NAH)",
+    "lichamelijk": "lichamelijke zorg (hartfalen, COPD, diabetes)",
+    "psychisch-emotioneel": "psychisch & emotioneel",
+    "beperking-begeleiding": "beperking & begeleiding",
+    "ouder-worden": "ouder worden",
+    "ernstig-ziek": "ernstig of langdurig ziek (kanker, palliatief)",
   }
-  const tagVoorkeuren = voorkeuren.filter((v) => v.type === "TAG")
+
+  // Zoek zorgthema in voorkeuren OF in legacy aandoening veld
+  const profielZorgthemas = voorkeuren
+    .filter((v) => v.type === "TAG" && zorgthemaSlugs.includes(v.slug))
+    .map((v) => zorgthemaNamen[v.slug] || v.slug)
+
+  if (profielZorgthemas.length > 0) {
+    block += `\n- Zorgsituatie naaste: ${profielZorgthemas.join(", ")}`
+  } else if (aandoening) {
+    block += `\n- Zorgsituatie naaste: ${zorgthemaNamen[aandoening] || aandoening}`
+  }
+
+  // Situatie-tags (wie is deze mantelzorger?)
+  const situatieTags = voorkeuren
+    .filter((v) => v.type === "TAG" && !zorgthemaSlugs.includes(v.slug))
+    .map((v) => v.slug.replace(/-/g, " "))
+  if (situatieTags.length > 0) {
+    block += `\n- Situatie: ${situatieTags.join(", ")}`
+  }
+
+  // Leesinteresses
   const catVoorkeuren = voorkeuren.filter((v) => v.type === "CATEGORIE")
-  if (tagVoorkeuren.length > 0) {
-    block += `\n- Interessegebieden: ${tagVoorkeuren.map((v) => v.slug).join(", ")}`
-  }
   if (catVoorkeuren.length > 0) {
-    block += `\n- Favoriete categorieën: ${catVoorkeuren.map((v) => v.slug).join(", ")}`
+    block += `\n- Leesinteresses: ${catVoorkeuren.map((v) => v.slug.replace(/-/g, " ")).join(", ")}`
   }
-  block += `\nStem je antwoorden af op deze voorkeuren wanneer relevant.`
+
+  block += `\nGebruik deze context om je antwoorden af te stemmen op de specifieke situatie van deze mantelzorger.`
   return block
 }
 
