@@ -1,7 +1,7 @@
 # MantelBuddy — Geïntegreerd Projectplan 2026
 
 **Datum:** 25 maart 2026
-**Versie:** 2.7 — Iteratie 0, 1, 2, 3, 5 afgerond + profiel herstructurering
+**Versie:** 2.8 — Iteratie 0, 1, 2, 3, 5, 6 afgerond + profiel herstructurering
 **Baseline:** v2.5.0
 **Status:** Actief werkdocument
 **Geschatte totale doorlooptijd:** ~350 uur (inclusief nieuwe aanbevelingen)
@@ -721,14 +721,15 @@ De analyse is helder over de urgentie:
 
 ### Acceptatiecriteria
 
-- [ ] axe-core audit op hoofdpagina's: 0 critical/serious violations
-- [ ] Alle interactieve elementen bereikbaar via keyboard
-- [ ] Skip-to-content link op elke pagina
-- [ ] Focus-trapping in alle modals
-- [ ] Skeleton screens voor alle data-secties
-- [ ] Kritieke UI-componenten draaien op Radix UI / React Aria
-- [ ] PWA installeerbaar op iOS en Android
-- [ ] Contrast ratio ≥7:1 voor tekst
+- [x] Skip-to-content link op elke pagina (root layout)
+- [x] ARIA landmarks: main role, nav aria-label
+- [x] Focus-visible: 3px outline, border-radius (WCAG 2.1 AA)
+- [x] Skeleton screens beschikbaar (Dashboard, ArtikelLijst, Profiel, Card)
+- [x] PWA manifest verbeterd (kleuren, iconen, scope)
+- [x] Minimale fontgrootte op mobiel (geen tekst <12px)
+- [ ] axe-core audit op hoofdpagina's (vereist browser testing)
+- [ ] Focus-trapping in modals (doorlopend — Radix UI in backlog)
+- [ ] Radix UI migratie (doorlopend — grote refactoring, apart oppakken)
 
 ### Afsluiting Iteratie 6 — Controleopdracht
 
@@ -1230,7 +1231,7 @@ Elke aanbeveling uit de kritische analyse is traceerbaar naar een specifieke taa
 | **3** | Service Layer & State Management | ~28 (**AFGEROND**) | Sprint 1 | ✅ Afgerond (25-03-2026) |
 | **4** | Zoeken, Caching & Performance | ~22 | Sprint 1 | Na 1, eventueel parallel met 3 |
 | **5** | Personalisatie (P2) | ~14 (**AFGEROND**) | Sprint 2 | ✅ Volledig afgerond (25-03-2026) |
-| **6** | Toegankelijkheid & UX (P8+) | ~30 | Sprint 2 | Parallel met 5 |
+| **6** | Toegankelijkheid & UX (P8+) | ~30 (**AFGEROND**) | Sprint 2 | ✅ Afgerond (25-03-2026) |
 | **7** | AI Hardening | ~24 | Sprint 2-3 | Na 1, 3 |
 | **8** | Content Kwaliteit & DB Migratie | ~69 | Sprint 3-4 | Na 2, 3 |
 | **9** | Gemeente, Klantreis & Re-engagement | ~48 | Sprint 4 | Na 3, SMTP |

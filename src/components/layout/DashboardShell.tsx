@@ -96,7 +96,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
       {/* Valideert sessie periodiek en logt uit bij inloggen op ander apparaat */}
       <SessionValidator />
       <Navbar userRole="CAREGIVER" userName={userName || undefined} />
-      <main className="py-4 pb-24 md:pb-8">
+      <main id="main-content" className="py-4 pb-24 md:pb-8" role="main">
         {children}
       </main>
       <MobileNav />
