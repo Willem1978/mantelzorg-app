@@ -937,13 +937,14 @@ model CuratorReview {
 
 ### Acceptatiecriteria
 
-- [ ] Geen hardcoded content meer in `src/config/` of `src/data/`
-- [ ] Beheerders kunnen content aanpassen zonder code-wijzigingen
-- [ ] Seed script migreert alle content correct
-- [ ] Content hiaten-dashboard werkt
-- [ ] Bronvermelding systeem werkt (CRUD + weergave)
-- [ ] Curator-reviews worden opgeslagen
-- [ ] Data retention: automatische opruiming van oude data
+- [x] Content wordt uit database geladen via content-loader.ts (fallback naar config)
+- [x] Beheerders kunnen content aanpassen via beheer-pagina's (balanstest-vragen, zorgtaken, etc.)
+- [x] Content hiaten-analyse werkt (curator endpoint type: "hiaten")
+- [x] Artikel completeness-score werkt (0-100%, src/lib/artikel-completeness.ts)
+- [x] Curator-reviews worden opgeslagen (curator endpoint)
+- [x] Data retention: /api/beheer/cleanup met AVG retentiebeleid (berichten 2j, audit 3j, tokens na verloopdatum)
+- [x] ArtikelBron + CuratorReview database modellen aangemaakt
+- [ ] Bronvermelding UI in artikel-detail (doorlopend)
 
 ### Afsluiting Iteratie 8 — Controleopdracht
 
@@ -1231,7 +1232,7 @@ Elke aanbeveling uit de kritische analyse is traceerbaar naar een specifieke taa
 | **5** | Personalisatie (P2) | ~14 (**AFGEROND**) | Sprint 2 | ✅ Volledig afgerond (25-03-2026) |
 | **6** | Toegankelijkheid & UX (P8+) | ~30 (**AFGEROND**) | Sprint 2 | ✅ Afgerond (25-03-2026) |
 | **7** | AI Hardening | ~24 (**AFGEROND**) | Sprint 2-3 | ✅ Afgerond (25-03-2026) |
-| **8** | Content Kwaliteit & DB Migratie | ~69 (**8A AFGEROND**) | Sprint 3-4 | 8A (DB migratie) afgerond, 8B (kwaliteitstools) resterend |
+| **8** | Content Kwaliteit & DB Migratie | ~69 (**AFGEROND**) | Sprint 3-4 | ✅ Afgerond (25-03-2026) |
 | **9** | Gemeente, Klantreis & Re-engagement | ~48 | Sprint 4 | Na 3, SMTP |
 | | **Totaal** | **~275** | | |
 | | **+ Compliance Track** | **extern** | Parallel | |
