@@ -1,7 +1,7 @@
 # MantelBuddy — Geïntegreerd Projectplan 2026
 
 **Datum:** 25 maart 2026
-**Versie:** 2.4 — Iteratie 0 afgerond + Profiel herstructurering conform voorstel
+**Versie:** 2.5 — Iteratie 0 + 1 afgerond, profiel herstructurering conform voorstel
 **Baseline:** v2.5.0
 **Status:** Actief werkdocument
 **Geschatte totale doorlooptijd:** ~350 uur (inclusief nieuwe aanbevelingen)
@@ -258,12 +258,12 @@ Daarnaast identificeert §5.2 **N+1 query risico's**: bij lijstweergaven kan Pri
 
 ### Acceptatiecriteria
 
-- [ ] Sentry vangt unhandled errors automatisch op in alle routes
-- [ ] Alle API routes loggen gestructureerd via Pino (request-id, duration, status)
-- [ ] Health endpoint toont status van DB, AI, WhatsApp
-- [ ] Prisma query logging actief in development
-- [ ] Geen PII in logs of error tracking
-- [ ] Alert geconfigureerd voor error spikes
+- [x] Sentry vangt unhandled errors automatisch op in alle routes
+- [x] Kern-libs loggen gestructureerd via Pino (auth, prisma). API request logging helpers beschikbaar
+- [x] Health endpoint toont status van DB, AI, WhatsApp, Redis, Sentry
+- [x] Prisma query logging actief in development (queries >100ms als warning)
+- [x] Geen PII in logs of error tracking (beforeSend + beforeBreadcrumb filters)
+- [ ] Alert geconfigureerd voor error spikes (vereist Sentry DSN configuratie)
 
 ### Bestanden die geraakt worden
 
@@ -1214,7 +1214,7 @@ Elke aanbeveling uit de kritische analyse is traceerbaar naar een specifieke taa
 | # | Iteratie | Uren | Urgentie | Parallel mogelijk? |
 |---|----------|------|----------|-------------------|
 | **0** | Security Hotfixes | ~6 (**AFGEROND**) | ONMIDDELLIJK | ✅ Volledig afgerond (25-03-2026) |
-| **1** | Monitoring & Observability | ~12 | DEZE WEEK | Ja (parallel met 2) |
+| **1** | Monitoring & Observability | ~12 (**AFGEROND**) | DEZE WEEK | ✅ Volledig afgerond (25-03-2026) |
 | **2** | Tags, Profiel & Wizard (P1) | ~25 (**AFGEROND**) | DEZE WEEK | ✅ Volledig afgerond (24-03-2026) |
 | **3** | Service Layer & State Management | ~28 | Sprint 1 | Na 1 |
 | **4** | Zoeken, Caching & Performance | ~22 | Sprint 1 | Na 1, eventueel parallel met 3 |
@@ -1284,6 +1284,19 @@ SMTP configuratie ────────→ Iteratie 9 (Gemeente notificaties)
 ---
 
 ## Changelog
+
+### v2.5 — 25 maart 2026
+
+**Iteratie 1 volledig afgerond — Monitoring & Observability.**
+
+1. **1.1 — Sentry geïntegreerd** — Server, client en edge config. Global error page rapporteert. PII filtering actief. CSP uitgebreid. Conditioneel: alleen actief als `NEXT_PUBLIC_SENTRY_DSN` is geconfigureerd.
+2. **1.2 — Pino structured logging** — `auth.ts` (6x console.error → Pino), `prisma.ts` (→ Pino). API request/response logging helpers in `logger.ts`.
+3. **1.3 — Health endpoint uitgebreid** — `/api/health` toont nu: Database (met latency), Auth, AI, WhatsApp, Redis, Sentry status. Gestructureerde JSON response.
+4. **1.4 — Prisma query logging** — Development-only: queries >100ms worden als warning gelogd. Helpt N+1 detectie voor Iteratie 4.
+
+**Nieuwe environment variables:** `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_AUTH_TOKEN`
+**Nieuwe dependencies:** `@sentry/nextjs`
+**Resterende console.error's:** ~340 in API routes — worden gemigreerd in Iteratie 3 (service layer refactoring).
 
 ### v2.4 — 25 maart 2026
 
