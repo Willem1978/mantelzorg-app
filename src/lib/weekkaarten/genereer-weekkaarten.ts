@@ -213,30 +213,63 @@ async function genereerLerenKaart(
   ctx: CaregiverContext,
   gebruikteTitels: Set<string>,
 ) {
-  // Probeer een relevant artikel te vinden
+  // Probeer een relevant artikel te vinden op basis van tags EN categorieën
   const voorkeurCategorieen = ctx.voorkeuren
     .filter((v) => v.type === "CATEGORIE")
     .map((v) => v.slug)
+  const voorkeurTags = ctx.voorkeuren
+    .filter((v) => v.type === "TAG")
+    .map((v) => v.slug)
 
-  // Zoek een gepubliceerd artikel dat past bij voorkeuren
-  const artikel = await prisma.artikel.findFirst({
-    where: {
-      status: "GEPUBLICEERD",
-      ...(voorkeurCategorieen.length > 0
-        ? { categorie: { in: voorkeurCategorieen } }
-        : {}),
-    },
-    orderBy: { publicatieDatum: "desc" },
-    select: { id: true, titel: true, categorie: true, emoji: true, beschrijving: true },
-  })
+  // Eerst: zoek artikelen die matchen op gebruiker-tags (meest relevant)
+  let artikel = null
+  if (voorkeurTags.length > 0) {
+    artikel = await prisma.artikel.findFirst({
+      where: {
+        status: "GEPUBLICEERD",
+        isActief: true,
+        tags: { some: { tag: { slug: { in: voorkeurTags } } } },
+        titel: { notIn: Array.from(gebruikteTitels) },
+      },
+      orderBy: { publicatieDatum: "desc" },
+      select: { id: true, titel: true, categorie: true, emoji: true, beschrijving: true },
+    })
+  }
 
-  if (artikel && !gebruikteTitels.has(artikel.titel)) {
+  // Fallback: zoek op categorie-voorkeur
+  if (!artikel && voorkeurCategorieen.length > 0) {
+    artikel = await prisma.artikel.findFirst({
+      where: {
+        status: "GEPUBLICEERD",
+        isActief: true,
+        categorie: { in: voorkeurCategorieen },
+        titel: { notIn: Array.from(gebruikteTitels) },
+      },
+      orderBy: { publicatieDatum: "desc" },
+      select: { id: true, titel: true, categorie: true, emoji: true, beschrijving: true },
+    })
+  }
+
+  // Fallback: willekeurig gepubliceerd artikel
+  if (!artikel) {
+    artikel = await prisma.artikel.findFirst({
+      where: {
+        status: "GEPUBLICEERD",
+        isActief: true,
+        titel: { notIn: Array.from(gebruikteTitels) },
+      },
+      orderBy: { publicatieDatum: "desc" },
+      select: { id: true, titel: true, categorie: true, emoji: true, beschrijving: true },
+    })
+  }
+
+  if (artikel) {
     return {
       type: "LEREN" as const,
       titel: artikel.titel,
       beschrijving: artikel.beschrijving || `Lees dit artikel over ${artikel.categorie}.`,
       emoji: artikel.emoji || "📖",
-      linkUrl: `/leren/${artikel.id}`,
+      linkUrl: `/leren/${artikel.categorie}`,
       linkLabel: "Lees artikel",
     }
   }

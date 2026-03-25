@@ -1,7 +1,7 @@
 # MantelBuddy — Geïntegreerd Projectplan 2026
 
 **Datum:** 25 maart 2026
-**Versie:** 2.5 — Iteratie 0 + 1 afgerond, profiel herstructurering conform voorstel
+**Versie:** 2.6 — Iteratie 0, 1, 2, 5 afgerond + profiel herstructurering
 **Baseline:** v2.5.0
 **Status:** Actief werkdocument
 **Geschatte totale doorlooptijd:** ~350 uur (inclusief nieuwe aanbevelingen)
@@ -636,11 +636,11 @@ Dit is de kern van de waardepropositie: **"Van zoek zelf naar aanbevolen voor jo
 
 ### Acceptatiecriteria
 
-- [ ] Dashboard toont "Aanbevolen voor jou" met 3-5 artikelen
-- [ ] Werkende mantelzorger ziet andere artikelen dan gepensioneerde
-- [ ] Match-reden is zichtbaar per aanbeveling
-- [ ] Weekkaarten zijn gepersonaliseerd
-- [ ] Ger gebruikt profiel-tags in gesprekken
+- [x] Dashboard toont "Aanbevolen voor jou" met 3-5 artikelen (tag-overlap scoring)
+- [x] Werkende mantelzorger ziet andere artikelen dan gepensioneerde (ZORGTHEMA=3pt, SITUATIE=2pt)
+- [x] Match-reden is zichtbaar per aanbeveling (matchRedenen array)
+- [x] Weekkaarten zijn gepersonaliseerd (LEREN kaart zoekt op tag-matching)
+- [x] Ger gebruikt profiel-tags in gesprekken (verbeterde context-block met zorgthema-namen)
 
 ### Afsluiting Iteratie 5 — Controleopdracht
 
@@ -1228,7 +1228,7 @@ Elke aanbeveling uit de kritische analyse is traceerbaar naar een specifieke taa
 | **2** | Tags, Profiel & Wizard (P1) | ~25 (**AFGEROND**) | DEZE WEEK | ✅ Volledig afgerond (24-03-2026) |
 | **3** | Service Layer & State Management | ~28 | Sprint 1 | Na 1 |
 | **4** | Zoeken, Caching & Performance | ~22 | Sprint 1 | Na 1, eventueel parallel met 3 |
-| **5** | Personalisatie (P2) | ~14 | Sprint 2 | Na 2 |
+| **5** | Personalisatie (P2) | ~14 (**AFGEROND**) | Sprint 2 | ✅ Volledig afgerond (25-03-2026) |
 | **6** | Toegankelijkheid & UX (P8+) | ~30 | Sprint 2 | Parallel met 5 |
 | **7** | AI Hardening | ~24 | Sprint 2-3 | Na 1, 3 |
 | **8** | Content Kwaliteit & DB Migratie | ~69 | Sprint 3-4 | Na 2, 3 |
@@ -1294,6 +1294,18 @@ SMTP configuratie ────────→ Iteratie 9 (Gemeente notificaties)
 ---
 
 ## Changelog
+
+### v2.6 — 25 maart 2026
+
+**Iteratie 5 volledig afgerond — Personalisatie.**
+
+1. **5.1 — Relevantie-score module** — `src/lib/relevantie.ts`: ZORGTHEMA=3pt, SITUATIE=2pt, ONDERWERP=1pt, CATEGORIE=1pt. Sorteert en filtert artikelen op tag-overlap met gebruikersprofiel.
+2. **5.2 — Dashboard aanbevelingen** — `getAanbevolenArtikelen()` gebruikt nu caregiverId + tag-overlap. Haalt zorgthemas, situatie-tags en interesses uit GebruikerVoorkeur. Fallback op belastingniveau.
+3. **5.3 — Leren-pagina** — "Aanbevolen" badge bij relevante artikelen. Sortering op relevantie bij "Alleen relevant" toggle.
+4. **5.4 — Weekkaarten** — LEREN kaart zoekt eerst op tag-matching, dan op categorie, dan willekeurig.
+5. **5.6 — Ger AI context** — Verbeterde profiel-context met zorgthema-namen i.p.v. slugs. Situatie-tags als context.
+
+**Taak 5.5 (gerelateerde suggesties)** niet geïmplementeerd — vereist artikel-detail pagina die nu via ContentModal werkt. Opgepakt in Iteratie 8 (content kwaliteit).
 
 ### v2.5 — 25 maart 2026
 

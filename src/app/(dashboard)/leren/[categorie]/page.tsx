@@ -22,6 +22,8 @@ interface Artikel {
   subHoofdstuk: string | null
   bronLabel: string | null
   tags?: ArtikelTag[]
+  relevantieScore?: number
+  matchRedenen?: string[]
 }
 
 
@@ -187,17 +189,39 @@ export default function CategoriePage() {
     return Array.from(tagMap.values()).sort((a, b) => b.count - a.count)
   })()
 
+  // Bereken relevantie per artikel
+  const itemsMetRelevantie = items.map(artikel => {
+    const artikelTagSlugs = (artikel.tags || []).map(at => at.tag.slug)
+    let score = 0
+    const matchRedenen: string[] = []
+
+    for (const slug of gebruikerTags) {
+      if (artikelTagSlugs.includes(slug)) {
+        const tag = artikel.tags?.find(at => at.tag.slug === slug)
+        const tagType = tag?.tag.type
+        if (tagType === "ZORGTHEMA") { score += 3; if (tag) matchRedenen.push(tag.tag.naam) }
+        else if (tagType === "SITUATIE") { score += 2; if (tag) matchRedenen.push(tag.tag.naam) }
+        else { score += 1 }
+      }
+    }
+
+    return { ...artikel, relevantieScore: score, matchRedenen }
+  })
+
   // Filter artikelen op basis van relevantie en/of tag
-  const gefilterdeItems = items.filter(artikel => {
+  const gefilterdeItems = itemsMetRelevantie.filter(artikel => {
     if (alleenRelevant && gebruikerTags.length > 0) {
-      if (!artikel.tags || artikel.tags.length === 0) return false
-      if (!artikel.tags.some(at => gebruikerTags.includes(at.tag.slug))) return false
+      if (artikel.relevantieScore === 0) return false
     }
     if (filterTag) {
       if (!artikel.tags || artikel.tags.length === 0) return false
       if (!artikel.tags.some(at => at.tag.slug === filterTag)) return false
     }
     return true
+  }).sort((a, b) => {
+    // Bij relevantie-filter: sorteer op score
+    if (alleenRelevant) return b.relevantieScore - a.relevantieScore
+    return 0 // Anders: behoud originele volgorde
   })
 
   // Loading state
@@ -479,6 +503,11 @@ function ArtikelCard({ artikel, categorieTitel, isFavorited, favorietId }: {
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xl">{artikel.emoji || "📄"}</span>
             <h2 className="font-semibold text-sm">{artikel.titel}</h2>
+            {(artikel.relevantieScore ?? 0) > 0 && (
+              <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded-md flex-shrink-0">
+                Aanbevolen
+              </span>
+            )}
           </div>
           <p className="text-xs text-muted-foreground leading-relaxed mb-2 pl-7 line-clamp-2">
             {artikel.beschrijving}
