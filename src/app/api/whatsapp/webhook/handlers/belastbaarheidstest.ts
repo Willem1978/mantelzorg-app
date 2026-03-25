@@ -32,7 +32,7 @@ import { TAAK_NAAR_ONDERDEEL } from '@/config/options'
 export async function handleTestSession(
   phoneNumber: string,
   input: string,
-  session: ReturnType<typeof getTestSession>,
+  session: Awaited<ReturnType<typeof getTestSession>>,
   caregiver: any
 ): Promise<HandlerResult> {
   if (!session) return { response: '' }
@@ -54,7 +54,7 @@ export async function handleTestSession(
         .map((n: number) => ZORGTAKEN[n - 1].id)
 
       if (taskIds.length > 0) {
-        const updatedSession = setSelectedTasks(phoneNumber, taskIds)
+        const updatedSession = await setSelectedTasks(phoneNumber, taskIds)
         if (updatedSession && updatedSession.currentStep === 'tasks_hours') {
           const currentTask = getCurrentTask(updatedSession)
           let response = `📋 *${currentTask?.naam}*\n\nHoeveel uur per week besteed je hieraan?\n\n`
@@ -75,7 +75,7 @@ export async function handleTestSession(
 
     if (num >= 1 && num <= UREN_OPTIES.length) {
       const urenOptie = UREN_OPTIES[num - 1]
-      const updatedSession = setTaskHours(phoneNumber, urenOptie.label)
+      const updatedSession = await setTaskHours(phoneNumber, urenOptie.label)
 
       if (updatedSession && updatedSession.currentStep === 'tasks_difficulty') {
         const taskIndex = updatedSession.currentTaskIndex
@@ -106,7 +106,7 @@ export async function handleTestSession(
     }
 
     if (moeilijkheidWaarde) {
-      const updatedSession = setTaskDifficulty(phoneNumber, moeilijkheidWaarde)
+      const updatedSession = await setTaskDifficulty(phoneNumber, moeilijkheidWaarde)
 
       if (updatedSession && updatedSession.currentStep === 'completed') {
         return await finishTestAndRespond(phoneNumber, updatedSession, caregiver)
@@ -149,7 +149,7 @@ export async function handleTestSession(
       normalizedAnswer = 'nee'
 
     if (['ja', 'soms', 'nee'].includes(normalizedAnswer)) {
-      const updatedSession = updateTestAnswer(phoneNumber, normalizedAnswer)
+      const updatedSession = await updateTestAnswer(phoneNumber, normalizedAnswer)
 
       if (updatedSession && updatedSession.currentStep === 'completed') {
         const score = calculateScore(updatedSession.answers)
@@ -176,7 +176,7 @@ export async function handleTestSession(
 
         response += `\n_Typ de nummers gescheiden door komma's_\n_Bijv: 1,2,5 of typ "geen"_`
 
-        startTasksFlow(phoneNumber)
+        await startTasksFlow(phoneNumber)
         return { response }
       } else if (updatedSession) {
         const nextQuestion = getCurrentQuestion(updatedSession)
@@ -191,7 +191,7 @@ export async function handleTestSession(
         }
       }
     } else if (command === 'stop' || command === 'stoppen') {
-      clearTestSession(phoneNumber)
+      await clearTestSession(phoneNumber)
       return { response: `❌ Test gestopt.\n\n_Typ 0 voor menu_` }
     }
 
@@ -237,7 +237,7 @@ async function finishTestAndRespond(
   // Als ingelogd: sla op en toon resultaat
   if (caregiver) {
     await saveTestResults(caregiver.id, session, score, level)
-    clearTestSession(phoneNumber)
+    await clearTestSession(phoneNumber)
 
     const response = await buildTestCompletionMessage(session, score, level, true)
 
@@ -249,10 +249,10 @@ async function finishTestAndRespond(
   }
 
   // Niet ingelogd: vraag om account aan te maken
-  clearTestSession(phoneNumber)
+  await clearTestSession(phoneNumber)
 
   const pendingResults = createPendingTestResults(session)
-  startOnboardingSession(phoneNumber, 'choice', pendingResults)
+  await startOnboardingSession(phoneNumber, 'choice', pendingResults)
 
   let response = await buildTestCompletionMessage(session, score, level, false)
   response += `\n\n💾 *Wil je dit resultaat bewaren?*`

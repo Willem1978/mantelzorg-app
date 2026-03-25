@@ -74,7 +74,7 @@ async function findHulpbronnenHierarchisch(
 export async function handleHulpSession(
   phoneNumber: string,
   input: string,
-  session: ReturnType<typeof getHulpSession>,
+  session: Awaited<ReturnType<typeof getHulpSession>>,
   caregiver: any
 ): Promise<HandlerResult> {
   if (!session) return { response: '' }
@@ -84,14 +84,14 @@ export async function handleHulpSession(
 
   // Annuleren
   if (command === 'stop' || command === 'terug' || command === '0') {
-    clearHulpSession(phoneNumber)
+    await clearHulpSession(phoneNumber)
     return { response: `_Hulp zoeken geannuleerd_\n\n_Typ 0 voor menu_` }
   }
 
   // STAP 1: Hoofdkeuze - hulp voor mij of hulp bij taak
   if (session.currentStep === 'main_choice') {
     if (num === 1 || command === 'hulp_mij') {
-      updateHulpSession(phoneNumber, 'soort_hulp', { mainChoice: 'mantelzorger' })
+      await updateHulpSession(phoneNumber, 'soort_hulp', { mainChoice: 'mantelzorger' })
 
       const numEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣']
       let response = `💚 *Hulp voor jou als mantelzorger*\n\nWelk type ondersteuning zoek je?\n\n`
@@ -103,7 +103,7 @@ export async function handleHulpSession(
     }
 
     if (num === 2 || command === 'hulp_taak') {
-      updateHulpSession(phoneNumber, 'onderdeel_taak', { mainChoice: 'taak' })
+      await updateHulpSession(phoneNumber, 'onderdeel_taak', { mainChoice: 'taak' })
 
       const numEmojis2 = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟']
       let response = `🔧 *Hulp bij een zorgtaak*\n\nBij welke taak zoek je hulp?\n\n`
@@ -124,7 +124,7 @@ export async function handleHulpSession(
   if (session.currentStep === 'soort_hulp') {
     if (num >= 1 && num <= HULP_VOOR_MANTELZORGER.length) {
       const soortHulp = HULP_VOOR_MANTELZORGER[num - 1]
-      updateHulpSession(phoneNumber, 'results', { soortHulp: soortHulp.dbValue })
+      await updateHulpSession(phoneNumber, 'results', { soortHulp: soortHulp.dbValue })
 
       const gemeente = caregiver?.municipality
       const woonplaats = caregiver?.city
@@ -137,7 +137,7 @@ export async function handleHulpSession(
         wijk
       )
 
-      clearHulpSession(phoneNumber)
+      await clearHulpSession(phoneNumber)
 
       if (hulpbronnen.length === 0) {
         return {
@@ -163,7 +163,7 @@ export async function handleHulpSession(
   if (session.currentStep === 'onderdeel_taak') {
     if (num >= 1 && num <= HULP_BIJ_TAAK.length) {
       const onderdeelTaak = HULP_BIJ_TAAK[num - 1]
-      updateHulpSession(phoneNumber, 'results', { onderdeelTaak: onderdeelTaak.dbValue })
+      await updateHulpSession(phoneNumber, 'results', { onderdeelTaak: onderdeelTaak.dbValue })
 
       // For task help, use care recipient location (more relevant for local services)
       const gemeente = caregiver?.careRecipientMunicipality || caregiver?.municipality
@@ -177,7 +177,7 @@ export async function handleHulpSession(
         wijk
       )
 
-      clearHulpSession(phoneNumber)
+      await clearHulpSession(phoneNumber)
 
       if (hulpbronnen.length === 0) {
         return {

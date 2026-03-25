@@ -64,15 +64,14 @@ export async function GET(request: NextRequest) {
       try {
         const embedding = await generateEmbedding(zoek)
         const vectorSql = toVectorSql(embedding)
-        const semanticResults = await prisma.$queryRawUnsafe<{ id: string; similarity: number }[]>(
-          `SELECT id, 1 - (embedding <=> $1::vector) as similarity
-           FROM "Zorgorganisatie"
-           WHERE "isActief" = true AND embedding IS NOT NULL
-           AND 1 - (embedding <=> $1::vector) > 0.3
-           ORDER BY embedding <=> $1::vector
-           LIMIT 50`,
-          vectorSql
-        )
+        const semanticResults = await prisma.$queryRaw<{ id: string; similarity: number }[]>`
+          SELECT id, 1 - (embedding <=> ${vectorSql}::vector) as similarity
+          FROM "Zorgorganisatie"
+          WHERE "isActief" = true AND embedding IS NOT NULL
+          AND 1 - (embedding <=> ${vectorSql}::vector) > 0.3
+          ORDER BY embedding <=> ${vectorSql}::vector
+          LIMIT 50
+        `
 
         if (semanticResults.length > 0) {
           const ids = semanticResults.map((r) => r.id)

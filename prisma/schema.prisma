@@ -1321,3 +1321,28 @@ enum WeekKaartType {
   PRAKTISCH
   LEREN
 }
+
+// ============================================
+// WHATSAPP SESSIES (persistent over serverless restarts)
+// ============================================
+
+model WhatsAppSessie {
+  id          String              @id @default(cuid())
+  telefoonnr  String              // Telefoonnummer zonder whatsapp: prefix
+  type        WhatsAppSessieType  // TEST, ONBOARDING, HULP
+  stap        String              // Huidige stap in de flow
+  data        Json                @default("{}") // Sessie-specifieke data (antwoorden, keuzes, etc.)
+  expiresAt   DateTime            // Automatische verloopdatum (TTL)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@unique([telefoonnr, type]) // Max 1 sessie per type per telefoonnummer
+  @@index([telefoonnr])
+  @@index([expiresAt])
+}
+
+enum WhatsAppSessieType {
+  TEST
+  ONBOARDING
+  HULP
+}

@@ -1,14 +1,23 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 
-// AUTH_SECRET is vereist door NextAuth v5. Fallback voorkomt crash als env var ontbreekt.
-const authSecret = process.env.AUTH_SECRET
-  || process.env.NEXTAUTH_SECRET
-  || (() => {
-    console.warn("[AUTH] WAARSCHUWING: AUTH_SECRET niet gevonden in environment! " +
-      "Stel AUTH_SECRET in via Vercel Dashboard → Settings → Environment Variables.")
-    return "mantelzorg-app-fallback-secret-stel-auth-secret-in-op-vercel"
-  })()
+// AUTH_SECRET is vereist door NextAuth v5.
+// Tijdens build (page data collection) is de env var niet altijd beschikbaar.
+// In dat geval gebruiken we een placeholder — bij runtime crasht de app als het secret ontbreekt.
+const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build"
+
+const authSecret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || (
+  isBuildPhase
+    ? "build-placeholder-not-used-at-runtime"
+    : (() => {
+        throw new Error(
+          "[AUTH] FATAL: AUTH_SECRET is niet ingesteld. " +
+          "De app kan niet veilig draaien zonder een geldig secret. " +
+          "Stel AUTH_SECRET in via Vercel Dashboard → Settings → Environment Variables. " +
+          "Genereer een secret met: openssl rand -base64 32"
+        )
+      })()
+)
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: authSecret,
@@ -44,7 +53,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         // Rate limiting op login (per email adres)
-        const limit = checkRateLimit(credentials.email as string, "login")
+        const limit = await checkRateLimit(credentials.email as string, "login")
         if (!limit.allowed) {
           throw new Error("Te veel inlogpogingen. Probeer het over enkele minuten opnieuw.")
         }

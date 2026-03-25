@@ -1,7 +1,7 @@
 # MantelBuddy — Geïntegreerd Projectplan 2026
 
-**Datum:** 24 maart 2026
-**Versie:** 2.2 — Iteratie 2 (Tags, Profiel & Wizard) volledig afgerond
+**Datum:** 25 maart 2026
+**Versie:** 2.3 — Iteratie 0 (Security Hotfixes) volledig afgerond
 **Baseline:** v2.5.0
 **Status:** Actief werkdocument
 **Geschatte totale doorlooptijd:** ~350 uur (inclusief nieuwe aanbevelingen)
@@ -146,21 +146,39 @@ model WhatsAppSessie {
 
 ### Acceptatiecriteria
 
-- [ ] App crasht als AUTH_SECRET environment variable ontbreekt
-- [ ] Rate limiting persists over serverless cold starts (Redis-backed)
-- [ ] Geen `$queryRawUnsafe` meer in de codebase
-- [ ] WhatsApp sessies overleven server-restarts
-- [ ] Bestaande functionaliteit werkt nog (smoke test)
+- [x] App crasht als AUTH_SECRET environment variable ontbreekt
+- [x] Rate limiting persists over serverless cold starts (Redis-backed)
+- [x] Geen `$queryRawUnsafe` meer in de codebase
+- [x] WhatsApp sessies overleven server-restarts
+- [x] Bestaande functionaliteit werkt nog (smoke test — 315/315 tests groen)
 
 ### Bestanden die geraakt worden
 
-- `src/lib/auth.ts` — AUTH_SECRET validatie
-- `src/lib/rate-limit.ts` — Redis-backed rate limiting
-- `src/app/api/search/route.ts` — queryRaw migratie
-- `src/app/api/ai/admin/content-agent/route.ts` — queryRaw migratie
-- `src/lib/twilio.ts` — WhatsApp sessies naar DB
-- `prisma/schema.prisma` — WhatsAppSessie model
-- `package.json` — Upstash Redis dependency
+- `src/lib/auth.ts` — AUTH_SECRET validatie (throw i.p.v. fallback)
+- `src/lib/rate-limit.ts` — Volledig herschreven: Upstash Redis primair, in-memory fallback
+- `src/app/api/search/route.ts` — $queryRaw migratie
+- `src/app/api/ai/admin/content-agent/route.ts` — $queryRaw migratie
+- `src/app/api/ai/admin/curator/route.ts` — $queryRaw migratie (extra gevonden!)
+- `src/lib/ai/tools/semantic-search.ts` — $queryRaw migratie (extra gevonden!)
+- `src/app/api/gemeente/hulpbronnen/route.ts` — $queryRaw migratie (extra gevonden!)
+- `src/lib/whatsapp-session.ts` — Volledig herschreven: DB-backed sessies met in-memory cache
+- `src/app/api/whatsapp/webhook/route.ts` — async/await voor sessie-functies
+- `src/app/api/whatsapp/webhook/handlers/*.ts` — async/await voor sessie-functies (5 bestanden)
+- `src/app/api/auth/register/route.ts` — await checkRateLimit
+- `src/app/api/auth/reset-password/route.ts` — await checkRateLimit
+- `src/app/api/auth/forgot-password/route.ts` — await checkRateLimit
+- `src/app/api/auth/check-phone/route.ts` — await checkRateLimit
+- `src/app/api/ai/welkom/route.ts` — await checkRateLimit
+- `src/lib/__tests__/rate-limit.test.ts` — Tests aangepast naar async
+- `prisma/schema.prisma` — WhatsAppSessie model + WhatsAppSessieType enum
+- `package.json` — @upstash/redis + @upstash/ratelimit dependencies
+- `.env.example` — UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN toegevoegd
+
+### Bevindingen tijdens implementatie
+
+- **5 $queryRawUnsafe instanties gevonden** i.p.v. de verwachte 2. Drie extra: `semantic-search.ts`, `gemeente/hulpbronnen/route.ts`, `curator/route.ts`.
+- **content-agent/route.ts had een SQL injection kwetsbaarheid**: vector werd via string interpolatie direct in de query geplaatst (`'${toVectorSql(embedding)}'`). Nu veilig via $queryRaw template literal.
+- **`session-store.ts` bestaat al** maar wordt niet gebruikt — de WhatsApp sessies zijn nu via het Prisma model persistent gemaakt.
 
 ### Afsluiting Iteratie 0 — Controleopdracht
 
@@ -1195,7 +1213,7 @@ Elke aanbeveling uit de kritische analyse is traceerbaar naar een specifieke taa
 
 | # | Iteratie | Uren | Urgentie | Parallel mogelijk? |
 |---|----------|------|----------|-------------------|
-| **0** | Security Hotfixes | ~6 | ONMIDDELLIJK | Nee — eerst doen |
+| **0** | Security Hotfixes | ~6 (**AFGEROND**) | ONMIDDELLIJK | ✅ Volledig afgerond (25-03-2026) |
 | **1** | Monitoring & Observability | ~12 | DEZE WEEK | Ja (parallel met 2) |
 | **2** | Tags, Profiel & Wizard (P1) | ~25 (**AFGEROND**) | DEZE WEEK | ✅ Volledig afgerond (24-03-2026) |
 | **3** | Service Layer & State Management | ~28 | Sprint 1 | Na 1 |
@@ -1266,6 +1284,19 @@ SMTP configuratie ────────→ Iteratie 9 (Gemeente notificaties)
 ---
 
 ## Changelog
+
+### v2.3 — 25 maart 2026
+
+**Iteratie 0 volledig afgerond — alle 4 taken DONE.**
+
+1. **0.1 — AUTH_SECRET crashen i.p.v. fallback** — Hardcoded fallback secret verwijderd. App gooit nu `Error("AUTH_SECRET is required")` als de environment variable ontbreekt.
+2. **0.2 — Upstash Redis rate limiting** — `src/lib/rate-limit.ts` volledig herschreven. Primair: Upstash Redis (persistent over serverless cold starts). Fallback: in-memory voor development. Alle 6 consumers geüpdatet naar async/await. Tests aangepast.
+3. **0.3 — $queryRawUnsafe → $queryRaw** — 5 instanties gemigreerd (3 meer dan verwacht). SQL injection kwetsbaarheid in content-agent opgelost (string interpolatie → template literal).
+4. **0.4 — WhatsApp sessies naar database** — `WhatsAppSessie` model toegevoegd aan Prisma schema. `whatsapp-session.ts` herschreven met DB-backed opslag + in-memory cache. Alle 6 webhook handlers geüpdatet naar async. Sessies verlopen na 2 uur (TTL).
+
+**Nieuwe environment variables:** `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
+**Nieuwe dependencies:** `@upstash/redis`, `@upstash/ratelimit`
+**Tests:** 315/315 groen na alle wijzigingen.
 
 ### v2.2 — 24 maart 2026
 

@@ -16,7 +16,7 @@ import { getLoggedInMenu } from './logged-in-menu'
 export async function handleOnboardingSession(
   phoneNumber: string,
   input: string,
-  session: ReturnType<typeof getOnboardingSession>
+  session: Awaited<ReturnType<typeof getOnboardingSession>>
 ): Promise<HandlerResult> {
   if (!session) return { response: '' }
 
@@ -25,7 +25,7 @@ export async function handleOnboardingSession(
 
   // Stop/annuleer
   if (commandLower === 'stop' || commandLower === '0') {
-    clearOnboardingSession(phoneNumber)
+    await clearOnboardingSession(phoneNumber)
     return { response: `_Geannuleerd_\n\n_Typ 0 voor menu_` }
   }
 
@@ -35,7 +35,7 @@ export async function handleOnboardingSession(
 
     if (num === 1 || commandLower === 'inloggen') {
       const baseUrl = branding.urls.production
-      clearOnboardingSession(phoneNumber)
+      await clearOnboardingSession(phoneNumber)
       return {
         response: `🔑 *Inloggen*
 
@@ -49,7 +49,7 @@ _Typ 0 voor menu_`,
 
     if (num === 2 || commandLower === 'registreren') {
       const baseUrl = branding.urls.production
-      clearOnboardingSession(phoneNumber)
+      await clearOnboardingSession(phoneNumber)
       return {
         response: `✨ *Account aanmaken*
 
@@ -74,7 +74,7 @@ _Typ 0 voor menu_`,
     }
 
     const postcode = normalizePostcode(command)
-    updateOnboardingSession(phoneNumber, 'location_own_huisnummer', { ownPostcode: postcode })
+    await updateOnboardingSession(phoneNumber, 'location_own_huisnummer', { ownPostcode: postcode })
     return { response: `🏠 Wat is je huisnummer?` }
   }
 
@@ -82,7 +82,7 @@ _Typ 0 voor menu_`,
   if (session.currentStep === 'location_own_huisnummer') {
     const addressData = await lookupAddress(session.data.ownPostcode!, command)
 
-    updateOnboardingSession(phoneNumber, 'location_care_name', {
+    await updateOnboardingSession(phoneNumber, 'location_care_name', {
       ownHuisnummer: command,
       ownStreet: addressData?.street,
       ownCity: addressData?.city,
@@ -101,7 +101,7 @@ _Typ 0 voor menu_`,
 
   // STAP: Locatie - Naam naaste
   if (session.currentStep === 'location_care_name') {
-    updateOnboardingSession(phoneNumber, 'location_care_relation', { careName: command })
+    await updateOnboardingSession(phoneNumber, 'location_care_relation', { careName: command })
 
     let response = `💑 Wat is je relatie tot ${command}?\n\n`
     const numEmojis = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣']
@@ -122,7 +122,7 @@ _Typ 0 voor menu_`,
       relation = RELATIE_OPTIES[num - 1]
     }
 
-    updateOnboardingSession(phoneNumber, 'location_care_postcode', { careRelation: relation })
+    await updateOnboardingSession(phoneNumber, 'location_care_postcode', { careRelation: relation })
     return {
       response: `📍 Wat is de postcode van ${session.data.careName}?\n\n_Bijv: 1234 AB_`,
     }
@@ -135,7 +135,7 @@ _Typ 0 voor menu_`,
     }
 
     const postcode = normalizePostcode(command)
-    updateOnboardingSession(phoneNumber, 'location_care_huisnummer', { carePostcode: postcode })
+    await updateOnboardingSession(phoneNumber, 'location_care_huisnummer', { carePostcode: postcode })
     return { response: `🏠 Wat is het huisnummer van ${session.data.careName}?` }
   }
 
@@ -181,7 +181,7 @@ _Typ 0 voor menu_`,
         })
       : null
 
-    clearOnboardingSession(phoneNumber)
+    await clearOnboardingSession(phoneNumber)
 
     let confirmText = ''
     if (addressData?.street) {

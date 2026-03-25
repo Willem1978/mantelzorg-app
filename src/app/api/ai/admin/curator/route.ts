@@ -299,7 +299,7 @@ async function detecteerDuplicaten(limiet: number) {
   if (process.env.OPENAI_API_KEY) {
     try {
       // Gebruik pgvector om paren met hoge similarity te vinden
-      duplicaten = await prisma.$queryRawUnsafe<DuplicaatPaar[]>(`
+      duplicaten = await prisma.$queryRaw<DuplicaatPaar[]>`
         SELECT
           a1.id as "artikel1Id",
           a1.titel as "artikel1Titel",
@@ -315,8 +315,8 @@ async function detecteerDuplicaten(limiet: number) {
           AND a2.embedding IS NOT NULL
           AND 1 - (a1.embedding <=> a2.embedding) > 0.85
         ORDER BY similarity DESC
-        LIMIT $1
-      `, limiet)
+        LIMIT ${limiet}
+      `
     } catch (error) {
       console.warn("[Curator] Vector duplicaten-detectie mislukt, fallback naar AI:", error)
       methode = "ai"

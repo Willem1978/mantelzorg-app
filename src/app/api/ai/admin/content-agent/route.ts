@@ -482,15 +482,16 @@ async function verrijkArtikel(artikelId: string) {
         categorie: artikel.categorie,
       })
       const embedding = await generateEmbedding(embeddingText)
-      gerelateerd = await prisma.$queryRawUnsafe<{ titel: string; id: string }[]>(`
+      const vectorStr = toVectorSql(embedding)
+      gerelateerd = await prisma.$queryRaw<{ titel: string; id: string }[]>`
         SELECT id, titel
         FROM "Artikel"
-        WHERE id != $1
+        WHERE id != ${artikelId}
           AND "isActief" = true
           AND embedding IS NOT NULL
-        ORDER BY embedding <=> '${toVectorSql(embedding)}'::vector
+        ORDER BY embedding <=> ${vectorStr}::vector
         LIMIT 5
-      `, artikelId)
+      `
     } catch {
       // Vector search mislukt, niet erg
     }

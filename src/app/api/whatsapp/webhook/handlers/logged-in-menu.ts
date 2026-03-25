@@ -56,7 +56,7 @@ export async function handleLoggedInUser(
 
   // Opnieuw testen
   if (command === 'opnieuw' || command === 'nieuwe test' || command === 'hertest' || command === '🔄 opnieuw testen') {
-    const session = startTestSession(phoneNumber)
+    const session = await startTestSession(phoneNumber)
     const firstQuestion = getCurrentQuestion(session)
 
     const questionText = `📊 *Mantelzorg Balanstest*\n\nIk stel je 12 korte vragen.\n\n*Vraag 1/12*\n\n${firstQuestion?.vraag}`
@@ -82,7 +82,7 @@ export async function handleLoggedInUser(
     command === 'check-in'
   ) {
     if (!lastTest) {
-      const session = startTestSession(phoneNumber)
+      const session = await startTestSession(phoneNumber)
       const firstQuestion = getCurrentQuestion(session)
 
       const questionText = `📊 *Mantelzorg Balanstest*\n\nIk stel je 12 korte vragen.\n\n*Vraag 1/12*\n\n${firstQuestion?.vraag}`
@@ -129,7 +129,7 @@ export async function handleLoggedInUser(
 
   // 2. Hulp in de buurt
   if (command === '2' || command === 'hulp' || command === 'help') {
-    startHulpSession(phoneNumber)
+    await startHulpSession(phoneNumber)
 
     return {
       response: `🗺️ *Hulp in de Buurt*\n\nWat voor hulp zoek je?`,

@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     // ===========================================
     // PRIORITEIT 1: ACTIEVE TEST SESSIE
     // ===========================================
-    const testSession = getTestSession(message.from)
+    const testSession = await getTestSession(message.from)
 
     if (testSession) {
       const result = await handleTestSession(
@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     // PRIORITEIT 2: ACTIEVE HULP SESSIE
     // ===========================================
     if (!response) {
-      const hulpSession = getHulpSession(message.from)
+      const hulpSession = await getHulpSession(message.from)
 
       if (hulpSession) {
         const result = await handleHulpSession(
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     // PRIORITEIT 3: ACTIEVE ONBOARDING SESSIE
     // ===========================================
     if (!response) {
-      const onboardingSession = getOnboardingSession(message.from)
+      const onboardingSession = await getOnboardingSession(message.from)
 
       if (onboardingSession) {
         const result = await handleOnboardingSession(
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
     // PRIORITEIT 5: GAST MENU (geen account)
     // ===========================================
     if (!response && !caregiver) {
-      const result = handleGuestMenu(message.from, userInput)
+      const result = await handleGuestMenu(message.from, userInput)
       response = result.response
       quickReplyButtons = result.quickReplyButtons
     }
