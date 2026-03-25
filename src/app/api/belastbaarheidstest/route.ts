@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { planCheckInNaBalanstest } from "@/services/gemeente.service"
 import { BALANSTEST_VRAGEN, UREN_MAP, TAAK_NAAR_ONDERDEEL } from "@/config/options"
 import { sendBalanstestResultEmail, sendAlarmNotificationEmail } from "@/lib/email"
 import { checkAlarmindicatoren } from "@/lib/alarm-indicatoren"
@@ -206,6 +207,11 @@ export async function POST(request: Request) {
           }
         }
       } catch { /* gemeente niet gevonden */ }
+    }
+
+    // Plan automatische check-in op basis van belastingniveau
+    if (session?.user?.caregiverId) {
+      planCheckInNaBalanstest(session.user.caregiverId, belastingNiveau, test.id).catch(() => {})
     }
 
     return NextResponse.json({
