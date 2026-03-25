@@ -1,7 +1,7 @@
 # MantelBuddy — Geïntegreerd Projectplan 2026
 
 **Datum:** 24 maart 2026
-**Versie:** 2.1 — Geïntegreerd met Kritische Analyse + Tag-opruiming & Content Filtering
+**Versie:** 2.2 — Iteratie 2 (Tags, Profiel & Wizard) volledig afgerond
 **Baseline:** v2.5.0
 **Status:** Actief werkdocument
 **Geschatte totale doorlooptijd:** ~350 uur (inclusief nieuwe aanbevelingen)
@@ -325,14 +325,14 @@ De analyse voegt hier twee extra inzichten aan toe:
 
 | # | Taak | Uur | Bron | Status |
 |---|------|-----|------|--------|
-| 2.1 | **Tag-groepen definiëren** — `groep` veld op ContentTag. Groepen: relatie, wonen, werk, zorgduur, zorgintensiteit, levensfase, extra | 2 | P1 bestaand | |
-| 2.2 | **Profielscherm herstructureren** — Eén scrollbaar scherm met 7 secties. Radio buttons voor exclusieve keuzes, chips voor multi-select | 6 | P1 bestaand | |
-| 2.3 | **Tag-afleiding server-side** — `bepaalProfielTags()` naar backend. Bij opslaan profiel automatisch tags berekenen | 3 | P1 bestaand | |
-| 2.4 | **Wizard en onboarding samenvoegen** — Eén flow: welkom → profiel → balanstest. "Later invullen" optie. Registratie verlichten (§1.1) | 4 | P1 + §1.1 | |
-| 2.5 | **Guided first session** — Na registratie direct naar balanstest, niet dashboard. Resultaat toont 3 actiepunten. Pas dan dashboard | 2 | §1.2 (nieuw) | |
+| 2.1 | **Tag-groepen definiëren** — `groep` veld op ContentTag. Groepen: relatie, wonen, weekinvulling, zorgduur, extra, rouw, zorgthema, onderwerp | 2 | P1 bestaand | **DONE** (24-03-2026) |
+| 2.2 | **Profielscherm herstructureren** — Eén scrollbaar scherm met 7 secties. Radio buttons voor exclusieve keuzes, chips voor multi-select | 6 | P1 bestaand | **DONE** (24-03-2026) |
+| 2.3 | **Tag-afleiding server-side** — `bepaalProfielTags()` naar backend. Bij opslaan profiel automatisch tags berekenen | 3 | P1 bestaand | **DONE** (24-03-2026) |
+| 2.4 | **Wizard en onboarding samenvoegen** — Eén flow: welkom → profiel → balanstest. "Later invullen" optie. Registratie verlichten (§1.1) | 4 | P1 + §1.1 | **DONE** (24-03-2026) |
+| 2.5 | **Guided first session** — Na registratie direct naar balanstest, niet dashboard. Resultaat toont 3 actiepunten. Pas dan dashboard | 2 | §1.2 (nieuw) | **DONE** (24-03-2026) |
 | 2.6 | **Voorkeuren-API opschonen** — Duidelijk onderscheid automatische vs handmatige tags. Backward-compat aliassen verwijderd, `zorgthemas` als enige veldnaam | 2 | P1 bestaand | **DONE** (24-03-2026) |
-| 2.7 | **Bestaande artikelen taggen** — AI bulk-tagging van 47 artikelen | 3 | P1 bestaand | |
-| 2.8 | **Profiel-completeness + dashboard reminder** — Voortgangsbalk + "Vul je profiel aan" kaart (max 3x) | 2 | P1 bestaand | |
+| 2.7 | **Bestaande artikelen taggen** — AI bulk-tagging script + `/api/ai/admin/bulk-tag` endpoint | 3 | P1 bestaand | **DONE** (24-03-2026) |
+| 2.8 | **Profiel-completeness + dashboard reminder** — `profileCompleted` veld + "Vul je profiel aan" kaart (max 3x dismissals) | 2 | P1 bestaand | **DONE** (24-03-2026) |
 | 2.9 | **Admin UI terminologie updaten** — `aandoeningen` → `zorgthemas` in beheer/artikelen tag-groepen | 0.5 | Opruimtaak | **DONE** (24-03-2026) |
 | 2.10 | **Verouderde tag-slugs opruimen** — `jong`, `intensief`, `werkend-parttime` verwijderd uit `profiel-tags.ts`. Sync met seed-herstructurering | 0.5 | Opruimtaak | **DONE** (24-03-2026) |
 | 2.11 | **Multi-select zorgthemas volledig integreren** — ProfielWizard + ProfielFormulier sturen `zorgthemas` array, API valideert correct, Caregiver.aandoening slaat primaire waarde op | 1 | Integratie | **DONE** (24-03-2026) |
@@ -349,15 +349,15 @@ model ContentTag {
 
 ### Acceptatiecriteria
 
-- [ ] Profielscherm is één scrollbaar scherm met 7 duidelijke secties
-- [ ] Radio buttons voor exclusieve keuzes (wonen, werk, relatie)
-- [ ] Tags worden automatisch afgeleid bij opslaan (server-side)
-- [ ] Wizard en onboarding gebruiken zelfde profielscherm
-- [ ] Registratie is verlicht: email + wachtwoord → direct platform
-- [ ] Nieuwe gebruiker gaat na registratie naar balanstest (guided first session)
-- [ ] Alle 47 artikelen zijn getagd via ArtikelTag
-- [ ] Profiel-completeness indicator werkt
-- [ ] "Later invullen" optie in onboarding
+- [x] Profielscherm is één scrollbaar scherm met 7 duidelijke secties
+- [x] Radio buttons voor exclusieve keuzes (wonen, werk, relatie)
+- [x] Tags worden automatisch afgeleid bij opslaan (`bepaalProfielTags()` in profiel-tags.ts)
+- [x] Wizard en onboarding gebruiken zelfde profielscherm (Onboarding.tsx → ProfielFormulier)
+- [x] Registratie is verlicht: email + wachtwoord → direct platform
+- [x] Nieuwe gebruiker gaat na registratie naar balanstest (guided first session via `/belastbaarheidstest?from=onboarding`)
+- [x] Artikelen taggen via `scripts/seed-artikel-tags.ts` + `/api/ai/admin/bulk-tag` endpoint
+- [x] Profiel-completeness indicator werkt (`profileCompleted` veld + ProfielHerinnering kaart)
+- [x] "Later invullen" optie in onboarding
 - [x] Alle API's gebruiken `zorgthemas` als veldnaam (geen `aandoeningen`/`aandoening` aliassen meer)
 - [x] Multi-select zorgthemas werkt in ProfielWizard en ProfielFormulier
 - [x] Verouderde tag-slugs (`jong`, `intensief`, `werkend-parttime`) zijn verwijderd uit profiel-tags.ts
@@ -1197,7 +1197,7 @@ Elke aanbeveling uit de kritische analyse is traceerbaar naar een specifieke taa
 |---|----------|------|----------|-------------------|
 | **0** | Security Hotfixes | ~6 | ONMIDDELLIJK | Nee — eerst doen |
 | **1** | Monitoring & Observability | ~12 | DEZE WEEK | Ja (parallel met 2) |
-| **2** | Tags, Profiel & Wizard (P1) | ~25 (~3 afgerond) | DEZE WEEK | Ja (parallel met 1) |
+| **2** | Tags, Profiel & Wizard (P1) | ~25 (**AFGEROND**) | DEZE WEEK | ✅ Volledig afgerond (24-03-2026) |
 | **3** | Service Layer & State Management | ~28 | Sprint 1 | Na 1 |
 | **4** | Zoeken, Caching & Performance | ~22 | Sprint 1 | Na 1, eventueel parallel met 3 |
 | **5** | Personalisatie (P2) | ~14 | Sprint 2 | Na 2 |
@@ -1267,9 +1267,28 @@ SMTP configuratie ────────→ Iteratie 9 (Gemeente notificaties)
 
 ## Changelog
 
+### v2.2 — 24 maart 2026
+
+**Iteratie 2 volledig afgerond — alle 12 taken DONE.**
+
+Nieuw afgeronde taken (aanvullend op v2.1):
+
+6. **2.1 — Tag-groepen definiëren** — `groep` veld op ContentTag in schema. 8 groepen gedefinieerd: zorgthema, relatie, weekinvulling, wonen, zorgduur, extra, rouw, onderwerp. Seed script `seed-content-herstructurering.ts` bevat volledige tag-structuur (6 zorgthema's, 18 situatie-tags, 12 onderwerp-tags).
+7. **2.2 — Profielscherm herstructureren** — ProfielFormulier.tsx is één scrollbaar scherm met 7 secties: Over jou, Naaste, Woonsituatie, Werk, Zorgthema, Situatie, Interesses. Radio buttons voor exclusieve keuzes, checkboxes/chips voor multi-select.
+8. **2.3 — Tag-afleiding server-side** — `bepaalProfielTags()` in `profiel-tags.ts` leidt automatisch tags af uit profieldata (werkstatus, woonsituatie, relatie, zorgduur). Wordt aangeroepen bij opslaan profiel en resultaat wordt doorgestuurd naar `/api/user/voorkeuren`.
+9. **2.4 — Wizard en onboarding samenvoegen** — Onboarding.tsx combineert welkom-scherm + ProfielFormulier (variant="onboarding") + "Later invullen" optie in één flow.
+10. **2.5 — Guided first session** — Na profiel opslaan wordt gebruiker doorgestuurd naar `/belastbaarheidstest?from=onboarding`. Skip-optie leidt naar dashboard.
+11. **2.7 — Bestaande artikelen taggen** — `scripts/seed-artikel-tags.ts` (keyword-matching) + `/api/ai/admin/bulk-tag` endpoint (AI-gestuurde bulk-tagging via Claude Haiku).
+12. **2.8 — Profiel-completeness + dashboard reminder** — `profileCompleted` veld op Caregiver model. ProfielHerinnering component op dashboard met max 3 dismissals.
+
+**Projectplan bijgewerkt:**
+- Alle 14 acceptatiecriteria afgevinkt
+- Iteratie 2 gemarkeerd als AFGEROND in totaaloverzicht
+- Iteratie 5 (Personalisatie) en Iteratie 8 (Content Kwaliteit) zijn nu deblocked
+
 ### v2.1 — 24 maart 2026
 
-**Afgeronde taken (Iteratie 2):**
+**Afgeronde taken (Iteratie 2 — eerste batch):**
 
 1. **2.9 — Admin UI terminologie** — `aandoeningen` → `zorgthemas` in beheer/artikelen. State-variabele, tag-groep labels en iteratie-loop aangepast.
 2. **2.10 — Verouderde tag-slugs opruimen** — `jong`, `intensief`, `werkend-parttime` verwijderd uit `profiel-tags.ts` (sync met seed-herstructurering die deze al deactiveerde in de database). `meerdere-zorgvragers` en `rouwverwerking` verwijderd uit HANDMATIGE_TAG_SLUGS.
