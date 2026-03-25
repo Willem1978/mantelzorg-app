@@ -167,6 +167,9 @@ export function AiChat() {
                 <p className="text-sm text-muted-foreground">
                   Fijn dat je er bent. Vertel me wat je bezighoudt, dan kijken we samen wat er mogelijk is.
                 </p>
+                <p className="text-xs text-muted-foreground/60 mt-2 italic">
+                  Ger is een digitale assistent, geen hulpverlener. Bij acute nood, bel 113 of je huisarts.
+                </p>
               </div>
             </div>
           </div>
