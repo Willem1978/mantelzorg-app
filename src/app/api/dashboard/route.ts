@@ -41,36 +41,37 @@ async function getStappenVoorGebruiker(
       })
     }
 
-    // Verrijk met organisatie/artikel
-    return Promise.all(
-      stappen.map(async (stap) => {
-        let organisatie = null
-        let artikel = null
+    // Verrijk met organisatie/artikel — in batch (voorkomt N+1 queries)
+    const orgIds = stappen.map((s) => s.organisatieId).filter(Boolean) as string[]
+    const artIds = stappen.map((s) => s.artikelId).filter(Boolean) as string[]
 
-        if (stap.organisatieId) {
-          organisatie = await prisma.zorgorganisatie.findUnique({
-            where: { id: stap.organisatieId },
+    const [orgs, arts] = await Promise.all([
+      orgIds.length > 0
+        ? prisma.zorgorganisatie.findMany({
+            where: { id: { in: orgIds } },
             select: { id: true, naam: true, telefoon: true, website: true },
           })
-        }
-        if (stap.artikelId) {
-          artikel = await prisma.artikel.findUnique({
-            where: { id: stap.artikelId },
+        : Promise.resolve([]),
+      artIds.length > 0
+        ? prisma.artikel.findMany({
+            where: { id: { in: artIds } },
             select: { id: true, titel: true, categorie: true, emoji: true },
           })
-        }
+        : Promise.resolve([]),
+    ])
 
-        return {
-          stapNummer: stap.stapNummer,
-          titel: stap.titel,
-          beschrijving: stap.beschrijving,
-          emoji: stap.emoji,
-          organisatie,
-          artikel,
-          externeUrl: stap.externeUrl,
-        }
-      })
-    )
+    const orgMap = new Map(orgs.map((o) => [o.id, o]))
+    const artMap = new Map(arts.map((a) => [a.id, a]))
+
+    return stappen.map((stap) => ({
+      stapNummer: stap.stapNummer,
+      titel: stap.titel,
+      beschrijving: stap.beschrijving,
+      emoji: stap.emoji,
+      organisatie: stap.organisatieId ? orgMap.get(stap.organisatieId) || null : null,
+      artikel: stap.artikelId ? artMap.get(stap.artikelId) || null : null,
+      externeUrl: stap.externeUrl,
+    }))
   } catch {
     return []
   }

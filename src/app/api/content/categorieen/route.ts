@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
+export const revalidate = 3600
+
 const VALID_TYPES = [
   "LEREN",
   "SUB_HOOFDSTUK",

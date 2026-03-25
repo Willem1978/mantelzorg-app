@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { searchGemeenten } from "@/lib/pdok"
 
+export const revalidate = 300
+
 export async function GET(request: NextRequest) {
   const session = await auth()
   if (!session) {

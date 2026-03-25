@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
+export const revalidate = 3600
+
 export async function GET() {
   try {
     const tags = await prisma.contentTag.findMany({
