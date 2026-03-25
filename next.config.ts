@@ -103,11 +103,10 @@ const nextConfig: NextConfig = {
 // Sentry wrapping — alleen actief als NEXT_PUBLIC_SENTRY_DSN is geconfigureerd
 export default process.env.NEXT_PUBLIC_SENTRY_DSN
   ? withSentryConfig(nextConfig, {
-      // Upload source maps voor betere stack traces
       silent: true,
-      // Verberg source maps van eindgebruikers
-      hideSourceMaps: true,
-      // Geen telemetrie naar Sentry sturen
       telemetry: false,
+      sourcemaps: {
+        disable: true,
+      },
     })
   : nextConfig;
