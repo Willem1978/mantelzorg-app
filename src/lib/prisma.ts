@@ -1,4 +1,7 @@
 import { PrismaClient } from '@prisma/client'
+import { createLogger } from '@/lib/logger'
+
+const log = createLogger('prisma')
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -7,13 +10,16 @@ const globalForPrisma = globalThis as unknown as {
 function createPrismaClient(): PrismaClient {
   if (!process.env.DATABASE_URL) {
     if (process.env.NODE_ENV === 'production') {
-      console.error('[PRISMA] KRITIEK: DATABASE_URL is niet ingesteld! Database operaties zullen falen.')
+      log.fatal('DATABASE_URL is niet ingesteld! Database operaties zullen falen.')
     }
   }
   try {
-    return new PrismaClient()
+    const logConfig = process.env.NODE_ENV !== 'production'
+      ? { log: [{ emit: 'event' as const, level: 'query' as const }] }
+      : {}
+    return new PrismaClient(logConfig)
   } catch (e) {
-    console.error('[PRISMA] Fout bij aanmaken PrismaClient:', e)
+    log.error({ err: e }, 'Fout bij aanmaken PrismaClient')
     // Return een client die bij elke query een duidelijke fout geeft
     return new Proxy({} as PrismaClient, {
       get(_, prop) {
@@ -28,6 +34,24 @@ function createPrismaClient(): PrismaClient {
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient()
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+// Development-only: log trage queries (>100ms) voor N+1 detectie
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma
+
+  // Event listener voor query logging (alleen als emit: 'event' is geconfigureerd)
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(prisma as any).$on?.('query', (e: { query: string; duration: number; params: string }) => {
+      if (e.duration > 100) {
+        log.warn({
+          durationMs: e.duration,
+          query: e.query.substring(0, 200),
+        }, `Trage query (${e.duration}ms)`)
+      }
+    })
+  } catch {
+    // $on niet beschikbaar — geen probleem
+  }
+}
 
 export default prisma
