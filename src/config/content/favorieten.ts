@@ -3,8 +3,8 @@
  */
 
 export const favorietenContent = {
-  title: "Mijn favorieten",
-  emoji: "\u2764\uFE0F",
+  title: "Mijn hulpbronnen",
+  emoji: "\uD83D\uDCCB",
   subtitle: "Alles wat je hebt bewaard op \u00E9\u00E9n plek.",
 
   leeg: {
@@ -22,7 +22,7 @@ export const favorietenContent = {
   kiesCategorieHint: "Kies een categorie om je bewaarde items te bekijken.",
 
   tabs: {
-    voorJou: { label: "Voor jou", emoji: "\uD83D\uDC9C" },
+    voorJou: { label: "Mijn hulpbronnen", emoji: "\uD83D\uDCCB" },
     voorNaaste: { label: "Voor naaste", emoji: "\uD83D\uDC9D" },
     informatie: { label: "Informatie", emoji: "\uD83D\uDCDA" },
   },

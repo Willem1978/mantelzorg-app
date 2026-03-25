@@ -241,7 +241,45 @@ function DashboardContentView() {
         <ProfielHerinnering />
       )}
 
-      {/* 2. COMPACTE BALANSKAART */}
+      {/* 2. ARTIKELEN VOOR JOU — aanbevelingen op basis van profiel-tags */}
+      {data?.aanbevolenArtikelen && data.aanbevolenArtikelen.length > 0 && (
+        <div className="ker-card">
+          <div className="ker-section-header">
+            <span className="ker-section-icon">📚</span>
+            <h2 className="ker-section-title">Artikelen voor jou</h2>
+          </div>
+          <div className="space-y-3">
+            {data.aanbevolenArtikelen.slice(0, 5).map((artikel) => (
+              <Link
+                key={artikel.id}
+                href={artikel.url || `/leren/${artikel.categorie?.toLowerCase().replace(/\s+/g, "-")}#${artikel.id}`}
+                className="flex items-start gap-3 p-3 rounded-xl hover:bg-primary-light transition-colors group"
+              >
+                <span className="text-2xl flex-shrink-0">{artikel.emoji || "📄"}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                    {artikel.titel}
+                  </p>
+                  <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
+                    {artikel.beschrijving}
+                  </p>
+                  <span className="inline-block mt-1 text-xs font-medium text-primary/70 bg-primary/5 px-2 py-0.5 rounded-full">
+                    {artikel.categorie}
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+          <Link
+            href="/leren"
+            className="block text-center text-sm font-semibold text-primary hover:text-primary/80 mt-4 py-2"
+          >
+            Bekijk alle artikelen →
+          </Link>
+        </div>
+      )}
+
+      {/* 3. COMPACTE BALANSKAART */}
       {data?.test?.hasTest && data.test.score !== undefined && data.test.niveau && (
         <BalansThermometer
           score={data.test.score}
@@ -256,13 +294,13 @@ function DashboardContentView() {
         />
       )}
 
-      {/* 3. WEEKKAARTEN — "Deze week voor jou" */}
+      {/* 4. WEEKKAARTEN — "Deze week voor jou" */}
       {data?.test?.hasTest && <WeekKaartenKaart />}
 
-      {/* 4. ACTIEPUNTEN */}
+      {/* 5. ACTIEPUNTEN */}
       <ActiepuntenKaart />
 
-      {/* 5. WHATSAPP HULP — met QR code */}
+      {/* 6. WHATSAPP HULP — met QR code */}
       <div className="ker-card bg-green-50/60 dark:bg-green-950/10 border border-green-200/40 dark:border-green-800/20">
         <div className="flex items-center gap-4">
           {/* QR Code */}

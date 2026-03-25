@@ -6,67 +6,51 @@ import { useSession, signOut } from "next-auth/react"
 import { useState } from "react"
 import { LogoIcon } from "@/components/ui"
 
-// Gegroepeerd menu — logische indeling voor beheerders
+// Gegroepeerd menu — vereenvoudigd naar 5 hoofdgroepen (Masterplan 2.0 v2)
 const menuGroepen: { label: string; items: { href: string; label: string; icon: string }[] }[] = [
   {
-    label: "",
+    label: "Dashboard",
     items: [
-      { href: "/beheer", label: "Dashboard", icon: "📊" },
-    ],
-  },
-  {
-    label: "Gebruikers & Hulp",
-    items: [
-      { href: "/beheer/gebruikers", label: "Gebruikers", icon: "👥" },
-      { href: "/beheer/mantelbuddies", label: "MantelBuddies", icon: "🤝" },
-      { href: "/beheer/alarmen", label: "Alarmen", icon: "🔔" },
+      { href: "/beheer", label: "Overzicht", icon: "📊" },
+      { href: "/beheer/analytics", label: "Analytics & Signalen", icon: "📈" },
     ],
   },
   {
     label: "Content",
     items: [
       { href: "/beheer/artikelen", label: "Artikelen & Tips", icon: "📝" },
-      { href: "/beheer/hulpbronnen", label: "Hulpbronnen", icon: "🏥" },
-      { href: "/beheer/hulpbronnen/ai-zoeken", label: "AI Hulpbronnen Zoeker", icon: "🔍" },
-      { href: "/beheer/hulpbronnen/validatie", label: "Hulpbronnen Validatie", icon: "✅" },
-      { href: "/beheer/app-content", label: "App content", icon: "📱" },
+      { href: "/beheer/curator", label: "Content Curator", icon: "✍️" },
+      { href: "/beheer/content-agent", label: "Content Agent", icon: "🤖" },
+      { href: "/beheer/app-content", label: "App teksten", icon: "📱" },
     ],
   },
   {
-    label: "Test & Vragen",
+    label: "Hulpbronnen",
     items: [
-      { href: "/beheer/balanstest-vragen", label: "Balanstest & Check-in", icon: "❓" },
-      { href: "/beheer/zorgtaken", label: "Zorgtaken", icon: "📋" },
-      { href: "/beheer/coach-adviezen", label: "Coach adviezen", icon: "🤖" },
-      { href: "/beheer/intake-vragen", label: "Intake vragen", icon: "📥" },
+      { href: "/beheer/hulpbronnen", label: "Beheren", icon: "🏥" },
+      { href: "/beheer/hulpbronnen/ai-zoeken", label: "AI Zoeker", icon: "🔍" },
+      { href: "/beheer/hulpbronnen/validatie", label: "Validatie", icon: "✅" },
+    ],
+  },
+  {
+    label: "Gebruikers",
+    items: [
+      { href: "/beheer/gebruikers", label: "Gebruikers", icon: "👥" },
+      { href: "/beheer/mantelbuddies", label: "MantelBuddies", icon: "🤝" },
+      { href: "/beheer/alarmen", label: "Alarmen", icon: "🔔" },
+      { href: "/beheer/moderatie", label: "Moderatie", icon: "🛡️" },
     ],
   },
   {
     label: "Inrichting",
     items: [
       { href: "/beheer/gemeenten", label: "Gemeenten", icon: "🏛️" },
-      { href: "/beheer/stappen", label: "Stappenplan", icon: "🪜" },
-      { href: "/beheer/huisstijl", label: "Huisstijl & Teksten", icon: "🎨" },
+      { href: "/beheer/balanstest-vragen", label: "Balanstest vragen", icon: "❓" },
+      { href: "/beheer/zorgtaken", label: "Zorgtaken", icon: "📋" },
       { href: "/beheer/categorieen", label: "Categorieën", icon: "🗂️" },
       { href: "/beheer/formulier-opties", label: "Formulier opties", icon: "📝" },
-    ],
-  },
-  {
-    label: "AI Agents",
-    items: [
-      { href: "/beheer/analytics", label: "Analytics & Signalen", icon: "📈" },
-      { href: "/beheer/moderatie", label: "Moderatie", icon: "🛡️" },
-      { href: "/beheer/curator", label: "Content Curator", icon: "✍️" },
-      { href: "/beheer/content-agent", label: "Content Agent", icon: "🤖" },
-    ],
-  },
-  {
-    label: "Systeem",
-    items: [
-      { href: "/beheer/audit", label: "Audit Log", icon: "📋" },
-      { href: "/beheer/data-update", label: "Data bijwerken", icon: "🔄" },
+      { href: "/beheer/huisstijl", label: "Huisstijl", icon: "🎨" },
       { href: "/beheer/instellingen", label: "Instellingen", icon: "⚙️" },
-      { href: "/beheer/handleiding", label: "Handleiding", icon: "📖" },
     ],
   },
 ]
@@ -89,14 +73,14 @@ export default function BeheerLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-[#F8F0F5] flex flex-col">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <header className="bg-[#2D1B69] text-white sticky top-0 z-50">
         <div className="px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
+              className="lg:hidden p-2 rounded-lg hover:bg-white/10"
               aria-label="Menu openen"
             >
               <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -105,17 +89,17 @@ export default function BeheerLayout({
             </button>
             <Link href="/beheer" className="flex items-center gap-2">
               <LogoIcon size={32} />
-              <span className="font-semibold text-gray-900">MantelBuddy</span>
-              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">Beheer</span>
+              <span className="font-bold text-white">MantelBuddy</span>
+              <span className="text-xs bg-[#E5A825] text-[#1E1533] px-2 py-0.5 rounded-full font-bold">Beheer</span>
             </Link>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-500 hidden sm:block">
+            <span className="text-sm text-white/70 hidden sm:block">
               {session?.user?.email}
             </span>
             <button
               onClick={() => signOut({ callbackUrl: "/beheer/login" })}
-              className="text-sm text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-gray-100"
+              className="text-sm text-white/80 hover:text-white px-3 py-1.5 rounded-lg hover:bg-white/10"
             >
               Uitloggen
             </button>
@@ -136,17 +120,17 @@ export default function BeheerLayout({
         <aside
           className={`
             fixed lg:static inset-y-0 left-0 z-50 lg:z-0
-            w-64 bg-white border-r border-gray-200
+            w-64 bg-white border-r border-[#E4D8E8]
             transform transition-transform duration-200 overflow-y-auto
             ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
             lg:translate-x-0 lg:mt-0 mt-[57px]
           `}
         >
-          <nav className="p-4 space-y-4">
+          <nav className="p-4 space-y-5">
             {menuGroepen.map((groep, gi) => (
               <div key={gi}>
                 {groep.label && (
-                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-3 mb-1">
+                  <p className="text-[11px] font-bold text-[#5A4D6B] uppercase tracking-wider px-3 mb-1.5">
                     {groep.label}
                   </p>
                 )}
@@ -165,8 +149,8 @@ export default function BeheerLayout({
                           flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium
                           transition-colors
                           ${isActive
-                            ? "bg-blue-50 text-blue-700"
-                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                            ? "bg-[#EDE8F5] text-[#2D1B69] font-bold"
+                            : "text-[#5A4D6B] hover:bg-[#F8F0F5] hover:text-[#2D1B69]"
                           }
                         `}
                       >
@@ -180,10 +164,10 @@ export default function BeheerLayout({
             ))}
           </nav>
 
-          <div className="sticky bottom-0 bg-white border-t border-gray-100 p-4">
+          <div className="sticky bottom-0 bg-white border-t border-[#E4D8E8] p-4">
             <Link
               href="/dashboard"
-              className="flex items-center gap-2 px-3 py-2 text-sm text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-50"
+              className="flex items-center gap-2 px-3 py-2 text-sm text-[#5A4D6B] hover:text-[#2D1B69] rounded-lg hover:bg-[#F8F0F5]"
             >
               <span>←</span>
               Terug naar app
