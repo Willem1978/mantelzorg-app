@@ -83,6 +83,26 @@ function LoginForm() {
         <main className="px-4 pb-8 lg:px-0 lg:w-full lg:max-w-md">
           <div className="max-w-md mx-auto lg:mx-0 lg:max-w-none">
             <div className="ker-card lg:shadow-lg">
+
+            {/* PROBEER ZONDER ACCOUNT — prominente CTA */}
+            {!fromTest && !sessionInvalidated && (
+              <Link
+                href="/belastbaarheidstest"
+                className="flex items-center gap-3 p-4 mb-6 rounded-xl bg-[#EDE8F5] border-2 border-[#2D1B69]/20 hover:border-[#2D1B69]/40 transition-colors group"
+              >
+                <div className="w-12 h-12 rounded-full bg-[#2D1B69] flex items-center justify-center flex-shrink-0">
+                  <span className="text-xl">🩺</span>
+                </div>
+                <div className="flex-1">
+                  <p className="font-bold text-[#2D1B69] group-hover:text-[#2D1B69]">Probeer zonder account</p>
+                  <p className="text-sm text-[#5A4D6B]">Doe de gratis balanscheck en ontdek direct hoe het met je gaat.</p>
+                </div>
+                <svg className="w-5 h-5 text-[#2D1B69] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            )}
+
             {sessionInvalidated && (
               <div className="bg-amber-50 border-2 border-amber-300 text-amber-800 px-4 py-3 rounded-xl mb-6 text-sm">
                 <p className="font-medium">{c.sessionInvalidated.title}</p>
