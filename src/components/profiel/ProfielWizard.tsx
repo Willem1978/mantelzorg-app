@@ -30,6 +30,7 @@ interface WizardData {
   zorgduur: string
   zorgthemas: string[]
   situatieTags: string[]
+  rouw: boolean
   interesseCategorieen: string[]
 }
 
@@ -256,7 +257,7 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
     naasteNaam: "", naasteRelatie: "",
     naasteAdres: null,
     woonsituatie: "", werkstatus: "", zorgduur: "",
-    zorgthemas: [], situatieTags: [],
+    zorgthemas: [], situatieTags: [], rouw: false,
     interesseCategorieen: [],
   })
   const [isSaving, setIsSaving] = useState(false)
@@ -374,6 +375,7 @@ export function ProfielWizard({ onComplete, onCancel }: ProfielWizardProps) {
     }
     const alleSituatieTags = [...new Set([
       ...data.situatieTags,
+      ...(data.rouw ? ["rouw"] : []),
       ...(data.zorgduur && zorgduurTagMap[data.zorgduur] ? [zorgduurTagMap[data.zorgduur]] : []),
     ])]
 
