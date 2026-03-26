@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { AdminSpinner } from "@/components/admin"
+import { GemeenteCTA } from "@/components/gemeente/GemeenteCTA"
 
 interface DashboardData {
   gemeenteNaam: string
@@ -309,6 +310,12 @@ export default function GemeenteDashboard() {
           )}
         </div>
       )}
+
+      {/* MantelBuddy CTA (Iteratie 5.2) */}
+      <GemeenteCTA
+        gemeenteNaam={data.gemeenteNaam}
+        aantalMantelzorgers={data.totaalMantelzorgers}
+      />
 
       {/* Snelle navigatie */}
       <div>
