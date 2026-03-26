@@ -10,7 +10,7 @@ import {
   startHulpSession,
 } from '@/lib/whatsapp-session'
 import type { HandlerResult } from './types'
-import { TEST_ANSWER_BUTTONS, HULP_CHOICE_BUTTONS } from './types'
+import { TEST_ANSWER_BUTTONS, HULP_CHOICE_BUTTONS, CHECKIN_FEELING_BUTTONS } from './types'
 
 export async function handleLoggedInUser(
   phoneNumber: string,
@@ -70,7 +70,7 @@ export async function handleLoggedInUser(
   }
 
   // ===========================================
-  // STANDAARD MENU NUMMERS (1-4)
+  // STANDAARD MENU NUMMERS (1-5)
   // ===========================================
 
   // 1. Balanstest / Mijn Score
@@ -196,8 +196,87 @@ export async function handleLoggedInUser(
     return { response }
   }
 
-  // 4. Contact
-  if (command === '4' || command === 'contact' || command === 'praten') {
+  // 4. Hoe gaat het? (dagelijkse check-in)
+  if (command === '4' || command === 'hoe gaat het' || command === 'gevoel') {
+    return {
+      response: `📊 *Hoe gaat het?*\n\nHoe voel je je vandaag?`,
+      quickReplyButtons: CHECKIN_FEELING_BUTTONS,
+    }
+  }
+
+  // Handle check-in feeling responses
+  if (
+    command === 'checkin_goed' ||
+    command === '😊 goed' ||
+    command === 'checkin_gaat_wel' ||
+    command === '😐 gaat wel' ||
+    command === 'checkin_niet_goed' ||
+    command === '😟 niet goed'
+  ) {
+    let feeling: string
+    let feelingLabel: string
+    let overallWellbeing: number
+
+    if (command === 'checkin_goed' || command === '😊 goed') {
+      feeling = 'goed'
+      feelingLabel = '😊 Goed'
+      overallWellbeing = 4
+    } else if (command === 'checkin_gaat_wel' || command === '😐 gaat wel') {
+      feeling = 'gaat_wel'
+      feelingLabel = '😐 Gaat wel'
+      overallWellbeing = 2
+    } else {
+      feeling = 'niet_goed'
+      feelingLabel = '😟 Niet goed'
+      overallWellbeing = 1
+    }
+
+    // Store check-in as a MonthlyCheckIn record
+    const now = new Date()
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+
+    try {
+      await prisma.monthlyCheckIn.upsert({
+        where: {
+          caregiverId_month: {
+            caregiverId: caregiver.id,
+            month: monthStart,
+          },
+        },
+        create: {
+          caregiverId: caregiver.id,
+          month: monthStart,
+          overallWellbeing,
+          completedAt: new Date(),
+        },
+        update: {
+          overallWellbeing,
+          completedAt: new Date(),
+        },
+      })
+    } catch {
+      // Log but don't block the user experience
+    }
+
+    let response = `✅ *Check-in opgeslagen*\n\nJe voelt je vandaag: ${feelingLabel}\n\n`
+
+    if (feeling === 'niet_goed') {
+      response += `❤️ Vervelend om te horen. Vergeet niet: je staat er niet alleen voor.\n\n`
+      response += `📞 *Mantelzorglijn:* 030-760 60 55\n`
+      response += `🚨 *Crisis:* 0800-0113 (24/7)\n\n`
+    } else if (feeling === 'gaat_wel') {
+      response += `💪 Hopelijk wordt het snel beter. Neem af en toe even rust.\n\n`
+    } else {
+      response += `🌟 Fijn om te horen! Blijf goed voor jezelf zorgen.\n\n`
+    }
+
+    response += `_Typ 0 voor menu_`
+
+    return { response }
+  }
+
+  // 5. Contact
+  if (command === '5' || command === 'contact' || command === 'praten') {
     return {
       response: `💬 *Direct Persoonlijk Contact*\n\n📞 *Mantelzorglijn*\n   030-760 60 55\n   (ma-vr 9-17u)\n\n🚨 *Crisis / 24/7*\n   113 Zelfmoordpreventie\n   0800-0113\n\n❤️ Je staat er niet alleen voor!\n\n_Typ 0 voor menu_`,
     }
@@ -242,7 +321,8 @@ export async function getLoggedInMenu(caregiver: any, lastTest: any): Promise<st
   menu += `1️⃣ ${testLabel} 📊\n`
   menu += `2️⃣ Hulp in de buurt 🗺️\n`
   menu += `3️⃣ Mijn dashboard 📈\n`
-  menu += `4️⃣ Direct contact 💬\n`
+  menu += `4️⃣ Hoe gaat het? 📊\n`
+  menu += `5️⃣ Direct contact 💬\n`
   menu += `\n_Typ het nummer van je keuze_`
 
   return menu

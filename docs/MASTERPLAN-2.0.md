@@ -2,7 +2,7 @@
 
 **Datum:** 25 maart 2026
 **Versie:** 2.0 — Compleet iteratieplan
-**Status:** Ter bespreking
+**Status:** In uitvoering — Iteratie 1, 2, 3 en 4 grotendeels afgerond (26-03-2026)
 **Scope:** Beheeromgeving, Content, Hulpbronnen, Activiteiten, UI/UX, Dashboard, Design, WhatsApp, Buddy
 
 ---
