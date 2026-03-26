@@ -35,6 +35,13 @@ export const HULP_CHOICE_BUTTONS: QuickReplyButton[] = [
   { id: 'hulp_taak', title: '🔧 Hulp bij taak' },
 ]
 
+/** Buttons voor dagelijkse check-in */
+export const CHECKIN_FEELING_BUTTONS: QuickReplyButton[] = [
+  { id: 'checkin_goed', title: '😊 Goed' },
+  { id: 'checkin_gaat_wel', title: '😐 Gaat wel' },
+  { id: 'checkin_niet_goed', title: '😟 Niet goed' },
+]
+
 /** Buttons voor inloggen/registreren keuze */
 export const ONBOARDING_CHOICE_BUTTONS: QuickReplyButton[] = [
   { id: 'inloggen', title: '🔑 Inloggen' },
