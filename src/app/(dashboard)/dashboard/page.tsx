@@ -241,42 +241,9 @@ function DashboardContentView() {
         <ProfielHerinnering />
       )}
 
-      {/* 2. ARTIKELEN VOOR JOU — aanbevelingen op basis van profiel-tags */}
+      {/* 2. ARTIKELEN VOOR JOU — aanbevelingen + gelezen/rating */}
       {data?.aanbevolenArtikelen && data.aanbevolenArtikelen.length > 0 && (
-        <div className="ker-card">
-          <div className="ker-section-header">
-            <span className="ker-section-icon">📚</span>
-            <h2 className="ker-section-title">Artikelen voor jou</h2>
-          </div>
-          <div className="space-y-3">
-            {data.aanbevolenArtikelen.slice(0, 5).map((artikel) => (
-              <Link
-                key={artikel.id}
-                href={artikel.url || `/leren/${artikel.categorie?.toLowerCase().replace(/\s+/g, "-")}#${artikel.id}`}
-                className="flex items-start gap-3 p-3 rounded-xl hover:bg-primary-light transition-colors group"
-              >
-                <span className="text-2xl flex-shrink-0">{artikel.emoji || "📄"}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                    {artikel.titel}
-                  </p>
-                  <p className="text-sm text-muted-foreground line-clamp-2 mt-0.5">
-                    {artikel.beschrijving}
-                  </p>
-                  <span className="inline-block mt-1 text-xs font-medium text-primary/70 bg-primary/5 px-2 py-0.5 rounded-full">
-                    {artikel.categorie}
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-          <Link
-            href="/leren"
-            className="block text-center text-sm font-semibold text-primary hover:text-primary/80 mt-4 py-2"
-          >
-            Bekijk alle artikelen →
-          </Link>
-        </div>
+        <ArtikelenVoorJou artikelen={data.aanbevolenArtikelen} />
       )}
 
       {/* 3. COMPACTE BALANSKAART */}
@@ -391,6 +358,185 @@ function ProfielHerinnering() {
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+// ============================================
+// ARTIKELEN VOOR JOU — met gelezen/rating
+// ============================================
+interface AanbevolenArtikel {
+  id: string
+  titel: string
+  beschrijving: string
+  emoji: string | null
+  categorie: string
+  url: string | null
+}
+
+function ArtikelenVoorJou({ artikelen }: { artikelen: AanbevolenArtikel[] }) {
+  const [interacties, setInteracties] = useState<Record<string, { gelezen: boolean; rating: number | null }>>({})
+  const [showAll, setShowAll] = useState(false)
+
+  useEffect(() => {
+    fetch("/api/artikel-interactie?all=true")
+      .then(r => r.ok ? r.json() : { interacties: [] })
+      .then(data => {
+        const map: Record<string, { gelezen: boolean; rating: number | null }> = {}
+        for (const i of data.interacties || []) {
+          map[i.artikelId] = { gelezen: i.gelezen, rating: i.rating }
+        }
+        setInteracties(map)
+      })
+      .catch(() => {})
+  }, [])
+
+  const toggleGelezen = async (artikelId: string) => {
+    const current = interacties[artikelId]?.gelezen || false
+    setInteracties(prev => ({
+      ...prev,
+      [artikelId]: { ...prev[artikelId], gelezen: !current, rating: prev[artikelId]?.rating ?? null },
+    }))
+    await fetch("/api/artikel-interactie", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ artikelId, gelezen: !current }),
+    })
+  }
+
+  const setRating = async (artikelId: string, rating: number) => {
+    const currentRating = interacties[artikelId]?.rating
+    const newRating = currentRating === rating ? null : rating
+    setInteracties(prev => ({
+      ...prev,
+      [artikelId]: { gelezen: prev[artikelId]?.gelezen ?? false, rating: newRating },
+    }))
+    await fetch("/api/artikel-interactie", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ artikelId, rating: newRating }),
+    })
+  }
+
+  // Sorteer: ongelezen bovenaan, gelezen onderaan
+  const sorted = [...artikelen].sort((a, b) => {
+    const aGelezen = interacties[a.id]?.gelezen ? 1 : 0
+    const bGelezen = interacties[b.id]?.gelezen ? 1 : 0
+    return aGelezen - bGelezen
+  })
+
+  const allGelezen = sorted.every(a => interacties[a.id]?.gelezen)
+  const visible = showAll ? sorted : sorted.slice(0, 5)
+
+  return (
+    <div className="ker-card">
+      <div className="ker-section-header">
+        <span className="ker-section-icon">📚</span>
+        <h2 className="ker-section-title">Artikelen voor jou</h2>
+      </div>
+
+      {allGelezen && (
+        <div className="text-center py-4 text-muted-foreground">
+          <span className="text-2xl block mb-1">🎉</span>
+          <p className="font-semibold">Je bent helemaal bij!</p>
+          <p className="text-sm mt-1">Alle aanbevolen artikelen zijn gelezen.</p>
+        </div>
+      )}
+
+      <div className="space-y-2">
+        {visible.map((artikel) => {
+          const isGelezen = interacties[artikel.id]?.gelezen || false
+          const currentRating = interacties[artikel.id]?.rating ?? null
+
+          return (
+            <div
+              key={artikel.id}
+              className={`flex items-start gap-3 p-3 rounded-xl transition-all ${
+                isGelezen ? "opacity-60" : ""
+              }`}
+            >
+              {/* Gelezen checkbox */}
+              <button
+                onClick={() => toggleGelezen(artikel.id)}
+                className={`mt-1 w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                  isGelezen
+                    ? "bg-primary border-primary text-primary-foreground"
+                    : "border-border hover:border-primary"
+                }`}
+                title={isGelezen ? "Markeer als ongelezen" : "Markeer als gelezen"}
+              >
+                {isGelezen && (
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </button>
+
+              {/* Artikel info */}
+              <Link
+                href={artikel.url || `/leren/${artikel.categorie?.toLowerCase().replace(/\s+/g, "-")}`}
+                className="flex-1 min-w-0 group"
+              >
+                <div className="flex items-start gap-2">
+                  <span className="text-xl flex-shrink-0">{artikel.emoji || "📄"}</span>
+                  <div>
+                    <p className={`font-semibold group-hover:text-primary transition-colors line-clamp-1 ${
+                      isGelezen ? "line-through text-muted-foreground" : "text-foreground"
+                    }`}>
+                      {artikel.titel}
+                    </p>
+                    <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">
+                      {artikel.beschrijving}
+                    </p>
+                  </div>
+                </div>
+              </Link>
+
+              {/* Duimpjes */}
+              <div className="flex items-center gap-1 flex-shrink-0 mt-1">
+                <button
+                  onClick={() => setRating(artikel.id, 2)}
+                  className={`p-1.5 rounded-lg transition-colors ${
+                    currentRating === 2 ? "bg-accent-green-bg text-accent-green" : "text-muted-foreground/40 hover:text-accent-green"
+                  }`}
+                  title="Duimpje omhoog"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M2 20h2c.55 0 1-.45 1-1v-9c0-.55-.45-1-1-1H2v11zm19.83-7.12c.11-.25.17-.52.17-.8V11c0-1.1-.9-2-2-2h-5.5l.92-4.65c.05-.22.02-.46-.08-.66-.23-.45-.52-.86-.88-1.22L14 2 7.59 8.41C7.21 8.79 7 9.3 7 9.83v7.84C7 18.95 8.05 20 9.34 20h8.11c.7 0 1.36-.37 1.72-.97l2.66-6.15z"/>
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setRating(artikel.id, 1)}
+                  className={`p-1.5 rounded-lg transition-colors ${
+                    currentRating === 1 ? "bg-accent-red-bg text-accent-red" : "text-muted-foreground/40 hover:text-accent-red"
+                  }`}
+                  title="Duimpje omlaag"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M22 4h-2c-.55 0-1 .45-1 1v9c0 .55.45 1 1 1h2V4zM2.17 11.12c-.11.25-.17.52-.17.8V13c0 1.1.9 2 2 2h5.5l-.92 4.65c-.05.22-.02.46.08.66.23.45.52.86.88 1.22L10 22l6.41-6.41c.38-.38.59-.89.59-1.42V6.34C17 5.05 15.95 4 14.66 4h-8.1c-.71 0-1.36.37-1.72.97l-2.67 6.15z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {artikelen.length > 5 && (
+        <button
+          onClick={() => setShowAll(!showAll)}
+          className="block w-full text-center text-sm font-semibold text-primary hover:text-primary/80 mt-3 py-2"
+        >
+          {showAll ? "Toon minder" : `Toon alle ${artikelen.length} artikelen`}
+        </button>
+      )}
+
+      <Link
+        href="/leren"
+        className="block text-center text-sm font-semibold text-primary hover:text-primary/80 mt-2 py-2 border-t border-border"
+      >
+        Bekijk alle artikelen →
+      </Link>
     </div>
   )
 }
