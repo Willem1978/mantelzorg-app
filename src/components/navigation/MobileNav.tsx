@@ -4,10 +4,9 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useState, useRef } from "react"
 import { cn } from "@/lib/utils"
-import { useNieuwsBadge } from "@/hooks/useNieuwsBadge"
 
-// B1 taalgebruik - simpele, duidelijke woorden
-const navItems: { href: string; label: string; icon: React.ReactNode; hasBadge?: boolean; nieuwsBadge?: boolean; matchPaths?: string[] }[] = [
+// 3-pilaren navigatie: Home, Ger, Aanbod + Profiel-icoon
+const navItems: { href: string; label: string; icon: React.ReactNode; matchPaths?: string[] }[] = [
   {
     href: "/dashboard",
     label: "Home",
@@ -16,200 +15,121 @@ const navItems: { href: string; label: string; icon: React.ReactNode; hasBadge?:
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
       </svg>
     ),
+    matchPaths: ["/dashboard", "/check-in", "/rapport", "/progressie", "/balanstest"],
   },
   {
-    href: "/leren",
-    label: "Info",
+    href: "/ai-assistent",
+    label: "Ger",
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
       </svg>
     ),
+    matchPaths: ["/ai-assistent", "/zoeken"],
   },
   {
-    href: "/hulpvragen",
-    label: "Hulp",
+    href: "/aanbod",
+    label: "Aanbod",
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
       </svg>
     ),
-    hasBadge: false,
+    matchPaths: ["/aanbod", "/hulpvragen", "/leren", "/buddys", "/activiteiten", "/favorieten"],
   },
-  {
-    href: "/buddys",
-    label: "Buddy's",
-    icon: (
-      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-      </svg>
-    ),
-    hasBadge: true,
-    matchPaths: ["/buddys"],
-  },
-]
-
-// Items in het Meer-menu
-const meerItems: { href: string; label: string; icon: string; matchPaths?: string[] }[] = [
-  { href: "/check-in", label: "Balanstest & Check-In", icon: "📊", matchPaths: ["/check-in", "/belastbaarheidstest"] },
-  { href: "/profiel", label: "Mijn profiel", icon: "👤" },
-  { href: "/rapport", label: "Mijn rapport", icon: "📋" },
-  { href: "/agenda", label: "Agenda", icon: "📅" },
 ]
 
 export function MobileNav() {
   const pathname = usePathname()
-  const [zwareTakenCount, setZwareTakenCount] = useState(0)
-  const nieuwsCount = useNieuwsBadge()
+  const [unreadCount, setUnreadCount] = useState(0)
   const hasFetched = useRef(false)
-  const [meerOpen, setMeerOpen] = useState(false)
 
   useEffect(() => {
     if (hasFetched.current) return
     hasFetched.current = true
 
-    const fetchBadgeCount = async () => {
+    const fetchNotificationCount = async () => {
       try {
-        const res = await fetch("/api/nav-badge")
+        const res = await fetch("/api/notifications")
         if (res.ok) {
           const data = await res.json()
-          setZwareTakenCount(data.count || 0)
+          const unread = (data.notifications || []).filter((n: { isRead: boolean }) => !n.isRead).length
+          setUnreadCount(unread)
         }
       } catch {
         // Silently fail
       }
     }
 
-    fetchBadgeCount()
+    fetchNotificationCount()
   }, [])
 
-  // Sluit Meer-menu bij navigatie
-  useEffect(() => {
-    setMeerOpen(false)
-  }, [pathname])
-
-  const isMeerActive = meerItems.some(
-    (item) => pathname === item.href || pathname.startsWith(item.href + "/")
-  )
-
   return (
-    <>
-      {/* Overlay + Meer-menu sheet */}
-      {meerOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-40 bg-black/30"
-            onClick={() => setMeerOpen(false)}
-          />
-          <div className="fixed bottom-20 left-0 right-0 z-50 px-4 pb-2 md:hidden animate-slide-up">
-            <div className="bg-card rounded-2xl border border-border shadow-xl p-3">
-              <div className="grid grid-cols-3 gap-2">
-                {meerItems.map((item) => {
-                  const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={cn(
-                        "flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all",
-                        isActive
-                          ? "bg-primary/10 text-primary"
-                          : "text-foreground hover:bg-secondary"
-                      )}
-                    >
-                      <span className="text-2xl">{item.icon}</span>
-                      <span className="text-xs font-medium">{item.label}</span>
-                    </Link>
-                  )
-                })}
-                {/* WhatsApp link */}
-                <a
-                  href="https://wa.me/14155238886?text=Hoi"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex flex-col items-center gap-1.5 p-3 rounded-xl text-foreground hover:bg-secondary transition-all"
-                >
-                  <span className="text-2xl">💬</span>
-                  <span className="text-xs font-medium">WhatsApp</span>
-                </a>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden safe-area-inset-bottom">
+      <div className="flex justify-around items-center h-20 px-1">
+        {navItems.map((item) => {
+          const isActive = item.matchPaths
+            ? item.matchPaths.some(p => pathname === p || pathname.startsWith(p + "/"))
+            : (pathname === item.href || pathname.startsWith(item.href + "/"))
 
-      {/* Bottom nav bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border md:hidden safe-area-inset-bottom">
-        <div className="flex justify-around items-center h-20 px-1">
-          {navItems.map((item) => {
-            const isActive = item.matchPaths
-              ? item.matchPaths.some(p => pathname === p || pathname.startsWith(p + "/"))
-              : (pathname === item.href || pathname.startsWith(item.href + "/"))
-            const showHulpBadge = item.hasBadge && zwareTakenCount > 0
-            const showNieuwsBadge = item.nieuwsBadge && nieuwsCount > 0
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex flex-col items-center justify-center py-3 px-4 rounded-xl transition-all min-w-[64px] min-h-[56px] relative",
+                isActive
+                  ? "text-primary bg-primary/10"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+              )}
+            >
+              <span className={cn(
+                "transition-transform duration-200",
+                isActive && "scale-110"
+              )}>
+                {item.icon}
+              </span>
+              <span className={cn(
+                "text-xs mt-1 font-medium",
+                isActive && "font-semibold"
+              )}>
+                {item.label}
+              </span>
+            </Link>
+          )
+        })}
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex flex-col items-center justify-center py-3 px-4 rounded-xl transition-all min-w-[64px] min-h-[56px] relative",
-                  isActive
-                    ? "text-primary bg-primary/10"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                )}
-              >
-                <span className={cn(
-                  "transition-transform duration-200 relative",
-                  isActive && "scale-110"
-                )}>
-                  {item.icon}
-                  {showHulpBadge && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--accent-amber)] text-white text-[11px] font-bold rounded-full flex items-center justify-center">
-                      {zwareTakenCount}
-                    </span>
-                  )}
-                  {showNieuwsBadge && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-[var(--accent-red)] text-white text-[11px] font-bold rounded-full flex items-center justify-center animate-pulse">
-                      {nieuwsCount}
-                    </span>
-                  )}
-                </span>
-                <span className={cn(
-                  "text-xs mt-1 font-medium",
-                  isActive && "font-semibold"
-                )}>
-                  {item.label}
-                </span>
-              </Link>
-            )
-          })}
-
-          {/* Meer-knop */}
-          <button
-            onClick={() => setMeerOpen(!meerOpen)}
-            className={cn(
-              "flex flex-col items-center justify-center py-3 px-4 rounded-xl transition-all min-w-[64px] min-h-[56px]",
-              meerOpen || isMeerActive
-                ? "text-primary bg-primary/10"
-                : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-            )}
-          >
-            <svg className={cn(
-              "w-6 h-6 transition-transform duration-200",
-              meerOpen && "rotate-45"
-            )} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        {/* Profiel-icoon */}
+        <Link
+          href="/profiel"
+          className={cn(
+            "flex flex-col items-center justify-center py-3 px-4 rounded-xl transition-all min-w-[64px] min-h-[56px] relative",
+            (pathname === "/profiel" || pathname.startsWith("/profiel/") || pathname === "/agenda" || pathname === "/notificaties")
+              ? "text-primary bg-primary/10"
+              : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+          )}
+        >
+          <span className={cn(
+            "transition-transform duration-200 relative",
+            (pathname === "/profiel" || pathname.startsWith("/profiel/")) && "scale-110"
+          )}>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
-            <span className={cn(
-              "text-xs mt-1 font-medium",
-              (meerOpen || isMeerActive) && "font-semibold"
-            )}>
-              Meer
-            </span>
-          </button>
-        </div>
-      </nav>
-    </>
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </span>
+          <span className={cn(
+            "text-xs mt-1 font-medium",
+            (pathname === "/profiel" || pathname.startsWith("/profiel/")) && "font-semibold"
+          )}>
+            Profiel
+          </span>
+        </Link>
+      </div>
+    </nav>
   )
 }

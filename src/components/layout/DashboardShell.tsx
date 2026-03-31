@@ -7,7 +7,7 @@ import { MobileNav } from "@/components/navigation/MobileNav"
 import { SessionValidator } from "@/components/SessionValidator"
 import { Tutorial, TUTORIAL_STORAGE_KEY } from "@/components/Tutorial"
 import { Onboarding } from "@/components/Onboarding"
-import { FloatingGerChat } from "@/components/ai/FloatingGerChat"
+// FloatingGerChat verwijderd — Ger heeft nu een eigen tab in de navigatie
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -20,9 +20,6 @@ export function DashboardShell({ children }: DashboardShellProps) {
   const [userName, setUserName] = useState("")
   const [isChecked, setIsChecked] = useState(false)
   const hasFetched = useRef(false)
-
-  // Verberg Ger chat op pagina's waar Ger al zichtbaar is (dashboard heeft eigen DashboardGerChat)
-  const hideGerChat = pathname === "/ai-assistent" || pathname === "/dashboard"
 
   // Initieel: haal naam op en check onboarding/tutorial status
   useEffect(() => {
@@ -100,9 +97,6 @@ export function DashboardShell({ children }: DashboardShellProps) {
         {children}
       </main>
       <MobileNav />
-
-      {/* Floating Ger chat — altijd bereikbaar behalve op dashboard en ai-assistent */}
-      {!hideGerChat && <FloatingGerChat />}
 
       {/* Onboarding welkomstflow voor nieuwe gebruikers (met profielvragen) */}
       {isChecked && showOnboarding && (

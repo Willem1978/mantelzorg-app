@@ -907,8 +907,6 @@ export default function ProfielPage() {
 
   return (
     <div className="ker-page-content">
-      <GerPageIntro tekst="Dit is jouw profiel. Hier kun je je gegevens bekijken en aanpassen. Wat kan ik voor jou doen?" />
-
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground">
@@ -917,6 +915,71 @@ export default function ProfielPage() {
         <p className="text-muted-foreground mt-1">
           {c.header.subtitle}
         </p>
+      </div>
+
+      {/* Snellinks — Agenda, Notificaties, SOS */}
+      <div className="grid grid-cols-3 gap-2 mb-6">
+        <Link
+          href="/agenda"
+          className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-border hover:border-primary/30 transition-colors"
+        >
+          <span className="text-2xl">📅</span>
+          <span className="text-xs font-medium text-foreground">Agenda</span>
+        </Link>
+        <Link
+          href="/notificaties"
+          className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-border hover:border-primary/30 transition-colors"
+        >
+          <span className="text-2xl">🔔</span>
+          <span className="text-xs font-medium text-foreground">Meldingen</span>
+        </Link>
+        <button
+          onClick={() => {
+            // SOS modal — direct nummers tonen
+            const modal = document.getElementById("sos-modal")
+            if (modal) modal.classList.remove("hidden")
+          }}
+          className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-red-200 hover:border-red-400 bg-red-50/50 transition-colors"
+        >
+          <span className="text-2xl">🆘</span>
+          <span className="text-xs font-medium text-red-600">Noodhulp</span>
+        </button>
+      </div>
+
+      {/* SOS Modal (verborgen) */}
+      <div id="sos-modal" className="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => { if (e.target === e.currentTarget) e.currentTarget.classList.add("hidden") }}>
+        <div className="bg-card rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-md space-y-3">
+          <h2 className="text-lg font-bold text-red-600 flex items-center gap-2">
+            <span>🆘</span> Ik heb NU hulp nodig
+          </h2>
+          <a href="tel:112" className="flex items-center gap-3 p-4 rounded-xl bg-red-50 border border-red-200">
+            <span className="text-3xl font-black text-red-600">112</span>
+            <div>
+              <p className="font-bold text-foreground">Direct gevaar</p>
+              <p className="text-xs text-muted-foreground">Bel 112 bij levensbedreigende situaties</p>
+            </div>
+          </a>
+          <a href="tel:030-1640164" className="flex items-center gap-3 p-3 rounded-xl bg-secondary">
+            <span className="text-xl">📞</span>
+            <div>
+              <p className="font-semibold text-foreground">Mantelzorglijn</p>
+              <p className="text-xs text-muted-foreground">030 - 164 0 164 (ma-vr 9-18)</p>
+            </div>
+          </a>
+          <a href="tel:0900-0113" className="flex items-center gap-3 p-3 rounded-xl bg-secondary">
+            <span className="text-xl">🤝</span>
+            <div>
+              <p className="font-semibold text-foreground">113 Zelfmoordpreventie</p>
+              <p className="text-xs text-muted-foreground">0900 - 0113 (24 uur bereikbaar)</p>
+            </div>
+          </a>
+          <button
+            onClick={() => document.getElementById("sos-modal")?.classList.add("hidden")}
+            className="w-full p-3 text-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Sluiten
+          </button>
+        </div>
       </div>
 
       {/* Profile load error */}
