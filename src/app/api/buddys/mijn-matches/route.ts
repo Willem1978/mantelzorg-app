@@ -51,33 +51,38 @@ export async function GET() {
       },
     })
 
-    // Tel ongelezen berichten per match
-    const matchesMetOngelezen = await Promise.all(
-      buddyMatches.map(async (m) => {
-        const ongelezen = await prisma.bericht.count({
+    // N1: Batch query voor ongelezen berichten per match (voorkomt N+1)
+    const matchIds = buddyMatches.map(m => m.id)
+    const ongelezenPerMatch = matchIds.length > 0
+      ? await prisma.bericht.groupBy({
+          by: ["matchId"],
           where: {
-            matchId: m.id,
+            matchId: { in: matchIds },
             afzenderId: { not: session.user.id },
             isGelezen: false,
           },
+          _count: { id: true },
         })
+      : []
 
-        return {
-          id: m.id,
-          status: m.status,
-          buddyNaam: buddy.voornaam,
-          mantelzorgerNaam: m.caregiver.user?.name?.split(" ")[0] || "Mantelzorger",
-          caregiverId: m.caregiver.id,
-          taakReacties: m.taakReacties.map((tr) => ({
-            taak: {
-              titel: tr.taak.titel,
-              status: tr.taak.status,
-            },
-          })),
-          ongelezen,
-        }
-      })
+    const ongelezenMap = new Map(
+      ongelezenPerMatch.map(r => [r.matchId, r._count.id])
     )
+
+    const matchesMetOngelezen = buddyMatches.map((m) => ({
+      id: m.id,
+      status: m.status,
+      buddyNaam: buddy.voornaam,
+      mantelzorgerNaam: m.caregiver.user?.name?.split(" ")[0] || "Mantelzorger",
+      caregiverId: m.caregiver.id,
+      taakReacties: m.taakReacties.map((tr) => ({
+        taak: {
+          titel: tr.taak.titel,
+          status: tr.taak.status,
+        },
+      })),
+      ongelezen: ongelezenMap.get(m.id) || 0,
+    }))
 
     return NextResponse.json({ matches: matchesMetOngelezen })
   } catch (error) {

@@ -22,6 +22,8 @@ import {
   createRegistreerAlarmTool,
 } from "@/lib/ai/tools"
 
+import { checkRateLimit } from "@/lib/rate-limit"
+
 // Vercel serverless function timeout: AI tool calls + DB queries need more than default 10s
 export const maxDuration = 30
 
@@ -36,6 +38,15 @@ export async function POST(req: Request) {
   const session = await auth()
   if (!session?.user?.id) {
     return new Response("Niet ingelogd", { status: 401 })
+  }
+
+  // S4: Rate limiting — 10 AI requests per minuut per gebruiker
+  const rateLimitResult = await checkRateLimit(session.user.id, "ai-checkin", { maxRequests: 10, windowSeconds: 60 })
+  if (!rateLimitResult.allowed) {
+    return new Response(
+      JSON.stringify({ error: `Even rustig aan — probeer het over ${rateLimitResult.resetIn} seconden opnieuw.` }),
+      { status: 429, headers: { "Content-Type": "application/json" } }
+    )
   }
 
   const body = await req.json()

@@ -44,12 +44,30 @@ function stripWhatsAppPrefix(phoneNumber: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    // S6: Valideer Twilio webhook signature om spoofing te voorkomen
+    const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN
+    const twilioSignature = request.headers.get("x-twilio-signature")
+    if (twilioAuthToken && !twilioSignature) {
+      log.warn("Webhook request zonder Twilio signature — geweigerd")
+      return NextResponse.json({ error: "Ongeldige request" }, { status: 403 })
+    }
+
     const body = await request.formData()
     const formDataObj: Record<string, string> = {}
 
     body.forEach((value, key) => {
       formDataObj[key] = value.toString()
     })
+
+    if (twilioAuthToken && twilioSignature) {
+      const twilio = await import("twilio")
+      const webhookUrl = `${process.env.NEXTAUTH_URL || "https://mantelbuddy.nl"}/api/whatsapp/webhook`
+      const isValid = twilio.default.validateRequest(twilioAuthToken, twilioSignature, webhookUrl, formDataObj)
+      if (!isValid) {
+        log.warn({ signature: twilioSignature }, "Ongeldige Twilio signature — spoofing poging geweigerd")
+        return NextResponse.json({ error: "Ongeldige signature" }, { status: 403 })
+      }
+    }
 
     const message = parseIncomingWhatsAppMessage(formDataObj)
     const buttonText = formDataObj.ButtonText as string | undefined

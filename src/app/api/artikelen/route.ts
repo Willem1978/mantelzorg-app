@@ -32,9 +32,11 @@ export async function GET(request: NextRequest) {
       { publicatieDatum: { lte: new Date() } },
     ]
 
+    // D9: Begrens resultaten om unbounded queries te voorkomen
     const artikelen = await prisma.artikel.findMany({
       where,
       orderBy: [{ sorteerVolgorde: "asc" }, { createdAt: "desc" }],
+      take: 200,
       select: {
         id: true,
         titel: true,

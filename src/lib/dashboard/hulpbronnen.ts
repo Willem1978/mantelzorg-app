@@ -150,44 +150,38 @@ export async function getHulpbronnenVoorTaken(
 
   const perTaak: Record<string, HulpbronResult[]> = {}
 
-  // Hulpbronnen per zware taak - PARALLEL ophalen
+  // N2: Eén batch query voor alle hulpbronnen per taak (voorkomt N+1)
   const taakOnderdelen = zwareTaken
     .map((taak: any) => ({ taak, varianten: TAAK_NAAR_ONDERDEEL_VARIANTEN[taak.taakId] }))
     .filter(({ varianten }: any) => varianten?.length > 0)
 
-  const taakResultaten = await Promise.all(
-    taakOnderdelen.map(async ({ varianten }: any) => {
-      const [lokaleHulp, landelijkeHulp] = await Promise.all([
-        zorgvragerGemeente
-          ? prisma.zorgorganisatie.findMany({
-              where: {
-                isActief: true,
-                onderdeelTest: { in: varianten },
-                gemeente: { equals: zorgvragerGemeente, mode: "insensitive" as const },
-                AND: niveauFilter,
-              },
-              orderBy: { naam: "asc" },
-              select: { naam: true, telefoon: true, website: true, beschrijving: true, gemeente: true, doelgroep: true, kosten: true, dienst: true, openingstijden: true, soortHulp: true, bronLabel: true },
-            })
-          : Promise.resolve([]),
-        prisma.zorgorganisatie.findMany({
-          where: {
-            isActief: true,
-            onderdeelTest: { in: varianten },
-            gemeente: null,
-            AND: niveauFilter,
-          },
-          orderBy: { naam: "asc" },
-          select: { naam: true, telefoon: true, website: true, beschrijving: true, gemeente: true, doelgroep: true, kosten: true, dienst: true, openingstijden: true, soortHulp: true, bronLabel: true },
-        }),
-      ])
+  const alleVarianten = taakOnderdelen.flatMap(({ varianten }: any) => varianten)
 
-      return [...lokaleHulp.map((h: any) => ({ ...h, isLandelijk: false })), ...landelijkeHulp.map((h: any) => ({ ...h, isLandelijk: true }))]
-    })
-  )
+  // Eén query voor lokaal + landelijk in plaats van 2 queries per taak
+  const alleTaakHulpbronnen = alleVarianten.length > 0
+    ? await prisma.zorgorganisatie.findMany({
+        where: {
+          isActief: true,
+          onderdeelTest: { in: alleVarianten },
+          OR: [
+            ...(zorgvragerGemeente
+              ? [{ gemeente: { equals: zorgvragerGemeente, mode: "insensitive" as const } }]
+              : []),
+            { gemeente: null },
+          ],
+          AND: niveauFilter,
+        },
+        orderBy: { naam: "asc" },
+        select: { naam: true, telefoon: true, website: true, beschrijving: true, gemeente: true, doelgroep: true, kosten: true, dienst: true, openingstijden: true, soortHulp: true, bronLabel: true, onderdeelTest: true },
+      })
+    : []
 
-  taakOnderdelen.forEach(({ taak }: any, i: number) => {
-    perTaak[taak.taakNaam] = taakResultaten[i]
+  // Groepeer resultaten per taak in-memory
+  taakOnderdelen.forEach(({ taak, varianten }: any) => {
+    const hulp = alleTaakHulpbronnen
+      .filter((h: any) => varianten.includes(h.onderdeelTest))
+      .map((h: any) => ({ ...h, isLandelijk: !h.gemeente }))
+    perTaak[taak.taakNaam] = hulp
   })
 
   return {

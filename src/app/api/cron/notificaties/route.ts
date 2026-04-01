@@ -21,11 +21,11 @@ export const maxDuration = 120 // 2 minuten max
  * en TIP (voor nieuwe artikel-matches).
  */
 export async function GET(request: Request) {
-  // Optionele CRON_SECRET beveiliging
+  // S5: CRON_SECRET is verplicht — voorkom ongeautoriseerde cron triggers
   const authHeader = request.headers.get("authorization")
   const cronSecret = process.env.CRON_SECRET
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return new Response(JSON.stringify({ error: "Niet geautoriseerd" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },

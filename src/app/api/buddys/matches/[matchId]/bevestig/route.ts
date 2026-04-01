@@ -63,12 +63,15 @@ export async function POST(
       )
     }
 
-    // Bevestig de match: CAREGIVER_AKKOORD → ACTIEF
+    // D10: Bevestig de match met status-check in where clause (voorkomt race condition)
     await prisma.$transaction(async (tx) => {
-      await tx.buddyMatch.update({
-        where: { id: matchId },
+      const updated = await tx.buddyMatch.updateMany({
+        where: { id: matchId, status: "CAREGIVER_AKKOORD" },
         data: { status: "ACTIEF" },
       })
+      if (updated.count === 0) {
+        throw new Error("Match status is al gewijzigd door een ander verzoek")
+      }
 
       // Notificatie voor de mantelzorger
       if (match.caregiver.userId) {

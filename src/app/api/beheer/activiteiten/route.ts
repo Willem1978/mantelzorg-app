@@ -19,9 +19,11 @@ export async function GET(req: NextRequest) {
   if (gemeente) where.gemeente = { equals: gemeente, mode: "insensitive" }
   if (type) where.type = type
 
+  // D9: Begrens resultaten om unbounded queries te voorkomen
   const activiteiten = await prisma.activiteit.findMany({
     where,
     orderBy: { updatedAt: "desc" },
+    take: 500,
   })
 
   return NextResponse.json({ activiteiten })
@@ -39,6 +41,12 @@ export async function POST(req: NextRequest) {
 
   if (!naam || !woonplaats || !gemeente || !type) {
     return NextResponse.json({ error: "naam, woonplaats, gemeente en type zijn vereist" }, { status: 400 })
+  }
+
+  // S7: Valideer type tegen toegestane waarden
+  const ALLOWED_TYPES = ["LOTGENOTEN", "SPORT", "SOCIAAL", "EDUCATIE", "RESPIJTZORG", "OVERIG"]
+  if (!ALLOWED_TYPES.includes(type)) {
+    return NextResponse.json({ error: `type moet een van: ${ALLOWED_TYPES.join(", ")}` }, { status: 400 })
   }
 
   const activiteit = await prisma.activiteit.create({
@@ -74,15 +82,27 @@ export async function PATCH(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { id, ...data } = body
+  const { id } = body
 
   if (!id) {
     return NextResponse.json({ error: "id is vereist" }, { status: 400 })
   }
 
+  // S1: Alleen toegestane velden accepteren (geen mass assignment)
+  const allowedFields: Record<string, unknown> = {}
+  const ALLOWED_KEYS = [
+    "naam", "beschrijving", "locatie", "adres", "woonplaats", "gemeente",
+    "type", "frequentie", "dag", "tijd", "kosten", "contactNaam",
+    "contactTelefoon", "contactEmail", "website", "bronUrl",
+    "isGevalideerd", "isActief",
+  ]
+  for (const key of ALLOWED_KEYS) {
+    if (key in body) allowedFields[key] = body[key]
+  }
+
   const activiteit = await prisma.activiteit.update({
     where: { id },
-    data,
+    data: allowedFields,
   })
 
   return NextResponse.json({ activiteit })

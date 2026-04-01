@@ -14,6 +14,8 @@ import {
   createSlaActiepuntOpTool,
 } from "@/lib/ai/tools"
 
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit"
+
 // Vercel serverless function timeout: AI tool calls + DB queries need more than default 10s
 export const maxDuration = 30
 
@@ -41,6 +43,15 @@ export async function POST(req: Request) {
     return new Response(
       JSON.stringify({ error: "Je bent niet ingelogd. Log eerst in." }),
       { status: 401, headers: { "Content-Type": "application/json" } }
+    )
+  }
+
+  // S4: Rate limiting — 20 AI requests per minuut per gebruiker
+  const rateLimitResult = await checkRateLimit(session.user.id, "ai-chat", { maxRequests: 20, windowSeconds: 60 })
+  if (!rateLimitResult.allowed) {
+    return new Response(
+      JSON.stringify({ error: `Even rustig aan — probeer het over ${rateLimitResult.resetIn} seconden opnieuw.` }),
+      { status: 429, headers: { "Content-Type": "application/json" } }
     )
   }
 

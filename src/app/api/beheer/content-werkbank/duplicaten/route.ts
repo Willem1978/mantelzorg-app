@@ -27,18 +27,31 @@ export async function POST(req: NextRequest) {
 
     if (embedding) {
       const vectorSql = `[${embedding.join(",")}]`
-      const results = await prisma.$queryRaw<
-        { id: string; titel: string; categorie: string; similarity: number }[]
-      >`
-        SELECT id, titel, categorie,
-          1 - (embedding <=> ${vectorSql}::vector) as similarity
-        FROM "Artikel"
-        WHERE embedding IS NOT NULL
-          AND "isActief" = true
-          ${excludeId ? prisma.$queryRaw`AND id != ${excludeId}` : prisma.$queryRaw``}
-        ORDER BY embedding <=> ${vectorSql}::vector
-        LIMIT 5
-      `
+      // S3: Gescheiden queries voor met/zonder excludeId — voorkomt nested $queryRaw interpolatie
+      const results = excludeId
+        ? await prisma.$queryRaw<
+            { id: string; titel: string; categorie: string; similarity: number }[]
+          >`
+            SELECT id, titel, categorie,
+              1 - (embedding <=> ${vectorSql}::vector) as similarity
+            FROM "Artikel"
+            WHERE embedding IS NOT NULL
+              AND "isActief" = true
+              AND id != ${excludeId}
+            ORDER BY embedding <=> ${vectorSql}::vector
+            LIMIT 5
+          `
+        : await prisma.$queryRaw<
+            { id: string; titel: string; categorie: string; similarity: number }[]
+          >`
+            SELECT id, titel, categorie,
+              1 - (embedding <=> ${vectorSql}::vector) as similarity
+            FROM "Artikel"
+            WHERE embedding IS NOT NULL
+              AND "isActief" = true
+            ORDER BY embedding <=> ${vectorSql}::vector
+            LIMIT 5
+          `
       vectorMatches = results
         .filter(r => r.similarity > 0.85)
         .map(r => ({

@@ -6,6 +6,23 @@ import { prisma } from "@/lib/prisma"
 // Werkt alleen als er nog geen ADMIN gebruiker bestaat
 export async function POST(request: Request) {
   try {
+    // S2: Beveilig setup endpoint met SETUP_SECRET
+    const setupSecret = process.env.SETUP_SECRET
+    if (!setupSecret) {
+      return NextResponse.json(
+        { error: "Setup is uitgeschakeld. Stel SETUP_SECRET in als environment variable." },
+        { status: 403 }
+      )
+    }
+
+    const authHeader = request.headers.get("authorization")
+    if (authHeader !== `Bearer ${setupSecret}`) {
+      return NextResponse.json(
+        { error: "Ongeldige setup-sleutel." },
+        { status: 401 }
+      )
+    }
+
     // Check of er al een admin bestaat
     const existingAdmin = await prisma.user.findFirst({
       where: { role: "ADMIN" },

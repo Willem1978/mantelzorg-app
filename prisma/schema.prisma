@@ -225,6 +225,10 @@ model Task {
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
   caregiver       Caregiver    @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  // D1: Indexen voor dashboard en taak-queries
+  @@index([caregiverId])
+  @@index([caregiverId, dueDate])
 }
 
 model Resource {
@@ -302,6 +306,8 @@ model Notification {
 
   @@index([userId])
   @@index([userId, isRead])
+  // D3: Index voor notificatie-sortering
+  @@index([userId, createdAt])
 }
 
 model HelpRequest {
@@ -633,7 +639,8 @@ model MantelBuddy {
 
   // Relaties
   userId            String?             @unique
-  user              User?               @relation(fields: [userId], references: [id])
+  // D8: onDelete: SetNull voorkomt orphaned records bij user-verwijdering
+  user              User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
   matches           BuddyMatch[]
   taakReacties      BuddyTaakReactie[]
   ontvangenBeoordelingen BuddyBeoordeling[] @relation("BeoordeeldeBuddy")
@@ -667,6 +674,9 @@ model BuddyMatch {
   updatedAt         DateTime            @updatedAt
 
   @@unique([buddyId, caregiverId])
+  // D2: Indexen voor match-queries
+  @@index([buddyId, status])
+  @@index([caregiverId, status])
 }
 
 model BuddyTaak {
@@ -750,6 +760,8 @@ model BuddyBeoordeling {
   createdAt         DateTime            @default(now())
 
   @@index([buddyId])
+  // D4: Index voor review-queries per caregiver
+  @@index([caregiverId])
 }
 
 model Bericht {
@@ -768,6 +780,8 @@ model Bericht {
 
   @@index([matchId])
   @@index([matchId, createdAt])
+  // D5: Index voor ongelezen-berichten count
+  @@index([matchId, isGelezen])
 }
 
 // ============================================
@@ -1448,6 +1462,8 @@ model ArtikelInteractie {
   @@index([caregiverId])
   @@index([artikelId])
   @@index([rating])
+  // D6: Index voor "gelezen artikelen" query
+  @@index([caregiverId, gelezen])
 }
 
 // ============================================

@@ -26,6 +26,7 @@ import {
   createBekijkGemeenteAdviesTool,
 } from "@/lib/ai/tools"
 import { resolveGemeenteContact } from "@/lib/ai/gemeente-resolver"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 export const maxDuration = 60
 
@@ -52,6 +53,15 @@ export async function POST(req: Request) {
     return new Response(
       JSON.stringify({ error: "Je bent niet ingelogd. Log eerst in." }),
       { status: 401, headers: { "Content-Type": "application/json" } }
+    )
+  }
+
+  // S4: Rate limiting — 15 AI requests per minuut per gebruiker
+  const rateLimitResult = await checkRateLimit(session.user.id, "ai-balanscoach", { maxRequests: 15, windowSeconds: 60 })
+  if (!rateLimitResult.allowed) {
+    return new Response(
+      JSON.stringify({ error: `Even rustig aan — probeer het over ${rateLimitResult.resetIn} seconden opnieuw.` }),
+      { status: 429, headers: { "Content-Type": "application/json" } }
     )
   }
 
