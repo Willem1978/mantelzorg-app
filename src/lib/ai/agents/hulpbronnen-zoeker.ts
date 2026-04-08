@@ -76,11 +76,11 @@ export const ZOEK_CATEGORIEEN: ZoekCategorie[] = [
     dbField: "soortHulp",
     dbValue: "Informatie en advies",
     zoekwoorden: [
-      "mantelzorgconsulent", "mantelzorgsteunpunt", "WMO loket mantelzorg",
-      "informatiepunt mantelzorg", "sociaal wijkteam",
+      "mantelzorgconsulent", "mantelzorgsteunpunt", "mantelzorgmakelaar",
+      "WMO loket mantelzorg", "informatiepunt mantelzorg", "sociaal wijkteam",
     ],
     synoniemen: [
-      "mantelzorgmakelaar", "mantelzorgcoach", "cliëntondersteuner",
+      "mantelzorgcoach", "cliëntondersteuner",
       "buurtcoach", "opbouwwerker", "WMO-consulent", "wijkteam",
       "steunpunt", "informatiepunt", "adviesloket",
     ],
@@ -103,38 +103,27 @@ export const ZOEK_CATEGORIEEN: ZoekCategorie[] = [
   },
   {
     code: "A3",
-    label: "Praten en steun",
+    label: "Praten, steun & lotgenoten",
     groep: "mantelzorger",
     dbField: "soortHulp",
     dbValue: "Emotionele steun",
     zoekwoorden: [
       "mantelzorglijn", "hulplijn mantelzorg", "inloopspreekuur mantelzorg",
       "maatschappelijk werk mantelzorg",
+      "lotgenotengroep mantelzorg", "mantelzorgcafé", "Alzheimer café",
+      "praatgroep mantelzorg",
     ],
     synoniemen: [
       "luisterlijn", "psychosociale hulp", "coaching", "counseling",
       "pastoraat", "geestelijke verzorging", "telefonische hulp",
       "maatschappelijk werker", "inloopspreekuur",
-    ],
-  },
-  {
-    code: "A4",
-    label: "Lotgenoten",
-    groep: "mantelzorger",
-    dbField: "soortHulp",
-    dbValue: "Persoonlijke begeleiding",
-    zoekwoorden: [
-      "lotgenotengroep mantelzorg", "mantelzorgcafé", "Alzheimer café",
-      "praatgroep mantelzorg",
-    ],
-    synoniemen: [
       "lotgenotencontact", "gespreksgroep", "Parkinson Café",
       "ervaringsdeskundige", "maatjesproject", "zelfhulpgroep",
       "ontmoetingsgroep", "online community",
     ],
   },
   {
-    code: "A5",
+    code: "A4",
     label: "Leren en training",
     groep: "mantelzorger",
     dbField: "soortHulp",
@@ -607,7 +596,6 @@ function bepaalZorgorganisatieType(hulpbron: GevondenHulpbron): string {
     case "A2": return "RESPIJTZORG"
     case "A3": return "OVERIG"
     case "A4": return "OVERIG"
-    case "A5": return "OVERIG"
     case "B1": return "GEMEENTE"
     case "B2": return "THUISZORG"
     case "B3": return "VRIJWILLIGERS"

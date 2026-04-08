@@ -20,7 +20,6 @@ function mapSoortHulpToType(soortHulp: string): string {
     'Praktische hulp': 'VRIJWILLIGERS',
     'Informatie en advies': 'MANTELZORGSTEUNPUNT',
     'Emotionele steun': 'MANTELZORGSTEUNPUNT',
-    'Persoonlijke begeleiding': 'THUISZORG',
     'Vervangende mantelzorg': 'RESPIJTZORG',
     'Nog geen lokale oplossingen': 'OVERIG',
   }

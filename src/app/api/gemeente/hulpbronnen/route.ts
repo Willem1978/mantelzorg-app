@@ -42,8 +42,7 @@ export async function GET(request: NextRequest) {
     const MANTELZORGER_CATEGORIEEN = [
       'Ondersteuning',
       'Vervangende mantelzorg',
-      'Praten & steun',
-      'Lotgenoten',
+      'Praten, steun & lotgenoten',
       'Leren & training',
     ]
     const doelgroepFilter = doelgroep === "MANTELZORGER"

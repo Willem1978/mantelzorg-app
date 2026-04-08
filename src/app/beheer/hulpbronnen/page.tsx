@@ -65,8 +65,7 @@ const CATEGORIEEN_ZORGVRAGER = [
 const CATEGORIEEN_MANTELZORGER = [
   "Ondersteuning",
   "Vervangende mantelzorg",
-  "Praten & steun",
-  "Lotgenoten",
+  "Praten, steun & lotgenoten",
   "Leren & training",
 ]
 
@@ -89,7 +88,6 @@ const SOORT_HULP_OPTIES = [
   "Hulplijn",
   "Informatie en advies",
   "Overheid en financieel",
-  "Persoonlijke begeleiding",
   "Praktische hulp",
   "Professionele zorg",
   "Vervangende mantelzorg",

@@ -501,8 +501,7 @@ function HulpPageContent() {
     const mapping: Record<string, string[]> = {
       'Ondersteuning': ['ondersteuning', 'mantelzorg'],
       'Vervangende mantelzorg': ['respijt'],
-      'Praten & steun': ['emotioneel', 'steun'],
-      'Lotgenoten': ['lotgenoot', 'lotgenoten'],
+      'Praten, steun & lotgenoten': ['emotioneel', 'steun', 'lotgenoot', 'lotgenoten'],
       'Leren & training': ['educatie', 'training', 'cursus', 'leren'],
     }
 

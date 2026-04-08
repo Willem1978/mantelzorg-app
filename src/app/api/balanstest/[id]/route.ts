@@ -106,7 +106,7 @@ export async function GET(
       prisma.zorgorganisatie.findMany({
         where: {
           isActief: true,
-          onderdeelTest: { in: ['Mantelzorgondersteuning', 'Emotionele steun', 'Vervangende mantelzorg', 'Lotgenotencontact', 'Leren en training'] },
+          onderdeelTest: { in: ['Mantelzorgondersteuning', 'Emotionele steun', 'Vervangende mantelzorg', 'Leren en training'] },
           gemeente: null,
         },
         orderBy: { naam: 'asc' },

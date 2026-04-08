@@ -53,8 +53,7 @@ const CATEGORIEEN_ZORGVRAGER = [
 const CATEGORIEEN_MANTELZORGER = [
   { label: "Ondersteuning", value: "Ondersteuning", emoji: "💜" },
   { label: "Vervangende mantelzorg", value: "Vervangende mantelzorg", emoji: "🔄" },
-  { label: "Praten & steun", value: "Praten & steun", emoji: "💬" },
-  { label: "Lotgenoten", value: "Lotgenoten", emoji: "🤝" },
+  { label: "Praten, steun & lotgenoten", value: "Praten, steun & lotgenoten", emoji: "💚" },
   { label: "Leren & training", value: "Leren & training", emoji: "📚" },
 ]
 

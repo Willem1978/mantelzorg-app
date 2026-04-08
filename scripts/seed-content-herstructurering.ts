@@ -88,9 +88,8 @@ async function main() {
     { categorie: 'zelfzorg-balans', slug: 'overbelasting-herkennen', naam: 'Overbelasting herkennen', volgorde: 1 },
     { categorie: 'zelfzorg-balans', slug: 'grenzen-stellen', naam: 'Grenzen stellen', volgorde: 2 },
     { categorie: 'zelfzorg-balans', slug: 'ontspanning-pauze', naam: 'Ontspanning & pauze', volgorde: 3 },
-    { categorie: 'zelfzorg-balans', slug: 'emotionele-steun', naam: 'Emotionele steun', volgorde: 4 },
+    { categorie: 'zelfzorg-balans', slug: 'emotionele-steun', naam: 'Emotionele steun & lotgenoten', volgorde: 4 },
     { categorie: 'zelfzorg-balans', slug: 'rouw-verlies', naam: 'Rouw & verlies', volgorde: 5 },
-    { categorie: 'zelfzorg-balans', slug: 'lotgenoten', naam: 'Lotgenoten', volgorde: 6 },
     // Rechten & regelingen
     { categorie: 'rechten-regelingen', slug: 'wmo-gemeente', naam: 'Wmo (gemeente)', volgorde: 1 },
     { categorie: 'rechten-regelingen', slug: 'wlz-langdurige-zorg', naam: 'Wlz (langdurige zorg)', volgorde: 2 },

@@ -38,8 +38,8 @@ const CATEGORIE_MAPPING: Record<string, string> = {
   'sociaal contact en activiteiten': 'Sociaal & activiteiten',
   // Oude lange mantelzorger-namen → nieuw
   'mantelzorgondersteuning': 'Ondersteuning',
-  'emotionele steun': 'Praten & steun',
-  'lotgenotencontact': 'Lotgenoten',
+  'emotionele steun': 'Praten, steun & lotgenoten',
+  'lotgenotencontact': 'Praten, steun & lotgenoten',
   'leren en training': 'Leren & training',
   // CSV-import varianten
   'respijtzorg': 'Vervangende mantelzorg',
@@ -53,8 +53,8 @@ const CATEGORIE_MAPPING: Record<string, string> = {
 
 // Gestandaardiseerde mantelzorger-categorieën
 const MANTELZORGER_CATEGORIEEN = [
-  'ondersteuning', 'vervangende mantelzorg', 'praten & steun',
-  'lotgenoten', 'leren & training',
+  'ondersteuning', 'vervangende mantelzorg', 'praten, steun & lotgenoten',
+  'leren & training',
 ]
 
 // Geldige ZorgorganisatieType enum-waarden

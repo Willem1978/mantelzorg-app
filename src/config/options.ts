@@ -91,8 +91,7 @@ export interface HulpCategorieDef {
 export const HULP_VOOR_MANTELZORGER: HulpCategorieDef[] = [
   { id: "informatie", naam: "Informatie en advies", emoji: "ℹ️", dbValue: "Informatie en advies" },
   { id: "educatie", naam: "Educatie & cursussen", emoji: "📚", dbValue: "Educatie" },
-  { id: "emotioneel", naam: "Emotionele steun", emoji: "💚", dbValue: "Emotionele steun" },
-  { id: "begeleiding", naam: "Persoonlijke begeleiding", emoji: "🤝", dbValue: "Persoonlijke begeleiding" },
+  { id: "emotioneel", naam: "Emotionele steun & lotgenoten", emoji: "💚", dbValue: "Emotionele steun" },
   { id: "praktisch", naam: "Praktische hulp", emoji: "🔧", dbValue: "Praktische hulp" },
   { id: "respijt", naam: "Vervangende zorg (respijt)", emoji: "🛏️", dbValue: "Vervangende mantelzorg" },
 ]

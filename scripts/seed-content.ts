@@ -276,9 +276,8 @@ async function main() {
   const categorieenMantelzorger = [
     { slug: "mantelzorgondersteuning", naam: "Ondersteuning", icon: "💜", kort: "Ondersteuning", volgorde: 1 },
     { slug: "vervangende-mantelzorg", naam: "Vervangende mantelzorg", icon: "🏠", kort: "Vervangende mantelzorg", volgorde: 2 },
-    { slug: "emotionele-steun", naam: "Praten & steun", icon: "💚", kort: "Praten & steun", volgorde: 3 },
-    { slug: "lotgenotencontact", naam: "Lotgenoten", icon: "👥", kort: "Lotgenoten", volgorde: 4 },
-    { slug: "leren-en-training", naam: "Leren & training", icon: "🎓", kort: "Leren & training", volgorde: 5 },
+    { slug: "emotionele-steun", naam: "Praten, steun & lotgenoten", icon: "💚", kort: "Praten, steun & lotgenoten", volgorde: 3 },
+    { slug: "leren-en-training", naam: "Leren & training", icon: "🎓", kort: "Leren & training", volgorde: 4 },
   ]
 
   for (const cat of categorieenMantelzorger) {
@@ -676,8 +675,7 @@ async function main() {
         items: [
           { emoji: "💜", label: "Ondersteuning" },
           { emoji: "🏠", label: "Vervangende mantelzorg" },
-          { emoji: "💚", label: "Praten" },
-          { emoji: "👥", label: "Lotgenoten" },
+          { emoji: "💚", label: "Praten & lotgenoten" },
         ],
       },
     },

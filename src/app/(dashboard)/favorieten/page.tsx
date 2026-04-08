@@ -28,7 +28,7 @@ type FavTab = "voor-jou" | "voor-naaste" | "informatie"
 
 // Categorieën die bij "Voor jou" horen (mantelzorger)
 const CATEGORIEEN_MANTELZORGER = [
-  'Mantelzorgondersteuning', 'Vervangende mantelzorg', 'Emotionele steun', 'Lotgenotencontact'
+  'Mantelzorgondersteuning', 'Vervangende mantelzorg', 'Emotionele steun'
 ]
 
 // Categorieën die bij "Voor naaste" horen (zorgvrager)

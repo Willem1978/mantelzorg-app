@@ -511,8 +511,7 @@ ZORGTAKEN DIE MANTELZORGERS UITVOEREN:
 HULPCATEGORIEËN VOOR MANTELZORGERS ZELF:
 - Informatie en advies
 - Educatie & cursussen
-- Emotionele steun
-- Persoonlijke begeleiding
+- Emotionele steun & lotgenoten
 - Praktische hulp
 - Vervangende zorg (respijt)
 

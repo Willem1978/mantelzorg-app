@@ -285,8 +285,7 @@ function StapHulpMantelzorger({ content }: { content?: TutorialStep }) {
   const defaultItems = [
     { emoji: "💜", label: "Ondersteuning" },
     { emoji: "🏠", label: "Vervangende mantelzorg" },
-    { emoji: "💚", label: "Praten" },
-    { emoji: "👥", label: "Lotgenoten" },
+    { emoji: "💚", label: "Praten & lotgenoten" },
   ]
   const items = content?.items?.length ? content.items : defaultItems
 
