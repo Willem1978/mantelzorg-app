@@ -1,6 +1,8 @@
 # AI-Chatbot Ger — Technisch & Functioneel Overzicht
 
-Dit document beschrijft hoe de AI-chatbot **Ger** in MantelBuddy werkt: welk model, hoe hij wordt aangestuurd ("getraind" via prompts en context), welke koppelingen hij heeft naar de database en externe systemen, en welke hulpmiddelen (tools) hij tot zijn beschikking heeft.
+Dit document beschrijft hoe de AI-chatbot **Ger** in MantelBuddy werkt: welk model, hoe hij wordt aangestuurd ("getraind" via prompt en context), welke koppelingen hij heeft naar de database en externe systemen, welke hulpmiddelen (tools) hij tot zijn beschikking heeft en welke gedragsregels hem warm én kort houden.
+
+> Laatste update: na implementatie van Ronde 1 + Ronde 2 UX-verbeteringen (kortere antwoorden, beide doelgroepen, cumulatieve kaartverzameling, proactieve opener, tool-status, variatie-regels).
 
 ---
 
@@ -9,18 +11,20 @@ Dit document beschrijft hoe de AI-chatbot **Ger** in MantelBuddy werkt: welk mod
 Ger is de digitale mantelzorgcoach in de app. Hij is geen hulpverlener, maar een warm, vriendelijk gespreksaanknooppunt dat:
 
 - meedenkt met mantelzorgers in B1-taalniveau (eenvoudig Nederlands),
-- relevante lokale hulpbronnen voorstelt op basis van gemeente en zorgsituatie,
-- artikelen en tips toont die de gebruiker kan lezen, opslaan als favoriet of mailen,
+- relevante lokale hulpbronnen voorstelt voor zowel de **zorgvrager** (de naaste die zorg krijgt) als voor de **mantelzorger** zelf,
+- artikelen en tips toont die de gebruiker kan aanklikken, lezen, opslaan als favoriet en mailen,
 - waarschuwt bij signalen van crisis en doorverwijst naar 113 / Mantelzorglijn,
-- actiepunten kan vastleggen voor opvolging in een volgend gesprek.
+- actiepunten kan vastleggen voor opvolging in een volgend gesprek,
+- onder de chat een groeiende verzameling hulpbronnen en artikelen opbouwt waarin de gebruiker zelf kan terugbladeren.
 
 Ger is **niet getraind** in de klassieke zin (geen fine-tuning). Zijn gedrag wordt volledig gestuurd door:
 
-1. Het keuze van het taalmodel (Anthropic Claude Haiku 4.5),
+1. De keuze van het taalmodel (Anthropic Claude Haiku 4.5),
 2. Een uitgebreid **systeem-prompt** dat zijn persona, stijl en gedragsregels beschrijft,
 3. **Pre-fetched gebruikerscontext** (balanstest, hulpbronnen, gemeente, voorkeuren),
-4. **Tools** die hij tijdens een gesprek kan aanroepen voor extra zoekopdrachten,
-5. Een **crisis-detector** die voor de AI-call al ingrijpt bij gevaarlijke situaties.
+4. Een **proactieve opener** die op basis van de balanstest server-side wordt opgebouwd,
+5. **Tools** die hij tijdens een gesprek kan aanroepen voor extra zoekopdrachten,
+6. Een **crisis-detector** die voor de AI-call al ingrijpt bij gevaarlijke situaties.
 
 ---
 
@@ -34,6 +38,8 @@ Ger is **niet getraind** in de klassieke zin (geen fine-tuning). Zijn gedrag wor
 | Gereserveerd voor toekomst (crisis-deep-detect) | `claude-opus-4-20250514` |
 | SDK-pakketten | `@ai-sdk/anthropic`, `ai`, `@ai-sdk/react` |
 | Embeddings (semantisch zoeken) | OpenAI `text-embedding-3-small` (1536-dim) |
+| **Output-budget per turn** | `maxOutputTokens: 600` (kort gehouden — zie sectie 5) |
+| **Tool-stappen per turn** | `stopWhen: stepCountIs(7)` |
 
 Model-keuze per agent staat centraal in `src/lib/ai/models.ts` in het `AGENT_MODELS`-object. Wijzig daar als een agent een ander model moet krijgen.
 
@@ -44,41 +50,50 @@ Model-keuze per agent staat centraal in `src/lib/ai/models.ts` in het `AGENT_MOD
 ## 3. Architectuuroverzicht (high-level)
 
 ```
-┌──────────────────┐     POST /api/ai/chat      ┌──────────────────────┐
-│                  │  ─────────────────────────►│                      │
-│  AiChat.tsx      │  body: messages,            │  /api/ai/chat        │
-│  (browser)       │        shownHulpbronnen,    │  (Next.js route)     │
-│                  │◄ ─────────────────────────  │                      │
-│  - useChat hook  │     SSE stream              │  1. Auth check       │
-│  - parseHulp/    │     (tekst + tool-steps)    │  2. Crisis-detector  │
-│    artikelkaart  │                             │  3. Prefetch context │
-│  - knoppen       │                             │  4. streamText()     │
-│  - localStorage  │                             │     ├ Claude Haiku   │
-└──────────────────┘                             │     ├ system-prompt  │
-                                                 │     └ tools          │
-                                                 └──────────┬───────────┘
-                                                            │
-                                                 ┌──────────┴───────────┐
-                                                 │                      │
-                                                 ▼                      ▼
-                                       ┌──────────────────┐   ┌─────────────────┐
-                                       │  Prisma / Postgres│   │  OpenAI         │
-                                       │  - Caregiver      │   │  embeddings API │
-                                       │  - BelastbaarheidT│   │  (semantic)     │
-                                       │  - Zorgorganisatie│   └─────────────────┘
-                                       │  - Artikel        │
-                                       │  - Actiepunten    │
-                                       │  - WeekKaart      │
-                                       │  + pgvector       │
-                                       └───────────────────┘
+┌──────────────────┐                                  ┌──────────────────────┐
+│                  │  GET /api/ai/opener              │                      │
+│  AiChat.tsx      │  ───────────────────────────────►│  /api/ai/opener      │
+│  (browser)       │  ◄──── opener + 3 vraagknoppen   │  (geen AI-call)      │
+│                  │                                  └──────────────────────┘
+│  - useChat hook  │
+│  - kaarten       │  POST /api/ai/chat               ┌──────────────────────┐
+│    parser        │  ───────────────────────────────►│                      │
+│  - cumulatieve   │  body: messages,                 │  /api/ai/chat        │
+│    verzameling   │        shownHulpbronnen,         │  (Next.js route)     │
+│  - tool-status   │        shownArtikelen            │                      │
+│  - localStorage  │  ◄──── SSE stream (tekst+tools)  │  1. Auth check       │
+└──────────────────┘                                  │  2. Crisis-detector  │
+                                                      │  3. Prefetch context │
+                                                      │     (met variatie)   │
+                                                      │  4. streamText()     │
+                                                      │     ├ Claude Haiku   │
+                                                      │     ├ system-prompt  │
+                                                      │     └ tools          │
+                                                      └──────────┬───────────┘
+                                                                 │
+                                                      ┌──────────┴───────────┐
+                                                      │                      │
+                                                      ▼                      ▼
+                                            ┌──────────────────┐   ┌─────────────────┐
+                                            │  Prisma / Postgres│   │  OpenAI         │
+                                            │  - Caregiver      │   │  embeddings API │
+                                            │  - BelastbaarheidT│   │  (semantic)     │
+                                            │  - Zorgorganisatie│   └─────────────────┘
+                                            │  - Artikel        │
+                                            │  - Actiepunten    │
+                                            │  - WeekKaart      │
+                                            │  + pgvector       │
+                                            └───────────────────┘
 ```
 
 ### Belangrijke ontwerpkeuzes
 
 - **Streaming**: antwoorden worden token-voor-token gestreamd via `streamText` → `toUIMessageStreamResponse`. De gebruiker ziet Ger "typen".
+- **Tool-status zichtbaar**: tijdens een tool-call toont de loading-bubble nu een mensvriendelijk label ("Ger zoekt lokale hulp...", "Ger zoekt artikelen...") in plaats van het generieke "Ger typt...". Dit komt uit `message.parts` met type `tool-<naam>`.
 - **Pre-fetch boven tools**: gebruikersdata (test, hulpbronnen, gemeente) wordt vóór de AI-call al uit de DB gehaald en in de system-prompt geïnjecteerd. Dat scheelt 1-2 tool-call rondes en daarmee 10-15 seconden latency.
+- **Variatie tussen beurten**: zowel pre-fetch als tools houden rekening met wat de gebruiker eerder heeft gezien (zacht deprioriteren, niet uitsluiten) zodat elke beurt iets nieuws kan tonen.
 - **Geen persistente chatgeschiedenis**: berichten staan in browser-localStorage (via Vercel AI SDK), niet in de database. Per device / per logout begint een nieuw gesprek.
-- **Sessie-scoped variatie**: de client stuurt namen van eerder getoonde hulpbronnen en artikelen mee, zodat Ger elke beurt iets nieuws kan voorstellen. Geen DB-state.
+- **Cumulatieve kaartverzameling**: hulp- en artikelkaarten verdwijnen niet als Ger nieuwe noemt — ze stapelen onder de chat (max 6 hulp + 6 artikelen, gededupliceerd) zodat de gebruiker tijdens het gesprek een verzameling opbouwt om later op te slaan.
 
 ---
 
@@ -88,6 +103,7 @@ Alle routes leven onder `src/app/api/ai/`.
 
 | Route | Agent-key | Doel | Auth | Rate-limit |
 |---|---|---|---|---|
+| `/api/ai/opener` | — | **Gepersonaliseerde welkomstzin + 3 startknoppen** (geen AI-call, server-side opgebouwd uit balanstest) | Vereist | nee |
 | `/api/ai/chat` | `ger-chat` | Hoofd-chatpagina (`/ai-assistent`) — ingelogde gebruiker | Vereist | nee |
 | `/api/ai/welkom` | `ger-welkom` | Publieke chat op homepage / hero | Anoniem | 20 / 10min per IP (Upstash) |
 | `/api/ai/balanscoach` | `ger-balanscoach` | Coach-pagina met test-context | Vereist | nee |
@@ -101,6 +117,19 @@ Alle routes leven onder `src/app/api/ai/`.
 
 `maxDuration` voor de chat-route staat op 30 seconden — voldoende voor tool-calls + DB-queries binnen Vercel serverless.
 
+### De opener-route (nieuw)
+
+`/api/ai/opener` is bewust **geen** AI-call: de welkomstzin moet binnen 200 ms beschikbaar zijn voor first paint van de chat. De route leest de laatste balanstest en bouwt op basis van het belastingsniveau en het zwaarste deelgebied/zwaarste taak een passende begroeting + 3 startknoppen:
+
+| Niveau | Voorbeeld-opener | Startknoppen |
+|---|---|---|
+| **HOOG** | "Fijn dat je er bent. Ik zie dat **fysieke belasting** op dit moment het meeste van je vraagt. Zal ik daar mee beginnen?" | "Vertel meer over fysieke belasting" / "Welke hulp kan mij ontlasten?" / "Ik wil het over iets anders hebben" |
+| **GEMIDDELD** | "Goed dat je er bent. **Huishoudelijke taken** kost je relatief veel tijd — wil je kijken hoe dat lichter kan?" | "Hulp bij huishoudelijke taken" / "Tips voor mezelf" / "Hoe gaat het met mij?" |
+| **LAAG** | "Goed dat je er bent. Het gaat eigenlijk best goed met je balans — knap! Wat houdt je vandaag bezig?" | "Tips om het zo te houden" / "Iets over mezelf vertellen" / "Welke hulp is er in de buurt?" |
+| **Geen test** | Nudge naar balanstest + uitnodiging om wel te starten | "Ik wil de balanstest doen" / "Ik wil eerst even praten" / "Welke hulp is er bij mij in de buurt?" |
+
+Frontend (`AiChat.tsx`) haalt dit op bij mount, valt terug op generieke tekst bij fout.
+
 ---
 
 ## 5. Het systeem-prompt (de "training" van Ger)
@@ -110,23 +139,36 @@ Het hart van Ger zit in `src/lib/ai/prompts/assistent.ts`. Dit prompt is opgebou
 | Sectie | Wat erin staat |
 |---|---|
 | **Grondhouding** | Niet belerend, niet medelijdend; uitgaan van kracht; warm en respectvol |
-| **Gespreksstijl** | Praat als warme buurvrouw; geen lijsten; max 4-5 zinnen; eindigen met open vraag |
+| **Gespreksstijl** | Warme buurvrouw-toon; **HARD limit max 3 zinnen** per beurt; geen inleidingen, samenvattingen of afsluitingen; geen lijsten |
 | **Taalstijl (B1)** | Korte zinnen (max 15 woorden), geen jargon, actief, scanbaar, geen genummerde lijsten |
 | **Gespreksvoering** | 4-stappen flow: Verbinding → Verdieping → Eén concreet advies → Open uitnodiging |
+| **Variatie in openers** | 5 soorten verbinding mogelijk; verboden clichés ("Wat een goede vraag", "Ik begrijp dat...", "Wat moedig dat je dit deelt"); "Dat herken ik" max 1× per gesprek |
+| **Gesprekscontinuïteit** | Bij korte/vage antwoorden ("ja", "weet niet"): pak iets uit de context (zware taak, open actiepunt) en vraag concreet door |
 | **Omgaan met context** | Pre-fetched data is al beschikbaar; nooit samenvatten, alleen onzichtbaar verweven |
 | **Gedrag per belastingniveau** | HOOG: proactief, mantelzorglijn / GEMIDDELD: één concrete actie / LAAG: complimenteren |
+| **Twee-doelgroepen-regel** | Bij brede vragen ALTIJD 1 hulp voor de zorgvrager + 1 hulp voor de mantelzorger zelf combineren |
+| **Hulp + artikel combineren** | Bij emotionele onderwerpen (slaap, schuldgevoel, eenzaamheid): hulpkaart (actie) **én** artikelkaart (lezen/bewaren) in hetzelfde bericht |
 | **Zorgtaken** | Eén taak per bericht, beginnen met de zwaarste; "eerste stap" benoemen voor nieuwe gebruikers |
 | **Actiepunten** | Concreet advies opslaan via tool, in volgend gesprek opvolgen |
 | **Crisisdetectie** | Empathie eerst, dan praktisch; bij acute nood doorverwijzen naar 113 / huisarts / Veilig Thuis |
-| **Output-syntax** | Hulpkaart, artikelkaart, navigatie-knop, vraag-knop — exacte syntax + max-aantallen |
+| **Output-syntax** | Hulpkaart, artikelkaart, navigatie-knop, vraag-knop — exacte syntax + max-aantallen per bericht |
 | **Tool-instructies** | Tools alléén als pre-fetched context niet voldoende is |
-| **Niet doen** | Verzin geen telefoonnummers; geen medisch advies; geen herhaling van eerder getoonde kaarten |
+| **Niet doen** | Verzin geen telefoonnummers; geen medisch advies; geen herhaling van eerder getoonde kaarten; nooit langer dan 3 zinnen |
 | **App-pagina's** | Lijst van interne paden voor `{{knop:...}}` actieknoppen |
 
 Aan dit basis-prompt worden **dynamisch toegevoegd** door `buildAssistentPrompt()`:
 
 1. De gemeenten van mantelzorger en zorgvrager (twee-gemeentes-systeem),
 2. Het volledige **context-blok** uit `prefetchUserContext()` (zie volgende sectie).
+
+### Lengte-regels (cruciaal voor coachende ervaring)
+
+Vroeger neigden antwoorden naar 6-10 zinnen met inleiding én samenvatting. Nu strikt:
+
+- `maxOutputTokens: 600` — hard plafond op het model.
+- Prompt-regel: **max 3 zinnen conversatietekst per beurt**, liever 2.
+- Geen "Wat een goede vraag", geen "Hopelijk helpt dit", geen "Dus om het kort te zeggen".
+- Korte zin = klein cadeautje. Lange zin = lezing.
 
 ### Output-syntax die Ger leert genereren
 
@@ -139,7 +181,7 @@ In zijn antwoord kan Ger speciale tokens plaatsen die de frontend dan rendert al
 | `{{knop:Label:/pad}}` | Navigatie-knop | Knop die naar een interne pagina linkt |
 | `{{vraag:Vraagtekst}}` | Vervolgvraag | Knop onder input die direct die vraag verstuurt |
 
-Parsing gebeurt in `src/components/ai/HulpKaart.tsx`, `ArtikelKaart.tsx` en `AiChat.tsx`.
+**Per bericht**: maximaal 4 kaarten in totaal — typisch 1-2 hulpkaarten + 1-2 artikelkaarten. Plus 3 vraagknoppen onderaan. Parsing gebeurt in `src/components/ai/HulpKaart.tsx`, `ArtikelKaart.tsx` en `AiChat.tsx`.
 
 ---
 
@@ -162,12 +204,12 @@ Voor élk chatverzoek wordt eerst `prefetchUserContext()` (`src/lib/ai/prefetch-
 
 ### Twee-gemeentes-systeem
 
-Cruciaal detail: een mantelzorger in Arnhem kan zorgen voor een naaste in Zutphen. Hulp wordt daarom in twee gemeenten gezocht:
+Cruciaal detail: een mantelzorger in Arnhem kan zorgen voor een naaste in Zutphen. Hulp wordt daarom in twee gemeenten gezocht en in **gescheiden blokken** in de prompt geplaatst:
 
-- **Zorgtaken** (boodschappen, verzorging, klusjes) → gemeente van de **zorgvrager**
-- **Mantelzorger-hulp** (steunpunt, emotioneel, lotgenoten) → gemeente van de **mantelzorger**
+- **Zorgtaken** (boodschappen, verzorging, klusjes) → gemeente van de **zorgvrager** → blok `HULP BIJ ZWARE ZORGTAKEN`
+- **Mantelzorger-hulp** (steunpunt, emotioneel, lotgenoten) → gemeente van de **mantelzorger** → blok `HULP VOOR JOU (mantelzorger)`
 
-Dat onderscheid wordt gemaakt in zowel `prefetch-context.ts` als in de `zoekHulpbronnen`-tool, op basis van categorie-keywords (`emotioneel`, `steunpunt`, `respijt` etc.).
+De prompt instrueert Ger om bij brede vragen **uit beide blokken** te kiezen en te combineren in één bericht. Categorie-routing in `zoekHulpbronnen` werkt op basis van keywords (`emotioneel`, `steunpunt`, `respijt` etc.).
 
 ### Variatie tussen chat-beurten
 
@@ -179,20 +221,20 @@ De pre-fetch-functie krijgt nu een `options.shownHulpbronnen` mee — een lijst 
 
 Ger kan tijdens een gesprek tools aanroepen voor extra zoekopdrachten. Definities in `src/lib/ai/tools/`. Het taalmodel beslist zelf wanneer en met welke parameters.
 
-| Tool | Doel | Belangrijke kenmerken |
+| Tool | Doel | Status-label in UI tijdens uitvoering |
 |---|---|---|
-| `bekijkTestTrend` | Vergelijking met eerdere balanstesten | Score-historie + trendindicatie |
-| `zoekHulpbronnen` | Zoek lokale zorgorganisaties | Twee-gemeentes-routing, categorie-varianten via `TAAK_NAAM_VARIANTEN`, sessie-variatie |
-| `zoekArtikelen` | Zoek info-artikelen | Filter op categorie/tag/zoekterm; sessie-variatie; output instrueert artikelkaart-syntax |
-| `gemeenteInfo` | Mantelzorgloket-contact per gemeente | Telefoon, e-mail, website van loket |
-| `semantischZoeken` | Vector similarity search | OpenAI embeddings + pgvector; valt terug op tekstzoek |
-| `slaActiepuntOp` | Concreet advies opslaan voor opvolging | Prisma `Actiepunt` record per user |
-| `bekijkBalanstest` | Volledige test-resultaten ophalen | Alleen als ineens diepe details nodig zijn |
-| `bekijkCheckInTrend` | Maandelijkse check-in trends | Score over laatste maanden |
-| `bekijkGebruikerStatus` | Profiel + test-status + voltooiingspercentage | 211 regels — meest uitgebreide tool |
-| `bekijkGemeenteAdvies` | Gemeente-specifiek advies (config) | Statische mapping |
-| `genereerRapportSamenvatting` | Genereer + sla PDF-rapport op | Voor de mantelzorger-rapport-functie |
-| `registreerAlarm` | Crisissignaal vastleggen | `AlarmLog` record |
+| `bekijkTestTrend` | Vergelijking met eerdere balanstesten | "Ger bekijkt jouw balans-trend" |
+| `zoekHulpbronnen` | Zoek lokale zorgorganisaties | "Ger zoekt lokale hulp voor je" |
+| `zoekArtikelen` | Zoek info-artikelen | "Ger zoekt artikelen die kunnen helpen" |
+| `gemeenteInfo` | Mantelzorgloket-contact per gemeente | "Ger bekijkt info van jouw gemeente" |
+| `semantischZoeken` | Vector similarity search | "Ger zoekt informatie over dit onderwerp" |
+| `slaActiepuntOp` | Concreet advies opslaan voor opvolging | "Ger noteert dit voor je" |
+| `bekijkBalanstest` | Volledige test-resultaten ophalen | "Ger bekijkt jouw balanstest" |
+| `bekijkCheckInTrend` | Maandelijkse check-in trends | "Ger bekijkt je check-in trend" |
+| `bekijkGebruikerStatus` | Profiel + test-status + voltooiingspercentage | — |
+| `bekijkGemeenteAdvies` | Gemeente-specifiek advies (config) | "Ger zoekt advies in jouw gemeente" |
+| `genereerRapportSamenvatting` | Genereer + sla PDF-rapport op | "Ger maakt een samenvatting" |
+| `registreerAlarm` | Crisissignaal vastleggen | "Ger zet dit veilig in je dossier" |
 
 Op de hoofdchat (`/api/ai/chat`) zijn nu **6 tools** actief: `bekijkTestTrend`, `zoekHulpbronnen`, `zoekArtikelen`, `gemeenteInfo`, `semantischZoeken`, `slaActiepuntOp`. De andere zijn beschikbaar in andere routes (balanscoach/checkin) of admin-agents.
 
@@ -201,6 +243,10 @@ Op de hoofdchat (`/api/ai/chat`) zijn nu **6 tools** actief: `bekijkTestTrend`, 
 ### Variatie in tool-resultaten
 
 `zoekHulpbronnen` en `zoekArtikelen` halen sinds [PR #345](https://github.com/Willem1978/mantelzorg-app/pull/345) een **ruimere set** op (15-24 records) en passen `prioritizeUnshown` toe op basis van `shownNamen` / `shownTitels` die de client meestuurt. Resultaat: bij dezelfde zoekvraag in dezelfde gemeente komen telkens andere organisaties bovendrijven.
+
+### Tool-status zichtbaar in UI
+
+`AiChat.tsx` inspecteert het laatste assistant-bericht tijdens streaming: als er een part van het type `tool-<naam>` aanwezig is, mapt het via `TOOL_STATUS` naar een mensvriendelijk Nederlands label dat in de loading-bubble verschijnt. Defensief gelezen zodat het werkt met meerdere AI SDK-versies. Geen tool actief? Dan toont de bubble simpelweg "Ger typt…".
 
 ---
 
@@ -228,19 +274,22 @@ Filosofie: **safety-first** — false positives (onterecht crisis-protocol tonen
 
 ## 9. Frontend-integratie
 
-Hoofdcomponent: `src/components/ai/AiChat.tsx` (~430 regels). Gebruikt `useChat` uit `@ai-sdk/react` met een custom `DefaultChatTransport`.
+Hoofdcomponent: `src/components/ai/AiChat.tsx`. Gebruikt `useChat` uit `@ai-sdk/react` met een custom `DefaultChatTransport`.
 
 ### Bericht-flow
 
-1. Gebruiker typt en verstuurt → `sendMessage({ text })`
-2. `prepareSendMessagesRequest` callback:
+1. **Bij mount**: `GET /api/ai/opener` → opener-tekst + 3 vraagknoppen tonen (gepersonaliseerd op basis van balanstest)
+2. **Gebruiker** typt of klikt op een vraagknop → `sendMessage({ text })`
+3. **`prepareSendMessagesRequest`** callback:
    - Converteert UI-berichten (parts-format) naar model-berichten (content-format)
    - Filtert lege berichten (tool-call stappen zonder tekst)
    - Verzamelt eerdere `{{hulpkaart:...}}`-namen en `{{artikelkaart:...}}`-titels uit de message-history
    - Stuurt mee als `shownHulpbronnen` / `shownArtikelen` in de body
-3. Server streamt antwoord-tokens terug
-4. Tijdens streaming: `parseHulpkaarten`, `parseArtikelkaarten`, `parseButtons` halen de tokens uit de tekst en renderen ze los buiten de spreekbubble
-5. Hulp- en artikelkaarten worden **gepersisteerd** onder de input (max 2 hulpkaarten + 3 artikelkaarten) — blijven staan tot Ger nieuwe noemt
+4. **Server** streamt antwoord-tokens terug
+5. **Tijdens streaming**:
+   - Loading-bubble toont tool-status als Ger een tool aanroept ("Ger zoekt lokale hulp voor je")
+   - `parseHulpkaarten`, `parseArtikelkaarten`, `parseButtons` halen tokens uit de tekst en renderen ze los buiten de spreekbubble
+6. **Cumulatieve verzameling**: een `useEffect` loopt na elke nieuwe assistant-message door **alle** assistant-berichten heen, dedupliceert op naam/titel en zet de top-6 hulp + top-6 artikelen onder de input. Verdwijnen doen ze pas als de cap wordt overschreden.
 
 ### UI-varianten
 
@@ -251,6 +300,18 @@ Hoofdcomponent: `src/components/ai/AiChat.tsx` (~430 regels). Gebruikt `useChat`
 | `FloatingGerChat` | Zwevend chat-widget |
 | `PublicGerChat` | Publieke variant zonder login |
 | `AgentChat` | Generiek alternatief (mogelijk legacy) |
+
+### Cumulatieve kaartverzameling
+
+In tegenstelling tot eerder (vervangende set per bericht) bouwt de chat nu een **groeiende collectie** op onder de input:
+
+- Hulpkaarten en artikelkaarten worden uit alle assistant-berichten verzameld
+- Dedupe op lowercase naam / titel
+- Caps: max 6 hulpkaarten + max 6 artikelkaarten
+- Volgorde: nieuwste eerst (van recent assistant-bericht naar oud)
+- Elke kaart blijft klikbaar; ContentModal opent met bel/web-knoppen + hartje voor favoriet
+
+Zo voelt het gesprek minder "wegglippen" — wat Ger eerder noemde blijft zichtbaar en makkelijk op te slaan.
 
 ### Favoriet-functie
 
@@ -279,6 +340,7 @@ Modellen die de AI-chatbot direct leest of schrijft:
 ```
 Caregiver           ── leest profiel, gemeenten, voorkeuren, organisatie-koppelingen
 BelastbaarheidTest  ── leest scores, antwoorden, geselecteerde taken, alarmen
+                       (gebruikt door /api/ai/chat én /api/ai/opener)
 Zorgorganisatie     ── leest hulpbronnen (filtert op gemeente, niveau, doelgroep)
 Artikel             ── leest gepubliceerde artikelen + tags
 ArtikelTag / Tag    ── leest tags voor filtering
@@ -300,7 +362,7 @@ Berichten worden **alleen lokaal** opgeslagen door de Vercel AI SDK in browser-l
 - Variatie in suggesties is sessie-scoped (zie sectie 6)
 - Privacy: gesprekken zijn nergens server-side gelogd
 
-Als je in de toekomst persistente chathistorie wilt, is dat een nieuw Prisma-model + extra read/write in de chat-route waard.
+Wel persistent over sessies heen: **Actiepunten** (door Ger via tool opgeslagen) en **Favorieten** (door gebruiker via kaart-modal). Die maken het mogelijk dat Ger in een volgend gesprek kan zeggen: *"Vorige keer spraken we over X. Is dat gelukt?"*
 
 ---
 
@@ -313,6 +375,7 @@ Als je in de toekomst persistente chathistorie wilt, is dat een nieuw Prisma-mod
 | **Rate-limiting** | `/api/ai/welkom` (20/10min per IP) | Voorkomt misbruik van de publieke endpoint |
 | **`maxDuration` 30s** | Vercel function | Hard timeout — voorkomt lange hangende calls |
 | **`stopWhen: stepCountIs(7)`** | streamText | Maximaal 7 tool-call stappen per turn — voorkomt oneindige loops |
+| **`maxOutputTokens: 600`** | streamText | Hard plafond op antwoordlengte — kostenbeheersing + UX |
 | **Hardgecodeerd protocol bij crisis** | `buildCrisisResponse()` | Telefoonnummers van hulplijnen kunnen niet door AI verzonnen of gewijzigd worden |
 | **Geen verzonnen contactgegevens** | Prompt-instructie + tool-output | Hulpkaarten worden letterlijk uit DB gekopieerd; AI mag geen telefoonnummers/websites verzinnen |
 
@@ -325,14 +388,18 @@ Omdat er geen fine-tuning is, gebeurt alle gedragsaanpassing via **prompt engine
 | Wat | Waar aanpassen |
 |---|---|
 | **Toon, persona, gespreksstijl** | `src/lib/ai/prompts/assistent.ts` (basis-prompt) |
-| **Gedrag per balansniveau** | Sectie "Gedrag per belastingniveau" in zelfde prompt |
+| **Lengte-limiet antwoorden** | `maxOutputTokens` in `src/app/api/ai/chat/route.ts` + zinnen-limiet in `assistent.ts` |
+| **Variatie in openers / verboden clichés** | Sectie "Stap 1 — Verbinding" in `assistent.ts` |
+| **Twee-doelgroepen-regel** | Sectie "Output-syntax" in `assistent.ts` |
+| **Welkomstzin + startknoppen** | `src/app/api/ai/opener/route.ts` (server-side, geen AI) |
+| **Tool-status labels in UI** | `TOOL_STATUS` object in `src/components/ai/AiChat.tsx` |
+| **Cap op cumulatieve kaartverzameling** | `MAX_HULP` / `MAX_ARTIKEL` in `AiChat.tsx` |
+| **Gedrag per balansniveau** | Sectie "Gedrag per belastingniveau" in `assistent.ts` |
 | **Output-syntax / kaart-formaat** | Sectie "Output Syntax" in zelfde prompt + `HulpKaart.tsx` / `ArtikelKaart.tsx` (parser) |
 | **Crisis-keywords / hulplijnen** | `src/lib/ai/crisis-detector.ts` |
 | **Welk model voor welke agent** | `src/lib/ai/models.ts` (`AGENT_MODELS`) |
 | **Welke tools beschikbaar per route** | De `tools: { ... }` in elke `/api/ai/*/route.ts` |
 | **Wat in pre-fetched context** | `src/lib/ai/prefetch-context.ts` (prefetchUserContext + buildContextBlock) |
-| **Suggestie-knoppen bij start** | `suggesties` array in `src/components/ai/AiChat.tsx` |
-| **Welkomst-zin (eerste bericht)** | JSX in `AiChat.tsx` (sectie "Welkomstbericht") |
 | **Variatie / herhaling-gedrag** | `src/lib/ai/variation.ts` + `shownHulpbronnen` body-veld |
 | **Coach-adviezen per deelgebied** | Static config (zie `loadCoachAdviezen()`) |
 
@@ -340,8 +407,9 @@ Omdat er geen fine-tuning is, gebeurt alle gedragsaanpassing via **prompt engine
 
 1. **Wijzig één ding tegelijk** in het systeem-prompt. Door de uitgebreidheid is het makkelijk dat aanpassingen elkaar tegenwerken.
 2. **Test op échte balanstest-data** — Ger gedraagt zich anders bij HOOG/GEMIDDELD/LAAG. Een test-account per niveau is waardevol.
-3. **Let op token-budget** — `maxOutputTokens: 2048` is geen probleem voor antwoorden, maar de pre-fetched context kan groot worden bij veel hulpbronnen. Onnodig veel context = hogere kosten.
+3. **Let op token-budget** — `maxOutputTokens: 600` houdt antwoorden kort, maar de pre-fetched context kan groot worden bij veel hulpbronnen. Monitor input-tokens in Anthropic dashboard.
 4. **Gebruik de Anthropic console voor prompt-debugging** — kopieer de werkelijk verstuurde messages + system prompt en test daar varianten zonder de volledige Next.js stack.
+5. **Bij wijzigingen aan kaart-syntax**: update óók de parser in `HulpKaart.tsx` / `ArtikelKaart.tsx`, anders worden ze niet meer herkend.
 
 ---
 
@@ -368,6 +436,7 @@ Deze agents schrijven naar dezelfde Postgres en delen de Anthropic-account — h
 ```
 src/
 ├── app/api/ai/
+│   ├── opener/route.ts          ← gepersonaliseerde welkomstzin (geen AI-call)
 │   ├── chat/route.ts            ← hoofd-chat endpoint
 │   ├── welkom/route.ts          ← publieke chat (rate-limited)
 │   ├── balanscoach/route.ts     ← coach met test-context
@@ -379,20 +448,20 @@ src/
 │   ├── models.ts                ← model-keuze per agent (Haiku/Sonnet/Opus)
 │   ├── variation.ts             ← shuffle + prioritizeUnshown helpers
 │   ├── crisis-detector.ts       ← keyword-detectie + vast protocol
-│   ├── prefetch-context.ts      ← gebruikersdata vooraf ophalen
+│   ├── prefetch-context.ts      ← gebruikersdata vooraf ophalen + variatie
 │   ├── embeddings.ts            ← OpenAI embedding service
 │   ├── coach-advies.ts          ← static coach-tips per deelgebied
 │   ├── gemeente-resolver.ts     ← gemeente-contact lookup
 │   ├── prompts/
-│   │   ├── assistent.ts         ← Ger's hoofdprompt (chat)
+│   │   ├── assistent.ts         ← Ger's hoofdprompt (chat) — variatie + 3 zinnen
 │   │   ├── welkom.ts            ← homepage Ger
 │   │   ├── balanscoach.ts       ← coach
 │   │   └── checkin-buddy.ts     ← check-in
-│   ├── tools/                   ← function-calling tools
+│   ├── tools/                   ← function-calling tools (met variatie)
 │   └── agents/                  ← complexe AI-agents (hulpbron-zoeker, validator)
 │
 └── components/ai/
-    ├── AiChat.tsx               ← hoofdchat-UI (useChat + transport)
+    ├── AiChat.tsx               ← hoofdchat-UI (useChat + transport + cumulatief)
     ├── HulpKaart.tsx            ← parser + render van {{hulpkaart:...}}
     ├── ArtikelKaart.tsx         ← parser + render van {{artikelkaart:...}}
     ├── GerAvatar.tsx            ← avatar-component
@@ -403,18 +472,38 @@ src/
 
 ---
 
-## 15. Bekende beperkingen & open punten
+## 15. Recente verbeteringen (Ronde 1 + 2)
 
-- **Geen cross-session-geheugen**: Ger weet niet wat hij vorige week zei — alleen open `Actiepunten` worden meegenomen.
+| Verbetering | Effect | Bestand |
+|---|---|---|
+| Antwoorden korter | `maxOutputTokens` 2048 → 600; prompt naar **max 3 zinnen** | `chat/route.ts`, `assistent.ts` |
+| Beide doelgroepen verplicht | Bij brede vragen ALTIJD 1 hulp voor zorgvrager + 1 voor mantelzorger | `assistent.ts` |
+| Meer kaarten per beurt | 1-2 hulp + 1-2 artikelen toegestaan (was: kies één type) | `assistent.ts` |
+| Cumulatieve verzameling | Kaarten stapelen onder input, dedupe, cap 6+6 | `AiChat.tsx` |
+| Proactieve opener | `/api/ai/opener` geeft per balanstest passende begroeting + 3 startknoppen | `opener/route.ts` |
+| Vraagknoppen 2 → 3 | Variatie-instructie: verdiepen / wisselen / nieuw onderwerp | `assistent.ts`, `AiChat.tsx` |
+| Tool-status in UI | "Ger zoekt lokale hulp..." i.p.v. "Ger typt..." | `AiChat.tsx` |
+| Variatie in openers | 5 soorten verbinding; verbod op clichés ("Wat een goede vraag", "Ik begrijp dat...") | `assistent.ts` |
+| Gespreksflow bij korte antwoorden | Bij "ja"/"weet niet": pak iets uit context en vraag concreet door | `assistent.ts` |
+| Variatie in suggesties | Eerder getoonde hulp/artikelen worden in tools + pre-fetch zacht gedeprioriteerd | `variation.ts`, `tools/*`, `prefetch-context.ts` |
+
+---
+
+## 16. Bekende beperkingen & open punten
+
+- **Geen cross-session-geheugen voor gesprekken zelf**: Ger weet niet wat hij vorige week zei — alleen open `Actiepunten` worden meegenomen.
 - **Geen multi-modal**: alleen tekst. Geen foto's of stem.
-- **Geen tool-keuze-uitleg in UI**: als Ger een tool aanroept ziet de gebruiker alleen "Ger typt..." — geen visuele indicatie van bv. "ik zoek nu lokale hulp".
-- **Variatie alleen in chat-hoofdpagina**: `/api/ai/balanscoach`, `/checkin` en `/welkom` accepteren de `shownNamen`/`shownTitels` parameters wel via tool-signature, maar wiren ze nog niet door vanuit hun eigen frontends.
+- **Variatie alleen op de hoofdchat**: `/api/ai/balanscoach`, `/checkin` en `/welkom` accepteren de `shownNamen`/`shownTitels` parameters wel via tool-signature, maar wiren ze nog niet door vanuit hun eigen frontends.
 - **Geen A/B-testing van prompts**: aanpassingen aan het systeem-prompt gaan direct naar productie zonder framework om varianten te vergelijken.
+- **Geen prompt-caching**: het systeem-prompt + pre-fetched context wordt elk request opnieuw verstuurd. Anthropic prompt caching kan input-kosten met ~90% verlagen voor vervolgvragen.
+- **Crisis-detectie keyword-based**: kan subtiele signalen missen. Te overwegen: aparte snelle moderatie-call met Haiku voor signalen die geen keyword raken.
+- **Artikel-`inhoud` via tekst-token**: als de inhoud een `|` bevat kan de parser haperen. Robuuster zou zijn: alleen artikel-id meegeven en client haalt inhoud uit DB.
+- **Geen klikgedrag-tracking**: we weten niet welke kaarten mantelzorgers nuttig vinden — handig voor latere ranking.
 - **Latency**: pre-fetch + Anthropic-call duurt typisch 2-5 seconden voor het eerste token. Bij veel hulpbronnen in de context kan dit oplopen.
 
 ---
 
-## 16. Snelle referentie
+## 17. Snelle referentie
 
 | Vraag | Antwoord |
 |---|---|
@@ -427,4 +516,9 @@ src/
 | Waar zitten zijn tools? | `src/lib/ai/tools/` |
 | Wat gebeurt er bij een crisis? | Vast protocol vóór AI-call (113, huisarts, Mantelzorglijn) |
 | Hoe pas ik zijn toon aan? | Bewerk het prompt in `assistent.ts` |
+| Hoe lang mag een antwoord zijn? | `maxOutputTokens: 600` + prompt: max 3 zinnen |
+| Toont hij hulp voor zorgvrager én mantelzorger? | Ja, bij brede vragen verplicht beide combineren |
+| Kan de gebruiker artikelen opslaan? | Ja, via hartje in ContentModal → `Favoriet`-tabel |
+| Blijven kaarten in beeld? | Ja, cumulatief onder de chat (max 6 hulp + 6 artikelen) |
+| Hoe weet de gebruiker wat Ger doet? | Tool-status in loading-bubble: "Ger zoekt lokale hulp voor je..." |
 | Waarom Haiku en geen Sonnet? | 4× goedkoper; voor coachende dialoog ruim voldoende |
