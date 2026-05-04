@@ -210,6 +210,41 @@ export function AiChat() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length, isLoading])
 
+  // Detecteer welke tool Ger op dit moment uitvoert (voor de loading-status).
+  // AI SDK v6: tool-parts hebben type "tool-<naam>"; oudere varianten zetten
+  // toolName op de part. Defensief gecheckt zodat het bij beide werkt.
+  const TOOL_STATUS: Record<string, string> = {
+    zoekHulpbronnen: "Ger zoekt lokale hulp voor je",
+    zoekArtikelen: "Ger zoekt artikelen die kunnen helpen",
+    semantischZoeken: "Ger zoekt informatie over dit onderwerp",
+    gemeenteInfo: "Ger bekijkt info van jouw gemeente",
+    bekijkTestTrend: "Ger bekijkt jouw balans-trend",
+    bekijkBalanstest: "Ger bekijkt jouw balanstest",
+    bekijkCheckInTrend: "Ger bekijkt je check-in trend",
+    bekijkGemeenteAdvies: "Ger zoekt advies in jouw gemeente",
+    slaActiepuntOp: "Ger noteert dit voor je",
+    registreerAlarm: "Ger zet dit veilig in je dossier",
+    genereerRapportSamenvatting: "Ger maakt een samenvatting",
+  }
+
+  const activeToolStatus: string | null = (() => {
+    if (!isLoading) return null
+    const lastA = [...messages].reverse().find((m) => m.role === "assistant")
+    if (!lastA?.parts) return null
+    for (const part of lastA.parts) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const p = part as any
+      if (typeof p.type === "string" && p.type.startsWith("tool-")) {
+        const naam = p.type.slice(5)
+        if (TOOL_STATUS[naam]) return TOOL_STATUS[naam]
+      }
+      if (typeof p.toolName === "string" && TOOL_STATUS[p.toolName]) {
+        return TOOL_STATUS[p.toolName]
+      }
+    }
+    return null
+  })()
+
   // Vraagknoppen uit het laatste assistant-bericht
   const lastVraagknoppen = (() => {
     const lastAssistant = [...messages].reverse().find(m => m.role === "assistant")
@@ -315,7 +350,7 @@ export function AiChat() {
                   <div className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:150ms]" />
                   <div className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:300ms]" />
                 </div>
-                <span className="text-xs text-muted-foreground">Ger typt...</span>
+                <span className="text-xs text-muted-foreground">{activeToolStatus ?? "Ger typt"}…</span>
               </div>
             </div>
           </div>
