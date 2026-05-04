@@ -106,7 +106,7 @@ export async function POST(req: Request) {
       model: getModelForAgent("ger-chat"),
       system: buildAssistentPrompt(gemeenteMantelzorger, gemeenteZorgvrager, contextBlock),
       messages,
-      maxOutputTokens: 2048,
+      maxOutputTokens: 600,
       stopWhen: stepCountIs(7),
       tools: {
         // Tools beschikbaar voor extra zoekopdrachten (niet nodig voor standaard vragen)
