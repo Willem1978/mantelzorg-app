@@ -14,6 +14,7 @@ import { fetchOpenActiepunten } from "@/lib/ai/tools/actiepunten"
 import { DEELGEBIED_SLEUTEL_MAP, TAAK_ID_MAP } from "@/lib/ai/types"
 import { ZORGTAKEN, TAAK_NAAM_VARIANTEN } from "@/config/options"
 import { getISOWeekNummer } from "@/lib/weekkaarten/genereer-weekkaarten"
+import { prioritizeUnshown, toKeySet } from "@/lib/ai/variation"
 
 // Mapping van taakNaam (dbValue) naar alle mogelijke onderdeelTest waarden
 // Identiek aan TAAK_NAAR_ONDERDEEL_VARIANTEN in hulpbronnen.ts
@@ -31,13 +32,20 @@ function getOnderdeelVarianten(taakNaam: string): string[] {
  * → Hulp bij boodschappen/verzorging komt uit Zutphen
  * → Mantelzorgsteunpunt komt uit Arnhem
  */
+export interface PrefetchOptions {
+  /** Namen van hulpbronnen die de gebruiker al in dit gesprek heeft gezien — worden achteraan gezet zodat er variatie ontstaat. */
+  shownHulpbronnen?: string[]
+}
+
 export async function prefetchUserContext(
   userId: string,
   gemeenteMantelzorger: string | null,
   gemeenteZorgvrager?: string | null,
+  options: PrefetchOptions = {},
 ) {
   // Fallback: als alleen één gemeente wordt meegegeven (backwards compatibility)
   const gemZorgvrager = gemeenteZorgvrager ?? gemeenteMantelzorger
+  const shownHulpSet = toKeySet(options.shownHulpbronnen)
 
   // 0) Haal gebruiker-voorkeuren + organisatiekoppelingen op
   const caregiver = await prisma.caregiver.findFirst({
@@ -102,8 +110,8 @@ export async function prefetchUserContext(
   if (!test) {
     // Geen test? Haal alsnog alle hulpbronnen per categorie op
     // Zorgtaken-hulp → gemeente zorgvrager, mantelzorger-hulp → gemeente mantelzorger
-    const alleHulp = await fetchAlleHulpbronnenPerCategorie(gemZorgvrager)
-    const mantelzorgerHulp = await fetchMantelzorgerHulp(gemeenteMantelzorger)
+    const alleHulp = await fetchAlleHulpbronnenPerCategorie(gemZorgvrager, shownHulpSet)
+    const mantelzorgerHulp = await fetchMantelzorgerHulp(gemeenteMantelzorger, shownHulpSet)
     // Haal gemeente contact op (zonder niveau — gebruik GEMIDDELD als default)
     const gemeenteVoorContact = gemZorgvrager || gemeenteMantelzorger
     const gemeenteContact = gemeenteVoorContact
@@ -178,14 +186,14 @@ export async function prefetchUserContext(
   const taakQueries = takenVoorHulp.map(async (taak) => {
     const varianten = getOnderdeelVarianten(taak.taakNaam)
 
-    const resultaten = await prisma.zorgorganisatie.findMany({
+    const ruwe = await prisma.zorgorganisatie.findMany({
       where: {
         isActief: true,
         onderdeelTest: { in: varianten },
         OR: gemeenteFilter,
         AND: niveauFilter,
       },
-      take: 5,
+      take: 15,
       orderBy: { naam: "asc" },
       select: {
         naam: true,
@@ -203,6 +211,8 @@ export async function prefetchUserContext(
       },
     })
 
+    // Variatie tussen chat-beurten: nog niet getoonde items eerst, dan getoonde
+    const resultaten = prioritizeUnshown(ruwe, (r) => r.naam, shownHulpSet).slice(0, 5)
     return { taakNaam: taak.taakNaam, resultaten }
   })
 
@@ -214,10 +224,10 @@ export async function prefetchUserContext(
   }
 
   // 7) Hulpbronnen voor de mantelzorger zelf — gemeente MANTELZORGER (daar woont de mantelzorger)
-  const hulpVoorMantelzorger = await fetchMantelzorgerHulp(gemeenteMantelzorger)
+  const hulpVoorMantelzorger = await fetchMantelzorgerHulp(gemeenteMantelzorger, shownHulpSet)
 
   // 8) Alle hulpbronnen per categorie — gemeente ZORGVRAGER (zorgtaken vinden daar plaats)
-  const alleHulpPerCategorie = await fetchAlleHulpbronnenPerCategorie(gemZorgvrager)
+  const alleHulpPerCategorie = await fetchAlleHulpbronnenPerCategorie(gemZorgvrager, shownHulpSet)
 
   // Bouw het resultaat
   const probleemDeelgebieden = deelgebieden.filter(
@@ -290,7 +300,10 @@ export async function prefetchUserContext(
  * Haalt ALLE hulpbronnen per categorie op (zonder niveaufilter),
  * zodat de AI altijd iets kan aanbieden.
  */
-async function fetchAlleHulpbronnenPerCategorie(gemeente: string | null) {
+async function fetchAlleHulpbronnenPerCategorie(
+  gemeente: string | null,
+  shownSet: ReadonlySet<string> = new Set(),
+) {
   const gemeenteFilter = gemeente
     ? [
         { gemeente: { equals: gemeente, mode: "insensitive" as const } },
@@ -330,7 +343,9 @@ async function fetchAlleHulpbronnenPerCategorie(gemeente: string | null) {
     const varianten = getOnderdeelVarianten(zorgtaak.dbValue)
     const matches = alle.filter((h) => h.onderdeelTest && varianten.includes(h.onderdeelTest))
     if (matches.length > 0) {
-      perCategorie[zorgtaak.naam] = matches.slice(0, 5).map((h) => ({
+      // Variatie: eerst nog niet getoonde items (geshuffeld), dan al getoonde
+      const gevarieerd = prioritizeUnshown(matches, (h) => h.naam, shownSet)
+      perCategorie[zorgtaak.naam] = gevarieerd.slice(0, 5).map((h) => ({
         naam: h.naam,
         dienst: h.dienst,
         telefoon: h.telefoon,
@@ -354,16 +369,19 @@ async function fetchAlleHulpbronnenPerCategorie(gemeente: string | null) {
 /**
  * Haalt hulpbronnen op die specifiek voor de mantelzorger zijn (doelgroep=MANTELZORGER).
  */
-async function fetchMantelzorgerHulp(gemeente: string | null) {
+async function fetchMantelzorgerHulp(
+  gemeente: string | null,
+  shownSet: ReadonlySet<string> = new Set(),
+) {
   if (!gemeente) return []
 
-  return prisma.zorgorganisatie.findMany({
+  const ruwe = await prisma.zorgorganisatie.findMany({
     where: {
       isActief: true,
       gemeente: { equals: gemeente, mode: "insensitive" as const },
       doelgroep: "MANTELZORGER",
     },
-    take: 8,
+    take: 24,
     orderBy: { naam: "asc" },
     select: {
       naam: true,
@@ -381,6 +399,9 @@ async function fetchMantelzorgerHulp(gemeente: string | null) {
       verwachtingTekst: true,
     },
   })
+
+  // Variatie: eerst nog niet getoonde items (geshuffeld), dan getoonde — slice 8
+  return prioritizeUnshown(ruwe, (h) => h.naam, shownSet).slice(0, 8)
 }
 
 /**

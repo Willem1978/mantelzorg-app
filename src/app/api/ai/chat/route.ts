@@ -46,6 +46,10 @@ export async function POST(req: Request) {
 
   const body = await req.json()
   const rawMessages = body.messages
+  // Lijsten van hulpbronnen/artikelen die de gebruiker eerder in dit gesprek
+  // heeft gezien — door de client meegestuurd zodat we kunnen variëren.
+  const shownHulpbronnen: string[] = Array.isArray(body.shownHulpbronnen) ? body.shownHulpbronnen : []
+  const shownArtikelen: string[] = Array.isArray(body.shownArtikelen) ? body.shownArtikelen : []
 
   // Handle both UI messages (parts format) and pre-converted model messages (content format)
   // Filter lege berichten (tool-call stappen zonder tekst) om API fouten te voorkomen
@@ -93,7 +97,9 @@ export async function POST(req: Request) {
 
   try {
     // Pre-fetch balanstest + hulpbronnen zodat de AI direct kan antwoorden
-    const userContext = await prefetchUserContext(userId, gemeenteMantelzorger, gemeenteZorgvrager)
+    const userContext = await prefetchUserContext(userId, gemeenteMantelzorger, gemeenteZorgvrager, {
+      shownHulpbronnen,
+    })
     const contextBlock = buildContextBlock(userContext)
 
     const result = streamText({
@@ -105,8 +111,12 @@ export async function POST(req: Request) {
       tools: {
         // Tools beschikbaar voor extra zoekopdrachten (niet nodig voor standaard vragen)
         bekijkTestTrend: createBekijkTestTrendTool({ userId }),
-        zoekHulpbronnen: createZoekHulpbronnenTool({ gemeenteZorgvrager, gemeenteMantelzorger }),
-        zoekArtikelen: createZoekArtikelenTool(),
+        zoekHulpbronnen: createZoekHulpbronnenTool({
+          gemeenteZorgvrager,
+          gemeenteMantelzorger,
+          shownNamen: shownHulpbronnen,
+        }),
+        zoekArtikelen: createZoekArtikelenTool({ shownTitels: shownArtikelen }),
         gemeenteInfo: createGemeenteInfoTool(),
         semantischZoeken: createSemantischZoekenTool(gemeenteZorgvrager || gemeenteMantelzorger),
         slaActiepuntOp: createSlaActiepuntOpTool({ userId }),

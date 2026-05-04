@@ -69,7 +69,36 @@ export function AiChat() {
           }))
           // Filter lege berichten (tool-call stappen zonder tekst) — die laten de API crashen
           .filter((msg) => msg.content.trim() !== "")
-        return { ...rest, body: { ...body, messages: converted } }
+
+        // Verzamel hulpbron-namen en artikel-titels die Ger eerder in dit gesprek
+        // heeft getoond, zodat de server kan variëren in nieuwe suggesties.
+        const shownHulpbronnen = new Set<string>()
+        const shownArtikelen = new Set<string>()
+        for (const msg of msgs) {
+          if (msg.role !== "assistant") continue
+          const text = msg.parts
+            ?.filter((p): p is { type: "text"; text: string } => p.type === "text")
+            .map((p) => p.text)
+            .join("") || ""
+          for (const m of text.matchAll(/\{\{hulpkaart:([\s\S]*?)\}\}/g)) {
+            const naam = m[1].split("|")[0]?.trim()
+            if (naam) shownHulpbronnen.add(naam)
+          }
+          for (const m of text.matchAll(/\{\{artikelkaart:([\s\S]*?)\}\}/g)) {
+            const titel = m[1].split("|")[0]?.trim()
+            if (titel) shownArtikelen.add(titel)
+          }
+        }
+
+        return {
+          ...rest,
+          body: {
+            ...body,
+            messages: converted,
+            shownHulpbronnen: [...shownHulpbronnen],
+            shownArtikelen: [...shownArtikelen],
+          },
+        }
       },
     }),
   })

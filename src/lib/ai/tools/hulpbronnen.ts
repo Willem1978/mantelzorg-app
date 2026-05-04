@@ -7,6 +7,7 @@ import { tool } from "ai"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { TAAK_NAAM_VARIANTEN } from "@/config/options"
+import { prioritizeUnshown, toKeySet } from "@/lib/ai/variation"
 
 // Bouwt een lijst van alle mogelijke onderdeelTest waarden voor een categorie
 function getCategorieVarianten(categorie: string): string[] {
@@ -25,10 +26,15 @@ function getCategorieVarianten(categorie: string): string[] {
   return [categorie]
 }
 
-export function createZoekHulpbronnenTool(ctx: { gemeenteZorgvrager: string | null; gemeenteMantelzorger: string | null } | { gemeente: string | null }) {
+export function createZoekHulpbronnenTool(
+  ctx:
+    | { gemeenteZorgvrager: string | null; gemeenteMantelzorger: string | null; shownNamen?: string[] }
+    | { gemeente: string | null; shownNamen?: string[] },
+) {
   // Ondersteun zowel het nieuwe (twee gemeenten) als het oude (één gemeente) formaat
   const ctxZorgvrager = "gemeenteZorgvrager" in ctx ? ctx.gemeenteZorgvrager : ctx.gemeente
   const ctxMantelzorger = "gemeenteMantelzorger" in ctx ? ctx.gemeenteMantelzorger : ctx.gemeente
+  const shownSet = toKeySet(ctx.shownNamen)
 
   return tool({
     description:
@@ -95,9 +101,12 @@ export function createZoekHulpbronnenTool(ctx: { gemeenteZorgvrager: string | nu
         ]
       }
 
-      const resultaten = await prisma.zorgorganisatie.findMany({
+      // Haal een ruimere set op zodat we kunnen variëren tussen chat-beurten:
+      // items die de gebruiker al gezien heeft worden achteraan gezet, niet
+      // uitgesloten (bij kleine gemeenten kan de pool 2-3 items zijn).
+      const ruwe = await prisma.zorgorganisatie.findMany({
         where,
-        take: 8,
+        take: 24,
         orderBy: { naam: "asc" },
         select: {
           naam: true,
@@ -113,6 +122,9 @@ export function createZoekHulpbronnenTool(ctx: { gemeenteZorgvrager: string | nu
           openingstijden: true,
         },
       })
+
+      const gesorteerd = prioritizeUnshown(ruwe, (r) => r.naam, shownSet)
+      const resultaten = gesorteerd.slice(0, 8)
 
       if (resultaten.length === 0) {
         return {

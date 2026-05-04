@@ -7,6 +7,7 @@
 import { tool } from "ai"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
+import { prioritizeUnshown, toKeySet } from "@/lib/ai/variation"
 
 /**
  * Strip HTML tags en trim tot maxLengte tekens.
@@ -27,7 +28,9 @@ function stripHtmlAndTrim(html: string | null, maxLengte = 1500): string | null 
   return tekst.slice(0, maxLengte) + "..."
 }
 
-export function createZoekArtikelenTool() {
+export function createZoekArtikelenTool(ctx: { shownTitels?: string[] } = {}) {
+  const shownSet = toKeySet(ctx.shownTitels)
+
   return tool({
     description:
       "Zoek informatie-artikelen en tips over mantelzorg. Gebruik dit voor advies en informatie over specifieke onderwerpen (slaap, energie, zelfzorg, rechten, financieel). Geeft artikelinhoud mee. BELANGRIJK: toon gevonden artikelen als {{artikelkaart:titel|beschrijving|emoji|categorie|inhoud}} zodat de gebruiker ze kan lezen, opslaan en mailen.",
@@ -65,9 +68,11 @@ export function createZoekArtikelenTool() {
         ]
       }
 
-      const artikelen = await prisma.artikel.findMany({
+      // Haal een ruimere set op zodat we kunnen variëren tussen chat-beurten:
+      // titels die de gebruiker al heeft gezien gaan achteraan.
+      const ruwe = await prisma.artikel.findMany({
         where,
-        take: 5,
+        take: 15,
         orderBy: { sorteerVolgorde: "asc" },
         select: {
           titel: true,
@@ -81,6 +86,9 @@ export function createZoekArtikelenTool() {
           },
         },
       })
+
+      const gesorteerd = prioritizeUnshown(ruwe, (a) => a.titel, shownSet)
+      const artikelen = gesorteerd.slice(0, 5)
 
       if (artikelen.length === 0) {
         return { gevonden: 0, bericht: "Geen artikelen gevonden over dit onderwerp." }
