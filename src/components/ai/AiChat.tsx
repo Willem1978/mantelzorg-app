@@ -111,12 +111,35 @@ export function AiChat() {
 
   const isLoading = status === "submitted" || status === "streaming"
 
-  const suggesties = [
-    { tekst: "Hoe gaat het met mij?", emoji: "📊" },
-    { tekst: "Welke hulp is er bij mij in de buurt?", emoji: "🏠" },
-    { tekst: "Ik ben moe, wat kan ik doen?", emoji: "😴" },
-    { tekst: "Tips voor beter slapen", emoji: "🌙" },
+  // Gepersonaliseerde welkomstzin + suggesties (ophalen uit /api/ai/opener)
+  const FALLBACK_OPENER =
+    "Hoi! Fijn dat je er bent. Vertel me wat je bezighoudt, dan kijken we samen wat er mogelijk is."
+  const FALLBACK_SUGGESTIES = [
+    "Hoe gaat het met mij?",
+    "Welke hulp is er bij mij in de buurt?",
+    "Ik ben moe, wat kan ik doen?",
   ]
+  const [opener, setOpener] = useState<string>(FALLBACK_OPENER)
+  const [suggesties, setSuggesties] = useState<string[]>(FALLBACK_SUGGESTIES)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch("/api/ai/opener")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return
+        if (typeof data.opener === "string" && data.opener.trim()) {
+          setOpener(data.opener.trim())
+        }
+        if (Array.isArray(data.vraagknoppen) && data.vraagknoppen.length > 0) {
+          setSuggesties(data.vraagknoppen.filter((s: unknown): s is string => typeof s === "string"))
+        }
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -157,18 +180,70 @@ export function AiChat() {
       .join("")
   }
 
-  // Hulpkaarten/artikelkaarten bewaren tot er nieuwe komen
+  // Cumulatieve verzameling: hulp- en artikelkaarten uit ALLE assistant-berichten,
+  // gededupliceerd op naam/titel. Nieuwste eerst zodat de meest recente bovenaan staat.
+  // Caps voorkomen dat de lijst onbeperkt groeit.
+  const MAX_HULP = 6
+  const MAX_ARTIKEL = 6
   useEffect(() => {
-    const lastA = [...messages].reverse().find(m => m.role === "assistant")
-    if (!lastA || isLoading) return
-    const raw = getMessageText(lastA)
-    if (!raw) return
-    const { kaarten } = parseHulpkaarten(raw)
-    const { artikelen } = parseArtikelkaarten(raw)
-    if (kaarten.length > 0) setPersistedKaarten(kaarten.slice(0, 2))
-    if (artikelen.length > 0) setPersistedArtikelen(artikelen.slice(0, 3))
+    if (isLoading) return
+    const hulpMap = new Map<string, ParsedHulpkaart>()
+    const artMap = new Map<string, ParsedArtikelkaart>()
+    // Loop van nieuw naar oud zodat de eerste hit (= recentste) bewaard wordt
+    for (const msg of [...messages].reverse()) {
+      if (msg.role !== "assistant") continue
+      const raw = getMessageText(msg)
+      if (!raw) continue
+      const { kaarten } = parseHulpkaarten(raw)
+      const { artikelen } = parseArtikelkaarten(raw)
+      for (const k of kaarten) {
+        const key = (k.naam || "").toLowerCase().trim()
+        if (key && !hulpMap.has(key)) hulpMap.set(key, k)
+      }
+      for (const a of artikelen) {
+        const key = (a.titel || "").toLowerCase().trim()
+        if (key && !artMap.has(key)) artMap.set(key, a)
+      }
+    }
+    setPersistedKaarten(Array.from(hulpMap.values()).slice(0, MAX_HULP))
+    setPersistedArtikelen(Array.from(artMap.values()).slice(0, MAX_ARTIKEL))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length, isLoading])
+
+  // Detecteer welke tool Ger op dit moment uitvoert (voor de loading-status).
+  // AI SDK v6: tool-parts hebben type "tool-<naam>"; oudere varianten zetten
+  // toolName op de part. Defensief gecheckt zodat het bij beide werkt.
+  const TOOL_STATUS: Record<string, string> = {
+    zoekHulpbronnen: "Ger zoekt lokale hulp voor je",
+    zoekArtikelen: "Ger zoekt artikelen die kunnen helpen",
+    semantischZoeken: "Ger zoekt informatie over dit onderwerp",
+    gemeenteInfo: "Ger bekijkt info van jouw gemeente",
+    bekijkTestTrend: "Ger bekijkt jouw balans-trend",
+    bekijkBalanstest: "Ger bekijkt jouw balanstest",
+    bekijkCheckInTrend: "Ger bekijkt je check-in trend",
+    bekijkGemeenteAdvies: "Ger zoekt advies in jouw gemeente",
+    slaActiepuntOp: "Ger noteert dit voor je",
+    registreerAlarm: "Ger zet dit veilig in je dossier",
+    genereerRapportSamenvatting: "Ger maakt een samenvatting",
+  }
+
+  const activeToolStatus: string | null = (() => {
+    if (!isLoading) return null
+    const lastA = [...messages].reverse().find((m) => m.role === "assistant")
+    if (!lastA?.parts) return null
+    for (const part of lastA.parts) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const p = part as any
+      if (typeof p.type === "string" && p.type.startsWith("tool-")) {
+        const naam = p.type.slice(5)
+        if (TOOL_STATUS[naam]) return TOOL_STATUS[naam]
+      }
+      if (typeof p.toolName === "string" && TOOL_STATUS[p.toolName]) {
+        return TOOL_STATUS[p.toolName]
+      }
+    }
+    return null
+  })()
 
   // Vraagknoppen uit het laatste assistant-bericht
   const lastVraagknoppen = (() => {
@@ -179,7 +254,7 @@ export function AiChat() {
     const { cleanText: t1 } = parseHulpkaarten(raw)
     const { cleanText: t2 } = parseArtikelkaarten(t1)
     const { buttons } = parseButtons(t2)
-    return buttons.filter(b => b.type === "vraag").slice(0, 2)
+    return buttons.filter(b => b.type === "vraag").slice(0, 3)
   })()
 
   return (
@@ -193,9 +268,7 @@ export function AiChat() {
             <div className="flex-1 min-w-0">
               <div className="bg-[var(--accent-amber-bg)]/40 border border-[var(--accent-amber)]/10 rounded-2xl rounded-tl-sm p-3.5 shadow-sm">
                 <p className="font-semibold text-foreground mb-1">Hoi! Ik ben Ger</p>
-                <p className="text-sm text-muted-foreground">
-                  Fijn dat je er bent. Vertel me wat je bezighoudt, dan kijken we samen wat er mogelijk is.
-                </p>
+                <p className="text-sm text-muted-foreground">{opener}</p>
                 <p className="text-xs text-muted-foreground/60 mt-2 italic">
                   Ger is een digitale assistent, geen hulpverlener. Bij acute nood, bel 113 of je huisarts.
                 </p>
@@ -210,11 +283,10 @@ export function AiChat() {
             {suggesties.map((s, i) => (
               <button
                 key={i}
-                onClick={() => handleSend(s.tekst)}
+                onClick={() => handleSend(s)}
                 className="flex items-center gap-2 p-3 rounded-xl border border-border bg-card hover:bg-secondary/50 hover:border-primary/30 transition-all text-left text-sm"
               >
-                <span className="text-lg">{s.emoji}</span>
-                <span className="text-foreground">{s.tekst}</span>
+                <span className="text-foreground">{s}</span>
               </button>
             ))}
           </div>
@@ -278,7 +350,7 @@ export function AiChat() {
                   <div className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:150ms]" />
                   <div className="w-2 h-2 bg-muted-foreground/40 rounded-full animate-bounce [animation-delay:300ms]" />
                 </div>
-                <span className="text-xs text-muted-foreground">Ger typt...</span>
+                <span className="text-xs text-muted-foreground">{activeToolStatus ?? "Ger typt"}…</span>
               </div>
             </div>
           </div>
