@@ -207,6 +207,7 @@ function DashboardContentView() {
 
   const gerContext: GerChatContext = {
     userName,
+    naasteNaam: data?.user?.naasteNaam || null,
     hasTest: data?.test?.hasTest || false,
     hasProfile: data?.user?.profileCompleted || false,
     niveau: data?.test?.niveau,

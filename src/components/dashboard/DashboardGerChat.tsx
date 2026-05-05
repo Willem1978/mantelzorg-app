@@ -46,6 +46,7 @@ function parseButtons(text: string): { cleanText: string; buttons: ParsedButton[
 
 export interface GerChatContext {
   userName: string
+  naasteNaam?: string | null
   hasTest: boolean
   hasProfile: boolean
   niveau?: "LAAG" | "GEMIDDELD" | "HOOG" | null
@@ -76,24 +77,20 @@ function buildProactiveActions(ctx: GerChatContext): { label: string; emoji: str
     let voorJouLabel: string
     let voorJouEmoji: string
     let voorJouColor: string
-    if (ctx.niveau === "HOOG") {
-      voorJouLabel = "Ik heb hulp nodig voor mij zelf"
-      voorJouEmoji = "❤️"
-      voorJouColor = "rose"
-    } else if (ctx.trend === "worse" || ctx.wellbeingTrend === "down") {
+    if (ctx.trend === "worse" || ctx.wellbeingTrend === "down") {
       voorJouLabel = "Het gaat niet zo goed met mij"
       voorJouEmoji = "💬"
       voorJouColor = "blue"
     } else {
-      voorJouLabel = "Welke hulp is er voor mij zelf?"
-      voorJouEmoji = "🧑"
-      voorJouColor = "sky"
+      voorJouLabel = "Ik wil hulp voor mijzelf"
+      voorJouEmoji = ctx.niveau === "HOOG" ? "❤️" : "🧑"
+      voorJouColor = ctx.niveau === "HOOG" ? "rose" : "sky"
     }
 
     // Dimensie 2 — voor je naaste (zorgtaken overdragen)
-    const voorNaasteLabel = ctx.zwareTaakNaam
-      ? `Hulp bij ${ctx.zwareTaakNaam.toLowerCase()} voor mijn naaste`
-      : "Hulp bij een zorgtaak voor mijn naaste"
+    // Bij voorkeur de naam van de naaste gebruiken zodat de keuze concreet voelt.
+    const naasteLabel = ctx.naasteNaam?.trim() || "mijn naaste"
+    const voorNaasteLabel = `Ik wil hulp bij een taak die ik voor ${naasteLabel} doe`
 
     // Dimensie 3 — verder kijken (status, tip, check-in, test)
     let verderLabel: string
