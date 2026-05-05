@@ -469,12 +469,18 @@ async function fetchMantelzorgerHulp(
       gemMantelzorger && r.gemeente.toLowerCase() === gemMantelzorger.toLowerCase()
     const inZorgvragerStad =
       gemZorgvrager && r.gemeente.toLowerCase() === gemZorgvrager.toLowerCase()
+    // Helper om alleen MantelzorgerHulpItem-velden te pluck (geen lokaalGebonden)
+    const itemBasis = {
+      naam: r.naam, dienst: r.dienst, beschrijving: r.beschrijving,
+      telefoon: r.telefoon, website: r.website, email: r.email,
+      soortHulp: r.soortHulp, kosten: r.kosten, onderdeelTest: r.onderdeelTest,
+      gemeente: r.gemeente, openingstijden: r.openingstijden,
+      eersteStap: r.eersteStap, verwachtingTekst: r.verwachtingTekst,
+    }
     if (scope === "mantelzorger-only") {
-      // Alleen meenemen als het in de mantelzorger-stad staat
-      if (inMantelzorgerStad) passend.push({ ...r, scope: "lokaal" })
+      if (inMantelzorgerStad) passend.push({ ...itemBasis, scope: "lokaal" })
     } else {
-      // scope = "beide" of "zorgvrager-only" (al gefilterd op kant elders)
-      if (inMantelzorgerStad || inZorgvragerStad) passend.push({ ...r, scope: "beide" })
+      if (inMantelzorgerStad || inZorgvragerStad) passend.push({ ...itemBasis, scope: "beide" })
     }
   }
 
@@ -567,10 +573,10 @@ van "hulp bij een taak voor je naaste" — niet voor de mantelzorger zelf.`
   }
 
   // Alle hulp per categorie (ook niet-zware taken)
-  block += buildHulpPerCategorieBlock(ctx.alleHulpPerCategorie)
+  block += buildHulpPerCategorieBlock(ctx.alleHulpPerCategorie, ctx.gemZorgvrager)
 
   // Hulp voor mantelzorger
-  block += buildMantelzorgerHulpBlock(ctx.hulpVoorMantelzorger)
+  block += buildMantelzorgerHulpBlock(ctx.hulpVoorMantelzorger, ctx.gemMantelzorger, ctx.gemZorgvrager)
 
   if (ctx.gemeenteContact) {
     block += buildGemeenteContactBlock(ctx.gemeenteContact)
