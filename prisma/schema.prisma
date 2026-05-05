@@ -1508,3 +1508,21 @@ model AiSuggestieClick {
   @@index([type, itemKey])
   @@index([userId, createdAt])
 }
+
+// Korte samenvatting van een afgesloten chat met Ger. Wordt aan het eind
+// van een gesprek door Haiku gegenereerd (~3-5 zinnen) en bij het begin van
+// een volgend gesprek terug-geïnjecteerd in de system prompt, zodat Ger kan
+// refereren aan eerdere gesprekken zonder de hele berichtenhistorie te hoeven
+// lezen. Privacy-vriendelijk: alleen de samenvatting + onderwerpen, geen
+// letterlijke berichten.
+model GesprekSamenvatting {
+  id                      String   @id @default(cuid())
+  userId                  String
+  samenvatting            String   @db.Text // 3-5 zinnen
+  onderwerpen             String[] // ["PGB", "zelfzorg", "huishoudelijke hulp"]
+  actiepuntenAangemaakt   Int      @default(0)
+  berichtenAantal         Int      @default(0)
+  createdAt               DateTime @default(now())
+
+  @@index([userId, createdAt])
+}

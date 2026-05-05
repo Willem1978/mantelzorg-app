@@ -212,6 +212,44 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length, isLoading])
 
+  // Vat het gesprek samen wanneer de gebruiker de dashboardpagina verlaat,
+  // zodat Ger bij een volgend gesprek kan refereren aan wat besproken is.
+  // Werkt zowel bij navigatie weg van dashboard (component-unmount) als bij
+  // het sluiten van het tabblad (beforeunload).
+  const messagesRef = useRef(messages)
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
+  useEffect(() => {
+    const samenvatten = () => {
+      const echteBerichten = messagesRef.current
+        .map((m) => ({
+          role: m.role,
+          content: (m.parts ?? [])
+            .filter((p): p is { type: "text"; text: string } => p.type === "text")
+            .map((p) => p.text)
+            .join(""),
+        }))
+        .filter((m) => m.content.trim() !== "" && !m.content.startsWith("[pagina:"))
+      if (echteBerichten.length < 4) return
+      try {
+        fetch("/api/ai/samenvat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: echteBerichten }),
+          keepalive: true,
+        }).catch(() => {})
+      } catch {
+        // negeer
+      }
+    }
+    window.addEventListener("beforeunload", samenvatten)
+    return () => {
+      window.removeEventListener("beforeunload", samenvatten)
+      samenvatten()
+    }
+  }, [])
+
   const handleSend = useCallback((text: string) => {
     if (!text.trim() || isLoading) return
     sendMessage({ text: text.trim() })
