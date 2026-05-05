@@ -48,6 +48,7 @@ export const AGENT_MODELS = {
   "ger-welkom": AI_MODELS.HAIKU,
   "ger-balanscoach": AI_MODELS.HAIKU,
   "ger-checkin": AI_MODELS.HAIKU,
+  "ger-samenvat": AI_MODELS.HAIKU, // post-gesprek samenvatting — kort en goedkoop
 
   // Admin agents — Haiku (bulk operaties, kosten beperken)
   "admin-bulk-tag": AI_MODELS.HAIKU,

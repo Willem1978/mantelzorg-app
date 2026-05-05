@@ -186,6 +186,27 @@ export function FloatingGerChat() {
   }
 
   const handleClose = () => {
+    // Vat het gesprek samen op de achtergrond zodat Ger er volgende keer aan
+    // kan refereren. Faalt stil — de gebruiker hoeft hier niets van te merken.
+    const echteBerichten = messages
+      .map((m) => ({
+        role: m.role,
+        content: getMessageText(m),
+      }))
+      .filter((m) => m.content.trim() !== "" && !m.content.startsWith("[pagina:"))
+
+    if (echteBerichten.length >= 4) {
+      try {
+        fetch("/api/ai/samenvat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: echteBerichten }),
+          keepalive: true,
+        }).catch(() => {})
+      } catch {
+        // negeer
+      }
+    }
     setIsOpen(false)
   }
 

@@ -594,7 +594,34 @@ src/
 
 ---
 
-## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10)
+## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11)
+
+### Ronde 11 — Gespreksgeheugen + proactieve artikelen bij kennis-onderwerpen
+
+Twee verbeteringen die het gesprek persoonlijker en beter doorpakkend maken.
+
+#### 1. Gespreksgeheugen (cross-session)
+
+Tot Ronde 10 startte elk chat-gesprek van nul: Ger wist alleen wat in profiel/balanstest/openstaande actiepunten stond, maar niet wat hij vorige keer met deze mantelzorger had besproken. Nu is er een lichtgewicht geheugen-systeem dat na elk gesprek een korte samenvatting opslaat en bij een volgend gesprek terug-injecteert.
+
+**Privacy-by-design:** alleen samenvatting (3-5 zinnen) + 1-5 onderwerpen worden bewaard, géén letterlijke berichten. Maximaal de laatste 3 samenvattingen worden in de prompt geïnjecteerd.
+
+| Onderdeel | Wat | Bestand |
+|---|---|---|
+| **Database-model** | Nieuw model `GesprekSamenvatting`: id, userId, samenvatting (text), onderwerpen (string[]), actiepuntenAangemaakt, berichtenAantal, createdAt. Geïndexeerd op (userId, createdAt). | `prisma/schema.prisma`, `prisma/gesprek-samenvatting.sql` (Supabase migratie) |
+| **API-endpoint `/api/ai/samenvat`** | POST met messages-array. Roept Haiku (~$0.0005/gesprek) met gestructureerde output via `generateObject`. Slaat samenvatting + onderwerpen op. Skipt gesprekken < 4 berichten. | `src/app/api/ai/samenvat/route.ts` |
+| **Trigger in chat-componenten** | `FloatingGerChat.handleClose` en `DashboardGerChat` (op unmount + beforeunload) sturen messages naar `/api/ai/samenvat` met `keepalive: true`. Faalt stil. | `FloatingGerChat.tsx`, `DashboardGerChat.tsx` |
+| **Prefetch-uitbreiding** | `prefetchUserContext` haalt de laatste 3 samenvattingen op. `buildEerdereGesprekkenBlock` rendert ze in een `EERDERE GESPREKKEN`-blok in de system prompt (datum + onderwerpen + samenvatting per gesprek). | `prefetch-context.ts` |
+| **Prompt-sectie** | Nieuwe `EERDERE GESPREKKEN — REFEREREN MET WARMTE`-sectie met WAT WEL ("vorige keer hadden we het over X — hoe staat dat nu?") / WAT NIET (letterlijk citeren, "ik heb in mijn database gezien"). | `prompts/balanscoach.ts` |
+| **Modeltoewijzing** | Nieuwe agent `ger-samenvat` → Haiku 4.5 (snel + goedkoop). | `lib/ai/models.ts` |
+
+#### 2. Proactieve artikelen bij kennis-onderwerpen
+
+Bij negen kennis-zwaar onderwerpen (PGB, respijtzorg, dementie, zorgverlof, mantelzorgvergoeding, WMO, lotgenoten, burn-out, schuldgevoel) is een `{{artikelkaart:...}}` voortaan **verplicht** — ook als de gebruiker niet expliciet om "info" of "tips" vroeg. De gebruiker heeft baat bij iets om later na te lezen, zonder dat hij ernaar hoeft te vragen.
+
+| Onderdeel | Wat | Bestand |
+|---|---|---|
+| **Prompt-regel** | Nieuwe `KENNIS-ONDERWERPEN`-sectie onder ARTIKELKAARTEN met de negen onderwerpen + GOED/FOUT-voorbeeld voor PGB (waar dit live mis ging). | `prompts/balanscoach.ts` |
 
 ### Ronde 10 — Drie kompas-dimensies, echte taken, deelgebied-specifieke vragen
 
@@ -717,7 +744,7 @@ Deze drie blijven ook midden in een sub-onderwerp aangeboden — de gebruiker ra
 
 ## 16. Bekende beperkingen & open punten
 
-- **Geen cross-session-geheugen voor gesprekken zelf**: Ger weet niet wat hij vorige week zei — alleen open `Actiepunten` worden meegenomen.
+- ~~**Geen cross-session-geheugen voor gesprekken zelf**~~ — opgelost in Ronde 11 via `GesprekSamenvatting` (zie sectie 15).
 - **Geen multi-modal**: alleen tekst. Geen foto's of stem.
 - **Tweesplitsing + variatie nog niet overal**: `/api/ai/balanscoach` deelt sinds Ronde 8 dezelfde `prefetchUserContext` + `buildContextBlock` als `/api/ai/chat`, maar de aanroepende frontends (`FloatingGerChat`, `DashboardGerChat`) sturen `shownHulpbronnen` nog niet mee. `/checkin` en `/welkom` lopen ook nog niet via die laag.
 - **Geen A/B-testing van prompts**: aanpassingen aan het systeem-prompt gaan direct naar productie zonder framework om varianten te vergelijken.

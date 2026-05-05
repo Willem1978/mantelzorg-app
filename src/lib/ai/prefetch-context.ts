@@ -72,6 +72,21 @@ export async function prefetchUserContext(
   // 0b) Haal openstaande actiepunten op voor opvolging
   const actiepunten = await fetchOpenActiepunten(userId)
 
+  // 0b2) Haal de laatste 3 gespreks-samenvattingen op zodat Ger kan refereren
+  // aan eerdere gesprekken. Privacy-vriendelijk: alleen samenvatting + onderwerpen,
+  // geen letterlijke berichten.
+  const eerdereGesprekken = await prisma.gesprekSamenvatting.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    take: 3,
+    select: {
+      samenvatting: true,
+      onderwerpen: true,
+      actiepuntenAangemaakt: true,
+      createdAt: true,
+    },
+  })
+
   // 0c) Haal weekkaarten op voor deze week
   const weekKaarten = caregiver
     ? await prisma.weekKaart.findMany({
@@ -128,6 +143,7 @@ export async function prefetchUserContext(
       aandoening: caregiver?.aandoening || null,
       voorkeuren: caregiver?.voorkeuren || [],
       actiepunten,
+      eerdereGesprekken,
       weekKaarten,
       externeHulp: caregiver?.organisationLinks?.map((l) => ({
         naam: l.organisation.name,
@@ -291,6 +307,7 @@ export async function prefetchUserContext(
     aandoening: caregiver?.aandoening || null,
     voorkeuren: caregiver?.voorkeuren || [],
     actiepunten,
+    eerdereGesprekken,
     weekKaarten,
     externeHulp: caregiver?.organisationLinks?.map((l) => ({
       naam: l.organisation.name,
@@ -500,12 +517,15 @@ export function buildContextBlock(ctx: Awaited<ReturnType<typeof prefetchUserCon
   const weekKaartenBlock = buildWeekKaartenBlock(ctx.weekKaarten)
   // Externe hulp blok (voor beide paden)
   const externeHulpBlock = buildExterneHulpBlock(ctx.externeHulp)
+  // Eerdere gespreks-samenvattingen (voor beide paden) — nieuw in Ronde 11
+  const eerdereGesprekkenBlock = buildEerdereGesprekkenBlock(ctx.eerdereGesprekken)
 
   if (!ctx.heeftTest) {
     let block = `\n\n--- GEBRUIKERSCONTEXT ---
 Deze gebruiker heeft nog GEEN balanstest gedaan. Moedig aan om de test te doen via /belastbaarheidstest (duurt 5 minuten).`
 
     block += voorkeurenBlock
+    block += eerdereGesprekkenBlock
     block += actiepuntenBlock
     block += weekKaartenBlock
     block += externeHulpBlock
@@ -531,6 +551,7 @@ BALANSTEST (${ctx.testDatum}):
   }
 
   block += voorkeurenBlock
+  block += eerdereGesprekkenBlock
   block += actiepuntenBlock
   block += weekKaartenBlock
   block += externeHulpBlock
@@ -712,6 +733,32 @@ Dit zijn organisaties die JOU als mantelzorger ondersteunen. Kopieer de
     for (const b of landelijk) {
       block += `\n  ${formatHulpkaart(b)}`
     }
+  }
+
+  return block
+}
+
+/**
+ * Bouwt een blok met de laatste gespreks-samenvattingen zodat Ger kan
+ * refereren aan eerdere gesprekken zonder de hele berichtenhistorie te
+ * hoeven lezen.
+ */
+function buildEerdereGesprekkenBlock(
+  gesprekken: { samenvatting: string; onderwerpen: string[]; actiepuntenAangemaakt: number; createdAt: Date }[],
+): string {
+  if (!gesprekken || gesprekken.length === 0) return ""
+
+  let block = `\n\n=== EERDERE GESPREKKEN MET DEZE MANTELZORGER ===
+Hier zijn de laatste ${gesprekken.length} gesprekken die we eerder hadden,
+nieuwste eerst. Refereer er natuurlijk aan ("vorige keer hadden we het over X")
+zonder ze letterlijk te citeren of een opsomming te geven.`
+
+  for (const g of gesprekken) {
+    const datum = g.createdAt
+      ? new Date(g.createdAt).toLocaleDateString("nl-NL", { day: "numeric", month: "long" })
+      : ""
+    const onderwerpen = g.onderwerpen?.length ? ` [onderwerpen: ${g.onderwerpen.join(", ")}]` : ""
+    block += `\n\n- ${datum}${onderwerpen}\n  ${g.samenvatting}`
   }
 
   return block
