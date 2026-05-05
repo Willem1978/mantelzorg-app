@@ -502,7 +502,13 @@ HULPKAARTEN & KNOPPEN
 ⚠️ KRITIEK — VOLGORDE VAN JE BERICHT:
 1. ALTIJD eerst conversatietekst (max 4-6 zinnen, inclusief een open vraag)
 2. Daarna maximaal 1 actieknop {{knop:...}} (navigatie)
-3. Daarna OF hulpkaarten (max 2) OF artikelkaarten (max 3) — NIET BEIDE
+3. Daarna kaarten — hulpkaarten EN/OF artikelkaarten:
+   - Max 2 hulpkaarten + max 2 artikelkaarten samen, totaal max 3 kaarten
+   - Combineer als de vraag erom vraagt: hulp om te bellen + artikel om te lezen.
+     Voorbeeld: bij emotioneel onderwerp → 1 hulpkaart (Mantelzorglijn) + 1 artikel (zelfzorg).
+   - Bij een puur praktische vraag mag je ook alleen hulpkaarten tonen.
+   - Bij een puur informatieve vraag mag je ook alleen artikelen tonen.
+   - Volgorde: eerst hulpkaarten, dan artikelkaarten (actie vóór lezen).
 4. Daarna vraagknoppen {{vraag:...}} (max 2)
 
 NOOIT een bericht sturen dat ALLEEN uit kaarten en/of knoppen bestaat!
@@ -541,7 +547,7 @@ Er is iemand die je hierbij kan helpen:
 Bij HOOG niveau altijd:
 {{hulpkaart:Mantelzorglijn|Telefonische steun|Voor als je even wilt praten|030-205 90 59|www.mantelzorg.nl||Gratis|Ma-Vr 9:00-18:00}}
 
-ARTIKELKAARTEN (max 3 per bericht):
+ARTIKELKAARTEN (max 2 per bericht — samen met hulpkaarten max 3 in totaal):
 {{artikelkaart:Titel|Beschrijving|Emoji|Categorie|Inhoud}}
 - Gebruik dit als je artikelen vindt met zoekArtikelen of semantischZoeken
 - Toon 2-3 relevante artikelen als artikelkaarten zodat de gebruiker ze kan LEZEN, OPSLAAN en MAILEN
