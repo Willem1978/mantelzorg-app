@@ -62,51 +62,91 @@ export interface GerChatContext {
   overdueTasks?: number
 }
 
+/**
+ * Bouwt drie chips met ELK een verschillende dimensie, zodat de gebruiker
+ * een echte keuze heeft (niet twee variaties op hetzelfde):
+ *   1. VOOR JOU         — mantelzorger als mens (emotioneel, lotgenoten, respijt)
+ *   2. VOOR JE NAASTE   — concrete zorgtaak overdragen
+ *   3. VERDER KIJKEN    — status, tip, check-in, balanstest
+ * Per dimensie kiezen we het meest passende label op basis van de context.
+ */
 function buildProactiveActions(ctx: GerChatContext): { label: string; emoji: string; action: string; color: string }[] {
-  const actions: { label: string; emoji: string; action: string; color: string }[] = []
-
   if (ctx.hasTest) {
+    // Dimensie 1 — voor jou (mantelzorger zelf)
+    let voorJouLabel: string
+    let voorJouEmoji: string
+    let voorJouColor: string
     if (ctx.niveau === "HOOG") {
-      actions.push({ label: "Ik heb hulp nodig", emoji: "❤️", action: "vraag", color: "rose" })
+      voorJouLabel = "Ik heb hulp nodig voor mij zelf"
+      voorJouEmoji = "❤️"
+      voorJouColor = "rose"
     } else if (ctx.trend === "worse" || ctx.wellbeingTrend === "down") {
-      actions.push({ label: "Het gaat niet zo goed", emoji: "💬", action: "vraag", color: "blue" })
-    } else if (ctx.overdueTasks && ctx.overdueTasks > 0) {
-      actions.push({ label: "Bekijk mijn openstaande acties", emoji: "📋", action: "vraag", color: "blue" })
-    } else if (ctx.zwareTaken && ctx.zwareTaken > 0) {
-      actions.push({ label: "Help me met mijn zware taken", emoji: "🤝", action: "vraag", color: "amber" })
+      voorJouLabel = "Het gaat niet zo goed met mij"
+      voorJouEmoji = "💬"
+      voorJouColor = "blue"
+    } else {
+      voorJouLabel = "Welke hulp is er voor mij zelf?"
+      voorJouEmoji = "🧑"
+      voorJouColor = "sky"
+    }
+
+    // Dimensie 2 — voor je naaste (zorgtaken overdragen)
+    const voorNaasteLabel = ctx.zwareTaakNaam
+      ? `Hulp bij ${ctx.zwareTaakNaam.toLowerCase()} voor mijn naaste`
+      : "Hulp bij een zorgtaak voor mijn naaste"
+
+    // Dimensie 3 — verder kijken (status, tip, check-in, test)
+    let verderLabel: string
+    let verderEmoji: string
+    let verderAction: string
+    let verderColor: string
+    if (ctx.overdueTasks && ctx.overdueTasks > 0) {
+      verderLabel = "Bekijk mijn openstaande acties"
+      verderEmoji = "📋"
+      verderAction = "vraag"
+      verderColor = "blue"
     } else if (!ctx.checkInDone) {
-      actions.push({ label: "Hoe gaat het vandaag?", emoji: "💬", action: "vraag", color: "blue" })
+      verderLabel = "Hoe gaat het vandaag?"
+      verderEmoji = "💬"
+      verderAction = "vraag"
+      verderColor = "blue"
     } else if (ctx.needsNewTest) {
-      actions.push({ label: "Doe een nieuwe balanstest", emoji: "📊", action: "/belastbaarheidstest", color: "purple" })
+      verderLabel = "Doe een nieuwe balanstest"
+      verderEmoji = "📊"
+      verderAction = "/belastbaarheidstest"
+      verderColor = "purple"
+    } else if (ctx.trend === "improved" || ctx.wellbeingTrend === "up") {
+      verderLabel = "Hoe houd ik dit vast?"
+      verderEmoji = "🌱"
+      verderAction = "vraag"
+      verderColor = "green"
     } else {
-      actions.push({ label: "Geef me informatie of een tip", emoji: "💡", action: "vraag", color: "purple" })
+      verderLabel = "Geef me een tip"
+      verderEmoji = "💡"
+      verderAction = "vraag"
+      verderColor = "purple"
     }
 
-    if (ctx.trend === "improved" || ctx.wellbeingTrend === "up") {
-      actions.push({ label: "Hoe houd ik dit vast?", emoji: "🌱", action: "vraag", color: "green" })
-    } else {
-      actions.push({ label: "Welke hulp is er voor mij?", emoji: "🙋", action: "vraag", color: "sky" })
-    }
-
-    if (ctx.zwareTaakNaam) {
-      actions.push({ label: `Hulp bij ${ctx.zwareTaakNaam}`, emoji: "🏘️", action: "vraag", color: "amber" })
-    } else {
-      actions.push({ label: "Welke hulp is er voor mijn naaste?", emoji: "🏘️", action: "vraag", color: "amber" })
-    }
-    return actions
+    return [
+      { label: voorJouLabel, emoji: voorJouEmoji, action: "vraag", color: voorJouColor },
+      { label: voorNaasteLabel, emoji: "🤝", action: "vraag", color: "amber" },
+      { label: verderLabel, emoji: verderEmoji, action: verderAction, color: verderColor },
+    ]
   }
 
   if (ctx.hasProfile) {
-    actions.push({ label: "Start de balanstest", emoji: "📊", action: "/belastbaarheidstest", color: "purple" })
-    actions.push({ label: "Wat is de balanstest?", emoji: "❓", action: "vraag", color: "sky" })
-    actions.push({ label: "Geef me een tip", emoji: "💡", action: "vraag", color: "amber" })
-    return actions
+    return [
+      { label: "Start de balanstest", emoji: "📊", action: "/belastbaarheidstest", color: "purple" },
+      { label: "Wat is de balanstest?", emoji: "❓", action: "vraag", color: "sky" },
+      { label: "Geef me een tip", emoji: "💡", action: "vraag", color: "amber" },
+    ]
   }
 
-  actions.push({ label: "Wat kan ik hier doen?", emoji: "💡", action: "vraag", color: "amber" })
-  actions.push({ label: "Maak mijn profiel aan", emoji: "👤", action: "/profiel", color: "sky" })
-  actions.push({ label: "Start de balanstest", emoji: "📊", action: "/belastbaarheidstest", color: "purple" })
-  return actions
+  return [
+    { label: "Wat kan ik hier doen?", emoji: "💡", action: "vraag", color: "amber" },
+    { label: "Maak mijn profiel aan", emoji: "👤", action: "/profiel", color: "sky" },
+    { label: "Start de balanstest", emoji: "📊", action: "/belastbaarheidstest", color: "purple" },
+  ]
 }
 
 function buildGreetingMessage(ctx: GerChatContext): string {

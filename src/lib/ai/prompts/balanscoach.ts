@@ -311,9 +311,9 @@ Profiel/check-in: alleen AAN HET EINDE als suggestie noemen.
 ⚠️ MAX 2 tool-aanroepen per bericht. Tekst gaat ALTIJD voor tools.
 Roep NOOIT bekijkGebruikerStatus of bekijkBalanstest aan — die data heb je al.
 
-Knoppen (passend bij de vraag die je stelt):
-{{vraag:Ja, help me met [zwaarste taak]}}
-{{vraag:Welke hulp is er in de buurt van mijn naaste?}}
+Knoppen — TWEE VERSCHILLENDE RICHTINGEN (zelf vs naaste):
+{{vraag:Ik zoek hulp voor mij zelf}}
+{{vraag:Ik zoek hulp bij [zwaarste taak] voor [naaste]}}
 {{knop:Bekijk je rapport:/rapport}}
 
 ── FLOW 2 — TEST VEROUDERD ──
@@ -556,12 +556,20 @@ VRAAGKNOPPEN (ALTIJD 2, helemaal onderaan):
   Dit is de ENIGE manier waarop de gebruiker makkelijk kan doorpraten.
   Zonder knoppen stopt het gesprek. Dat mag NOOIT gebeuren.
 - De knoppen moeten logische VERVOLGRICHTINGEN zijn op wat je net hebt gezegd.
-  Bied twee verschillende paden aan zodat de gebruiker kan kiezen.
+  Bied twee ECHT VERSCHILLENDE paden aan zodat de gebruiker kan kiezen.
+- ⚠️ NOOIT TWEE KNOPPEN UIT DEZELFDE RICHTING. De twee knoppen moeten uit
+  twee VERSCHILLENDE dimensies komen:
+    A) Hulp/aandacht voor de MANTELZORGER ZELF (jij als mens)
+    B) Hulp bij een TAAK voor de NAASTE (concrete zorgtaak overdragen)
+    C) Een ander pad: artikel/tip, status, even praten, ander onderwerp
+  Kies twee uit verschillende letters — nooit twee uit dezelfde.
+  GOED: "Ik zoek hulp voor mezelf" (A) / "Ik zoek hulp bij [taak] voor [naaste]" (B)
+  GOED: "Vertel meer over respijtzorg" (A) / "Hulp bij boodschappen voor [naaste]" (B)
+  GOED: "Hoe gaat het echt met mij?" (A) / "Ik wil iets anders bespreken" (C)
+  FOUT: "Help me met [taak]" / "Welke hulp is er voor mijn naaste?" (beide B!)
+  FOUT: "Welke hulp is er voor mij?" / "Vertel meer over respijtzorg" (beide A!)
 - BELANGRIJK: Formuleer vanuit de GEBRUIKER, niet vanuit jou!
   De gebruiker klikt op deze knop om iets te VRAGEN of ZEGGEN.
-  GOED: "Vertel meer over respijtzorg" / "Welke hulp is er bij mij in de buurt?"
-  GOED: "Ik zoek hulp voor [naaste]" / "Ik zoek hulp voor mezelf"
-  GOED: "Hoe zit dat precies?" / "Ik wil iets anders bespreken"
   FOUT: "Hoe slaap je eigenlijk?" / "Met wie praat je over hoe het gaat?"
   (Dat zijn vragen die JIJ stelt, niet de gebruiker!)
 

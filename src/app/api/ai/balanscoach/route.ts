@@ -13,6 +13,7 @@ import { streamText, stepCountIs } from "ai"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { buildBalanscoachPrompt } from "@/lib/ai/prompts/balanscoach"
+import { prefetchUserContext, buildContextBlock } from "@/lib/ai/prefetch-context"
 import {
   fetchGebruikerStatus,
   createBekijkGebruikerStatusTool,
@@ -25,7 +26,6 @@ import {
   createGenereerRapportSamenvattingTool,
   createBekijkGemeenteAdviesTool,
 } from "@/lib/ai/tools"
-import { resolveGemeenteContact } from "@/lib/ai/gemeente-resolver"
 
 export const maxDuration = 60
 
@@ -75,6 +75,8 @@ export async function POST(req: Request) {
 
   const pagina = body.pagina || null
   const userId = session.user.id
+  // Lijsten van hulpbronnen die de gebruiker eerder heeft gezien — voor variatie
+  const shownHulpbronnen: string[] = Array.isArray(body.shownHulpbronnen) ? body.shownHulpbronnen : []
 
   // Filter lege berichten (tool-call stappen zonder tekst) om API fouten te voorkomen
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -92,12 +94,15 @@ export async function POST(req: Request) {
     return { role: msg.role, content: "" }
   }).filter((msg: { content: string }) => msg.content.trim() !== "")
 
-  // PRE-FETCH: haal gemeente + gebruikersstatus + gemeenteContact tegelijk op
-  // Dit bespaart de AI 1-2 tool calls = 10-15 seconden sneller
+  // PRE-FETCH: haal gemeente + status + volledige context (incl. hulpkaarten) op.
+  // Dit bespaart de AI tool-call round-trips én geeft het model de
+  // {{hulpkaart:...}} regels per zorgtaak/voor de mantelzorger letterlijk
+  // mee, zodat de prompt-instructie "kaarten zijn al geladen, niet zoeken"
+  // ook echt klopt.
   let gemeenteMantelzorger: string | null = null
   let gemeenteZorgvrager: string | null = null
   let statusContext = ""
-  let gemeenteContactBlok = ""
+  let dynamicContext = ""
 
   try {
     const [caregiver, gebruikerStatus] = await Promise.all([
@@ -111,27 +116,15 @@ export async function POST(req: Request) {
     gemeenteMantelzorger = caregiver?.municipality || caregiver?.city || null
     gemeenteZorgvrager = caregiver?.careRecipientMunicipality || caregiver?.careRecipientCity || gemeenteMantelzorger
 
-    // Pre-fetch gemeenteContact (mantelzorgloket) op basis van belastingniveau
-    const gemeenteVoorContact = gemeenteZorgvrager || gemeenteMantelzorger
-    const niveau = gebruikerStatus?.balanstest && "niveau" in gebruikerStatus.balanstest
-      ? gebruikerStatus.balanstest.niveau as string
-      : null
-    if (gemeenteVoorContact && niveau) {
-      const gemeenteContact = await resolveGemeenteContact(gemeenteVoorContact, niveau)
-      if (gemeenteContact) {
-        const dienstNaam = `Mantelzorgloket ${gemeenteContact.gemeente}`
-        const beschrijvingTekst = gemeenteContact.beschrijving || gemeenteContact.adviesTekst || ""
-        gemeenteContactBlok = `\n\n--- GEMEENTE HULPVERLENER (AUTOMATISCH GELADEN) ---
-Dit is het mantelzorgloket/de hulpverlener gekoppeld aan gemeente ${gemeenteContact.gemeente} voor niveau ${niveau}:
-{{hulpkaart:${gemeenteContact.naam}|${dienstNaam}|${beschrijvingTekst}|${gemeenteContact.telefoon || ""}|${gemeenteContact.website || ""}|${gemeenteContact.gemeente || ""}||}}
-${gemeenteContact.email ? `Email: ${gemeenteContact.email}` : ""}
-${gemeenteContact.adviesTekst ? `Gemeente-advies: ${gemeenteContact.adviesTekst}` : ""}
-Verwijs de mantelzorger ALTIJD naar deze hulpverlener bij hulpvragen.
---- EINDE GEMEENTE HULPVERLENER ---`
-      }
-    }
+    // Volledige context: balanstest, hulpkaarten per zorgtaak, hulp voor de
+    // mantelzorger, gemeentecontact, voorkeuren, weekkaarten, actiepunten.
+    const userContext = await prefetchUserContext(userId, gemeenteMantelzorger, gemeenteZorgvrager, {
+      shownHulpbronnen,
+    })
+    dynamicContext = buildContextBlock(userContext)
 
-    // Bouw de status-context die in de prompt wordt geïnjecteerd
+    // Status-blok dat de prompt expliciet noemt (naam, profiel-percentage,
+    // ontbrekende velden, check-in status etc.) — komt bovenop de context.
     statusContext = `\n\n--- GEBRUIKERSSTATUS (AUTOMATISCH GELADEN) ---
 Je HOEFT bekijkGebruikerStatus NIET aan te roepen. De data is hier:
 ${JSON.stringify(gebruikerStatus, null, 2)}
@@ -139,12 +132,12 @@ ${JSON.stringify(gebruikerStatus, null, 2)}
 Gebruik deze data direct om de juiste flow te kiezen. Roep bekijkGebruikerStatus alleen aan als je VERNIEUWDE data nodig hebt.`
   } catch (dbError) {
     console.error("[MantelCoach] Pre-fetch fout:", dbError)
-    // Als pre-fetch faalt, kan de AI alsnog de tool aanroepen
-    statusContext = "\n\nLet op: de status kon niet vooraf worden geladen. Roep bekijkGebruikerStatus aan."
+    // Als pre-fetch faalt, kan de AI alsnog de tools aanroepen
+    statusContext = "\n\nLet op: de context kon niet vooraf worden geladen. Roep bekijkGebruikerStatus en zoekHulpbronnen aan waar nodig."
   }
 
   try {
-    const systemPrompt = buildBalanscoachPrompt(gemeenteMantelzorger, gemeenteZorgvrager, pagina, gemeenteContactBlok) + statusContext
+    const systemPrompt = buildBalanscoachPrompt(gemeenteMantelzorger, gemeenteZorgvrager, pagina) + dynamicContext + statusContext
 
     const result = streamText({
       model: getModelForAgent("ger-balanscoach"),
