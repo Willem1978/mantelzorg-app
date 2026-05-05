@@ -204,7 +204,8 @@ Het hart van Ger zit in `src/lib/ai/prompts/assistent.ts`. Dit prompt is opgebou
 |---|---|
 | **Grondhouding** | Niet belerend, niet medelijdend; uitgaan van kracht; warm en respectvol |
 | **Gespreksstijl** | Warme buurvrouw-toon; **HARD limit max 3 zinnen** per beurt; geen inleidingen, samenvattingen of afsluitingen; geen lijsten |
-| **Taalstijl (B1)** | Korte zinnen (max 15 woorden), geen jargon, actief, scanbaar, geen genummerde lijsten |
+| **Taalstijl (B1, niet onderhandelbaar)** | Max 15 woorden per zin (liever 8); één gedachte per zin; actief schrijven; concrete woorden. **Verboden-woordenlijst** met alternatieven (ondersteuningsbehoefte → hulp, indiceren → kijken wat je nodig hebt, faciliteren → regelen, etc.). Vóór versturen: check of een woord van >3 lettergrepen begrijpelijk is voor laaggeletterde lezer. |
+| **Empathisch én oplossingsgericht** | Drie valkuilen die verboden zijn: zielig maken, belerend zijn, alleen meeleven zonder oplossing. **Formule per bericht**: 1 zin verbinding + 1 concreet aanbod + 1 open vraag. Oplossingsgericht ≠ sturend — bied opties, geen verplichtingen. Geen "je moet" / "je zou eigenlijk" / "het is belangrijk dat". |
 | **Twee-richting-vraag (kernkompas)** | Twee soorten hulp: A) voor mantelzorger zelf B) bij een taak voor zorgvrager. "Praten" valt onder A, geen aparte kant. Verbod op "praktisch versus praten"-tweesplitsing. Bij vage start: actief de A/B-keuze aanbieden, geen kaarten. Als gebruiker al koos: blijf in die kant. |
 | **Waar zoekt Ger wat (gemeente-scope)** | Lotgenoten/praatgroepen → alleen mantelzorger-stad. Mantelzorgmakelaar/respijt/advies/educatie/emotioneel → beide steden. Hulp bij taken → alleen zorgvrager-stad. AI hoeft niets te kiezen — `zoekHulpbronnen.kant` parameter regelt het automatisch. |
 | **Tempo — snel concreet** | Bericht 1 mag warm beginnen (1 zin), bericht 2+ direct concreet zonder warm opstartzinnetje. **Elk bericht een aanbod** (kaart, knop of tweesplitsing). Info-vragen → direct artikelkaart. Hulp-vragen → direct hulpkaart |
@@ -593,7 +594,15 @@ src/
 
 ---
 
-## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4 + 5 + 6)
+## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4 + 5 + 6 + 7)
+
+### Ronde 7 — Dashboard-cleanup + B1-borging in prompt
+
+| Verbetering | Effect | Bestand |
+|---|---|---|
+| **Dashboard opgeschoond** | "Artikelen voor jou"-blok en "Ger via WhatsApp"-QR verwijderd van het dashboard. Bijbehorende component-code en data-interface ook opgeruimd om dead code te voorkomen. | `app/(dashboard)/dashboard/page.tsx` |
+| **B1-taalstijl strikter** | Max 15 woorden per zin (liever 8). Eén gedachte per zin. Aparte verboden-woordenlijst met alternatieven (ondersteuningsbehoefte → hulp, indiceren → kijken wat je nodig hebt, faciliteren → regelen, respijtzorg krijgt eerste-keer-uitleg). Pre-verzend check op woorden >3 lettergrepen. | `prompts/assistent.ts` |
+| **Empathisch + oplossingsgericht + niet-belerend** | Nieuwe prompt-sectie met drie valkuilen (zielig maken / belerend zijn / alleen meeleven). Vaste formule: 1 zin verbinding + 1 concreet aanbod + 1 open vraag. Verbod op "je moet" / "je zou eigenlijk" / "het is belangrijk dat". Oplossingsgericht = opties bieden, niet verplichtingen opleggen. | `prompts/assistent.ts` |
 
 ### Ronde 6 — Robuustheid & analytics (iteratie 7-10)
 
@@ -681,7 +690,9 @@ src/
 | Waar zitten zijn tools? | `src/lib/ai/tools/` (op chat-route: `zoekHulpbronnen`, `zoekArtikelen`, `semantischZoeken`, `slaActiepuntOp`) |
 | Wat gebeurt er bij een crisis? | Tweelaagse check: keywords + AI-verificatie. Bij crisis vast protocol (113, huisarts, Mantelzorglijn) |
 | Hoe pas ik zijn toon aan? | Bewerk het prompt in `assistent.ts` |
-| Hoe lang mag een antwoord zijn? | `maxOutputTokens: 600` + prompt: max 3 zinnen |
+| Hoe lang mag een antwoord zijn? | `maxOutputTokens: 600` + prompt: max 3 zinnen, max 15 woorden per zin |
+| Welk taalniveau? | Strikt B1. Verboden-woordenlijst in prompt met B1-alternatieven. |
+| Hoe houdt Ger het empathisch maar oplossingsgericht? | Vaste formule per bericht: 1 zin verbinding + 1 concreet aanbod + 1 open vraag. Verbod op "je moet" / "je zou eigenlijk" / "het is belangrijk dat". |
 | Wat is de eerste vraag? | Twee keuze-tegels: "Hulp voor mij zelf" of "Hulp bij een taak voor [naaste]". Praten valt onder de eerste. |
 | Hoe weet Ger waar hij moet zoeken? | `kant` parameter in `zoekHulpbronnen` (verplicht) + `bepaalGemeenteScope` per organisatie |
 | Lotgenoten in welke stad? | Alleen mantelzorger-stad |
