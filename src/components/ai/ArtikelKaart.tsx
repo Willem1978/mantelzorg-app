@@ -1,22 +1,28 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 import { ContentModal } from "@/components/ui/ContentModal"
 
 /**
- * Artikelkaart syntax:
- *   {{artikelkaart:titel|beschrijving|emoji|categorie|inhoud}}
+ * Artikelkaart syntax — twee formats ondersteund:
  *
- * Velden gescheiden door |. Inhoud is het laatste veld en mag zelf | bevatten.
- * - titel: Artikeltitel
- * - beschrijving: Korte beschrijving (1-2 regels)
- * - emoji: Artikel-emoji (bijv. 💡, 🧘, 📋)
- * - categorie: Categorie-slug (voor link en favoriet)
- * - inhoud: Volledige artikelinhoud (optioneel, kan lang zijn)
+ * NIEUW (voorkeur): {{artikelkaart:id|titel|emoji|categorie}}
+ *   De client haalt de volledige inhoud op via /api/artikelen/[id]
+ *   zodragebruiker de kaart aanklikt. Robuust tegen | in de inhoud,
+ *   bespaart tokens en garandeert altijd actuele content.
+ *
+ * OUD (backwards compatible): {{artikelkaart:titel|beschrijving|emoji|categorie|inhoud}}
+ *   De inhoud staat inline in de token. Wordt nog herkend voor oude
+ *   gesprekken in localStorage.
+ *
+ * Heuristiek: een cuid-id begint typisch met "c" en is 24+ tekens
+ * lang zonder spaties. Als het eerste veld daar aan voldoet, gaan we
+ * uit van het nieuwe format (4 velden).
  */
 
 export interface ParsedArtikelkaart {
+  id?: string
   titel: string
   beschrijving: string
   emoji: string
@@ -25,22 +31,35 @@ export interface ParsedArtikelkaart {
 }
 
 const ARTIKELKAART_REGEX = /\{\{artikelkaart:([\s\S]*?)\}\}/g
+const CUID_LIKE = /^c[a-z0-9]{15,}$/i
 
-/**
- * Extraheert artikelkaarten uit tekst en retourneert schone tekst + kaarten.
- */
 export function parseArtikelkaarten(text: string): { cleanText: string; artikelen: ParsedArtikelkaart[] } {
   const artikelen: ParsedArtikelkaart[] = []
   let cleanText = text.replace(ARTIKELKAART_REGEX, (_, content: string) => {
-    const parts = content.split("|")
-    if (parts.length >= 2 && parts[0].trim()) {
+    const parts = content.split("|").map((p) => p.trim())
+    if (parts.length === 0 || !parts[0]) return ""
+
+    const eerste = parts[0]
+    const lijktOpId = CUID_LIKE.test(eerste) && !eerste.includes(" ")
+
+    if (lijktOpId) {
+      // Nieuw format: id | titel | emoji | categorie (geen inhoud — die komt via API)
       artikelen.push({
-        titel: parts[0]?.trim() || "",
-        beschrijving: parts[1]?.trim() || "",
-        emoji: parts[2]?.trim() || "📄",
-        categorie: parts[3]?.trim() || "",
-        // Alles na de 4e pipe is inhoud (mag zelf pipes bevatten)
-        inhoud: parts.slice(4).join("|").trim(),
+        id: eerste,
+        titel: parts[1] || "",
+        beschrijving: "",
+        emoji: parts[2] || "📄",
+        categorie: parts[3] || "",
+        inhoud: "",
+      })
+    } else {
+      // Oud format: titel | beschrijving | emoji | categorie | inhoud
+      artikelen.push({
+        titel: eerste,
+        beschrijving: parts[1] || "",
+        emoji: parts[2] || "📄",
+        categorie: parts[3] || "",
+        inhoud: parts.slice(4).join("|"),
       })
     }
     return ""
@@ -56,6 +75,38 @@ export function parseArtikelkaarten(text: string): { cleanText: string; artikele
  */
 export function ArtikelKaart({ artikel, className }: { artikel: ParsedArtikelkaart; className?: string }) {
   const [modalOpen, setModalOpen] = useState(false)
+  const [inhoud, setInhoud] = useState<string>(artikel.inhoud || "")
+  const [beschrijving, setBeschrijving] = useState<string>(artikel.beschrijving || "")
+  const [laden, setLaden] = useState(false)
+
+  // Bij nieuwe id-syntax: haal inhoud op zodra de modal opent (lazy).
+  // We slaan het lokaal op, zodat heropenen geen tweede fetch doet.
+  useEffect(() => {
+    if (!modalOpen || !artikel.id || inhoud) return
+    let cancelled = false
+    setLaden(true)
+    fetch(`/api/artikelen/${artikel.id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.artikel) return
+        setInhoud(data.artikel.inhoud || "")
+        if (data.artikel.beschrijving && !beschrijving) {
+          setBeschrijving(data.artikel.beschrijving)
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLaden(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [modalOpen, artikel.id, inhoud, beschrijving])
+
+  // FavorietId stabiel: gebruik artikel-id als beschikbaar, anders titel-slug
+  const favorietItemId = artikel.id
+    ? `artikel-${artikel.id}`
+    : `ai-artikel-${artikel.titel.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`
 
   return (
     <>
@@ -67,15 +118,28 @@ export function ArtikelKaart({ artikel, className }: { artikel: ParsedArtikelkaa
           "active:scale-[0.98]",
           className
         )}
-        onClick={() => setModalOpen(true)}
+        onClick={() => {
+          setModalOpen(true)
+          // Klik-tracking (niet-blocking)
+          fetch("/api/ai/suggestie-klik", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              type: "ARTIKEL",
+              itemKey: artikel.id || artikel.titel,
+              categorie: artikel.categorie || null,
+              titel: artikel.titel,
+            }),
+          }).catch(() => {})
+        }}
       >
         {/* Emoji */}
         <span className="text-lg flex-shrink-0 leading-none">{artikel.emoji || "📄"}</span>
         {/* Titel + beschrijving */}
         <div className="flex-1 min-w-0">
           <span className="text-sm font-semibold text-foreground truncate block">{artikel.titel}</span>
-          {artikel.beschrijving && (
-            <span className="text-[11px] text-muted-foreground line-clamp-1 block">{artikel.beschrijving}</span>
+          {beschrijving && (
+            <span className="text-[11px] text-muted-foreground line-clamp-1 block">{beschrijving}</span>
           )}
         </div>
         {/* Lees-indicator */}
@@ -92,11 +156,11 @@ export function ArtikelKaart({ artikel, className }: { artikel: ParsedArtikelkaa
         onClose={() => setModalOpen(false)}
         titel={artikel.titel}
         emoji={artikel.emoji || undefined}
-        beschrijving={artikel.beschrijving || undefined}
-        inhoud={artikel.inhoud || undefined}
+        beschrijving={beschrijving || undefined}
+        inhoud={laden ? "Bezig met laden…" : inhoud || undefined}
         favoriet={{
           type: "INFORMATIE",
-          itemId: `ai-artikel-${artikel.titel.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+          itemId: favorietItemId,
           categorie: artikel.categorie || "AI aanbeveling",
         }}
       />

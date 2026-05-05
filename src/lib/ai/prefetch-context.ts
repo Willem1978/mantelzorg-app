@@ -12,9 +12,10 @@ import { loadCoachAdviezen } from "@/lib/ai/coach-advies"
 import { resolveGemeenteContact } from "@/lib/ai/gemeente-resolver"
 import { fetchOpenActiepunten } from "@/lib/ai/tools/actiepunten"
 import { DEELGEBIED_SLEUTEL_MAP, TAAK_ID_MAP } from "@/lib/ai/types"
-import { ZORGTAKEN, TAAK_NAAM_VARIANTEN } from "@/config/options"
+import { ZORGTAKEN, TAAK_NAAM_VARIANTEN, HULP_VOOR_MANTELZORGER } from "@/config/options"
 import { getISOWeekNummer } from "@/lib/weekkaarten/genereer-weekkaarten"
 import { prioritizeUnshown, toKeySet } from "@/lib/ai/variation"
+import { bepaalGemeenteScope } from "@/lib/ai/hulp-categorisatie"
 
 // Mapping van taakNaam (dbValue) naar alle mogelijke onderdeelTest waarden
 // Identiek aan TAAK_NAAR_ONDERDEEL_VARIANTEN in hulpbronnen.ts
@@ -111,7 +112,7 @@ export async function prefetchUserContext(
     // Geen test? Haal alsnog alle hulpbronnen per categorie op
     // Zorgtaken-hulp → gemeente zorgvrager, mantelzorger-hulp → gemeente mantelzorger
     const alleHulp = await fetchAlleHulpbronnenPerCategorie(gemZorgvrager, shownHulpSet)
-    const mantelzorgerHulp = await fetchMantelzorgerHulp(gemeenteMantelzorger, shownHulpSet)
+    const mantelzorgerHulp = await fetchMantelzorgerHulp(gemeenteMantelzorger, gemZorgvrager, shownHulpSet)
     // Haal gemeente contact op (zonder niveau — gebruik GEMIDDELD als default)
     const gemeenteVoorContact = gemZorgvrager || gemeenteMantelzorger
     const gemeenteContact = gemeenteVoorContact
@@ -119,6 +120,8 @@ export async function prefetchUserContext(
       : null
     return {
       heeftTest: false as const,
+      gemMantelzorger: gemeenteMantelzorger,
+      gemZorgvrager,
       alleHulpPerCategorie: alleHulp,
       hulpVoorMantelzorger: mantelzorgerHulp,
       gemeenteContact,
@@ -223,8 +226,8 @@ export async function prefetchUserContext(
     }
   }
 
-  // 7) Hulpbronnen voor de mantelzorger zelf — gemeente MANTELZORGER (daar woont de mantelzorger)
-  const hulpVoorMantelzorger = await fetchMantelzorgerHulp(gemeenteMantelzorger, shownHulpSet)
+  // 7) Hulpbronnen voor de mantelzorger zelf — uit BEIDE gemeenten met scope-label
+  const hulpVoorMantelzorger = await fetchMantelzorgerHulp(gemeenteMantelzorger, gemZorgvrager, shownHulpSet)
 
   // 8) Alle hulpbronnen per categorie — gemeente ZORGVRAGER (zorgtaken vinden daar plaats)
   const alleHulpPerCategorie = await fetchAlleHulpbronnenPerCategorie(gemZorgvrager, shownHulpSet)
@@ -236,6 +239,8 @@ export async function prefetchUserContext(
 
   return {
     heeftTest: true as const,
+    gemMantelzorger: gemeenteMantelzorger,
+    gemZorgvrager,
     testDatum: test.completedAt?.toLocaleDateString("nl-NL", { day: "numeric", month: "long", year: "numeric" }),
     totaalScore: test.totaleBelastingScore,
     niveau: test.belastingNiveau,
@@ -367,21 +372,59 @@ async function fetchAlleHulpbronnenPerCategorie(
 }
 
 /**
- * Haalt hulpbronnen op die specifiek voor de mantelzorger zijn (doelgroep=MANTELZORGER).
+ * Haalt hulp voor de mantelzorger op uit BEIDE gemeenten (mantelzorger + zorgvrager)
+ * en labelt elke organisatie met scope:
+ *   - "lokaal": alleen relevant in mantelzorger-stad (lotgenoten, praatgroepen)
+ *   - "beide": relevant in zowel mantelzorger- als zorgvrager-stad
+ *     (mantelzorgmakelaar, respijtzorg, informatie, educatie, emotionele steun)
+ *
+ * Per organisatie wordt de juiste scope bepaald via heuristiek
+ * (`bepaalGemeenteScope`). Lotgenoten in zorgvrager-stad worden eruit
+ * gefilterd — die zijn niet praktisch voor de mantelzorger.
  */
+type MantelzorgerHulpItem = {
+  naam: string
+  dienst: string | null
+  beschrijving: string | null
+  telefoon: string | null
+  website: string | null
+  email: string | null
+  soortHulp: string | null
+  kosten: string | null
+  onderdeelTest: string | null
+  gemeente: string | null
+  openingstijden: string | null
+  eersteStap: string | null
+  verwachtingTekst: string | null
+  scope: "lokaal" | "beide" | "landelijk"
+}
+
 async function fetchMantelzorgerHulp(
-  gemeente: string | null,
+  gemMantelzorger: string | null,
+  gemZorgvrager: string | null,
   shownSet: ReadonlySet<string> = new Set(),
-) {
-  if (!gemeente) return []
+): Promise<MantelzorgerHulpItem[]> {
+  // Bepaal welke gemeenten doorzocht moeten worden (uniek)
+  const gemeenten = new Set<string>()
+  if (gemMantelzorger) gemeenten.add(gemMantelzorger)
+  if (gemZorgvrager) gemeenten.add(gemZorgvrager)
+  if (gemeenten.size === 0) return []
+
+  const gemeenteFilter = [
+    ...[...gemeenten].map((g) => ({ gemeente: { equals: g, mode: "insensitive" as const } })),
+    { gemeente: null }, // landelijk
+  ]
 
   const ruwe = await prisma.zorgorganisatie.findMany({
     where: {
       isActief: true,
-      gemeente: { equals: gemeente, mode: "insensitive" as const },
-      doelgroep: "MANTELZORGER",
+      OR: [
+        { onderdeelTest: { in: HULP_VOOR_MANTELZORGER.map((c) => c.dbValue) } },
+        { doelgroep: "MANTELZORGER" },
+      ],
+      AND: [{ OR: gemeenteFilter }],
     },
-    take: 24,
+    take: 60,
     orderBy: { naam: "asc" },
     select: {
       naam: true,
@@ -397,11 +440,45 @@ async function fetchMantelzorgerHulp(
       openingstijden: true,
       eersteStap: true,
       verwachtingTekst: true,
+      lokaalGebonden: true,
     },
   })
 
-  // Variatie: eerst nog niet getoonde items (geshuffeld), dan getoonde — slice 8
-  return prioritizeUnshown(ruwe, (h) => h.naam, shownSet).slice(0, 8)
+  // Filter per organisatie op de juiste scope:
+  //   - landelijk: altijd meenemen (label "landelijk")
+  //   - mantelzorger-stad: altijd OK
+  //   - zorgvrager-stad: alleen meenemen als scope = "beide" (geen lotgenoten in
+  //     zorgvragers-stad). DB-veld lokaalGebonden override't de heuristiek.
+  const passend: MantelzorgerHulpItem[] = []
+  for (const r of ruwe) {
+    if (!r.gemeente) {
+      passend.push({
+        naam: r.naam, dienst: r.dienst, beschrijving: r.beschrijving,
+        telefoon: r.telefoon, website: r.website, email: r.email,
+        soortHulp: r.soortHulp, kosten: r.kosten, onderdeelTest: r.onderdeelTest,
+        gemeente: r.gemeente, openingstijden: r.openingstijden,
+        eersteStap: r.eersteStap, verwachtingTekst: r.verwachtingTekst,
+        scope: "landelijk",
+      })
+      continue
+    }
+    const scope = bepaalGemeenteScope(r.onderdeelTest, r.naam, r.dienst, {
+      lokaalGebonden: r.lokaalGebonden,
+    })
+    const inMantelzorgerStad =
+      gemMantelzorger && r.gemeente.toLowerCase() === gemMantelzorger.toLowerCase()
+    const inZorgvragerStad =
+      gemZorgvrager && r.gemeente.toLowerCase() === gemZorgvrager.toLowerCase()
+    if (scope === "mantelzorger-only") {
+      // Alleen meenemen als het in de mantelzorger-stad staat
+      if (inMantelzorgerStad) passend.push({ ...r, scope: "lokaal" })
+    } else {
+      // scope = "beide" of "zorgvrager-only" (al gefilterd op kant elders)
+      if (inMantelzorgerStad || inZorgvragerStad) passend.push({ ...r, scope: "beide" })
+    }
+  }
+
+  return prioritizeUnshown(passend, (h) => h.naam, shownSet).slice(0, 12)
 }
 
 /**
@@ -427,8 +504,8 @@ Deze gebruiker heeft nog GEEN balanstest gedaan. Moedig aan om de test te doen v
     block += weekKaartenBlock
     block += externeHulpBlock
     // Toch hulpbronnen tonen als die er zijn
-    block += buildHulpPerCategorieBlock(ctx.alleHulpPerCategorie)
-    block += buildMantelzorgerHulpBlock(ctx.hulpVoorMantelzorger)
+    block += buildHulpPerCategorieBlock(ctx.alleHulpPerCategorie, ctx.gemZorgvrager)
+    block += buildMantelzorgerHulpBlock(ctx.hulpVoorMantelzorger, ctx.gemMantelzorger, ctx.gemZorgvrager)
     if (ctx.gemeenteContact) {
       block += buildGemeenteContactBlock(ctx.gemeenteContact)
     }
@@ -474,10 +551,13 @@ BALANSTEST (${ctx.testDatum}):
     block += `\nDeze taken kosten ook tijd en energie. Bied PROACTIEF hulp aan bij taken met veel uren, ook als ze niet als "zwaar" zijn gemarkeerd.`
   }
 
-  // Hulp per zware taak
+  // Hulp per zware taak (deel van het ZORGVRAGER-TAKEN-blok)
   const hulpNaaste = Object.entries(ctx.hulpVoorNaaste)
   if (hulpNaaste.length > 0) {
-    block += `\n\nHULP BIJ ZWARE ZORGTAKEN — kopieer de {{hulpkaart:...}} regels letterlijk als je ze wilt tonen:`
+    const stadLabel = ctx.gemZorgvrager ? ` (in ${ctx.gemZorgvrager})` : ""
+    block += `\n\n=== HULP BIJ ZWAARSTE TAKEN VOOR JE NAASTE${stadLabel} ===
+Dit zijn organisaties die de zwaarste zorgtaken kunnen overnemen. Onderdeel
+van "hulp bij een taak voor je naaste" — niet voor de mantelzorger zelf.`
     for (const [taak, bronnen] of hulpNaaste) {
       block += `\n\n  ${taak}:`
       for (const b of bronnen) {
@@ -523,11 +603,14 @@ function formatHulpkaart(b: any): string {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function buildHulpPerCategorieBlock(perCategorie: Record<string, any[]>): string {
+function buildHulpPerCategorieBlock(perCategorie: Record<string, any[]>, gemZorgvrager: string | null): string {
   const entries = Object.entries(perCategorie)
   if (entries.length === 0) return ""
 
-  let block = `\n\nALLE HULP PER CATEGORIE — kopieer de {{hulpkaart:...}} regels letterlijk als je ze wilt tonen:`
+  const stadLabel = gemZorgvrager ? ` (in ${gemZorgvrager} — de stad van je naaste)` : ""
+  let block = `\n\n=== HULP BIJ TAKEN VOOR JE NAASTE${stadLabel} ===
+Dit zijn organisaties die TAKEN kunnen overnemen die jij normaal voor je
+naaste doet. Per zorgtaak een set hulpkaarten. Kopieer letterlijk.`
   for (const [categorie, bronnen] of entries) {
     block += `\n\n  ${categorie} (${bronnen.length}):`
     for (const b of bronnen) {
@@ -582,14 +665,49 @@ function buildVoorkeurenBlock(aandoening: string | null, voorkeuren: { type: str
   return block
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function buildMantelzorgerHulpBlock(hulp: any[]): string {
+function buildMantelzorgerHulpBlock(
+  hulp: MantelzorgerHulpItem[],
+  gemMantelzorger: string | null,
+  gemZorgvrager: string | null,
+): string {
   if (!hulp || hulp.length === 0) return ""
 
-  let block = `\n\nHULP VOOR JOU (mantelzorger) — kopieer de {{hulpkaart:...}} regels letterlijk:`
-  for (const b of hulp) {
-    block += `\n  ${formatHulpkaart(b)}`
+  // Groepeer per scope-label zodat Ger meteen ziet welke hulpbron in welke
+  // stad geldt — geen verwarring meer over waar de gebruiker heen kan.
+  const lokaal = hulp.filter((h) => h.scope === "lokaal")
+  const beide = hulp.filter((h) => h.scope === "beide")
+  const landelijk = hulp.filter((h) => h.scope === "landelijk")
+
+  let block = `\n\n=== HULP VOOR JOU (mantelzorger) ===
+Dit zijn organisaties die JOU als mantelzorger ondersteunen. Kopieer de
+{{hulpkaart:...}} regels letterlijk wanneer je ze toont.`
+
+  if (lokaal.length > 0) {
+    const stadLabel = gemMantelzorger ? ` (alleen in ${gemMantelzorger} — jouw stad)` : ""
+    block += `\n\n  Lotgenoten / praatgroepen / fysieke ontmoeting${stadLabel}:`
+    for (const b of lokaal) {
+      block += `\n  ${formatHulpkaart(b)}`
+    }
   }
+
+  if (beide.length > 0) {
+    const stadLabel =
+      gemMantelzorger && gemZorgvrager && gemMantelzorger !== gemZorgvrager
+        ? ` (in zowel ${gemMantelzorger} als ${gemZorgvrager} — beide steden hebben hier vaak iets te bieden)`
+        : ""
+    block += `\n\n  Mantelzorgmakelaar / respijtzorg / advies / educatie / emotionele steun${stadLabel}:`
+    for (const b of beide) {
+      block += `\n  ${formatHulpkaart(b)}`
+    }
+  }
+
+  if (landelijk.length > 0) {
+    block += `\n\n  Landelijke organisaties (geen plaats — bereikbaar voor iedereen):`
+    for (const b of landelijk) {
+      block += `\n  ${formatHulpkaart(b)}`
+    }
+  }
+
   return block
 }
 

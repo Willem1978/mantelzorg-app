@@ -1,112 +1,112 @@
 /**
  * Tool: zoekHulpbronnen
- * Zoekt zorgorganisaties op basis van zoekterm, gemeente en/of categorie.
- * Gebruikt TAAK_NAAM_VARIANTEN voor correcte categorie-matching.
+ *
+ * Zoekt zorgorganisaties met een EXPLICIETE keuze welke kant (hulp voor de
+ * mantelzorger zelf, of hulp bij een taak voor de zorgvrager). De kant
+ * bepaalt de gemeente-scope:
+ *
+ *   - kant = "zorgvrager-taak" → alleen gemeente zorgvrager
+ *   - kant = "mantelzorger" en lotgenoten/praatgroep → alleen gemeente mantelzorger
+ *   - kant = "mantelzorger" anders → BEIDE gemeenten
+ *
+ * De keuze van Ger om een tweesplitsing aan de gebruiker voor te leggen
+ * gebeurt in de prompt; deze tool dwingt af dat de keuze daarna expliciet
+ * in een parameter zit.
  */
 import { tool } from "ai"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
-import { TAAK_NAAM_VARIANTEN } from "@/config/options"
+import { TAAK_NAAM_VARIANTEN, HULP_VOOR_MANTELZORGER } from "@/config/options"
 import { prioritizeUnshown, toKeySet } from "@/lib/ai/variation"
+import { bepaalGemeenteScope, gemeentenVoorScope } from "@/lib/ai/hulp-categorisatie"
 
 // Bouwt een lijst van alle mogelijke onderdeelTest waarden voor een categorie
 function getCategorieVarianten(categorie: string): string[] {
-  // Directe match als dbValue
   const directVarianten = TAAK_NAAM_VARIANTEN[categorie]
   if (directVarianten) return [categorie, ...directVarianten]
-
-  // Zoek of dit een variant is van een dbValue
   for (const [dbValue, varianten] of Object.entries(TAAK_NAAM_VARIANTEN)) {
     if (varianten.some((v) => v.toLowerCase() === categorie.toLowerCase())) {
       return [dbValue, ...varianten]
     }
   }
-
-  // Geen match gevonden, gebruik de categorie zelf
   return [categorie]
 }
+
+const MANTELZORGER_DBVALUES = HULP_VOOR_MANTELZORGER.map((c) => c.dbValue)
 
 export function createZoekHulpbronnenTool(
   ctx:
     | { gemeenteZorgvrager: string | null; gemeenteMantelzorger: string | null; shownNamen?: string[] }
     | { gemeente: string | null; shownNamen?: string[] },
 ) {
-  // Ondersteun zowel het nieuwe (twee gemeenten) als het oude (één gemeente) formaat
   const ctxZorgvrager = "gemeenteZorgvrager" in ctx ? ctx.gemeenteZorgvrager : ctx.gemeente
   const ctxMantelzorger = "gemeenteMantelzorger" in ctx ? ctx.gemeenteMantelzorger : ctx.gemeente
   const shownSet = toKeySet(ctx.shownNamen)
 
   return tool({
     description:
-      "Zoek hulporganisaties en zorgaanbieders. Gebruik dit om lokale hulp te vinden voor specifieke problemen, deelgebieden of zorgtaken. " +
-      "Zorgtaken (verzorging, boodschappen, klusjes) worden gezocht in de gemeente van de zorgvrager. " +
-      "Hulp voor de mantelzorger zelf (steunpunt, emotioneel) wordt gezocht in de gemeente van de mantelzorger.",
+      "Zoek hulporganisaties. Je MOET de parameter 'kant' meegeven: " +
+      "'mantelzorger' (hulp voor de mantelzorger zelf — mantelzorgmakelaar, lotgenoten, respijtzorg, praten, ondersteuning) " +
+      "of 'zorgvrager-taak' (hulp bij een taak die de mantelzorger doet voor de naaste — boodschappen, verzorging, vervoer, huishouden). " +
+      "De gemeente-scope wordt automatisch bepaald: lotgenoten alleen in de stad van de mantelzorger, " +
+      "andere mantelzorger-hulp in BEIDE steden, taken alleen in de stad van de zorgvrager.",
     inputSchema: z.object({
-      zoekterm: z.string().optional().describe("Zoekterm voor naam of beschrijving"),
-      gemeente: z.string().optional().describe("Gemeente naam om lokaal te zoeken (overschrijft de standaard)"),
+      kant: z
+        .enum(["mantelzorger", "zorgvrager-taak"])
+        .describe("Welke soort hulp: 'mantelzorger' (voor de mantelzorger zelf) of 'zorgvrager-taak' (bij een taak voor de naaste)"),
       categorie: z
         .string()
         .optional()
-        .describe("Categorie/taak zoals: Persoonlijke verzorging, Huishoudelijke taken, Vervangende mantelzorg, Emotionele steun, etc."),
+        .describe(
+          "Specifieke categorie. Bij kant='mantelzorger': Informatie en advies / Educatie / Emotionele steun / " +
+          "Persoonlijke begeleiding / Praktische hulp / Vervangende mantelzorg. " +
+          "Bij kant='zorgvrager-taak': Boodschappen / Persoonlijke verzorging / Huishoudelijke taken / " +
+          "Vervoer / Maaltijden / Klusjes / Administratie / Plannen / Sociaal contact / Huisdieren.",
+        ),
+      zoekterm: z.string().optional().describe("Zoekterm voor naam of beschrijving"),
     }),
-    execute: async ({ zoekterm, gemeente: zoekGemeente, categorie }) => {
-      // Bepaal de juiste gemeente: zorgtaken → zorgvrager, mantelzorger hulp → mantelzorger
-      const categorieLC = categorie?.toLowerCase() || ""
-      const isMantelzorgerHulp = categorie && (
-        categorieLC.includes("emotioneel") ||
-        categorieLC.includes("steunpunt") ||
-        categorieLC.includes("mantelzorg") ||
-        categorieLC.includes("lotgenoot") ||
-        categorieLC.includes("zelfzorg") ||
-        categorieLC.includes("respijt") ||
-        categorieLC.includes("vervangende zorg") ||
-        categorieLC.includes("begeleiding") ||
-        categorieLC.includes("informatie en advies") ||
-        categorieLC.includes("educatie") ||
-        categorieLC.includes("cursus")
-      )
-      const defaultGemeente = isMantelzorgerHulp ? ctxMantelzorger : ctxZorgvrager
-      const gem = zoekGemeente || defaultGemeente || ctxZorgvrager || ctxMantelzorger
+    execute: async ({ kant, categorie, zoekterm }) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const where: Record<string, any> = { isActief: true }
 
-      if (gem) {
-        where.OR = [
-          { gemeente: { equals: gem, mode: "insensitive" } },
-          { gemeente: null },
-        ]
+      // Categorie-filter
+      if (kant === "zorgvrager-taak") {
+        if (categorie) {
+          const varianten = getCategorieVarianten(categorie)
+          where.onderdeelTest = { in: varianten }
+        }
+      } else {
+        // kant = mantelzorger
+        if (categorie) {
+          const varianten = getCategorieVarianten(categorie)
+          where.onderdeelTest = { in: varianten }
+        } else {
+          // Geen specifieke categorie: pak alle MANTELZORGER-categorieën + doelgroep MANTELZORGER
+          where.OR = [
+            { onderdeelTest: { in: MANTELZORGER_DBVALUES } },
+            { doelgroep: "MANTELZORGER" },
+          ]
+        }
       }
 
-      // Bij mantelzorger-hulp: filter op doelgroep MANTELZORGER
-      if (isMantelzorgerHulp) {
-        where.doelgroep = "MANTELZORGER"
-      }
-
-      if (categorie && !isMantelzorgerHulp) {
-        // Gebruik alle naamvarianten voor correcte matching (alleen voor zorgtaken)
-        const varianten = getCategorieVarianten(categorie)
-        where.onderdeelTest = { in: varianten }
-      }
-
+      // Zoekterm
       if (zoekterm) {
-        where.AND = [
-          ...(Array.isArray(where.AND) ? where.AND : []),
-          {
-            OR: [
-              { naam: { contains: zoekterm, mode: "insensitive" } },
-              { beschrijving: { contains: zoekterm, mode: "insensitive" } },
-              { soortHulp: { contains: zoekterm, mode: "insensitive" } },
-            ],
-          },
-        ]
+        const zoektermFilter = {
+          OR: [
+            { naam: { contains: zoekterm, mode: "insensitive" as const } },
+            { beschrijving: { contains: zoekterm, mode: "insensitive" as const } },
+            { soortHulp: { contains: zoekterm, mode: "insensitive" as const } },
+          ],
+        }
+        where.AND = Array.isArray(where.AND) ? [...where.AND, zoektermFilter] : [zoektermFilter]
       }
 
-      // Haal een ruimere set op zodat we kunnen variëren tussen chat-beurten:
-      // items die de gebruiker al gezien heeft worden achteraan gezet, niet
-      // uitgesloten (bij kleine gemeenten kan de pool 2-3 items zijn).
-      const ruwe = await prisma.zorgorganisatie.findMany({
+      // Haal kandidaten op (ruim, voor variatie). Gemeente-filter doen we
+      // PER ORGANISATIE op basis van bepaalGemeenteScope, omdat lotgenoten
+      // strikt lokaal moeten zijn maar mantelzorgmakelaar uit beide steden mag.
+      const kandidaten = await prisma.zorgorganisatie.findMany({
         where,
-        take: 24,
+        take: 50,
         orderBy: { naam: "asc" },
         select: {
           naam: true,
@@ -115,30 +115,55 @@ export function createZoekHulpbronnenTool(
           website: true,
           email: true,
           soortHulp: true,
+          dienst: true,
           onderdeelTest: true,
           gemeente: true,
           dekkingNiveau: true,
           kosten: true,
           openingstijden: true,
+          doelgroep: true,
+          lokaalGebonden: true,
         },
       })
 
-      const gesorteerd = prioritizeUnshown(ruwe, (r) => r.naam, shownSet)
+      // Filter per organisatie op de juiste gemeente(n) op basis van scope.
+      // De DB-waarde `lokaalGebonden` overschrijft de heuristiek wanneer gezet.
+      const passend = kandidaten.filter((k) => {
+        // Landelijk (gemeente=null) mag altijd
+        if (!k.gemeente) return true
+        const scope = bepaalGemeenteScope(k.onderdeelTest, k.naam, k.dienst, {
+          lokaalGebonden: k.lokaalGebonden,
+        })
+        const toegestaneGemeenten = gemeentenVoorScope(scope, ctxMantelzorger, ctxZorgvrager)
+        if (toegestaneGemeenten.length === 0) {
+          // Geen gemeenten bekend: laat alles toe (anders krijg je 0 resultaten)
+          return true
+        }
+        return toegestaneGemeenten.some(
+          (g) => g.toLowerCase() === (k.gemeente || "").toLowerCase(),
+        )
+      })
+
+      const gesorteerd = prioritizeUnshown(passend, (r) => r.naam, shownSet)
       const resultaten = gesorteerd.slice(0, 8)
 
       if (resultaten.length === 0) {
+        const gemSpec =
+          kant === "zorgvrager-taak"
+            ? ctxZorgvrager || "deze regio"
+            : `${ctxMantelzorger || ""}${ctxZorgvrager && ctxZorgvrager !== ctxMantelzorger ? ` of ${ctxZorgvrager}` : ""}`.trim() || "deze regio"
         return {
           gevonden: 0,
-          bericht: gem
-            ? `Geen hulpbronnen gevonden in ${gem}. Geef de gebruiker algemeen advies over dit onderwerp en verwijs naar de gemeente of huisarts.`
-            : "Geen hulpbronnen gevonden. Geef de gebruiker algemeen advies over dit onderwerp en verwijs naar de gemeente of huisarts.",
+          bericht: `Geen hulpbronnen gevonden voor ${kant} in ${gemSpec}. Geef de gebruiker algemeen advies en verwijs naar de gemeente of huisarts.`,
         }
       }
 
       return {
         gevonden: resultaten.length,
+        kant,
         hulpbronnen: resultaten.map((r) => ({
           naam: r.naam,
+          dienst: r.dienst,
           beschrijving: r.beschrijving,
           telefoon: r.telefoon,
           website: r.website,

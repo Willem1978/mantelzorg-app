@@ -100,7 +100,20 @@ export function HulpKaart({ kaart, className }: { kaart: ParsedHulpkaart; classN
           "active:scale-[0.98]",
           className
         )}
-        onClick={() => setModalOpen(true)}
+        onClick={() => {
+          setModalOpen(true)
+          // Klik-tracking (niet-blocking)
+          fetch("/api/ai/suggestie-klik", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              type: "HULP",
+              itemKey: kaart.naam,
+              categorie: kaart.dienst || null,
+              titel: kaart.naam,
+            }),
+          }).catch(() => {})
+        }}
       >
         {/* Compact icon */}
         <div className="w-7 h-7 rounded-lg bg-[var(--accent-amber)]/15 flex items-center justify-center flex-shrink-0">
