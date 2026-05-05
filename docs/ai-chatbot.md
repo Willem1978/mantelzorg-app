@@ -171,7 +171,7 @@ Alle routes leven onder `src/app/api/ai/`.
 
 `maxDuration` voor de chat-route staat op 30 seconden — voldoende voor tool-calls + DB-queries binnen Vercel serverless.
 
-### De opener-route — drie duidelijke richtingen
+### De opener-route — twee duidelijke richtingen
 
 `/api/ai/opener` is bewust **geen** AI-call: de welkomstzin moet binnen 200 ms beschikbaar zijn voor first paint van de chat. De route leest de laatste balanstest + de naam van de zorgvrager (`careRecipientName`) en bouwt:
 
@@ -181,13 +181,14 @@ Alle routes leven onder `src/app/api/ai/`.
    - LAAG: "Goed dat je er bent. Het gaat eigenlijk best goed met je balans — knap! Waar kan ik je vandaag mee helpen?"
    - Geen test: "Hoi! Ik ben Ger. Fijn dat je er bent. Waar kan ik je vandaag mee helpen?"
 
-2. **Drie vaste keuze-tegels** (DE KERN — dit is wat de gebruiker als eerste ziet):
+2. **Twee vaste keuze-tegels** die de fundamentele tweesplitsing fysiek weerspiegelen:
 
 | Emoji | Titel | Omschrijving | Wat wordt naar Ger gestuurd |
 |---|---|---|---|
-| 🧑 | Hulp voor mij zelf | Steunpunt, lotgenoten, even op adem komen, slaap of stress | "Ik wil hulp voor mij zelf" |
-| 🤝 | Hulp bij een taak voor [naaste-naam] | Boodschappen, verzorging, vervoer, huishouden | "Ik zoek hulp bij [zwaarste-taak] voor [naaste]" (of generiek) |
-| 💬 | Even praten over hoe het gaat | Vertel hoe je je voelt, ik luister mee | "Ik wil even vertellen hoe het met me gaat" |
+| 🧑 | Hulp voor mij zelf | Mantelzorgmakelaar, lotgenoten, vervangende zorg, praten over hoe het gaat | "Ik wil hulp voor mij zelf als mantelzorger" |
+| 🤝 | Hulp bij een taak voor [naaste-naam] | Boodschappen, verzorging, vervoer, huishouden — taken die jij doet | "Ik zoek hulp bij [zwaarste-taak] voor [naaste]" (of generiek) |
+
+"Even praten over hoe het gaat" valt **onder tegel 1** (kant A) — het is geen losse derde optie. Onder de twee tegels staat een sub-link *"Liever je eigen vraag stellen? Type hieronder."* voor wie direct iets wil typen.
 
 De middelste tegel personaliseert: als de zorgvrager-naam bekend is, staat hij in de titel; als de zwaarste taak bekend is, gaat de actie-tekst direct naar die taak. Zo voelt het meteen alsof Ger de situatie kent.
 
@@ -204,15 +205,16 @@ Het hart van Ger zit in `src/lib/ai/prompts/assistent.ts`. Dit prompt is opgebou
 | **Grondhouding** | Niet belerend, niet medelijdend; uitgaan van kracht; warm en respectvol |
 | **Gespreksstijl** | Warme buurvrouw-toon; **HARD limit max 3 zinnen** per beurt; geen inleidingen, samenvattingen of afsluitingen; geen lijsten |
 | **Taalstijl (B1)** | Korte zinnen (max 15 woorden), geen jargon, actief, scanbaar, geen genummerde lijsten |
-| **Twee-richting-vraag** | Twee soorten hulp: A) voor mantelzorger zelf B) bij een taak voor zorgvrager. Bij vage start: actief de keuze aanbieden. Als gebruiker al koos: blijf in die kant — niet beide combineren |
+| **Twee-richting-vraag (kernkompas)** | Twee soorten hulp: A) voor mantelzorger zelf B) bij een taak voor zorgvrager. "Praten" valt onder A, geen aparte kant. Verbod op "praktisch versus praten"-tweesplitsing. Bij vage start: actief de A/B-keuze aanbieden, geen kaarten. Als gebruiker al koos: blijf in die kant. |
+| **Waar zoekt Ger wat (gemeente-scope)** | Lotgenoten/praatgroepen → alleen mantelzorger-stad. Mantelzorgmakelaar/respijt/advies/educatie/emotioneel → beide steden. Hulp bij taken → alleen zorgvrager-stad. AI hoeft niets te kiezen — `zoekHulpbronnen.kant` parameter regelt het automatisch. |
 | **Tempo — snel concreet** | Bericht 1 mag warm beginnen (1 zin), bericht 2+ direct concreet zonder warm opstartzinnetje. **Elk bericht een aanbod** (kaart, knop of tweesplitsing). Info-vragen → direct artikelkaart. Hulp-vragen → direct hulpkaart |
 | **Gespreksvoering** | 4-stappen flow: Verbinding → Verdieping → Concreet aanbod (1-2 kaarten) → Open uitnodiging |
 | **Variatie in openers** | 5 soorten verbinding mogelijk; verboden clichés ("Wat een goede vraag", "Ik begrijp dat...", "Wat moedig dat je dit deelt"); "Dat herken ik" max 1× per gesprek |
 | **Gesprekscontinuïteit** | Bij korte/vage antwoorden ("ja", "weet niet"): pak iets uit de context (zware taak, open actiepunt) en vraag concreet door |
 | **Omgaan met context** | Pre-fetched data is al beschikbaar; nooit samenvatten, alleen onzichtbaar verweven |
 | **Gedrag per belastingniveau** | HOOG: proactief, mantelzorglijn / GEMIDDELD: één concrete actie / LAAG: complimenteren |
-| **Twee-doelgroepen-regel** | Bij brede vragen ALTIJD 1 hulp voor de zorgvrager + 1 hulp voor de mantelzorger zelf combineren |
-| **Hulp + artikel combineren** | Bij emotionele onderwerpen (slaap, schuldgevoel, eenzaamheid): hulpkaart (actie) **én** artikelkaart (lezen/bewaren) in hetzelfde bericht |
+| **Volg de gemaakte keuze** | Als gebruiker kant A of B koos: kopieer alléén kaarten uit dat blok in de pre-fetch. Geen kruislings combineren. |
+| **Hulp + artikel combineren** | Bij emotionele onderwerpen (slaap, schuldgevoel, eenzaamheid) binnen kant A: hulpkaart (actie) **én** artikelkaart (lezen/bewaren) in hetzelfde bericht |
 | **Zorgtaken** | Eén taak per bericht, beginnen met de zwaarste; "eerste stap" benoemen voor nieuwe gebruikers |
 | **Actiepunten** | Concreet advies opslaan via tool, in volgend gesprek opvolgen |
 | **Crisisdetectie** | Empathie eerst, dan praktisch; bij acute nood doorverwijzen naar 113 / huisarts / Veilig Thuis |
@@ -221,10 +223,12 @@ Het hart van Ger zit in `src/lib/ai/prompts/assistent.ts`. Dit prompt is opgebou
 | **Niet doen** | Verzin geen telefoonnummers; geen medisch advies; geen herhaling van eerder getoonde kaarten; nooit langer dan 3 zinnen |
 | **App-pagina's** | Lijst van interne paden voor `{{knop:...}}` actieknoppen |
 
-Aan dit basis-prompt worden **dynamisch toegevoegd** door `buildAssistentPrompt()`:
+Het prompt is gesplitst in twee delen voor Anthropic prompt caching:
 
-1. De gemeenten van mantelzorger en zorgvrager (twee-gemeentes-systeem),
-2. Het volledige **context-blok** uit `prefetchUserContext()` (zie volgende sectie).
+1. **`buildStableSystem(gemeenteMantelzorger, gemeenteNaaste)`** — basisprompt + de gemeenten van mantelzorger en zorgvrager. Verandert zelden binnen een gesprek, wordt door Anthropic ~5 min gecached.
+2. **`buildContextBlock(userContext)`** — het pre-fetched user-context-blok (balanstest, hulpbronnen, actiepunten). Verandert per beurt door variatie en `shownHulpbronnen`, hangt achter de cache-grens.
+
+De backwards-compatible `buildAssistentPrompt()` retourneert beide aan elkaar geplakt voor routes die nog geen caching gebruiken.
 
 ### Lengte-regels (cruciaal voor coachende ervaring)
 
@@ -258,27 +262,52 @@ Voor élk chatverzoek wordt eerst `prefetchUserContext()` (`src/lib/ai/prefetch-
 
 | Bron (Prisma-model) | Inhoud |
 |---|---|
-| `Caregiver` | Aandoening, voorkeuren (tags & categorieën), al gekoppelde organisaties |
+| `Caregiver` | Aandoening, voorkeuren (tags & categorieën), al gekoppelde organisaties, gemeenten |
 | `BelastbaarheidTest` | Laatste test: totaalscore, niveau, zorguren, deelgebieden, alarmen |
 | `TaakSelectie` | Geselecteerde zorgtaken + uren + moeilijkheid |
-| `Zorgorganisatie` (3×) | Hulp per zware taak, hulp per categorie, hulp voor de mantelzorger zelf |
+| `Zorgorganisatie` (mantelzorger-zijde) | Hulp voor de mantelzorger — uit BEIDE gemeenten, met scope-label per organisatie (lokaal-only / beide / landelijk) |
+| `Zorgorganisatie` (zorgvrager-zijde) | Hulp bij taken voor de naaste — alleen uit gemeente zorgvrager, gegroepeerd per zorgtaak |
 | `Actiepunt` | Openstaande actiepunten uit eerdere gesprekken |
 | `WeekKaart` | Kaarten van deze week (voltooid + open) |
 | `Gemeente`-resolver | Gemeente-specifiek mantelzorgloket (als geconfigureerd) |
 | Coach-adviezen | Adviesteksten per deelgebied/niveau (uit static config) |
 
-### Twee-gemeentes-systeem
+### Twee gescheiden hulp-blokken in de system-prompt
 
-Cruciaal detail: een mantelzorger in Arnhem kan zorgen voor een naaste in Zutphen. Hulp wordt daarom in twee gemeenten gezocht en in **gescheiden blokken** in de prompt geplaatst:
+De pre-fetched context produceert twee scherp gelabelde blokken zodat Ger fysiek niet kruislings kan categoriseren:
 
-- **Zorgtaken** (boodschappen, verzorging, klusjes) → gemeente van de **zorgvrager** → blok `HULP BIJ ZWARE ZORGTAKEN`
-- **Mantelzorger-hulp** (steunpunt, emotioneel, lotgenoten) → gemeente van de **mantelzorger** → blok `HULP VOOR JOU (mantelzorger)`
+```
+=== HULP VOOR JOU (mantelzorger) ===
+  Lotgenoten / praatgroepen / fysieke ontmoeting (alleen in [stad mantelzorger] — jouw stad):
+    {{hulpkaart:...}}
+  Mantelzorgmakelaar / respijtzorg / advies / educatie / emotionele steun (in [stad mantelzorger] én [stad zorgvrager]):
+    {{hulpkaart:...}}
+  Landelijke organisaties:
+    {{hulpkaart:...}}
 
-De prompt instrueert Ger om bij brede vragen **uit beide blokken** te kiezen en te combineren in één bericht. Categorie-routing in `zoekHulpbronnen` werkt op basis van keywords (`emotioneel`, `steunpunt`, `respijt` etc.).
+=== HULP BIJ TAKEN VOOR JE NAASTE (in [stad zorgvrager]) ===
+  Boodschappen:
+    {{hulpkaart:...}}
+  Persoonlijke verzorging:
+    {{hulpkaart:...}}
+  ...
+```
+
+De scope-bepaling per organisatie gebeurt in `src/lib/ai/hulp-categorisatie.ts` (functies `bepaalKant`, `bepaalGemeenteScope`, `gemeentenVoorScope`). Lotgenoten in de stad van de zorgvrager worden er actief uit gefilterd — ze hebben geen praktische waarde voor de mantelzorger.
+
+### Twee-gemeentes-systeem (zoek-strategie)
+
+Een mantelzorger heeft (mogelijk) twee gemeenten in zijn profiel: zijn eigen woonplaats en die van de zorgvrager. De zoek-scope is verschillend per soort hulp — zie sectie 0 voor de complete tabel. Kort samengevat:
+
+| Soort hulp | Gemeente |
+|---|---|
+| Lotgenoten / praatgroepen / fysieke ontmoeting | Alleen mantelzorger-stad |
+| Mantelzorgmakelaar / respijtzorg / advies / educatie / emotioneel | Beide steden |
+| Hulp bij een TAAK voor de naaste (boodschappen, verzorging, vervoer) | Alleen zorgvrager-stad |
 
 ### Variatie tussen chat-beurten
 
-De pre-fetch-functie krijgt nu een `options.shownHulpbronnen` mee — een lijst met namen van hulpkaarten die Ger in eerdere beurten al heeft getoond. Items in die lijst worden **zacht gedeprioriteerd**: ze gaan achteraan in de gesorteerde resultaten, maar verdwijnen niet (bij gemeenten met weinig hulpbronnen blijven ze beschikbaar). Binnen elke subgroep wordt geshuffeld via `prioritizeUnshown` (`src/lib/ai/variation.ts`).
+De pre-fetch-functie krijgt een `options.shownHulpbronnen` mee — een lijst met namen van hulpkaarten die Ger in eerdere beurten al heeft getoond. Items in die lijst worden **zacht gedeprioriteerd**: ze gaan achteraan in de gesorteerde resultaten, maar verdwijnen niet (bij gemeenten met weinig hulpbronnen blijven ze beschikbaar). Binnen elke subgroep wordt geshuffeld via `prioritizeUnshown` (`src/lib/ai/variation.ts`).
 
 ---
 
@@ -286,24 +315,27 @@ De pre-fetch-functie krijgt nu een `options.shownHulpbronnen` mee — een lijst 
 
 Ger kan tijdens een gesprek tools aanroepen voor extra zoekopdrachten. Definities in `src/lib/ai/tools/`. Het taalmodel beslist zelf wanneer en met welke parameters.
 
-| Tool | Doel | Status-label in UI tijdens uitvoering |
+| Tool | Doel | Status-label in UI |
 |---|---|---|
-| `bekijkTestTrend` | Vergelijking met eerdere balanstesten | "Ger bekijkt jouw balans-trend" |
-| `zoekHulpbronnen` | Zoek lokale zorgorganisaties | "Ger zoekt lokale hulp voor je" |
-| `zoekArtikelen` | Zoek info-artikelen | "Ger zoekt artikelen die kunnen helpen" |
-| `gemeenteInfo` | Mantelzorgloket-contact per gemeente | "Ger bekijkt info van jouw gemeente" |
-| `semantischZoeken` | Vector similarity search | "Ger zoekt informatie over dit onderwerp" |
+| `zoekHulpbronnen` | Zoek lokale zorgorganisaties — vereist `kant` parameter ('mantelzorger' of 'zorgvrager-taak'); past automatisch juiste gemeente-scope toe | "Ger zoekt hulp voor jou als mantelzorger" / "Ger zoekt hulp bij een taak voor je naaste" |
+| `zoekArtikelen` | Zoek info-artikelen via id-lookup — kaart-syntax is `{{artikelkaart:id\|titel\|emoji\|categorie}}` | "Ger zoekt artikelen die kunnen helpen" |
+| `semantischZoeken` | Vector similarity search (pgvector + OpenAI embeddings) | "Ger zoekt informatie over dit onderwerp" |
 | `slaActiepuntOp` | Concreet advies opslaan voor opvolging | "Ger noteert dit voor je" |
-| `bekijkBalanstest` | Volledige test-resultaten ophalen | "Ger bekijkt jouw balanstest" |
-| `bekijkCheckInTrend` | Maandelijkse check-in trends | "Ger bekijkt je check-in trend" |
-| `bekijkGebruikerStatus` | Profiel + test-status + voltooiingspercentage | — |
-| `bekijkGemeenteAdvies` | Gemeente-specifiek advies (config) | "Ger zoekt advies in jouw gemeente" |
-| `genereerRapportSamenvatting` | Genereer + sla PDF-rapport op | "Ger maakt een samenvatting" |
-| `registreerAlarm` | Crisissignaal vastleggen | "Ger zet dit veilig in je dossier" |
 
-Op de hoofdchat (`/api/ai/chat`) zijn nu **6 tools** actief: `bekijkTestTrend`, `zoekHulpbronnen`, `zoekArtikelen`, `gemeenteInfo`, `semantischZoeken`, `slaActiepuntOp`. De andere zijn beschikbaar in andere routes (balanscoach/checkin) of admin-agents.
+Op de hoofdchat (`/api/ai/chat`) zijn dit de **4 actieve tools**. `bekijkTestTrend`, `gemeenteInfo`, `bekijkBalanstest` en `bekijkCheckInTrend` zijn weggehaald omdat hun data al in de pre-fetched context staat — het model riep ze toch zelden, maar hun descriptions kostten elke request tokens. Ze zijn nog beschikbaar in andere routes (balanscoach, checkin) en admin-agents.
 
 `stopWhen: stepCountIs(7)` betekent: maximaal 7 stappen (tool-calls + finale tekst) per turn — voorkomt loops.
+
+### De `kant` parameter in `zoekHulpbronnen`
+
+Verplicht. AI moet expliciet kiezen voordat hij zoekt:
+
+| Waarde | Wat de tool doet |
+|---|---|
+| `"mantelzorger"` | Zoekt in `HULP_VOOR_MANTELZORGER`-categorieën of `doelgroep=MANTELZORGER`. Per organisatie wordt scope bepaald: lotgenoten alleen mantelzorger-stad, andere mantelzorger-hulp in beide steden. |
+| `"zorgvrager-taak"` | Zoekt in `ZORGTAKEN`-categorieën, alleen in zorgvrager-stad. |
+
+De gemeente-filter is daardoor niet meer keyword-based of door het model te kiezen — de classificatie zit centraal in `src/lib/ai/hulp-categorisatie.ts`. Override per organisatie is mogelijk via DB-veld `Zorgorganisatie.lokaalGebonden`.
 
 ### Variatie in tool-resultaten
 
@@ -317,15 +349,30 @@ Op de hoofdchat (`/api/ai/chat`) zijn nu **6 tools** actief: `bekijkTestTrend`, 
 
 ## 8. Crisis-detectie
 
+Tweelaagse aanpak — eerst snel en deterministisch, daarna AI-aanvulling voor subtiele formuleringen.
+
+### Laag 1: keyword-detectie
+
 Vóórdat het AI-model überhaupt wordt aangesproken, wordt het laatste gebruikersbericht door `detecteerCrisis()` gescand (`src/lib/ai/crisis-detector.ts`).
 
 ### Niveaus
 
 | Niveau | Trigger | Reactie |
 |---|---|---|
-| `none` | Geen signalen | Normaal AI-antwoord |
-| `attention` | 1 keyword-match | AI antwoordt, maar met extra crisis-context in het prompt |
+| `geen` | Geen signalen | Normaal AI-antwoord |
+| `aandacht` | 1 keyword-match | Doorzetten naar laag 2 (AI-verificatie) |
 | `crisis` | 2+ matches of expliciete keywords ("zelfmoord", "ik kan niet meer") | **Geen AI-call**: vast protocol-antwoord met 113, huisarts en Mantelzorglijn |
+
+### Laag 2: AI-verificatie bij `aandacht`
+
+`aiCrisisVerificatie()` in `src/lib/ai/crisis-ai-check.ts`:
+
+- Wordt **alleen** aangeroepen als laag 1 een aandacht-signaal vond — bij ~99% van de berichten gebeurt deze call niet.
+- Stuurt het bericht naar Haiku met een safety-classifier prompt; verwacht één woord terug: `ESCALEREN` / `ZORG` / `OK`.
+- Bij `ESCALEREN` wordt het niveau opgewaardeerd naar `crisis` → vast protocol-antwoord.
+- Maximaal 10 output-tokens, faalt stil bij netwerk-/API-fouten (chat blijft werken).
+
+Vangt formuleringen als "alles voelt grijs", "ik weet het allemaal niet meer", "het maakt allemaal niet meer uit" — die geen keyword raken maar wel zorgwekkend zijn.
 
 Hardcoded crisis-respons gebruikt deze hulplijnen:
 - **113 Zelfmoordpreventie** — 0800-0113
@@ -343,8 +390,8 @@ Hoofdcomponent: `src/components/ai/AiChat.tsx`. Gebruikt `useChat` uit `@ai-sdk/
 
 ### Bericht-flow
 
-1. **Bij mount**: `GET /api/ai/opener` → opener-tekst + 3 vraagknoppen tonen (gepersonaliseerd op basis van balanstest)
-2. **Gebruiker** typt of klikt op een vraagknop → `sendMessage({ text })`
+1. **Bij mount**: `GET /api/ai/opener` → opener-tekst + **2 keuze-tegels** tonen (gepersonaliseerd op basis van balanstest en zorgvrager-naam)
+2. **Gebruiker** typt of klikt op een tegel of vraagknop → `sendMessage({ text })`. Klik op vraagknop wordt gelogd via `POST /api/ai/suggestie-klik` (type=`VRAAGKNOP`).
 3. **`prepareSendMessagesRequest`** callback:
    - Converteert UI-berichten (parts-format) naar model-berichten (content-format)
    - Filtert lege berichten (tool-call stappen zonder tekst)
@@ -352,9 +399,11 @@ Hoofdcomponent: `src/components/ai/AiChat.tsx`. Gebruikt `useChat` uit `@ai-sdk/
    - Stuurt mee als `shownHulpbronnen` / `shownArtikelen` in de body
 4. **Server** streamt antwoord-tokens terug
 5. **Tijdens streaming**:
-   - Loading-bubble toont tool-status als Ger een tool aanroept ("Ger zoekt lokale hulp voor je")
+   - Loading-bubble toont **tool-status met kant** als Ger `zoekHulpbronnen` aanroept: "Ger zoekt hulp voor jou als mantelzorger" of "Ger zoekt hulp bij een taak voor je naaste"
+   - Voor andere tools een algemener label ("Ger zoekt artikelen die kunnen helpen", etc.)
    - `parseHulpkaarten`, `parseArtikelkaarten`, `parseButtons` halen tokens uit de tekst en renderen ze los buiten de spreekbubble
 6. **Cumulatieve verzameling**: een `useEffect` loopt na elke nieuwe assistant-message door **alle** assistant-berichten heen, dedupliceert op naam/titel en zet de top-6 hulp + top-6 artikelen onder de input. Verdwijnen doen ze pas als de cap wordt overschreden.
+7. **Lege-strook hint**: als er nog géén kaarten zijn maar er is wel een gesprek bezig, toont de UI subtiel *"Nog geen suggesties — Ger luistert eerst even mee."*
 
 ### UI-varianten
 
@@ -437,7 +486,8 @@ Wel persistent over sessies heen: **Actiepunten** (door Ger via tool opgeslagen)
 | Mechanisme | Waar | Doel |
 |---|---|---|
 | **Auth-check** | Begin van elke route (m.u.v. `/welkom`) | Alleen ingelogde users mogen praten met de gepersonaliseerde Ger |
-| **Crisis-detector** | Vóór elke AI-call | Voorkomt dat AI iets schadelijks zegt bij echte nood |
+| **Crisis-detector (laag 1: keywords)** | Vóór elke AI-call | Voorkomt dat AI iets schadelijks zegt bij overduidelijke crisis-keywords |
+| **AI crisis-verificatie (laag 2)** | Bij `aandacht`-niveau van laag 1 | Snelle Haiku-call die subtiele formuleringen oppakt; kan upgraden naar `crisis` |
 | **Rate-limiting** | `/api/ai/welkom` (20/10min per IP) | Voorkomt misbruik van de publieke endpoint |
 | **`maxDuration` 30s** | Vercel function | Hard timeout — voorkomt lange hangende calls |
 | **`stopWhen: stepCountIs(7)`** | streamText | Maximaal 7 tool-call stappen per turn — voorkomt oneindige loops |
@@ -462,7 +512,8 @@ Omdat er geen fine-tuning is, gebeurt alle gedragsaanpassing via **prompt engine
 | **Cap op cumulatieve kaartverzameling** | `MAX_HULP` / `MAX_ARTIKEL` in `AiChat.tsx` |
 | **Gedrag per balansniveau** | Sectie "Gedrag per belastingniveau" in `assistent.ts` |
 | **Output-syntax / kaart-formaat** | Sectie "Output Syntax" in zelfde prompt + `HulpKaart.tsx` / `ArtikelKaart.tsx` (parser) |
-| **Crisis-keywords / hulplijnen** | `src/lib/ai/crisis-detector.ts` |
+| **Crisis-keywords / hulplijnen** | `src/lib/ai/crisis-detector.ts` (laag 1) en `src/lib/ai/crisis-ai-check.ts` (laag 2) |
+| **Welke kant / gemeente-scope** | `src/lib/ai/hulp-categorisatie.ts` (centrale classificatie + lotgenoten-keywords) |
 | **Welk model voor welke agent** | `src/lib/ai/models.ts` (`AGENT_MODELS`) |
 | **Welke tools beschikbaar per route** | De `tools: { ... }` in elke `/api/ai/*/route.ts` |
 | **Wat in pre-fetched context** | `src/lib/ai/prefetch-context.ts` (prefetchUserContext + buildContextBlock) |
@@ -502,34 +553,38 @@ Deze agents schrijven naar dezelfde Postgres en delen de Anthropic-account — h
 ```
 src/
 ├── app/api/ai/
-│   ├── opener/route.ts          ← gepersonaliseerde welkomstzin (geen AI-call)
+│   ├── opener/route.ts          ← welkomstzin + 2 keuze-tegels (geen AI-call)
 │   ├── chat/route.ts            ← hoofd-chat endpoint
 │   ├── welkom/route.ts          ← publieke chat (rate-limited)
 │   ├── balanscoach/route.ts     ← coach met test-context
 │   ├── checkin/route.ts         ← maandelijkse check-in
 │   ├── embeddings/route.ts      ← embedding generatie
+│   ├── suggestie-klik/route.ts  ← logt klikken op kaarten + vraagknoppen
 │   └── admin/                   ← admin-agents
 │
 ├── lib/ai/
 │   ├── models.ts                ← model-keuze per agent (Haiku/Sonnet/Opus)
 │   ├── variation.ts             ← shuffle + prioritizeUnshown helpers
-│   ├── crisis-detector.ts       ← keyword-detectie + vast protocol
-│   ├── prefetch-context.ts      ← gebruikersdata vooraf ophalen + variatie
+│   ├── hulp-categorisatie.ts    ← Kant + GemeenteScope (de tweesplitsing)
+│   ├── crisis-detector.ts       ← keyword-detectie laag 1 + vast protocol
+│   ├── crisis-ai-check.ts       ← AI-aanvulling laag 2 (Haiku)
+│   ├── prefetch-context.ts      ← context vooraf + twee gescheiden hulp-blokken
 │   ├── embeddings.ts            ← OpenAI embedding service
 │   ├── coach-advies.ts          ← static coach-tips per deelgebied
 │   ├── gemeente-resolver.ts     ← gemeente-contact lookup
 │   ├── prompts/
-│   │   ├── assistent.ts         ← Ger's hoofdprompt (chat) — variatie + 3 zinnen
+│   │   ├── assistent.ts         ← Ger's hoofdprompt (chat) — TWEE-RICHTING + tempo
 │   │   ├── welkom.ts            ← homepage Ger
 │   │   ├── balanscoach.ts       ← coach
 │   │   └── checkin-buddy.ts     ← check-in
-│   ├── tools/                   ← function-calling tools (met variatie)
-│   └── agents/                  ← complexe AI-agents (hulpbron-zoeker, validator)
+│   ├── tools/                   ← function-calling tools (zoekHulpbronnen met kant)
+│   ├── agents/                  ← complexe AI-agents (hulpbron-zoeker, validator)
+│   └── __tests__/               ← vitest unit-tests
 │
 └── components/ai/
-    ├── AiChat.tsx               ← hoofdchat-UI (useChat + transport + cumulatief)
+    ├── AiChat.tsx               ← hoofdchat-UI (transport + tegels + cumulatief)
     ├── HulpKaart.tsx            ← parser + render van {{hulpkaart:...}}
-    ├── ArtikelKaart.tsx         ← parser + render van {{artikelkaart:...}}
+    ├── ArtikelKaart.tsx         ← parser + render van {{artikelkaart:...}} (id-lookup)
     ├── GerAvatar.tsx            ← avatar-component
     ├── GerHeroChat.tsx          ← hero-variant
     ├── FloatingGerChat.tsx      ← floating widget
@@ -577,8 +632,8 @@ src/
 
 | Verbetering | Effect | Bestand |
 |---|---|---|
-| **Drie keuze-tegels in welkomst** | Mantelzorger ziet meteen drie duidelijke richtingen: hulp voor mezelf / hulp bij taak voor naaste / even praten | `opener/route.ts`, `AiChat.tsx` |
-| **Personalisering met naaste-naam** | Middelste tegel toont naam van zorgvrager als bekend; actie verwijst direct naar zwaarste taak | `opener/route.ts` |
+| **Keuze-tegels in welkomst** | Mantelzorger ziet meteen de richtingen: hulp voor mezelf / hulp bij taak voor naaste (in Ronde 5 teruggebracht naar 2 tegels — "even praten" valt onder kant 1) | `opener/route.ts`, `AiChat.tsx` |
+| **Personalisering met naaste-naam** | Tegel "Hulp bij een taak voor [naam]" toont naam van zorgvrager als bekend; actie verwijst direct naar zwaarste taak | `opener/route.ts` |
 | **Twee-richting-vraag in prompt** | Bij vage starten ("ik weet het niet meer") biedt Ger actief A vs B keuze aan via vraagknoppen | `assistent.ts` |
 | **Tempo-regel** | Bericht 2+ moet direct concreet zijn, geen warm opstartzinnetje meer; info-vraag → direct artikelkaart, hulp-vraag → direct hulpkaart | `assistent.ts` |
 | **Elk bericht een aanbod** | Praten zonder iets aan te bieden mag alleen bij echte emotionele momenten | `assistent.ts` |
@@ -589,11 +644,11 @@ src/
 | Verbetering | Effect | Bestand |
 |---|---|---|
 | Antwoorden korter | `maxOutputTokens` 2048 → 600; prompt naar **max 3 zinnen** | `chat/route.ts`, `assistent.ts` |
-| Beide doelgroepen verplicht | Bij brede vragen ALTIJD 1 hulp voor zorgvrager + 1 voor mantelzorger | `assistent.ts` |
+| Beide doelgroepen verplicht (vervangen in Ronde 5) | Bij brede vragen ALTIJD 1 hulp voor zorgvrager + 1 voor mantelzorger. **Ronde 5** heeft dit vervangen door: bij brede vraag ALLEEN tweesplitsing tonen, gebruiker kiest, daarna eenkant. | `assistent.ts` |
 | Meer kaarten per beurt | 1-2 hulp + 1-2 artikelen toegestaan (was: kies één type) | `assistent.ts` |
 | Cumulatieve verzameling | Kaarten stapelen onder input, dedupe, cap 6+6 | `AiChat.tsx` |
 | Proactieve opener | `/api/ai/opener` geeft per balanstest passende begroeting + 3 startknoppen | `opener/route.ts` |
-| Vraagknoppen 2 → 3 | Variatie-instructie: verdiepen / wisselen / nieuw onderwerp | `assistent.ts`, `AiChat.tsx` |
+| Vraagknoppen 2 → 3 | Variatie-instructie: verdiepen / wisselen / nieuw onderwerp; klikken worden gelogd | `assistent.ts`, `AiChat.tsx` |
 | Tool-status in UI | "Ger zoekt lokale hulp..." i.p.v. "Ger typt..." | `AiChat.tsx` |
 | Variatie in openers | 5 soorten verbinding; verbod op clichés ("Wat een goede vraag", "Ik begrijp dat...") | `assistent.ts` |
 | Gespreksflow bij korte antwoorden | Bij "ja"/"weet niet": pak iets uit context en vraag concreet door | `assistent.ts` |
@@ -605,10 +660,11 @@ src/
 
 - **Geen cross-session-geheugen voor gesprekken zelf**: Ger weet niet wat hij vorige week zei — alleen open `Actiepunten` worden meegenomen.
 - **Geen multi-modal**: alleen tekst. Geen foto's of stem.
-- **Variatie alleen op de hoofdchat**: `/api/ai/balanscoach`, `/checkin` en `/welkom` accepteren de `shownNamen`/`shownTitels` parameters wel via tool-signature, maar wiren ze nog niet door vanuit hun eigen frontends.
+- **Tweesplitsing + variatie alleen op de hoofdchat**: `/api/ai/balanscoach`, `/checkin` en `/welkom` accepteren de tool-parameters wel maar wiren `kant`, `shownNamen` en `shownTitels` nog niet door vanuit hun eigen frontends.
 - **Geen A/B-testing van prompts**: aanpassingen aan het systeem-prompt gaan direct naar productie zonder framework om varianten te vergelijken.
-- **Crisis-detectie keyword-based**: kan subtiele signalen missen. Te overwegen: aparte snelle moderatie-call met Haiku voor signalen die geen keyword raken.
-- **Latency**: pre-fetch + Anthropic-call duurt typisch 2-5 seconden voor het eerste token. Bij veel hulpbronnen in de context kan dit oplopen.
+- **Lotgenoten-detectie blijft heuristisch waar `lokaalGebonden` niet expliciet gezet is**: false negatives mogelijk bij organisaties die wel praatgroep zijn maar geen keyword in de naam hebben. Curatie via admin-UI is volgende stap.
+- **`AiSuggestieClick` wordt nog niet teruggevoerd in ranking**: gegevens worden verzameld maar er is nog geen analyse/ranking-functie bovenop. Eerste stap was logging; ranking volgt zodra er voldoende data is.
+- **Latency**: pre-fetch + Anthropic-call duurt typisch 2-5 seconden voor het eerste token. Bij `aandacht`-niveau wordt daar nog een Haiku-verificatie aan toegevoegd (~500ms extra). Prompt caching beperkt de latency-impact bij vervolgvragen.
 
 ---
 
@@ -622,14 +678,19 @@ src/
 | Welke API roept hij aan? | Anthropic Messages API via `@ai-sdk/anthropic` |
 | Waar slaat hij gesprekken op? | Browser-localStorage (niet in DB) |
 | Hoe weet hij wat de gebruiker doormaakt? | Pre-fetched context uit balanstest, hulpbronnen, gemeente, voorkeuren |
-| Waar zitten zijn tools? | `src/lib/ai/tools/` |
-| Wat gebeurt er bij een crisis? | Vast protocol vóór AI-call (113, huisarts, Mantelzorglijn) |
+| Waar zitten zijn tools? | `src/lib/ai/tools/` (op chat-route: `zoekHulpbronnen`, `zoekArtikelen`, `semantischZoeken`, `slaActiepuntOp`) |
+| Wat gebeurt er bij een crisis? | Tweelaagse check: keywords + AI-verificatie. Bij crisis vast protocol (113, huisarts, Mantelzorglijn) |
 | Hoe pas ik zijn toon aan? | Bewerk het prompt in `assistent.ts` |
 | Hoe lang mag een antwoord zijn? | `maxOutputTokens: 600` + prompt: max 3 zinnen |
-| Wat is de eerste vraag? | Drie keuze-tegels: hulp voor mij zelf / hulp bij een taak voor mijn naaste / even praten |
-| Toont hij hulp voor zorgvrager én mantelzorger? | Ja, maar volgt de keuze van de gebruiker. Combineert alleen bij puur brede vraag zonder gemaakte keuze |
+| Wat is de eerste vraag? | Twee keuze-tegels: "Hulp voor mij zelf" of "Hulp bij een taak voor [naaste]". Praten valt onder de eerste. |
+| Hoe weet Ger waar hij moet zoeken? | `kant` parameter in `zoekHulpbronnen` (verplicht) + `bepaalGemeenteScope` per organisatie |
+| Lotgenoten in welke stad? | Alleen mantelzorger-stad |
+| Mantelzorgmakelaar in welke stad? | Beide steden (mantelzorger én zorgvrager) |
+| Hulp bij boodschappen? | Alleen zorgvrager-stad |
+| Toont hij hulp voor zorgvrager én mantelzorger? | Volgt de keuze van de gebruiker. Bij brede vraag: tweesplitsing aanbieden, niet combineren. |
 | Hoe snel komt er concreet advies? | Vanaf bericht 2 verplicht: elk bericht bevat minstens een hulpkaart, artikelkaart of tweesplitsing |
 | Kan de gebruiker artikelen opslaan? | Ja, via hartje in ContentModal → `Favoriet`-tabel |
 | Blijven kaarten in beeld? | Ja, cumulatief onder de chat (max 6 hulp + 6 artikelen) |
-| Hoe weet de gebruiker wat Ger doet? | Tool-status in loading-bubble: "Ger zoekt lokale hulp voor je..." |
+| Hoe weet de gebruiker wat Ger doet? | Tool-status in loading-bubble: "Ger zoekt hulp voor jou als mantelzorger..." (kant zichtbaar) |
+| Worden klikken gelogd? | Ja: hulpkaart-klik, artikelkaart-klik én vraagknop-klik in `AiSuggestieClick` |
 | Waarom Haiku en geen Sonnet? | 4× goedkoper; voor coachende dialoog ruim voldoende |
