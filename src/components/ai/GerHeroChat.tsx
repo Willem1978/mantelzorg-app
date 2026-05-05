@@ -285,7 +285,7 @@ export function GerHeroChat() {
             const { cleanText: t1, kaarten } = parseHulpkaarten(raw)
             const { cleanText: t2, artikelen } = parseArtikelkaarten(t1)
             const { buttons: btns } = parseButtons(t2)
-            const vraagChips = btns.filter(b => b.type === "vraag").slice(0, 2)
+            const vraagChips = btns.filter(b => b.type === "vraag").slice(0, 3)
             const hulpCards = kaarten.slice(0, 2)
             const artikelCards = artikelen.slice(0, 3)
             const hasVragen = vraagChips.length > 0
