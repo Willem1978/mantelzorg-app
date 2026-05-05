@@ -360,6 +360,7 @@ WeekKaart           ── leest week-overzicht
 AlarmLog            ── schrijft crisis-signalen
 GeplandCheckin      ── schrijft (via balanscoach-route)
 Favoriet            ── geschreven door client na klik op favoriet-knop
+AiSuggestieClick    ── geschreven bij elke klik op hulp-/artikelkaart (analytics)
 ```
 
 `pgvector` extensie wordt gebruikt door `semantischZoeken` voor 1536-dim embedding similarity (OpenAI). Valt automatisch terug op tekstzoek als de extensie niet aanwezig is — geen harde dependency.
@@ -483,7 +484,17 @@ src/
 
 ---
 
-## 15. Recente verbeteringen (Ronde 1 + 2 + 3)
+## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4)
+
+### Ronde 4 — Kostenbeheersing, robuustheid en analytics
+
+| Verbetering | Effect | Bestand |
+|---|---|---|
+| **Anthropic prompt caching** | Stabiele deel van system-prompt (~6 KB) wordt gecached. Vervolgvragen binnen 5 min geven ~90% korting op input-kosten van dat blok. | `chat/route.ts`, `prompts/assistent.ts` (`buildStableSystem`) |
+| **Artikelkaart via id-lookup** | Token wordt `{{artikelkaart:id\|titel\|emoji\|categorie}}` (4 velden, geen inhoud meer). Client haalt volledige inhoud lazy op via `/api/artikelen/[id]`. Robuust tegen `\|` in inhoud, bespaart tokens, altijd actuele content. Backwards-compatible met oude 5-veld syntax. | `tools/artikelen.ts`, `ArtikelKaart.tsx`, `assistent.ts` |
+| **Klikgedrag-tracking** | Klikken op hulp- en artikelkaarten worden gelogd in nieuw `AiSuggestieClick` model. Basis voor latere ranking ("welke suggesties klikken mantelzorgers daadwerkelijk aan?"). Niet-blocking, faalt stil bij netwerkfout. | `prisma/schema.prisma`, `suggestie-klik/route.ts`, `HulpKaart.tsx`, `ArtikelKaart.tsx` |
+
+**LET OP**: schema-wijziging vereist migratie. Run `npm run db:migrate` (development) of `npm run db:generate` + `prisma migrate deploy` (productie).
 
 ### Ronde 3 — Soepel geheel met expliciete tweesplitsing
 
@@ -519,10 +530,7 @@ src/
 - **Geen multi-modal**: alleen tekst. Geen foto's of stem.
 - **Variatie alleen op de hoofdchat**: `/api/ai/balanscoach`, `/checkin` en `/welkom` accepteren de `shownNamen`/`shownTitels` parameters wel via tool-signature, maar wiren ze nog niet door vanuit hun eigen frontends.
 - **Geen A/B-testing van prompts**: aanpassingen aan het systeem-prompt gaan direct naar productie zonder framework om varianten te vergelijken.
-- **Geen prompt-caching**: het systeem-prompt + pre-fetched context wordt elk request opnieuw verstuurd. Anthropic prompt caching kan input-kosten met ~90% verlagen voor vervolgvragen.
 - **Crisis-detectie keyword-based**: kan subtiele signalen missen. Te overwegen: aparte snelle moderatie-call met Haiku voor signalen die geen keyword raken.
-- **Artikel-`inhoud` via tekst-token**: als de inhoud een `|` bevat kan de parser haperen. Robuuster zou zijn: alleen artikel-id meegeven en client haalt inhoud uit DB.
-- **Geen klikgedrag-tracking**: we weten niet welke kaarten mantelzorgers nuttig vinden — handig voor latere ranking.
 - **Latency**: pre-fetch + Anthropic-call duurt typisch 2-5 seconden voor het eerste token. Bij veel hulpbronnen in de context kan dit oplopen.
 
 ---

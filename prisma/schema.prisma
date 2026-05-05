@@ -1482,3 +1482,23 @@ model Activiteit {
   @@index([gemeente, type])
   @@index([isGevalideerd, isActief])
 }
+
+// ============================================
+// AI SUGGESTIE KLIK-TRACKING
+// Logt klikken op hulp- en artikelkaarten die Ger heeft voorgesteld,
+// zodat we later kunnen ranken welke suggesties écht nuttig zijn.
+// ============================================
+
+model AiSuggestieClick {
+  id          String    @id @default(cuid())
+  userId      String?   // null voor anonieme welkom-chat
+  type        String    // "HULP" | "ARTIKEL"
+  itemKey     String    // hulpkaart-naam of artikel-id (cuid)
+  categorie   String?
+  titel       String?   // voor ranking-debug en analytics
+  saved       Boolean   @default(false) // ook opgeslagen als favoriet?
+  createdAt   DateTime  @default(now())
+
+  @@index([type, itemKey])
+  @@index([userId, createdAt])
+}

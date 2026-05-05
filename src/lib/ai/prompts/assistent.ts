@@ -326,14 +326,16 @@ HULPKAARTEN (1-2 per bericht):
   staan vooraan. Pak de eerste die past — niet steeds dezelfde naam.
 
 ARTIKELKAARTEN (max 2 per bericht, voor info en tips):
-{{artikelkaart:Titel|Beschrijving|Emoji|Categorie|Inhoud}}
+{{artikelkaart:ID|Titel|Emoji|Categorie}}
+- Gebruik EXACT 4 velden: het ID (cuid uit de tool-output), titel, emoji, categorie-slug.
+  GEEN inhoud meer in de token — die haalt de client zelf op via de id.
+  Het veld `kaartSyntax` in de tool-output bevat de juiste string; kopieer die letterlijk.
 - Gebruik artikelkaarten als de gebruiker iets WIL LEZEN of LEREN
   (slaap, ontspanning, financieel, rechten, omgaan met dementie, etc.).
 - De gebruiker kan op de kaart klikken om het hele artikel te lezen,
   én kan het opslaan als favoriet of mailen naar zichzelf.
 - Verwijs er warm naar: "Hier is iets om rustig te lezen — je kunt het
   ook bewaren voor later."
-- Kopieer artikelkaarten LETTERLIJK uit de context of tool-output. Verzin niets.
 - VARIATIE: kies elke beurt een ANDER artikel dan je al eerder hebt aangeboden
   in dit gesprek.
 
@@ -388,16 +390,13 @@ APP PAGINA'S (voor actieknoppen)
 - /profiel — Je profiel aanpassen`
 
 /**
- * Bouwt het systeem-prompt met optionele gemeenten en pre-fetched context.
- *
- * @param gemeenteMantelzorger - Gemeente waar de mantelzorger woont
- * @param gemeenteNaaste - Gemeente waar de naaste woont (voor zorgtaken)
- * @param contextBlock - Pre-fetched context (balanstest, hulpbronnen, etc.)
+ * Bouwt het stabiele deel van het systeem-prompt: basis-prompt + gemeenten.
+ * Dit deel verandert zelden binnen een gesprek en wordt door Anthropic
+ * prompt caching gecached zodat vervolgvragen ~90% goedkoper zijn.
  */
-export function buildAssistentPrompt(
+export function buildStableSystem(
   gemeenteMantelzorger: string | null,
   gemeenteNaaste?: string | null,
-  contextBlock?: string,
 ): string {
   let prompt = ASSISTENT_PROMPT
 
@@ -412,9 +411,18 @@ export function buildAssistentPrompt(
     prompt += `\nHet mantelzorgloket zit in de gemeente van de naaste (${gemNaaste}).`
   }
 
-  if (contextBlock) {
-    prompt += contextBlock
-  }
-
   return prompt
+}
+
+/**
+ * Backwards-compatible: bouwt stable + dynamic in één string voor routes
+ * die geen prompt caching gebruiken.
+ */
+export function buildAssistentPrompt(
+  gemeenteMantelzorger: string | null,
+  gemeenteNaaste?: string | null,
+  contextBlock?: string,
+): string {
+  const stable = buildStableSystem(gemeenteMantelzorger, gemeenteNaaste)
+  return contextBlock ? stable + contextBlock : stable
 }

@@ -1,7 +1,7 @@
 import { streamText, stepCountIs } from "ai"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { buildAssistentPrompt } from "@/lib/ai/prompts/assistent"
+import { buildStableSystem } from "@/lib/ai/prompts/assistent"
 import { prefetchUserContext, buildContextBlock } from "@/lib/ai/prefetch-context"
 import { getModelForAgent } from "@/lib/ai/models"
 import { detecteerCrisis, buildCrisisResponse } from "@/lib/ai/crisis-detector"
@@ -100,12 +100,29 @@ export async function POST(req: Request) {
     const userContext = await prefetchUserContext(userId, gemeenteMantelzorger, gemeenteZorgvrager, {
       shownHulpbronnen,
     })
-    const contextBlock = buildContextBlock(userContext)
+    const dynamicContext = buildContextBlock(userContext)
+
+    // Anthropic prompt caching: het STABIELE deel (basis-prompt + gemeenten)
+    // wordt als eerste system-message met cacheControl: ephemeral verstuurd
+    // zodat Anthropic het ~5 min cachet. Vervolgvragen binnen die window
+    // krijgen ~90% korting op de input-kosten van dat blok.
+    // Het DYNAMISCHE deel (user-context, verandert per beurt door variatie
+    // en shownHulpbronnen) staat achter de cache-grens en wordt elke keer
+    // opnieuw meegestuurd.
+    const stableSystem = buildStableSystem(gemeenteMantelzorger, gemeenteZorgvrager)
+    const messagesMetSystem = [
+      {
+        role: "system" as const,
+        content: stableSystem,
+        providerOptions: { anthropic: { cacheControl: { type: "ephemeral" } } },
+      },
+      { role: "system" as const, content: dynamicContext },
+      ...messages,
+    ]
 
     const result = streamText({
       model: getModelForAgent("ger-chat"),
-      system: buildAssistentPrompt(gemeenteMantelzorger, gemeenteZorgvrager, contextBlock),
-      messages,
+      messages: messagesMetSystem,
       maxOutputTokens: 600,
       stopWhen: stepCountIs(7),
       tools: {
