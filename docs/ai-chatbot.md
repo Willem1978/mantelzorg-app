@@ -206,7 +206,7 @@ Het hart van Ger zit in `src/lib/ai/prompts/assistent.ts`. Dit prompt is opgebou
 | **Gespreksstijl** | Warme buurvrouw-toon; **HARD limit max 3 zinnen** per beurt; geen inleidingen, samenvattingen of afsluitingen; geen lijsten |
 | **Taalstijl (B1, niet onderhandelbaar)** | Max 15 woorden per zin (liever 8); één gedachte per zin; actief schrijven; concrete woorden. **Verboden-woordenlijst** met alternatieven (ondersteuningsbehoefte → hulp, indiceren → kijken wat je nodig hebt, faciliteren → regelen, etc.). Vóór versturen: check of een woord van >3 lettergrepen begrijpelijk is voor laaggeletterde lezer. |
 | **Empathisch én oplossingsgericht** | Drie valkuilen die verboden zijn: zielig maken, belerend zijn, alleen meeleven zonder oplossing. **Formule per bericht**: 1 zin verbinding + 1 concreet aanbod + 1 open vraag. Oplossingsgericht ≠ sturend — bied opties, geen verplichtingen. Geen "je moet" / "je zou eigenlijk" / "het is belangrijk dat". |
-| **Twee-richting-vraag (kernkompas)** | Twee soorten hulp: A) voor mantelzorger zelf B) bij een taak voor zorgvrager. "Praten" valt onder A, geen aparte kant. Verbod op "praktisch versus praten"-tweesplitsing. Bij vage start: actief de A/B-keuze aanbieden, geen kaarten. Als gebruiker al koos: blijf in die kant. |
+| **Drie-richting-kompas (kernkompas, Ronde 10)** | Drie vaste paden zichtbaar onder elke chat-beurt: A) hulp voor de mantelzorger zelf, B) hulp bij een taak voor de zorgvrager, C) informatie / artikel zoeken. "Praten" valt onder A. De drie blijven ook midden in een sub-onderwerp aangeboden via 3 vraagknoppen. Bij vage start: actief de A/B/C-keuze aanbieden, geen kaarten. Als gebruiker al koos: blijf in die kant maar bied volgende beurt weer A/B/C aan. |
 | **Waar zoekt Ger wat (gemeente-scope)** | Lotgenoten/praatgroepen → alleen mantelzorger-stad. Mantelzorgmakelaar/respijt/advies/educatie/emotioneel → beide steden. Hulp bij taken → alleen zorgvrager-stad. AI hoeft niets te kiezen — `zoekHulpbronnen.kant` parameter regelt het automatisch. |
 | **Tempo — snel concreet** | Bericht 1 mag warm beginnen (1 zin), bericht 2+ direct concreet zonder warm opstartzinnetje. **Elk bericht een aanbod** (kaart, knop of tweesplitsing). Info-vragen → direct artikelkaart. Hulp-vragen → direct hulpkaart |
 | **Gespreksvoering** | 4-stappen flow: Verbinding → Verdieping → Concreet aanbod (1-2 kaarten) → Open uitnodiging |
@@ -251,7 +251,7 @@ In zijn antwoord kan Ger speciale tokens plaatsen die de frontend dan rendert al
 | `{{knop:Label:/pad}}` | Navigatie-knop | Knop die naar een interne pagina linkt |
 | `{{vraag:Vraagtekst}}` | Vervolgvraag | Knop onder input die direct die vraag verstuurt |
 
-**Per bericht**: maximaal 3 kaarten in totaal — combinatie toegestaan en zelfs gewenst (hulp om te bellen + artikel om te lezen). Specifiek: max 2 hulpkaarten + max 2 artikelkaarten, samen niet meer dan 3. Volgorde: eerst hulpkaarten (actie), dan artikelkaarten (lezen). Plus max 2 vraagknoppen onderaan. Parsing gebeurt in `src/components/ai/HulpKaart.tsx`, `ArtikelKaart.tsx` en de chat-componenten (`FloatingGerChat`, `DashboardGerChat`, `AiChat`).
+**Per bericht**: maximaal 3 kaarten in totaal — combinatie toegestaan en zelfs gewenst (hulp om te bellen + artikel om te lezen). Specifiek: max 2 hulpkaarten + max 2 artikelkaarten, samen niet meer dan 3. Volgorde: eerst hulpkaarten (actie), dan artikelkaarten (lezen). Plus **3 vraagknoppen onderaan (A/B/C-kompas)** — sinds Ronde 10 niet meer 2. Parsing gebeurt in `src/components/ai/HulpKaart.tsx`, `ArtikelKaart.tsx` en de chat-componenten (`FloatingGerChat`, `DashboardGerChat`, `AiChat`, `AgentChat`, `PublicGerChat`, `GerHeroChat`).
 
 ---
 
@@ -594,7 +594,40 @@ src/
 
 ---
 
-## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9)
+## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10)
+
+### Ronde 10 — Drie kompas-dimensies, echte taken, deelgebied-specifieke vragen
+
+Live-test toonde drie dieperliggende problemen die de chat onpersoonlijk en
+willekeurig maakten:
+
+1. **Generieke taakvoorbeelden in plaats van de eigen taken.** De prompt bevatte vaste voorbeelden ("boodschappenservice, maaltijdservice, koken") in het ENERGIE/GEVOEL/TIJD-blok. Het model kopieerde die letterlijk, zelfs als de gebruiker geen boodschappen of koken in zijn `zwareTaken` had. Resultaat: een Zutphen-mantelzorger die 10 uur per week regelt voor zijn naaste kreeg een aanbod voor boodschappenbezorging.
+2. **Twee vraagknoppen, vaak uit dezelfde dimensie.** De UI capte op 2 (`slice(0, 2)`), de prompt zei "ALTIJD precies 2", en in de praktijk eindigden gesprekken vaak op een dood spoor.
+3. **Bij vage input ("iets anders") gaf Ger een lege wedervraag.** *"Oké, goed. Waar wil je het over hebben?"* — precies wat een coach niet hoort te doen.
+
+#### De drie kompas-dimensies (kerncompass)
+
+Onder elke chat-beurt staan voortaan drie vraagknoppen die de drie vaste paden representeren:
+
+| Dimensie | Wat | Voorbeeld-label |
+|---|---|---|
+| **A — Voor jou** | Hulp/aandacht voor de mantelzorger zelf — rust, gevoel, tijd, lotgenoten, respijt | "Ik wil hulp voor mijzelf" / "Vertel meer over respijtzorg voor mij" |
+| **B — Voor je naaste** | Hulp bij een concrete zorgtaak die je voor de naaste doet (gebruikt een ECHTE taak uit `zwareTaken`) | "Ik wil hulp bij een taak die ik voor [naaste] doe" / "Hulp bij administratie voor Kim" |
+| **C — Informatie / ander pad** | Een artikel lezen, ander onderwerp aansnijden, status bekijken | "Ik ben op zoek naar informatie" / "Lees een artikel over slaap" |
+
+Deze drie blijven ook midden in een sub-onderwerp aangeboden — de gebruiker raakt nooit het kompas kwijt.
+
+#### Wijzigingen
+
+| Verbetering | Effect | Bestand |
+|---|---|---|
+| **Echte taken, geen verzinsels** | Vaste voorbeelden in het ENERGIE/GEVOEL/TIJD-blok zijn weggehaald. Nieuwe kritieke regel: "Gebruik alleen taken uit `zwareTaken`/`overigeTaken`. Verzin er geen bij." Met FOUT/GOED-voorbeelden. ZWARE TAKEN-blok zegt nu expliciet: "BEGIN ALTIJD bij de zwaarste (hoogste urenPerWeek)". | `prompts/balanscoach.ts` |
+| **Eerste bericht met cijfers + deelgebied-vraag** | FLOW 1 vervangen: regel 1 = één zin met `totaleZorguren` + zwaarste taak. Regel 2 = open vraag specifiek voor het LAAGSTE deelgebied (energie → "hoe slaap je", gevoel → "met wie kun je praten", tijd → "heb je nog tijd voor jezelf"). | `prompts/balanscoach.ts` |
+| **3 vraagknoppen (A/B/C-kompas)** | "ALTIJD precies 2" → "ALTIJD precies 3". Drie vaste dimensies, ook midden in een gesprek. UI cap op `.slice(0, 3)` in alle chat-componenten. | `prompts/balanscoach.ts`, `FloatingGerChat.tsx`, `DashboardGerChat.tsx`, `AgentChat.tsx`, `PublicGerChat.tsx`, `GerHeroChat.tsx` |
+| **Dashboard-chip C: "Ik ben op zoek naar informatie"** | Vroeger varieerde C tussen "Hoe gaat het vandaag", "Bekijk openstaande acties", "Geef me een tip" etc. Nu vast: "Ik ben op zoek naar informatie" → triggert artikel-zoek-flow. | `DashboardGerChat.tsx` |
+| **Direct artikelen tonen bij C** | Klikt de gebruiker op "Ik ben op zoek naar informatie" → Ger zoekt direct 1-2 passende artikelen op basis van zorgthema/laagste deelgebied. Geen open wedervraag eerst. | `prompts/balanscoach.ts` |
+| **"Iets anders"-regel** | Ger pakt ZELF een onbesproken onderwerp uit de status (ander deelgebied, tweede zware taak, mantelzorger zelf, leesinteresse). Verbod op "waar wil je het over hebben?" als wedervraag. | `prompts/balanscoach.ts` |
+| **Pagina-specifieke voorbeelden geüpgraded** | Alle voorbeeld-knoppensets in pagina-context (informatie, hulp, mantelbuddy, balanstest, checkin) bijgewerkt naar 3 knoppen die A/B/C-spreiding hebben. | `prompts/balanscoach.ts` |
 
 ### Ronde 9 — Live-test fixes: hulpkaart-pills, openingsknoppen, geen-agency, en/en-kaarten
 

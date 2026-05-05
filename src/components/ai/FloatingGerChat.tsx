@@ -357,7 +357,7 @@ export function FloatingGerChat() {
           const { cleanText: t1 } = parseHulpkaarten(raw)
           const { cleanText: t2 } = parseArtikelkaarten(t1)
           const { buttons: btns } = parseButtons(t2)
-          const vraagChips = btns.filter(b => b.type === "vraag").slice(0, 2)
+          const vraagChips = btns.filter(b => b.type === "vraag").slice(0, 3)
           const hasCards = persistedKaarten.length > 0 || persistedArtikelen.length > 0
           if (vraagChips.length === 0 && !hasCards) return null
           return (

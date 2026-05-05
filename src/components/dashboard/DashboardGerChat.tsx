@@ -64,16 +64,18 @@ export interface GerChatContext {
 }
 
 /**
- * Bouwt drie chips met ELK een verschillende dimensie, zodat de gebruiker
- * een echte keuze heeft (niet twee variaties op hetzelfde):
- *   1. VOOR JOU         — mantelzorger als mens (emotioneel, lotgenoten, respijt)
- *   2. VOOR JE NAASTE   — concrete zorgtaak overdragen
- *   3. VERDER KIJKEN    — status, tip, check-in, balanstest
- * Per dimensie kiezen we het meest passende label op basis van de context.
+ * Bouwt drie chips met de drie vaste kompas-dimensies van Ger:
+ *   A. VOOR JOU              — hulp voor de mantelzorger zelf
+ *   B. VOOR JE NAASTE        — hulp bij een taak die je voor de naaste doet
+ *   C. INFORMATIE / ARTIKEL  — iets opzoeken, niet direct hulp
+ *
+ * Deze drie blijven onder elke chat zichtbaar als kompas. De labels van A
+ * variëren licht op de stemming/trend, B gebruikt de naam van de naaste,
+ * C is altijd de informatie-ingang.
  */
 function buildProactiveActions(ctx: GerChatContext): { label: string; emoji: string; action: string; color: string }[] {
   if (ctx.hasTest) {
-    // Dimensie 1 — voor jou (mantelzorger zelf)
+    // A — voor jou (mantelzorger zelf)
     let voorJouLabel: string
     let voorJouEmoji: string
     let voorJouColor: string
@@ -87,47 +89,17 @@ function buildProactiveActions(ctx: GerChatContext): { label: string; emoji: str
       voorJouColor = ctx.niveau === "HOOG" ? "rose" : "sky"
     }
 
-    // Dimensie 2 — voor je naaste (zorgtaken overdragen)
-    // Bij voorkeur de naam van de naaste gebruiken zodat de keuze concreet voelt.
+    // B — voor je naaste (taak overdragen)
     const naasteLabel = ctx.naasteNaam?.trim() || "mijn naaste"
     const voorNaasteLabel = `Ik wil hulp bij een taak die ik voor ${naasteLabel} doe`
 
-    // Dimensie 3 — verder kijken (status, tip, check-in, test)
-    let verderLabel: string
-    let verderEmoji: string
-    let verderAction: string
-    let verderColor: string
-    if (ctx.overdueTasks && ctx.overdueTasks > 0) {
-      verderLabel = "Bekijk mijn openstaande acties"
-      verderEmoji = "📋"
-      verderAction = "vraag"
-      verderColor = "blue"
-    } else if (!ctx.checkInDone) {
-      verderLabel = "Hoe gaat het vandaag?"
-      verderEmoji = "💬"
-      verderAction = "vraag"
-      verderColor = "blue"
-    } else if (ctx.needsNewTest) {
-      verderLabel = "Doe een nieuwe balanstest"
-      verderEmoji = "📊"
-      verderAction = "/belastbaarheidstest"
-      verderColor = "purple"
-    } else if (ctx.trend === "improved" || ctx.wellbeingTrend === "up") {
-      verderLabel = "Hoe houd ik dit vast?"
-      verderEmoji = "🌱"
-      verderAction = "vraag"
-      verderColor = "green"
-    } else {
-      verderLabel = "Geef me een tip"
-      verderEmoji = "💡"
-      verderAction = "vraag"
-      verderColor = "purple"
-    }
+    // C — informatie zoeken (artikelen)
+    const informatieLabel = "Ik ben op zoek naar informatie"
 
     return [
       { label: voorJouLabel, emoji: voorJouEmoji, action: "vraag", color: voorJouColor },
       { label: voorNaasteLabel, emoji: "🤝", action: "vraag", color: "amber" },
-      { label: verderLabel, emoji: verderEmoji, action: verderAction, color: verderColor },
+      { label: informatieLabel, emoji: "📚", action: "vraag", color: "purple" },
     ]
   }
 
@@ -135,7 +107,7 @@ function buildProactiveActions(ctx: GerChatContext): { label: string; emoji: str
     return [
       { label: "Start de balanstest", emoji: "📊", action: "/belastbaarheidstest", color: "purple" },
       { label: "Wat is de balanstest?", emoji: "❓", action: "vraag", color: "sky" },
-      { label: "Geef me een tip", emoji: "💡", action: "vraag", color: "amber" },
+      { label: "Ik ben op zoek naar informatie", emoji: "📚", action: "vraag", color: "amber" },
     ]
   }
 
@@ -448,7 +420,7 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
           const { cleanText: t1 } = parseHulpkaarten(raw)
           const { cleanText: t2 } = parseArtikelkaarten(t1)
           const { buttons: btns } = parseButtons(t2)
-          const vraagChips = btns.filter(b => b.type === "vraag").slice(0, 2)
+          const vraagChips = btns.filter(b => b.type === "vraag").slice(0, 3)
           if (vraagChips.length === 0) return null
           return (
             <div className="mt-2 flex flex-col gap-1.5 items-end">
