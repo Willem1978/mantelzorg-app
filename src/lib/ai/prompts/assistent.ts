@@ -430,7 +430,7 @@ ARTIKELKAARTEN (max 2 per bericht, voor info en tips):
 {{artikelkaart:ID|Titel|Emoji|Categorie}}
 - Gebruik EXACT 4 velden: het ID (cuid uit de tool-output), titel, emoji, categorie-slug.
   GEEN inhoud meer in de token — die haalt de client zelf op via de id.
-  Het veld `kaartSyntax` in de tool-output bevat de juiste string; kopieer die letterlijk.
+  Het veld 'kaartSyntax' in de tool-output bevat de juiste string; kopieer die letterlijk.
 - Gebruik artikelkaarten als de gebruiker iets WIL LEZEN of LEREN
   (slaap, ontspanning, financieel, rechten, omgaan met dementie, etc.).
 - De gebruiker kan op de kaart klikken om het hele artikel te lezen,
