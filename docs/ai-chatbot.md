@@ -215,7 +215,7 @@ Het hart van Ger zit in `src/lib/ai/prompts/assistent.ts`. Dit prompt is opgebou
 | **Omgaan met context** | Pre-fetched data is al beschikbaar; nooit samenvatten, alleen onzichtbaar verweven |
 | **Gedrag per belastingniveau** | HOOG: proactief, mantelzorglijn / GEMIDDELD: één concrete actie / LAAG: complimenteren |
 | **Volg de gemaakte keuze** | Als gebruiker kant A of B koos: kopieer alléén kaarten uit dat blok in de pre-fetch. Geen kruislings combineren. |
-| **Hulp + artikel combineren** | Bij emotionele onderwerpen (slaap, schuldgevoel, eenzaamheid) binnen kant A: hulpkaart (actie) **én** artikelkaart (lezen/bewaren) in hetzelfde bericht |
+| **Hulp + artikel combineren** | Combineren is de standaard waar het past (hulp om te bellen + artikel om te lezen). Volgorde: hulpkaart eerst, dan artikelkaart. Max 2+2 met totaal 3 per bericht. Alleen-hulp of alleen-artikelen mag bij puur praktische resp. puur informatieve vragen. |
 | **Zorgtaken** | Eén taak per bericht, beginnen met de zwaarste; "eerste stap" benoemen voor nieuwe gebruikers |
 | **Actiepunten** | Concreet advies opslaan via tool, in volgend gesprek opvolgen |
 | **Crisisdetectie** | Empathie eerst, dan praktisch; bij acute nood doorverwijzen naar 113 / huisarts / Veilig Thuis |
@@ -251,7 +251,7 @@ In zijn antwoord kan Ger speciale tokens plaatsen die de frontend dan rendert al
 | `{{knop:Label:/pad}}` | Navigatie-knop | Knop die naar een interne pagina linkt |
 | `{{vraag:Vraagtekst}}` | Vervolgvraag | Knop onder input die direct die vraag verstuurt |
 
-**Per bericht**: maximaal 4 kaarten in totaal — typisch 1-2 hulpkaarten + 1-2 artikelkaarten. Plus 3 vraagknoppen onderaan. Parsing gebeurt in `src/components/ai/HulpKaart.tsx`, `ArtikelKaart.tsx` en `AiChat.tsx`.
+**Per bericht**: maximaal 3 kaarten in totaal — combinatie toegestaan en zelfs gewenst (hulp om te bellen + artikel om te lezen). Specifiek: max 2 hulpkaarten + max 2 artikelkaarten, samen niet meer dan 3. Volgorde: eerst hulpkaarten (actie), dan artikelkaarten (lezen). Plus max 2 vraagknoppen onderaan. Parsing gebeurt in `src/components/ai/HulpKaart.tsx`, `ArtikelKaart.tsx` en de chat-componenten (`FloatingGerChat`, `DashboardGerChat`, `AiChat`).
 
 ---
 
@@ -594,7 +594,16 @@ src/
 
 ---
 
-## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8)
+## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9)
+
+### Ronde 9 — Live-test fixes: hulpkaart-pills, openingsknoppen, geen-agency, en/en-kaarten
+
+| Verbetering | Effect | Bestand |
+|---|---|---|
+| **Hulpbronnen NOOIT in platte tekst** | Live-test toonde dat het model de prefetched organisaties paraphraseerde als bold-naam + beschrijving + telefoon op aparte regels — geen hulpkaart-pill onder de chat. Toegevoegd: kritieke FOUT/GOED-regel die platte-tekst-organisaties verbiedt. Naam, telefoon en beschrijving mogen alleen via de `{{hulpkaart:...}}`-marker. | `prompts/balanscoach.ts` |
+| **Openingsknoppen consistent + naasteNaam** | Eén formulering overal: "Ik wil hulp voor mijzelf" + "Ik wil hulp bij een taak die ik voor [naasteNaam] doe". `naasteNaam` doorgegeven via `GerChatContext`, dus de tweede chip toont de echte naam (bijv. "Kim") in plaats van "mijn naaste". Vraagknop-voorbeelden + A/B/C-regel in de prompt zijn met dezelfde formulering bijgewerkt. | `DashboardGerChat.tsx`, `dashboard/page.tsx`, `prompts/balanscoach.ts` |
+| **Geen-agency-regel** | Live-test toonde "Laat me de gemeente bellen voor je". Nieuwe sectie onder `WAT NIET`: "NOOIT DOEN ALSOF JE ACTIES UITVOERT" met FOUT/GOED-voorbeelden voor bellen, mailen, contact opnemen, regelen. Ger geeft alleen suggesties; de gebruiker doet zelf de actie. | `prompts/balanscoach.ts` |
+| **En/en in plaats van of/of voor kaarten** | Vroegere regel was "OF hulpkaarten OF artikelkaarten — NIET BEIDE". Nu is combineren juist de standaard waar het past (hulp om te bellen + artikel om te lezen). Nieuwe limiet: max 2 hulpkaarten + max 2 artikelkaarten, totaal max 3 per bericht. Volgorde: hulpkaarten eerst (actie), dan artikelkaarten (lezen). | `prompts/balanscoach.ts` |
 
 ### Ronde 8 — Hulpkaarten in floating-/dashboardchat + drie-dimensies-regel voor vraagknoppen
 
