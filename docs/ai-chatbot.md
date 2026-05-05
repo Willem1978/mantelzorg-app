@@ -598,7 +598,9 @@ src/
 
 ## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12)
 
-### Ronde 12 — Korter + bullets toegestaan + geen tool-narratie
+### Ronde 12 — Korter, bullets, geen tool-narratie + gebruiker-pad volgen
+
+Vier verbeteringen samen — drie aan tekstvorm, één aan gespreksflow.
 
 Live-test: Ger gaf op informatie-vragen lange essay-achtige antwoorden, beginnend met *"Laat me anders zoeken naar wat breder kan helpen: Oké, ik zie dat er op dit moment geen specifieke artikelen beschikbaar zijn..."*. Drie problemen:
 
@@ -612,6 +614,8 @@ Live-test: Ger gaf op informatie-vragen lange essay-achtige antwoorden, beginnen
 | **Bullets toegestaan voor concrete tips** | Verbod *"NOOIT opsommingen met streepjes"* opgeheven. Wel kort: max 4 bullets, max 10 woorden per bullet, alleen als ze concreter zijn dan een vloeiende zin. Genummerde lijsten (1. 2. 3.) blijven verboden. De UI rendert `- ` en `• ` al als bullets — geen code-aanpassing nodig. | `prompts/balanscoach.ts` |
 | **Verbod op tool-narratie** | Nieuwe regel: NOOIT je eigen denkproces verbaliseren. FOUT-voorbeelden: *"Laat me anders zoeken..."*, *"Even kijken in de database..."*, *"Ik denk dat..."*, *"Oké, ik zie dat..."*. GOED: direct met het antwoord beginnen, zonder opwarmer. | `prompts/balanscoach.ts` |
 | **Fallback bij geen artikelen gevonden** | Niet narreren ("ik zie geen artikelen"). Wel: 1-2 zinnen tip + 2-3 bullets + verwijzing naar mantelzorgloket als hulpkaart + open vraag + 3 vraagknoppen. | `prompts/balanscoach.ts` |
+| **Meerdere hulpkaarten bij meerdere taken** | Bij B-pad-vraag ("hulp bij een taak voor naaste") en >1 taak in `zwareTaken`/`overigeTaken`: toon tot 2 hulpkaarten verspreid over de zwaarste én tweede taak. Niet één bron en stoppen. Als er maar één passende bron is: noemen dat er ook hulp is voor de andere taak en vragen of de gebruiker dat ook wil zien. | `prompts/balanscoach.ts` |
+| **Vraagknoppen volgen het gekozen pad** | A/B/C-kompas heeft nu twee modi: bij OPENING/vage start drie verschillende dimensies (1× A, 1× B, 1× C). Maar zodra de gebruiker een pad koos: 2 knoppen verdiepen dat pad + 1 uitstap-knop naar een ander pad. De gebruiker koos B (taak voor Kim) → blijf in B totdat hij zelf wil wisselen, niet meteen weer A en C aanbieden. | `prompts/balanscoach.ts` |
 
 ### Ronde 11 — Gespreksgeheugen + proactieve artikelen bij kennis-onderwerpen
 
