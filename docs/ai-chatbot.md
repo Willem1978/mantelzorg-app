@@ -594,7 +594,15 @@ src/
 
 ---
 
-## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4 + 5 + 6 + 7)
+## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8)
+
+### Ronde 8 — Hulpkaarten in floating-/dashboardchat + drie-dimensies-regel voor vraagknoppen
+
+| Verbetering | Effect | Bestand |
+|---|---|---|
+| **Hulpkaarten in `/api/ai/balanscoach`** | De floating "Vraag Ger"-chat (`FloatingGerChat`) en de dashboardchat (`DashboardGerChat`) toonden geen hulpkaarten onder de chat. Oorzaak: de balanscoach-route injecteerde alleen status-JSON + mantelzorgloket — geen `{{hulpkaart:...}}` per zorgtaak / voor de mantelzorger. De prompt rekent daar wél op ("kaarten zijn al geladen, NIET zoeken met tools"). Fix: balanscoach gebruikt nu `prefetchUserContext` + `buildContextBlock`, identiek aan `/api/ai/chat`. | `app/api/ai/balanscoach/route.ts` |
+| **Drie-dimensies-regel voor de twee vraagknoppen** | De prompt liet het model regelmatig twee knoppen uit dezelfde richting genereren (bijv. "Help me met [taak]" + "Welke hulp is er voor mijn naaste?" — beide hulp-bij-taak). Nieuwe expliciete regel + voorbeeld in `balanscoach.ts`: de twee knoppen MOETEN uit verschillende dimensies komen — A) hulp voor de mantelzorger zelf, B) hulp bij een taak voor de naaste, C) ander pad (artikel/tip/status/even praten). Nooit twee uit dezelfde letter. | `prompts/balanscoach.ts` |
+| **Dashboard: drie chips uit drie verschillende dimensies** | `buildProactiveActions` in `DashboardGerChat` gaf bij sommige contexten twee semantisch identieke chips (bijv. `niveau=HOOG` → "Ik heb hulp nodig" + default "Welke hulp is er voor mij?"; `zwareTaken>0` → "Help me met mijn zware taken" + "Hulp bij [taak]"). Herschreven naar één chip per dimensie: VOOR JOU / VOOR JE NAASTE / VERDER KIJKEN — labels variëren per niveau, trend, openstaande acties en check-in-status, maar de drie kolommen staan vast. | `components/dashboard/DashboardGerChat.tsx` |
 
 ### Ronde 7 — Dashboard-cleanup + B1-borging in prompt
 
@@ -669,7 +677,7 @@ src/
 
 - **Geen cross-session-geheugen voor gesprekken zelf**: Ger weet niet wat hij vorige week zei — alleen open `Actiepunten` worden meegenomen.
 - **Geen multi-modal**: alleen tekst. Geen foto's of stem.
-- **Tweesplitsing + variatie alleen op de hoofdchat**: `/api/ai/balanscoach`, `/checkin` en `/welkom` accepteren de tool-parameters wel maar wiren `kant`, `shownNamen` en `shownTitels` nog niet door vanuit hun eigen frontends.
+- **Tweesplitsing + variatie nog niet overal**: `/api/ai/balanscoach` deelt sinds Ronde 8 dezelfde `prefetchUserContext` + `buildContextBlock` als `/api/ai/chat`, maar de aanroepende frontends (`FloatingGerChat`, `DashboardGerChat`) sturen `shownHulpbronnen` nog niet mee. `/checkin` en `/welkom` lopen ook nog niet via die laag.
 - **Geen A/B-testing van prompts**: aanpassingen aan het systeem-prompt gaan direct naar productie zonder framework om varianten te vergelijken.
 - **Lotgenoten-detectie blijft heuristisch waar `lokaalGebonden` niet expliciet gezet is**: false negatives mogelijk bij organisaties die wel praatgroep zijn maar geen keyword in de naam hebben. Curatie via admin-UI is volgende stap.
 - **`AiSuggestieClick` wordt nog niet teruggevoerd in ranking**: gegevens worden verzameld maar er is nog geen analyse/ranking-functie bovenop. Eerste stap was logging; ranking volgt zodra er voldoende data is.
