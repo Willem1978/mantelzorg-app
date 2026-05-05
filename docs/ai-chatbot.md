@@ -117,18 +117,27 @@ Alle routes leven onder `src/app/api/ai/`.
 
 `maxDuration` voor de chat-route staat op 30 seconden — voldoende voor tool-calls + DB-queries binnen Vercel serverless.
 
-### De opener-route (nieuw)
+### De opener-route — drie duidelijke richtingen
 
-`/api/ai/opener` is bewust **geen** AI-call: de welkomstzin moet binnen 200 ms beschikbaar zijn voor first paint van de chat. De route leest de laatste balanstest en bouwt op basis van het belastingsniveau en het zwaarste deelgebied/zwaarste taak een passende begroeting + 3 startknoppen:
+`/api/ai/opener` is bewust **geen** AI-call: de welkomstzin moet binnen 200 ms beschikbaar zijn voor first paint van de chat. De route leest de laatste balanstest + de naam van de zorgvrager (`careRecipientName`) en bouwt:
 
-| Niveau | Voorbeeld-opener | Startknoppen |
-|---|---|---|
-| **HOOG** | "Fijn dat je er bent. Ik zie dat **fysieke belasting** op dit moment het meeste van je vraagt. Zal ik daar mee beginnen?" | "Vertel meer over fysieke belasting" / "Welke hulp kan mij ontlasten?" / "Ik wil het over iets anders hebben" |
-| **GEMIDDELD** | "Goed dat je er bent. **Huishoudelijke taken** kost je relatief veel tijd — wil je kijken hoe dat lichter kan?" | "Hulp bij huishoudelijke taken" / "Tips voor mezelf" / "Hoe gaat het met mij?" |
-| **LAAG** | "Goed dat je er bent. Het gaat eigenlijk best goed met je balans — knap! Wat houdt je vandaag bezig?" | "Tips om het zo te houden" / "Iets over mezelf vertellen" / "Welke hulp is er in de buurt?" |
-| **Geen test** | Nudge naar balanstest + uitnodiging om wel te starten | "Ik wil de balanstest doen" / "Ik wil eerst even praten" / "Welke hulp is er bij mij in de buurt?" |
+1. Een **korte begroeting** (één zin, niveau-afhankelijk):
+   - HOOG: "Fijn dat je er bent. Ik zie dat je flink wat doet voor [naaste] — waar kan ik je vandaag mee helpen?"
+   - GEMIDDELD: "Goed dat je er bent. Waar kan ik je vandaag mee helpen?"
+   - LAAG: "Goed dat je er bent. Het gaat eigenlijk best goed met je balans — knap! Waar kan ik je vandaag mee helpen?"
+   - Geen test: "Hoi! Ik ben Ger. Fijn dat je er bent. Waar kan ik je vandaag mee helpen?"
 
-Frontend (`AiChat.tsx`) haalt dit op bij mount, valt terug op generieke tekst bij fout.
+2. **Drie vaste keuze-tegels** (DE KERN — dit is wat de gebruiker als eerste ziet):
+
+| Emoji | Titel | Omschrijving | Wat wordt naar Ger gestuurd |
+|---|---|---|---|
+| 🧑 | Hulp voor mij zelf | Steunpunt, lotgenoten, even op adem komen, slaap of stress | "Ik wil hulp voor mij zelf" |
+| 🤝 | Hulp bij een taak voor [naaste-naam] | Boodschappen, verzorging, vervoer, huishouden | "Ik zoek hulp bij [zwaarste-taak] voor [naaste]" (of generiek) |
+| 💬 | Even praten over hoe het gaat | Vertel hoe je je voelt, ik luister mee | "Ik wil even vertellen hoe het met me gaat" |
+
+De middelste tegel personaliseert: als de zorgvrager-naam bekend is, staat hij in de titel; als de zwaarste taak bekend is, gaat de actie-tekst direct naar die taak. Zo voelt het meteen alsof Ger de situatie kent.
+
+Frontend (`AiChat.tsx`) haalt deze JSON op bij mount, rendert de tegels als grote klikbare cards onder de welkomstzin en valt terug op generieke tekst bij fout.
 
 ---
 
@@ -141,7 +150,9 @@ Het hart van Ger zit in `src/lib/ai/prompts/assistent.ts`. Dit prompt is opgebou
 | **Grondhouding** | Niet belerend, niet medelijdend; uitgaan van kracht; warm en respectvol |
 | **Gespreksstijl** | Warme buurvrouw-toon; **HARD limit max 3 zinnen** per beurt; geen inleidingen, samenvattingen of afsluitingen; geen lijsten |
 | **Taalstijl (B1)** | Korte zinnen (max 15 woorden), geen jargon, actief, scanbaar, geen genummerde lijsten |
-| **Gespreksvoering** | 4-stappen flow: Verbinding → Verdieping → Eén concreet advies → Open uitnodiging |
+| **Twee-richting-vraag** | Twee soorten hulp: A) voor mantelzorger zelf B) bij een taak voor zorgvrager. Bij vage start: actief de keuze aanbieden. Als gebruiker al koos: blijf in die kant — niet beide combineren |
+| **Tempo — snel concreet** | Bericht 1 mag warm beginnen (1 zin), bericht 2+ direct concreet zonder warm opstartzinnetje. **Elk bericht een aanbod** (kaart, knop of tweesplitsing). Info-vragen → direct artikelkaart. Hulp-vragen → direct hulpkaart |
+| **Gespreksvoering** | 4-stappen flow: Verbinding → Verdieping → Concreet aanbod (1-2 kaarten) → Open uitnodiging |
 | **Variatie in openers** | 5 soorten verbinding mogelijk; verboden clichés ("Wat een goede vraag", "Ik begrijp dat...", "Wat moedig dat je dit deelt"); "Dat herken ik" max 1× per gesprek |
 | **Gesprekscontinuïteit** | Bij korte/vage antwoorden ("ja", "weet niet"): pak iets uit de context (zware taak, open actiepunt) en vraag concreet door |
 | **Omgaan met context** | Pre-fetched data is al beschikbaar; nooit samenvatten, alleen onzichtbaar verweven |
@@ -472,7 +483,20 @@ src/
 
 ---
 
-## 15. Recente verbeteringen (Ronde 1 + 2)
+## 15. Recente verbeteringen (Ronde 1 + 2 + 3)
+
+### Ronde 3 — Soepel geheel met expliciete tweesplitsing
+
+| Verbetering | Effect | Bestand |
+|---|---|---|
+| **Drie keuze-tegels in welkomst** | Mantelzorger ziet meteen drie duidelijke richtingen: hulp voor mezelf / hulp bij taak voor naaste / even praten | `opener/route.ts`, `AiChat.tsx` |
+| **Personalisering met naaste-naam** | Middelste tegel toont naam van zorgvrager als bekend; actie verwijst direct naar zwaarste taak | `opener/route.ts` |
+| **Twee-richting-vraag in prompt** | Bij vage starten ("ik weet het niet meer") biedt Ger actief A vs B keuze aan via vraagknoppen | `assistent.ts` |
+| **Tempo-regel** | Bericht 2+ moet direct concreet zijn, geen warm opstartzinnetje meer; info-vraag → direct artikelkaart, hulp-vraag → direct hulpkaart | `assistent.ts` |
+| **Elk bericht een aanbod** | Praten zonder iets aan te bieden mag alleen bij echte emotionele momenten | `assistent.ts` |
+| **Niet meer altijd combineren** | Als gebruiker een kant koos, blijft Ger daarin (was: ALTIJD beide). Combineren alleen bij puur brede vraag zonder gemaakte keuze | `assistent.ts` |
+
+### Ronde 1 + 2 — kernverbeteringen
 
 | Verbetering | Effect | Bestand |
 |---|---|---|
@@ -517,7 +541,9 @@ src/
 | Wat gebeurt er bij een crisis? | Vast protocol vóór AI-call (113, huisarts, Mantelzorglijn) |
 | Hoe pas ik zijn toon aan? | Bewerk het prompt in `assistent.ts` |
 | Hoe lang mag een antwoord zijn? | `maxOutputTokens: 600` + prompt: max 3 zinnen |
-| Toont hij hulp voor zorgvrager én mantelzorger? | Ja, bij brede vragen verplicht beide combineren |
+| Wat is de eerste vraag? | Drie keuze-tegels: hulp voor mij zelf / hulp bij een taak voor mijn naaste / even praten |
+| Toont hij hulp voor zorgvrager én mantelzorger? | Ja, maar volgt de keuze van de gebruiker. Combineert alleen bij puur brede vraag zonder gemaakte keuze |
+| Hoe snel komt er concreet advies? | Vanaf bericht 2 verplicht: elk bericht bevat minstens een hulpkaart, artikelkaart of tweesplitsing |
 | Kan de gebruiker artikelen opslaan? | Ja, via hartje in ContentModal → `Favoriet`-tabel |
 | Blijven kaarten in beeld? | Ja, cumulatief onder de chat (max 6 hulp + 6 artikelen) |
 | Hoe weet de gebruiker wat Ger doet? | Tool-status in loading-bubble: "Ger zoekt lokale hulp voor je..." |
