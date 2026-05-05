@@ -448,6 +448,12 @@ model Zorgorganisatie {
   bronLabel             String?             // Bronlabel: Landelijk, Gemeente, Zvw, Wlz, Overig
   zorgverzekeraar       Boolean             @default(false) // Tag: valt onder zorgverzekeraar
 
+  // Lokaal-gebonden: TRUE = activiteit vereist fysieke aanwezigheid in deze
+  // ene gemeente (lotgenotengroep, praatcafé). FALSE = ook waardevol vanuit
+  // de andere gemeente. NULL = onbekend → valt terug op heuristiek
+  // (`bepaalGemeenteScope` in src/lib/ai/hulp-categorisatie.ts).
+  lokaalGebonden        Boolean?
+
   // Vector embedding voor semantische zoek (pgvector, 1536 dimensies)
   // Gegenereerd door OpenAI text-embedding-3-small
   embedding             Unsupported("vector(1536)")?

@@ -30,8 +30,11 @@ export async function POST(req: Request) {
   if (!data.type || !data.itemKey) {
     return NextResponse.json({ ok: false, error: "type en itemKey zijn verplicht" }, { status: 400 })
   }
-  if (data.type !== "HULP" && data.type !== "ARTIKEL") {
-    return NextResponse.json({ ok: false, error: "type moet HULP of ARTIKEL zijn" }, { status: 400 })
+  if (data.type !== "HULP" && data.type !== "ARTIKEL" && data.type !== "VRAAGKNOP") {
+    return NextResponse.json(
+      { ok: false, error: "type moet HULP, ARTIKEL of VRAAGKNOP zijn" },
+      { status: 400 },
+    )
   }
 
   let userId: string | null = null

@@ -191,6 +191,17 @@ export function AiChat() {
   }
 
   const handleButtonClick = useCallback((button: ParsedButton) => {
+    // Klik-tracking: zo zien we welke gespreksrichtingen mensen kiezen
+    fetch("/api/ai/suggestie-klik", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "VRAAGKNOP",
+        itemKey: button.label.slice(0, 200),
+        titel: button.label,
+      }),
+    }).catch(() => {})
+
     if (button.type === "knop") {
       router.push(button.target)
     } else {
@@ -264,7 +275,20 @@ export function AiChat() {
       const p = part as any
       if (typeof p.type === "string" && p.type.startsWith("tool-")) {
         const naam = p.type.slice(5)
-        if (TOOL_STATUS[naam]) return TOOL_STATUS[naam]
+        const basis = TOOL_STATUS[naam]
+        if (basis) {
+          // Als de tool een 'kant' parameter krijgt (zoekHulpbronnen), toon dat
+          // erbij — zodat de gebruiker ziet wat Ger doet (voor jou of voor je naaste).
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const args = (p.input || p.args || {}) as any
+          if (naam === "zoekHulpbronnen" && typeof args.kant === "string") {
+            const kantLabel = args.kant === "mantelzorger"
+              ? "voor jou als mantelzorger"
+              : "bij een taak voor je naaste"
+            return `Ger zoekt hulp ${kantLabel}`
+          }
+          return basis
+        }
       }
       if (typeof p.toolName === "string" && TOOL_STATUS[p.toolName]) {
         return TOOL_STATUS[p.toolName]
@@ -337,6 +361,9 @@ export function AiChat() {
                 </svg>
               </button>
             ))}
+            <p className="text-xs text-muted-foreground/70 px-1 pt-1 italic">
+              Liever je eigen vraag stellen? Type hieronder.
+            </p>
           </div>
         )}
 
@@ -485,6 +512,16 @@ export function AiChat() {
                 <span>{btn.label}</span>
               </button>
             ))}
+          </div>
+        )}
+
+        {/* Lege-strook hint: na minstens één assistant-bericht maar nog geen kaarten,
+            laat zien dat Ger meedenkt en kaarten zal aanbieden zodra het past. */}
+        {persistedKaarten.length === 0 && persistedArtikelen.length === 0 && messages.length > 0 && !isLoading && (
+          <div className="mt-3 pt-3 border-t border-border/40">
+            <p className="text-xs text-muted-foreground/70 italic px-1">
+              Nog geen suggesties — Ger luistert eerst even mee.
+            </p>
           </div>
         )}
 

@@ -100,26 +100,24 @@ function buildKeuzeTegels(naasteNaam: string | null, zwaarsteTaak: string | null
   const naasteLabel = naasteNaam ? `voor ${naasteNaam}` : "voor mijn naaste"
   const taakHint = zwaarsteTaak ? `, zoals ${zwaarsteTaak.toLowerCase()}` : ""
 
+  // Twee tegels die de fundamentele tweesplitsing weerspiegelen.
+  // "Even praten" is bewust GEEN aparte tegel meer — dat valt onder kant 1
+  // (hulp voor de mantelzorger zelf) en wordt daar genoemd.
   return [
     {
       emoji: "🧑",
       titel: "Hulp voor mij zelf",
-      omschrijving: "Steunpunt, lotgenoten, even op adem komen, slaap of stress",
-      actie: "Ik wil hulp voor mij zelf",
+      omschrijving:
+        "Mantelzorgmakelaar, lotgenoten, vervangende zorg, praten over hoe het gaat",
+      actie: "Ik wil hulp voor mij zelf als mantelzorger",
     },
     {
       emoji: "🤝",
       titel: `Hulp bij een taak ${naasteLabel}`,
-      omschrijving: `Boodschappen, verzorging, vervoer, huishouden${taakHint}`,
+      omschrijving: `Boodschappen, verzorging, vervoer, huishouden${taakHint} — taken die jij doet`,
       actie: zwaarsteTaak
         ? `Ik zoek hulp bij ${zwaarsteTaak.toLowerCase()} ${naasteLabel}`
         : `Ik zoek hulp bij een taak ${naasteLabel}`,
-    },
-    {
-      emoji: "💬",
-      titel: "Even praten over hoe het gaat",
-      omschrijving: "Vertel hoe je je voelt, ik luister mee",
-      actie: "Ik wil even vertellen hoe het met me gaat",
     },
   ]
 }

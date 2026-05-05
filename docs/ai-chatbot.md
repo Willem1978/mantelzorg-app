@@ -6,6 +6,60 @@ Dit document beschrijft hoe de AI-chatbot **Ger** in MantelBuddy werkt: welk mod
 
 ---
 
+## 0. De twee soorten hulp & de zoek-strategie per gemeente (kernkompas)
+
+**Mantelzorg-hulp bestaat uit precies twee soorten** — geen derde. Dit onderscheid is de spil van Ger's gedrag, de zoek-tool en de pre-fetched context.
+
+### A. Hulp voor de mantelzorger zelf
+Voor de mantelzorger als persoon: ondersteuning, contact met lotgenoten, vervangende zorg, advies, educatie, emotionele steun. **Praten met iemand** valt hier ook onder — het is geen aparte "derde kant".
+
+Concrete categorieën (`HULP_VOOR_MANTELZORGER` in `src/config/options.ts`):
+
+| dbValue | Beschrijving |
+|---|---|
+| `Informatie en advies` | Mantelzorgmakelaar, mantelzorgsteunpunt, brochures |
+| `Educatie` | Cursussen, trainingen voor mantelzorgers |
+| `Emotionele steun` | Lotgenotengroepen, praatgroepen, psycholoog, coach |
+| `Persoonlijke begeleiding` | Coaching, individuele begeleiding |
+| `Praktische hulp` | Hulp in huis, dagelijkse ondersteuning |
+| `Vervangende mantelzorg` | Respijtzorg, logeerhuis |
+
+### B. Hulp bij een taak voor de zorgvrager
+Voor taken die de mantelzorger normaal voor zijn naaste doet, maar waar iemand anders kan inspringen.
+
+Concrete categorieën (`ZORGTAKEN` in `src/config/options.ts`):
+
+`Boodschappen` · `Huishoudelijke taken` · `Persoonlijke verzorging` · `Vervoer` · `Bereiden en/of nuttigen van maaltijden` · `Klusjes in en om het huis` · `Administratie en aanvragen` · `Plannen en organiseren` · `Sociaal contact en activiteiten` · `Huisdieren`
+
+### Zoek-strategie per gemeente
+
+Een mantelzorger heeft (mogelijk) twee gemeenten in zijn profiel: zijn eigen gemeente en die van de zorgvrager. De zoek-scope per soort hulp:
+
+| Wat wordt gezocht | In welke gemeente | Waarom |
+|---|---|---|
+| **Lotgenoten / praatgroepen / fysieke ontmoeting** | Alleen mantelzorger-gemeente | Vereist fysieke aanwezigheid in de eigen stad |
+| **Mantelzorgmakelaar / respijtzorg / advies / educatie / emotionele steun** | Beide gemeenten (mantelzorger + zorgvrager) | Stad van de naaste weet vaak wat er regionaal mogelijk is rond de zorg; eigen stad is dichtbij voor afspraken |
+| **Hulp bij een TAAK voor de naaste** (boodschappen, verzorging, etc.) | Alleen zorgvrager-gemeente | Een boodschappendienst in de eigen stad helpt niet als de naaste 50 km verderop woont |
+
+Detectie van "lotgenoten / fysieke ontmoeting" gebeurt op twee manieren, in volgorde van prioriteit:
+
+1. **Expliciet DB-veld** `Zorgorganisatie.lokaalGebonden` (Boolean nullable). Wanneer admin dit aanvinkt voor een organisatie, overrult die waarde de heuristiek.
+2. **Heuristiek op trefwoorden** in de organisatienaam/dienst: `lotgenoten`, `praatgroep`, `praatcafé`, `ontmoetingsgroep`, `huiskamer`, `alzheimer café`, `mantelzorgsalon`, `inloopochtend`, `wandelgroep`.
+
+Implementatie: `src/lib/ai/hulp-categorisatie.ts` — functies `bepaalKant`, `bepaalGemeenteScope`, `gemeentenVoorScope`.
+
+### Hoe dit door het systeem heen wordt geborgd
+
+Op vier plekken tegelijk hardgemaakt — geen single point of failure:
+
+1. **Centrale classificatie** (`hulp-categorisatie.ts`): één bron van waarheid voor `Kant` en `GemeenteScope`.
+2. **Tool `zoekHulpbronnen`** verplicht een `kant` parameter ('mantelzorger' of 'zorgvrager-taak'); de tool past automatisch de juiste gemeente-scope toe per organisatie.
+3. **Pre-fetched context** rendert twee scherp gelabelde blokken (`=== HULP VOOR JOU (mantelzorger) ===` en `=== HULP BIJ TAKEN VOOR JE NAASTE (in [stad]) ===`) met sub-secties per scope ("alleen in [jouw stad]" / "in beide steden" / "landelijk").
+4. **System-prompt** definieert de tweesplitsing expliciet, verbiedt valse alternatieven ("praktisch versus praten" — fout, want praten valt onder kant A) en koppelt elke kant aan het juiste pre-fetched blok.
+5. **Opener-tegels**: twee tegels die fysiek de twee kanten weerspiegelen (geen losse "even praten"-tegel).
+
+---
+
 ## 1. Wat is Ger?
 
 Ger is de digitale mantelzorgcoach in de app. Hij is geen hulpverlener, maar een warm, vriendelijk gespreksaanknooppunt dat:
@@ -484,7 +538,30 @@ src/
 
 ---
 
-## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4)
+## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4 + 5 + 6)
+
+### Ronde 6 — Robuustheid & analytics (iteratie 7-10)
+
+| Verbetering | Effect | Bestand |
+|---|---|---|
+| **Schema-veld `lokaalGebonden`** | Admin kan per organisatie expliciet markeren "vereist fysieke aanwezigheid in deze stad". Override't de heuristiek in `bepaalGemeenteScope`. | `prisma/schema.prisma` (migratie nodig) |
+| **AI-aanvulling op crisis-detectie** | Bij keyword-niveau "aandacht" volgt een snelle Haiku-call (~10 tokens) die kan upgraden naar "crisis". Vangt subtiele formuleringen die keywords missen. Faalt stil als AI niet bereikbaar is. | `crisis-ai-check.ts` (nieuw), `chat/route.ts` |
+| **Tool-cleanup chat-route** | `bekijkTestTrend` en `gemeenteInfo` weggehaald uit `/api/ai/chat` — hun data staat al in pre-fetch en model riep ze toch zelden. Bespaart tool-description tokens per request. | `chat/route.ts` |
+| **Vraagknop klik-tracking** | Klikken op `{{vraag:...}}` knoppen worden ook gelogd in `AiSuggestieClick` (type=VRAAGKNOP). Zo zien we welke gespreksrichtingen mantelzorgers kiezen. | `AiChat.tsx`, `suggestie-klik/route.ts` |
+| **Lege-strook hint** | Als er nog geen suggesties zijn maar wel een gesprek loopt: subtiele tekst "Nog geen suggesties — Ger luistert eerst even mee." | `AiChat.tsx` |
+| **Tool-status met kant + gemeente** | Tijdens `zoekHulpbronnen`: "Ger zoekt hulp voor jou als mantelzorger" of "Ger zoekt hulp bij een taak voor je naaste". | `AiChat.tsx` |
+| **Datakwaliteit-log** | `bepaalKant` logt `console.warn` voor onbekende `onderdeelTest` waarden. Maakt content-curatie zichtbaar. | `hulp-categorisatie.ts` |
+| **Vitest unit-tests** | Tests voor `bepaalKant`, `bepaalGemeenteScope`, `gemeentenVoorScope`, `prioritizeUnshown`, `toKeySet`. Voorkomt regressies in de classificatie-laag. | `__tests__/hulp-categorisatie.test.ts`, `__tests__/variation.test.ts` |
+
+### Ronde 5 — Tweesplitsing structureel borgen + zoek-strategie per gemeente
+
+| Verbetering | Effect | Bestand |
+|---|---|---|
+| **Centrale `hulp-categorisatie.ts`** | Eén bron van waarheid voor `Kant` ("mantelzorger" of "zorgvrager-taak") en `GemeenteScope` (lokaal-only / zorgvrager-only / beide). Vervangt fragiele keyword-logica. | `src/lib/ai/hulp-categorisatie.ts` (nieuw) |
+| **Tool `zoekHulpbronnen` met verplichte `kant`** | AI moet expliciet kiezen welke kant voordat hij zoekt. Tool past automatisch juiste gemeente-scope toe per organisatie (lotgenoten alleen in jouw stad, mantelzorgmakelaar in beide). | `tools/hulpbronnen.ts` |
+| **Pre-fetched context met twee gescheiden blokken** | "HULP VOOR JOU (mantelzorger)" met sub-secties (lotgenoten alleen in [stad] / overig in beide steden / landelijk) en "HULP BIJ TAKEN VOOR JE NAASTE (in [stad])" met taken per categorie. | `prefetch-context.ts` |
+| **Prompt: TWEE-RICHTING-VRAAG + WAAR ZOEKT GER WAT** | Expliciete tweesplitsing als kernkompas; verbod op valse alternatieven ("praktisch vs praten"); uitleg waar Ger wat zoekt per soort hulp. | `prompts/assistent.ts` |
+| **Opener-tegels: 2 in plaats van 3** | "Hulp voor mij zelf" en "Hulp bij een taak voor [naaste]" — geen losse "even praten"-tegel meer (zit in tegel 1). Sub-link "Liever je eigen vraag stellen? Type hieronder." | `opener/route.ts`, `AiChat.tsx` |
 
 ### Ronde 4 — Kostenbeheersing, robuustheid en analytics
 

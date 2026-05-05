@@ -5,11 +5,10 @@ import { buildStableSystem } from "@/lib/ai/prompts/assistent"
 import { prefetchUserContext, buildContextBlock } from "@/lib/ai/prefetch-context"
 import { getModelForAgent } from "@/lib/ai/models"
 import { detecteerCrisis, buildCrisisResponse } from "@/lib/ai/crisis-detector"
+import { aiCrisisVerificatie } from "@/lib/ai/crisis-ai-check"
 import {
-  createBekijkTestTrendTool,
   createZoekHulpbronnenTool,
   createZoekArtikelenTool,
-  createGemeenteInfoTool,
   createSemantischZoekenTool,
   createSlaActiepuntOpTool,
 } from "@/lib/ai/tools"
@@ -72,7 +71,18 @@ export async function POST(req: Request) {
   const laatsteBericht = messages.filter((m: { role: string }) => m.role === "user").pop()
   if (laatsteBericht) {
     const crisisResult = detecteerCrisis(laatsteBericht.content)
-    if (crisisResult.isCrisis && crisisResult.niveau === "crisis") {
+    let niveau: "geen" | "aandacht" | "crisis" = crisisResult.niveau
+
+    // Bij aandacht-niveau: laat een snelle Haiku-call beoordelen of het een
+    // verkapt crisis-signaal is. Subtiele formuleringen ("alles voelt grijs",
+    // "ik zie geen weg meer") missen de keyword-detector. Faalt stil als de
+    // AI niet bereikbaar is.
+    if (niveau === "aandacht") {
+      const oordeel = await aiCrisisVerificatie(laatsteBericht.content)
+      if (oordeel === "escaleren") niveau = "crisis"
+    }
+
+    if (niveau === "crisis") {
       // Bij crisis: retourneer vast protocol, geen AI-call
       const crisisResponse = buildCrisisResponse("crisis")
       return new Response(
@@ -80,7 +90,7 @@ export async function POST(req: Request) {
         { headers: { "Content-Type": "text/plain; charset=utf-8" } }
       )
     }
-    // Bij aandacht-niveau: voeg crisis-context toe aan het systeem-prompt (hieronder)
+    // Bij aandacht-niveau dat niet escaleerde: voeg crisis-context toe aan het systeem-prompt (hieronder)
   }
 
   // Haal gebruikerscontext op — twee gemeenten: mantelzorger en zorgvrager
@@ -126,15 +136,17 @@ export async function POST(req: Request) {
       maxOutputTokens: 600,
       stopWhen: stepCountIs(7),
       tools: {
-        // Tools beschikbaar voor extra zoekopdrachten (niet nodig voor standaard vragen)
-        bekijkTestTrend: createBekijkTestTrendTool({ userId }),
+        // Beperkte tool-set: pre-fetched context dekt al de meeste data
+        // (balanstest, gemeente-contact, hulpbronnen). Tools alleen voor
+        // EXTRA zoekopdrachten die niet in de context staan.
+        // bekijkTestTrend en gemeenteInfo zijn weggehaald omdat hun data
+        // al in de pre-fetch zit en ze zelden door het model werden gebruikt.
         zoekHulpbronnen: createZoekHulpbronnenTool({
           gemeenteZorgvrager,
           gemeenteMantelzorger,
           shownNamen: shownHulpbronnen,
         }),
         zoekArtikelen: createZoekArtikelenTool({ shownTitels: shownArtikelen }),
-        gemeenteInfo: createGemeenteInfoTool(),
         semantischZoeken: createSemantischZoekenTool(gemeenteZorgvrager || gemeenteMantelzorger),
         slaActiepuntOp: createSlaActiepuntOpTool({ userId }),
       },
