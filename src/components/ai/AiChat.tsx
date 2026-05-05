@@ -13,6 +13,19 @@ import { parseArtikelkaarten, ArtikelKaart } from "@/components/ai/ArtikelKaart"
 import type { ParsedArtikelkaart } from "@/components/ai/ArtikelKaart"
 
 /**
+ * Tegel voor de drie hoofdrichtingen die Ger aanbiedt bij het start van een gesprek:
+ * 1. Hulp voor de mantelzorger zelf
+ * 2. Hulp bij een taak voor de zorgvrager
+ * 3. Even praten over hoe het gaat
+ */
+interface KeuzeTegel {
+  emoji: string
+  titel: string
+  omschrijving: string
+  actie: string
+}
+
+/**
  * Button syntax for Ger:
  *   {{knop:Label:/pad}}        → navigation button (goes to /pad)
  *   {{vraag:Vraagtekst}}       → chat action button (sends text to Ger)
@@ -111,16 +124,31 @@ export function AiChat() {
 
   const isLoading = status === "submitted" || status === "streaming"
 
-  // Gepersonaliseerde welkomstzin + suggesties (ophalen uit /api/ai/opener)
+  // Gepersonaliseerde welkomst + drie keuze-tegels (ophalen uit /api/ai/opener)
   const FALLBACK_OPENER =
-    "Hoi! Fijn dat je er bent. Vertel me wat je bezighoudt, dan kijken we samen wat er mogelijk is."
-  const FALLBACK_SUGGESTIES = [
-    "Hoe gaat het met mij?",
-    "Welke hulp is er bij mij in de buurt?",
-    "Ik ben moe, wat kan ik doen?",
+    "Hoi! Fijn dat je er bent. Waar kan ik je vandaag mee helpen?"
+  const FALLBACK_TEGELS: KeuzeTegel[] = [
+    {
+      emoji: "🧑",
+      titel: "Hulp voor mij zelf",
+      omschrijving: "Steunpunt, lotgenoten, even op adem komen",
+      actie: "Ik wil hulp voor mij zelf",
+    },
+    {
+      emoji: "🤝",
+      titel: "Hulp bij een taak voor mijn naaste",
+      omschrijving: "Boodschappen, verzorging, vervoer, huishouden",
+      actie: "Ik zoek hulp bij een taak voor mijn naaste",
+    },
+    {
+      emoji: "💬",
+      titel: "Even praten over hoe het gaat",
+      omschrijving: "Vertel hoe je je voelt, ik luister mee",
+      actie: "Ik wil even vertellen hoe het met me gaat",
+    },
   ]
   const [opener, setOpener] = useState<string>(FALLBACK_OPENER)
-  const [suggesties, setSuggesties] = useState<string[]>(FALLBACK_SUGGESTIES)
+  const [keuzeTegels, setKeuzeTegels] = useState<KeuzeTegel[]>(FALLBACK_TEGELS)
 
   useEffect(() => {
     let cancelled = false
@@ -131,8 +159,8 @@ export function AiChat() {
         if (typeof data.opener === "string" && data.opener.trim()) {
           setOpener(data.opener.trim())
         }
-        if (Array.isArray(data.vraagknoppen) && data.vraagknoppen.length > 0) {
-          setSuggesties(data.vraagknoppen.filter((s: unknown): s is string => typeof s === "string"))
+        if (Array.isArray(data.keuzeTegels) && data.keuzeTegels.length > 0) {
+          setKeuzeTegels(data.keuzeTegels as KeuzeTegel[])
         }
       })
       .catch(() => {})
@@ -277,16 +305,36 @@ export function AiChat() {
           </div>
         )}
 
-        {/* Suggesties */}
+        {/* Drie keuze-tegels: hulp voor mantelzorger, hulp bij taak voor zorgvrager, of even praten */}
         {showSuggestions && messages.length === 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-            {suggesties.map((s, i) => (
+          <div className="mt-2 space-y-2">
+            <p className="text-xs font-medium text-muted-foreground px-1">
+              Waarmee kan ik je vandaag helpen?
+            </p>
+            {keuzeTegels.map((tegel, i) => (
               <button
                 key={i}
-                onClick={() => handleSend(s)}
-                className="flex items-center gap-2 p-3 rounded-xl border border-border bg-card hover:bg-secondary/50 hover:border-primary/30 transition-all text-left text-sm"
+                onClick={() => handleSend(tegel.actie)}
+                className="w-full flex items-start gap-3 p-3.5 rounded-xl border border-border bg-card hover:bg-[var(--accent-amber-bg)]/30 hover:border-[var(--accent-amber)]/30 transition-all text-left active:scale-[0.99]"
               >
-                <span className="text-foreground">{s}</span>
+                <span className="text-2xl flex-shrink-0 leading-none mt-0.5" aria-hidden>
+                  {tegel.emoji}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">{tegel.titel}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
+                    {tegel.omschrijving}
+                  </p>
+                </div>
+                <svg
+                  className="w-4 h-4 text-muted-foreground/60 flex-shrink-0 mt-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </button>
             ))}
           </div>

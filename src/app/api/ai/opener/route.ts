@@ -1,88 +1,125 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { berekenDeelgebieden } from "@/lib/dashboard/deelgebieden"
 
 /**
- * Geeft een gepersonaliseerde welkomstzin voor de chat met Ger.
+ * Geeft een gepersonaliseerde welkomst voor de chat met Ger.
+ *
  * Niet via AI — server-side opgebouwd uit de laatste balanstest, zodat de
- * eerste indruk meteen relevant is en de chat direct het juiste onderwerp
- * voorstelt.
+ * eerste indruk meteen relevant is en er direct een duidelijke keuze ligt:
+ *   1. Hulp voor de mantelzorger zelf
+ *   2. Hulp bij een taak die hij voor de zorgvrager doet
+ *   3. Even praten over hoe het gaat
+ *
+ * Deze drie paden komen terug als zowel "keuzeTegels" (voor visuele weergave)
+ * als "vraagknoppen" (compatibel met bestaande chip-UI).
  */
 export async function GET() {
   const session = await auth()
   if (!session?.user?.id) {
-    return NextResponse.json({
-      opener: "Hoi! Ik ben Ger. Vertel me wat je bezighoudt.",
-      vraagknoppen: [],
-    })
+    return defaultResponse()
   }
 
-  const test = await prisma.belastbaarheidTest.findFirst({
-    where: { caregiver: { userId: session.user.id }, isCompleted: true },
-    orderBy: { completedAt: "desc" },
+  const caregiver = await prisma.caregiver.findUnique({
+    where: { userId: session.user.id },
     select: {
-      belastingNiveau: true,
-      antwoorden: { select: { vraagId: true, score: true, gewicht: true } },
-      taakSelecties: {
-        where: { isGeselecteerd: true },
-        orderBy: { urenPerWeek: "desc" },
+      careRecipientName: true,
+      belastbaarheidTests: {
+        where: { isCompleted: true },
+        orderBy: { completedAt: "desc" },
         take: 1,
-        select: { taakNaam: true },
+        select: {
+          belastingNiveau: true,
+          taakSelecties: {
+            where: { isGeselecteerd: true },
+            orderBy: { urenPerWeek: "desc" },
+            take: 1,
+            select: { taakNaam: true },
+          },
+        },
       },
     },
   })
 
-  if (!test) {
-    return NextResponse.json({
-      opener:
-        "Hoi! Ik ben Ger. We kennen elkaar nog niet — wil je eerst de balanstest doen? " +
-        "Dan weet ik beter hoe ik je kan helpen. Of vertel meteen wat er speelt.",
-      vraagknoppen: [
-        "Ik wil de balanstest doen",
-        "Ik wil eerst even praten",
-        "Welke hulp is er bij mij in de buurt?",
-      ],
-    })
+  const naasteNaam = caregiver?.careRecipientName?.trim() || null
+  const test = caregiver?.belastbaarheidTests?.[0] || null
+  const zwaarsteTaak = test?.taakSelecties?.[0]?.taakNaam || null
+
+  const begroeting = buildBegroeting(test?.belastingNiveau, naasteNaam, zwaarsteTaak)
+  const keuzeTegels = buildKeuzeTegels(naasteNaam, zwaarsteTaak)
+  const vraagknoppen = keuzeTegels.map((t) => t.actie)
+
+  return NextResponse.json({
+    opener: begroeting,
+    heeftTest: !!test,
+    naasteNaam,
+    keuzeTegels,
+    vraagknoppen,
+  })
+}
+
+function defaultResponse() {
+  return NextResponse.json({
+    opener: "Hoi! Ik ben Ger. Vertel me wat je bezighoudt.",
+    heeftTest: false,
+    naasteNaam: null,
+    keuzeTegels: [],
+    vraagknoppen: [],
+  })
+}
+
+function buildBegroeting(niveau: string | null | undefined, naasteNaam: string | null, zwaarsteTaak: string | null): string {
+  // Geen test? Korte opening met uitnodiging.
+  if (!niveau) {
+    return "Hoi! Ik ben Ger. Fijn dat je er bent. Waar kan ik je vandaag mee helpen?"
   }
 
-  const deelgebieden = berekenDeelgebieden(
-    test.antwoorden.map((a) => ({ vraagId: a.vraagId, score: a.score, gewicht: a.gewicht })),
-  )
-  const zwaarste = [...deelgebieden].sort((a, b) => b.percentage - a.percentage)[0]
-  const zwaarsteTaak = test.taakSelecties[0]?.taakNaam
-
-  let opener: string
-  let vraagknoppen: string[]
-
-  if (test.belastingNiveau === "HOOG") {
-    opener = zwaarste
-      ? `Fijn dat je er bent. Ik zie dat ${zwaarste.naam.toLowerCase()} op dit moment het meeste van je vraagt. Zal ik daar mee beginnen?`
-      : "Fijn dat je er bent. Ik zie dat het pittig is op dit moment. Waar wil je het over hebben?"
-    vraagknoppen = [
-      zwaarste ? `Vertel meer over ${zwaarste.naam.toLowerCase()}` : "Hoe gaat het met mij?",
-      "Welke hulp kan mij ontlasten?",
-      "Ik wil het over iets anders hebben",
-    ]
-  } else if (test.belastingNiveau === "GEMIDDELD") {
-    opener = zwaarsteTaak
-      ? `Goed dat je er bent. ${zwaarsteTaak} kost je relatief veel tijd — wil je kijken hoe dat lichter kan?`
-      : "Goed dat je er bent. Waar zou ik je vandaag mee kunnen helpen?"
-    vraagknoppen = [
-      zwaarsteTaak ? `Hulp bij ${zwaarsteTaak.toLowerCase()}` : "Welke hulp is er in de buurt?",
-      "Tips voor mezelf",
-      "Hoe gaat het met mij?",
-    ]
-  } else {
-    opener =
-      "Goed dat je er bent. Het gaat eigenlijk best goed met je balans — knap! " +
-      "Wat houdt je vandaag bezig?"
-    vraagknoppen = [
-      "Tips om het zo te houden",
-      "Iets over mezelf vertellen",
-      "Welke hulp is er in de buurt?",
-    ]
+  if (niveau === "HOOG") {
+    if (zwaarsteTaak && naasteNaam) {
+      return `Fijn dat je er bent. Ik zie dat je flink wat doet voor ${naasteNaam} — waar kan ik je vandaag mee helpen?`
+    }
+    return "Fijn dat je er bent. Het is op dit moment best pittig — waar kan ik je vandaag mee helpen?"
   }
 
-  return NextResponse.json({ opener, vraagknoppen })
+  if (niveau === "GEMIDDELD") {
+    return "Goed dat je er bent. Waar kan ik je vandaag mee helpen?"
+  }
+
+  return "Goed dat je er bent. Het gaat eigenlijk best goed met je balans — knap! Waar kan ik je vandaag mee helpen?"
+}
+
+interface KeuzeTegel {
+  emoji: string
+  titel: string
+  omschrijving: string
+  /** De tekst die naar Ger wordt gestuurd als de gebruiker erop klikt. */
+  actie: string
+}
+
+function buildKeuzeTegels(naasteNaam: string | null, zwaarsteTaak: string | null): KeuzeTegel[] {
+  const naasteLabel = naasteNaam ? `voor ${naasteNaam}` : "voor mijn naaste"
+  const taakHint = zwaarsteTaak ? `, zoals ${zwaarsteTaak.toLowerCase()}` : ""
+
+  return [
+    {
+      emoji: "🧑",
+      titel: "Hulp voor mij zelf",
+      omschrijving: "Steunpunt, lotgenoten, even op adem komen, slaap of stress",
+      actie: "Ik wil hulp voor mij zelf",
+    },
+    {
+      emoji: "🤝",
+      titel: `Hulp bij een taak ${naasteLabel}`,
+      omschrijving: `Boodschappen, verzorging, vervoer, huishouden${taakHint}`,
+      actie: zwaarsteTaak
+        ? `Ik zoek hulp bij ${zwaarsteTaak.toLowerCase()} ${naasteLabel}`
+        : `Ik zoek hulp bij een taak ${naasteLabel}`,
+    },
+    {
+      emoji: "💬",
+      titel: "Even praten over hoe het gaat",
+      omschrijving: "Vertel hoe je je voelt, ik luister mee",
+      actie: "Ik wil even vertellen hoe het met me gaat",
+    },
+  ]
 }
