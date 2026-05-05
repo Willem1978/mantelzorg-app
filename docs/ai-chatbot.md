@@ -203,7 +203,7 @@ Het hart van Ger zit in `src/lib/ai/prompts/assistent.ts`. Dit prompt is opgebou
 | Sectie | Wat erin staat |
 |---|---|
 | **Grondhouding** | Niet belerend, niet medelijdend; uitgaan van kracht; warm en respectvol |
-| **Gespreksstijl** | Warme buurvrouw-toon; **HARD limit max 3 zinnen** per beurt; geen inleidingen, samenvattingen of afsluitingen; geen lijsten |
+| **Gespreksstijl** | Warme buurvrouw-toon; sinds Ronde 12: **max 3-4 zinnen** lopende tekst (90 woorden eerste bericht, 70 daarna); geen inleidingen, samenvattingen, afsluitingen of tool-narratie; korte bullets met "- " toegestaan voor concrete tips (max 4, max 10 woorden); genummerde lijsten verboden |
 | **Taalstijl (B1, niet onderhandelbaar)** | Max 15 woorden per zin (liever 8); één gedachte per zin; actief schrijven; concrete woorden. **Verboden-woordenlijst** met alternatieven (ondersteuningsbehoefte → hulp, indiceren → kijken wat je nodig hebt, faciliteren → regelen, etc.). Vóór versturen: check of een woord van >3 lettergrepen begrijpelijk is voor laaggeletterde lezer. |
 | **Empathisch én oplossingsgericht** | Drie valkuilen die verboden zijn: zielig maken, belerend zijn, alleen meeleven zonder oplossing. **Formule per bericht**: 1 zin verbinding + 1 concreet aanbod + 1 open vraag. Oplossingsgericht ≠ sturend — bied opties, geen verplichtingen. Geen "je moet" / "je zou eigenlijk" / "het is belangrijk dat". |
 | **Drie-richting-kompas (kernkompas, Ronde 10)** | Drie vaste paden zichtbaar onder elke chat-beurt: A) hulp voor de mantelzorger zelf, B) hulp bij een taak voor de zorgvrager, C) informatie / artikel zoeken. "Praten" valt onder A. De drie blijven ook midden in een sub-onderwerp aangeboden via 3 vraagknoppen. Bij vage start: actief de A/B/C-keuze aanbieden, geen kaarten. Als gebruiker al koos: blijf in die kant maar bied volgende beurt weer A/B/C aan. |
@@ -233,11 +233,13 @@ De backwards-compatible `buildAssistentPrompt()` retourneert beide aan elkaar ge
 
 ### Lengte-regels (cruciaal voor coachende ervaring)
 
-Vroeger neigden antwoorden naar 6-10 zinnen met inleiding én samenvatting. Nu strikt:
+Vroeger neigden antwoorden naar 6-10 zinnen met inleiding én samenvatting. Sinds Ronde 12:
 
 - `maxOutputTokens: 600` — hard plafond op het model.
-- Prompt-regel: **max 3 zinnen conversatietekst per beurt**, liever 2.
+- **Eerste bericht max 90 woorden, vervolgberichten max 70 woorden** (was 120/100).
+- 3-4 zinnen lopende tekst, eventueel aangevuld met 2-4 korte bullets (max 10 woorden per bullet) als die concreter zijn dan een vloeiende zin.
 - Geen "Wat een goede vraag", geen "Hopelijk helpt dit", geen "Dus om het kort te zeggen".
+- Geen tool-narratie ("laat me zoeken", "even kijken in de database", "ik denk dat") — direct met het antwoord beginnen.
 - Korte zin = klein cadeautje. Lange zin = lezing.
 
 ### Output-syntax die Ger leert genereren
@@ -594,7 +596,22 @@ src/
 
 ---
 
-## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11)
+## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12)
+
+### Ronde 12 — Korter + bullets toegestaan + geen tool-narratie
+
+Live-test: Ger gaf op informatie-vragen lange essay-achtige antwoorden, beginnend met *"Laat me anders zoeken naar wat breder kan helpen: Oké, ik zie dat er op dit moment geen specifieke artikelen beschikbaar zijn..."*. Drie problemen:
+
+1. **Te lange teksten** — drie alinea's waar één had volstaan. Oude regel was "max 4-6 zinnen / 100 woorden", maar in de praktijk te ruim.
+2. **Bullet-verbod te strikt** — voor concrete tips ("zorg voor 7 uur slaap, geen scherm, frisse lucht") was een vloeiende zin minder helder dan een korte bullet-lijst.
+3. **Tool-narratie zichtbaar** — Ger zei letterlijk wat hij dacht of zocht in plaats van direct met het antwoord te komen.
+
+| Verbetering | Effect | Bestand |
+|---|---|---|
+| **Strakker woordbudget** | Eerste bericht: 120 → **90 woorden**. Vervolgberichten: 100 → **70 woorden**. 3-4 zinnen i.p.v. 4-6. Bij emotionele onderwerpen iets meer (110). | `prompts/balanscoach.ts` |
+| **Bullets toegestaan voor concrete tips** | Verbod *"NOOIT opsommingen met streepjes"* opgeheven. Wel kort: max 4 bullets, max 10 woorden per bullet, alleen als ze concreter zijn dan een vloeiende zin. Genummerde lijsten (1. 2. 3.) blijven verboden. De UI rendert `- ` en `• ` al als bullets — geen code-aanpassing nodig. | `prompts/balanscoach.ts` |
+| **Verbod op tool-narratie** | Nieuwe regel: NOOIT je eigen denkproces verbaliseren. FOUT-voorbeelden: *"Laat me anders zoeken..."*, *"Even kijken in de database..."*, *"Ik denk dat..."*, *"Oké, ik zie dat..."*. GOED: direct met het antwoord beginnen, zonder opwarmer. | `prompts/balanscoach.ts` |
+| **Fallback bij geen artikelen gevonden** | Niet narreren ("ik zie geen artikelen"). Wel: 1-2 zinnen tip + 2-3 bullets + verwijzing naar mantelzorgloket als hulpkaart + open vraag + 3 vraagknoppen. | `prompts/balanscoach.ts` |
 
 ### Ronde 11 — Gespreksgeheugen + proactieve artikelen bij kennis-onderwerpen
 
