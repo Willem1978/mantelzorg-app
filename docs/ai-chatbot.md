@@ -314,6 +314,125 @@ De pre-fetch-functie krijgt een `options.shownHulpbronnen` mee — een lijst met
 
 ---
 
+## 6b. Geheugen — hoe Ger continuïteit bewaart
+
+Ger heeft **drie soorten geheugen**, elk met een eigen rol en levensduur:
+
+### Geheugen 1 — Profiel & balanstest (vast)
+
+Wat je ooit hebt ingevuld op `/profiel` (gemeente, naaste-naam, zorgthema, voorkeuren) en je laatste balanstest (zware taken, uren, niveau). Blijft staan tot je het zelf wijzigt of een nieuwe test doet.
+
+| | |
+|---|---|
+| Bron | `caregiver`, `belastbaarheidTest`, `taakSelectie`, `caregiverVoorkeur` |
+| Lezen | `prefetchUserContext` elke chat-beurt |
+| In prompt | `dynamicContext` blok via `buildContextBlock` |
+| Levensduur | Permanent (tot wijziging) |
+
+### Geheugen 2 — Actiepunten (concrete afspraken)
+
+Als Ger en de gebruiker afspreken dat er iets gaat gebeuren, slaat Ger dat op via de `slaActiepuntOp`-tool. Het komt in `Task` met `isSuggested: true`. Bij elke volgende chat leest `fetchOpenActiepunten` de openstaande actiepunten.
+
+| | |
+|---|---|
+| Bron | `Task`-model met `isSuggested: true`, `status: TODO` of `IN_PROGRESS` |
+| Schrijven | Tool `slaActiepuntOp` (sinds Ronde 15 ook in `/api/ai/balanscoach`) |
+| Lezen | `fetchOpenActiepunten` (max 5, nieuwste eerst) |
+| In prompt | `OPENSTAANDE ACTIEPUNTEN (uit vorige gesprekken)`-blok |
+| Wegvalt | Wanneer status → `DONE` of `CANCELLED` op `/agenda` |
+| Voorbeeld | *"Vorige keer spraken we over [titel]. Is dat gelukt?"* |
+
+### Geheugen 3 — Gespreks-samenvattingen (longitudinale context)
+
+Sinds Ronde 11. Aan het eind van elk gesprek vat Haiku het samen in 3-5 zinnen + 1-5 onderwerpen. Bij een nieuw gesprek krijgt Ger de laatste 3 samenvattingen mee.
+
+#### Schrijven — wanneer en hoe
+
+```
+Chat eindigt (handmatig sluiten of navigatie weg)
+    ↓
+FloatingGerChat.handleClose / DashboardGerChat unmount
+    ↓
+fetch /api/ai/samenvat met { messages[] }, keepalive: true
+    ↓
+Server: dedup-check (max 1 per 5 min per user)
+    ↓
+Haiku model genereert { samenvatting, onderwerpen } via generateObject + Zod schema
+    ↓
+Server telt actiepunten gemaakt in laatste 30 min
+    ↓
+prisma.gesprekSamenvatting.create({ userId, samenvatting, onderwerpen,
+                                    actiepuntenAangemaakt, berichtenAantal })
+```
+
+Skip-criteria:
+- Minder dan 4 echte berichten (te kort)
+- Al een samenvatting in de laatste 5 minuten (dedup)
+- Niet ingelogd
+
+#### Lezen — bij volgend gesprek
+
+```
+Gebruiker stuurt bericht naar /api/ai/balanscoach
+    ↓
+prefetchUserContext.findMany op gesprekSamenvatting
+  - userId match
+  - createdAt >= 90 dagen geleden  (TTL)
+  - orderBy createdAt DESC, take 3
+    ↓
+buildEerdereGesprekkenBlock formatteert per gesprek:
+  "- [datum] [onderwerpen: ...]
+     [samenvatting]"
+    ↓
+Geïnjecteerd onder "=== EERDERE GESPREKKEN MET DEZE MANTELZORGER ===" in de system prompt
+    ↓
+Prompt-sectie EERDERE GESPREKKEN — REFEREREN MET WARMTE instrueert Ger:
+  - WEL: "Vorige keer hadden we het over X — hoe staat dat nu?"
+  - NIET: letterlijk citeren of voorlezen
+  - NIET: "ik heb in mijn database gezien dat..."
+```
+
+#### Velden van `GesprekSamenvatting`
+
+| Veld | Wat |
+|---|---|
+| `samenvatting` | 3-5 zinnen, vanuit Ger's perspectief, B1-Nederlands |
+| `onderwerpen` | 1-5 sleutelwoorden, bv. `["PGB", "zelfzorg", "regelwerk"]` |
+| `actiepuntenAangemaakt` | Hoeveel `Task`-records met `isSuggested: true` in de laatste 30 min zijn aangemaakt |
+| `berichtenAantal` | Aantal echte berichten in het gesprek (excl. lege tool-call-stappen en `[pagina:...]`-init) |
+| `createdAt` | Indexeren voor TTL en dedup |
+
+#### Privacy
+
+- **GEEN letterlijke berichten** in de DB — alleen de samenvatting.
+- **TTL 90 dagen** in het AI-geheugen — oudere blijven voor analytics maar verdwijnen uit de prompt.
+- **Maximaal 3 samenvattingen** in de prompt per beurt — geen cumulatief stapelen.
+- **Dedup** voorkomt drie identieke records bij re-mount of beforeunload-event.
+
+### Hoe alle drie samenkomen — voorbeeld
+
+| Bron | Wat Ger leest |
+|---|---|
+| Geheugen 1 | "Willem, gemeente Arnhem, naaste Kim in Zutphen. Zware taken: regelen 10u, administratie 3u." |
+| Geheugen 2 | "OPEN ACTIEPUNT: Bel maandag het Wmo-loket Zutphen — 5 dagen geleden voorgesteld." |
+| Geheugen 3 | "Vorig gesprek (5 dagen geleden, onderwerpen: PGB, regelwerk): we hadden het over PGB voor Kim. Willem zou contact opnemen met het Wmo-loket." |
+
+Ger's openingszin: *"Hey Willem, fijn je weer te zien. Je zou contact opnemen met het Wmo-loket — is dat gelukt?"*
+
+### DB-migratie + bestanden
+
+| Bestand | Wat |
+|---|---|
+| `prisma/schema.prisma:1518` | Model `GesprekSamenvatting` |
+| `prisma/gesprek-samenvatting.sql` | Supabase SQL voor dit model |
+| `src/app/api/ai/samenvat/route.ts` | Schrijf-endpoint (Haiku via `generateObject`) |
+| `src/lib/ai/prefetch-context.ts` | `prefetchUserContext` leest, `buildEerdereGesprekkenBlock` formatteert |
+| `src/lib/ai/prompts/balanscoach.ts` | Sectie `EERDERE GESPREKKEN — REFEREREN MET WARMTE` |
+| `src/components/ai/FloatingGerChat.tsx` | Trigger in `handleClose` met `keepalive: true` |
+| `src/components/dashboard/DashboardGerChat.tsx` | Trigger in cleanup + `beforeunload` |
+
+---
+
 ## 7. Tools (function calling)
 
 Ger kan tijdens een gesprek tools aanroepen voor extra zoekopdrachten. Definities in `src/lib/ai/tools/`. Het taalmodel beslist zelf wanneer en met welke parameters.
