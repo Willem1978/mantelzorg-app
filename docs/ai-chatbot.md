@@ -596,7 +596,57 @@ src/
 
 ---
 
-## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12)
+## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12 + 13)
+
+### Ronde 13 — Tweesplitsing-kennis borgen + nóg kortere B1-taal
+
+Twee verbeteringen die voortkomen uit het inzicht dat de mantelzorger zelf
+meestal **geen voorkennis heeft** over zijn rol of de hulp die er is.
+
+#### 1. Tweesplitsing-kennis expliciet uitleggen (kennis-borging)
+
+Veel mensen die voor een naaste zorgen herkennen zich niet als "mantelzorger" en weten niet dat er twee fundamenteel verschillende soorten hulp bestaan:
+
+| Soort | Voor wie | Komt van |
+|---|---|---|
+| **Hulp voor jou** (de mantelzorger) | Voor jou als mens — praten, rust, advies | Jouw gemeente, jouw werkgever, jouw zorgverzekeraar, steunpunt mantelzorg |
+| **Hulp bij een taak voor je naaste** | Een ander neemt jouw zorgtaak over | De gemeente van je naaste, zijn/haar zorgverzekeraar, vrijwilligers, mensen uit de buurt |
+
+Nieuwe prompt-sectie *TWEE SOORTEN HULP — DIT IS HET BELANGRIJKSTE WAT JE UITLEGT* met:
+- Expliciete waarschuwing dat de gebruiker dit meestal niet weet
+- Beide soorten in B1-taal uitgelegd, mét waar de hulp vandaan komt
+- Regel voor toepassing: bij eerste vraag van iemand die nog niets weet — leg in 1-2 zinnen uit dat er twee soorten zijn, niet als lijst
+- Verbod op jargon zonder uitleg ("WMO", "Wlz", "PGB" alleen met uitleg in dezelfde zin)
+
+#### 2. Nóg kortere B1-taal
+
+Antwoorden waren nog te lang en te formeel. Aangescherpt:
+
+| Was (Ronde 12) | Nu (Ronde 13) |
+|---|---|
+| Eerste bericht: max 90 woorden | **max 60 woorden** |
+| Vervolgberichten: max 70 woorden | **max 45 woorden** |
+| Lopende tekst: max 3-4 zinnen | **max 1-2 zinnen** |
+| Open vraag: max 15 woorden | **max 8 woorden** |
+| Zinslengte: niet expliciet | **max 12 woorden, liever 8** |
+| Emotionele onderwerpen: max 110 | **max 80** |
+
+Dashboard- en opener-chips zijn ook ingekort:
+
+| Was | Nu |
+|---|---|
+| "Ik wil hulp voor mijzelf" | "Hulp voor mij zelf" |
+| "Ik wil hulp bij een taak die ik voor [naaste] doe" | "Hulp bij een taak voor [naaste]" |
+| "Ik ben op zoek naar informatie" | "Ik zoek informatie" |
+| "Het gaat niet zo goed met mij" | "Het gaat niet goed met mij" |
+
+Pagina-context-voorbeelden in de prompt zijn allemaal verkort. Opener-tegels (`/api/ai/opener`) gebruiken nu B1-omschrijvingen ("Een ander neemt boodschappen over, zodat jij dat niet alleen doet") in plaats van opsommingen van diensten.
+
+| Bestand | Wat |
+|---|---|
+| `prompts/balanscoach.ts` | Nieuwe sectie TWEE SOORTEN HULP, woordbudget 60/45, zinnen max 12 woorden, vragen max 8 woorden, alle pagina-voorbeelden ingekort |
+| `components/dashboard/DashboardGerChat.tsx` | Drie chip-labels ingekort |
+| `app/api/ai/opener/route.ts` | Tegel-omschrijvingen herschreven naar B1 (geen opsomming van diensten) |
 
 ### Ronde 12 — Korter, bullets, geen tool-narratie + gebruiker-pad volgen
 
