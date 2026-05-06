@@ -20,9 +20,10 @@
  */
 import { generateObject } from "ai"
 import { z } from "zod"
-import { getModelForAgent } from "@/lib/ai/models"
+import { getModelForAgent, AGENT_MODELS } from "@/lib/ai/models"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { logAiInteractie } from "@/lib/ai/telemetrie"
 
 export const maxDuration = 30
 
@@ -40,6 +41,10 @@ const samenvattingSchema = z.object({
 })
 
 export async function POST(req: Request) {
+  const startTime = Date.now()
+  const ROUTE = "samenvat"
+  const MODEL_ID = AGENT_MODELS["ger-samenvat"]
+
   if (!process.env.ANTHROPIC_API_KEY) {
     return new Response(JSON.stringify({ error: "AI niet beschikbaar." }), {
       status: 503,
@@ -157,6 +162,16 @@ onderwerpen vangen — gebruikt om bij volgende chat snel context te tonen.`,
       select: { id: true, samenvatting: true, onderwerpen: true, createdAt: true },
     })
 
+    void logAiInteractie({
+      userId,
+      route: ROUTE,
+      model: MODEL_ID,
+      durationMs: Date.now() - startTime,
+      inputTokens: result.usage?.inputTokens ?? null,
+      outputTokens: result.usage?.outputTokens ?? null,
+      status: "ok",
+    })
+
     return new Response(JSON.stringify({ saved: true, samenvatting: saved }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
@@ -164,6 +179,14 @@ onderwerpen vangen — gebruikt om bij volgende chat snel context te tonen.`,
   } catch (error) {
     console.error("[Samenvat] Fout:", error)
     const message = error instanceof Error ? error.message : "onbekende fout"
+    void logAiInteractie({
+      userId,
+      route: ROUTE,
+      model: MODEL_ID,
+      durationMs: Date.now() - startTime,
+      status: "error",
+      errorBericht: message,
+    })
     return new Response(JSON.stringify({ error: `Samenvatten mislukt: ${message}` }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
