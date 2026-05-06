@@ -10,6 +10,7 @@
 import { tool } from "ai"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
+import { safeExecute } from "@/lib/ai/tools/_helpers"
 
 export function createBekijkGemeenteAdviesTool(ctx: {
   gemeenteZorgvrager: string | null
@@ -23,7 +24,7 @@ export function createBekijkGemeenteAdviesTool(ctx: {
         .enum(["LAAG", "GEMIDDELD", "HOOG"])
         .describe("Het belastingniveau waarvoor je advies wilt ophalen"),
     }),
-    execute: async ({ niveau }) => {
+    execute: async ({ niveau }) => safeExecute("bekijkGemeenteAdvies", async () => {
       const gemeenteNaam = ctx.gemeenteZorgvrager || ctx.gemeenteMantelzorger
       if (!gemeenteNaam) {
         return {
@@ -160,6 +161,6 @@ export function createBekijkGemeenteAdviesTool(ctx: {
           url: s.externeUrl,
         })),
       }
-    },
+    }),
   })
 }

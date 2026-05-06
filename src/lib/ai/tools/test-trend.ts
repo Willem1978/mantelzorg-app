@@ -6,13 +6,14 @@ import { tool } from "ai"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { berekenDeelgebieden } from "@/lib/dashboard/deelgebieden"
+import { safeExecute } from "@/lib/ai/tools/_helpers"
 
 export function createBekijkTestTrendTool(ctx: { userId: string }) {
   return tool({
     description:
       "Bekijk de trend van meerdere balanstesten over tijd. Gebruik dit als iemand vraagt of het beter of slechter gaat, of naar hun voortgang.",
     inputSchema: z.object({}),
-    execute: async () => {
+    execute: async () => safeExecute("bekijkTestTrend", async () => {
       const tests = await prisma.belastbaarheidTest.findMany({
         where: { caregiver: { userId: ctx.userId }, isCompleted: true },
         orderBy: { completedAt: "asc" },
@@ -87,6 +88,6 @@ export function createBekijkTestTrendTool(ctx: { userId: string }) {
           niveau: t.belastingNiveau,
         })),
       }
-    },
+    }),
   })
 }

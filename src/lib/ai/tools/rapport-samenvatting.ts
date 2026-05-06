@@ -6,6 +6,7 @@
 import { tool } from "ai"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
+import { safeExecute } from "@/lib/ai/tools/_helpers"
 
 export function createGenereerRapportSamenvattingTool(ctx: { userId: string }) {
   return tool({
@@ -22,7 +23,7 @@ export function createGenereerRapportSamenvattingTool(ctx: { userId: string }) {
         .max(3)
         .describe("Maximaal 3 concrete aanbevelingen, bijv. 'Neem contact op met ...'"),
     }),
-    execute: async ({ samenvatting, aandachtspunten, aanbevelingen }) => {
+    execute: async ({ samenvatting, aandachtspunten, aanbevelingen }) => safeExecute("genereerRapportSamenvatting", async () => {
       // Zoek de meest recente test van deze gebruiker
       const test = await prisma.belastbaarheidTest.findFirst({
         where: { caregiver: { userId: ctx.userId }, isCompleted: true },
@@ -58,6 +59,6 @@ export function createGenereerRapportSamenvattingTool(ctx: { userId: string }) {
       }
 
       return { opgeslagen: true, bericht: "Rapport-samenvatting opgeslagen." }
-    },
+    }),
   })
 }

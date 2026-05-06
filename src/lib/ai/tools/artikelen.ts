@@ -8,6 +8,7 @@ import { tool } from "ai"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { prioritizeUnshown, toKeySet } from "@/lib/ai/variation"
+import { safeExecute } from "@/lib/ai/tools/_helpers"
 
 /**
  * Strip HTML tags en trim tot maxLengte tekens.
@@ -45,7 +46,7 @@ export function createZoekArtikelenTool(ctx: { shownTitels?: string[] } = {}) {
         .describe("Tag slug voor aandoening of situatie, bijv: dementie, kanker, psychisch, jong, werkend, op-afstand"),
       zoekterm: z.string().optional().describe("Zoekterm in titel of beschrijving"),
     }),
-    execute: async ({ categorie, tag, zoekterm }) => {
+    execute: async ({ categorie, tag, zoekterm }) => safeExecute("zoekArtikelen", async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const where: Record<string, any> = {
         isActief: true,
@@ -114,6 +115,6 @@ export function createZoekArtikelenTool(ctx: { shownTitels?: string[] } = {}) {
           kaartSyntax: `{{artikelkaart:${a.id}|${a.titel}|${a.emoji || "📄"}|${a.categorie}}}`,
         })),
       }
-    },
+    }),
   })
 }

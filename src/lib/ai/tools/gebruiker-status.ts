@@ -13,6 +13,7 @@
 import { tool } from "ai"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
+import { safeExecute } from "@/lib/ai/tools/_helpers"
 
 /**
  * Haal de gebruikersstatus op — wordt aangeroepen door de route (pre-fetch)
@@ -206,6 +207,6 @@ export function createBekijkGebruikerStatusTool(ctx: { userId: string }) {
     description:
       "Bekijk de volledige status van de gebruiker: profielcompleetheid, laatste test, laatste check-in, voorkeuren. Gebruik dit alleen als je de status wilt VERNIEUWEN — bij het eerste bericht is de status al beschikbaar in de context.",
     inputSchema: z.object({}),
-    execute: async () => fetchGebruikerStatus(ctx.userId),
+    execute: async () => safeExecute("bekijkGebruikerStatus", () => fetchGebruikerStatus(ctx.userId)),
   })
 }
