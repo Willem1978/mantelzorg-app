@@ -596,7 +596,57 @@ src/
 
 ---
 
-## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12 + 13 + 14 + 15)
+## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12 + 13 + 14 + 15 + 16)
+
+### Ronde 16 — Stabilization: tool-fouten + telemetrie + prompt-duplicaten
+
+Drie aparte stabilisatie-stappen op één branch.
+
+#### 1. Tool-error-handling (`safeExecute`)
+
+Voorheen kon één crashende tool (DB-fout, time-out, malformed input) de hele chat-stream omver gooien. Nieuwe utility `lib/ai/tools/_helpers.ts` met `safeExecute(toolName, fn)` die elke tool-execute wrapt:
+
+- Bij fout: `console.error` met toolName + retourneer `{ fout: true, bericht: string, toolName: string }`.
+- Het model verwerkt dit als gewone tool-output en kan beleefd uitwijken.
+- Alle 12 tools gewrapt: `balanstest`, `actiepunten`, `artikelen`, `checkin-trend`, `gebruiker-status`, `gemeente-advies`, `gemeente`, `hulpbronnen`, `rapport-samenvatting`, `registreer-alarm`, `semantic-search`, `test-trend`.
+
+#### 2. Telemetrie (`AiInteractie`)
+
+Nieuw model voor lichtgewicht logging zodat we kosten/latency/tool-gebruik in productie kunnen monitoren:
+
+| Veld | Wat |
+|---|---|
+| `userId, route, model, pagina` | Wie + welke endpoint + welk model |
+| `durationMs` | Totale request-duur |
+| `toolsCalled[], toolsFailed[]` | Welke tools werden gebruikt + welke faalden via `safeExecute` |
+| `inputTokens, outputTokens` | Uit `usage` van streamText / generateObject |
+| `status` | `ok` / `error` / `rate-limited` / `auth-error` |
+| `errorBericht` | Afgekapt op 500 chars |
+
+**GEEN content** — geen berichten of samenvattingen worden gelogd, alleen meta-data.
+
+| Locatie | Wat |
+|---|---|
+| `prisma/schema.prisma` | Nieuw model `AiInteractie` |
+| `prisma/ai-interactie.sql` | Supabase migratie (idempotent) — inclusief RLS-enable |
+| `src/lib/ai/telemetrie.ts` | `logAiInteractie()` — fire-and-forget helper |
+| `src/app/api/ai/balanscoach/route.ts` | Logging op alle exit-paths (auth-error, rate-limited, ok via `onFinish`, error catch) |
+| `src/app/api/ai/samenvat/route.ts` | Logging op ok + error |
+
+Andere routes (`chat`, `welkom`, `checkin`) volgen in latere ronde.
+
+#### 3. Prompt: drie evidente duplicaten weggehaald
+
+Conservatieve opschoning, geen dramatische rewrite. Drie regels weggehaald die elk al ergens anders in de prompt stonden:
+- "Verzin er geen bij" (regel 513 — al gedekt in TWEE SOORTEN HULP en COACHING)
+- "NOOIT alle info in één bericht dumpen — één onderwerp per keer" (al gedekt in ZO PRAAT JE en STIJL)
+- "Verzin geen taken" in `buildBalanscoachPrompt` LOCATIE-blok (al gedekt in hoofdprompt)
+
+Resultaat: 1043 → 1030 regels. Subtiele opschoning; grote rewrite blijft uitgesteld.
+
+#### Vereist na deploy
+
+DB-migratie via `prisma/ai-interactie.sql` in Supabase SQL Editor voordat de telemetrie écht schrijft. Zonder migratie: telemetry-calls falen stil (zoals bedoeld), maar er komt niets in de DB.
 
 ### Ronde 15 — Cleanup-roundup: feedback-loop herstellen + tegenspraken oplossen + hardening
 
@@ -897,7 +947,7 @@ Deze drie blijven ook midden in een sub-onderwerp aangeboden — de gebruiker ra
 
 - ~~**Geen cross-session-geheugen voor gesprekken zelf**~~ — opgelost in Ronde 11 via `GesprekSamenvatting` (zie sectie 15).
 - **Prompt-redundantie nog niet opgeschoond**: ~30-40% van de prompt (`balanscoach.ts`) bevat herhalingen ("verzin geen taken" 4×, "B1" 6×, "één onderwerp per bericht" 5×). Bewust uitgesteld omdat bulk-edit subtiele nuances kan wegnemen — toekomstige ronde.
-- **Geen telemetrie / observability**: kosten, latency, tool-call-frequentie en samenvat-success-rate worden niet gelogd. Lastig om kwaliteit en kosten te monitoren in productie.
+- ~~**Geen telemetrie / observability**~~ — opgelost in Ronde 16 via `AiInteractie`-model (zie sectie 15). Vereist nog DB-migratie via `prisma/ai-interactie.sql`. Routes `chat`, `welkom`, `checkin` volgen in een latere ronde.
 - **Geen multi-modal**: alleen tekst. Geen foto's of stem.
 - **Tweesplitsing + variatie nog niet overal**: `/api/ai/balanscoach` deelt sinds Ronde 8 dezelfde `prefetchUserContext` + `buildContextBlock` als `/api/ai/chat`, maar de aanroepende frontends (`FloatingGerChat`, `DashboardGerChat`) sturen `shownHulpbronnen` nog niet mee. `/checkin` en `/welkom` lopen ook nog niet via die laag.
 - **Geen A/B-testing van prompts**: aanpassingen aan het systeem-prompt gaan direct naar productie zonder framework om varianten te vergelijken.
