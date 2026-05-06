@@ -80,21 +80,21 @@ function buildProactiveActions(ctx: GerChatContext): { label: string; emoji: str
     let voorJouEmoji: string
     let voorJouColor: string
     if (ctx.trend === "worse" || ctx.wellbeingTrend === "down") {
-      voorJouLabel = "Het gaat niet zo goed met mij"
+      voorJouLabel = "Het gaat niet goed met mij"
       voorJouEmoji = "💬"
       voorJouColor = "blue"
     } else {
-      voorJouLabel = "Ik wil hulp voor mijzelf"
+      voorJouLabel = "Hulp voor mij zelf"
       voorJouEmoji = ctx.niveau === "HOOG" ? "❤️" : "🧑"
       voorJouColor = ctx.niveau === "HOOG" ? "rose" : "sky"
     }
 
     // B — voor je naaste (taak overdragen)
     const naasteLabel = ctx.naasteNaam?.trim() || "mijn naaste"
-    const voorNaasteLabel = `Ik wil hulp bij een taak die ik voor ${naasteLabel} doe`
+    const voorNaasteLabel = `Hulp bij een taak voor ${naasteLabel}`
 
     // C — informatie zoeken (artikelen)
-    const informatieLabel = "Ik ben op zoek naar informatie"
+    const informatieLabel = "Ik zoek informatie"
 
     return [
       { label: voorJouLabel, emoji: voorJouEmoji, action: "vraag", color: voorJouColor },
@@ -107,7 +107,7 @@ function buildProactiveActions(ctx: GerChatContext): { label: string; emoji: str
     return [
       { label: "Start de balanstest", emoji: "📊", action: "/belastbaarheidstest", color: "purple" },
       { label: "Wat is de balanstest?", emoji: "❓", action: "vraag", color: "sky" },
-      { label: "Ik ben op zoek naar informatie", emoji: "📚", action: "vraag", color: "amber" },
+      { label: "Ik zoek informatie", emoji: "📚", action: "vraag", color: "amber" },
     ]
   }
 
