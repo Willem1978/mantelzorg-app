@@ -74,9 +74,11 @@ export async function prefetchUserContext(
 
   // 0b2) Haal de laatste 3 gespreks-samenvattingen op zodat Ger kan refereren
   // aan eerdere gesprekken. Privacy-vriendelijk: alleen samenvatting + onderwerpen,
-  // geen letterlijke berichten.
+  // geen letterlijke berichten. TTL van 90 dagen — oudere zijn niet meer relevant
+  // voor coaching en zouden de prompt verstoppen.
+  const negentigDagenGeleden = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
   const eerdereGesprekken = await prisma.gesprekSamenvatting.findMany({
-    where: { userId },
+    where: { userId, createdAt: { gte: negentigDagenGeleden } },
     orderBy: { createdAt: "desc" },
     take: 3,
     select: {

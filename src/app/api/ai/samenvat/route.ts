@@ -14,6 +14,9 @@
  * Goedkoop:
  * - Haiku model (~$0.0005 per gesprek bij 5KB input).
  * - Niet-blocking: de UI kan dit met `keepalive` of `sendBeacon` aanroepen.
+ *
+ * Dedup: maximaal één samenvatting per 5 minuten per gebruiker, om dubbele
+ * opslag bij re-mount of beforeunload-events te voorkomen.
  */
 import { generateObject } from "ai"
 import { z } from "zod"
@@ -87,6 +90,20 @@ export async function POST(req: Request) {
 
   const userId = session.user.id
 
+  // Dedup: één samenvatting per 5 minuten per gebruiker. Voorkomt dubbele
+  // opslag bij re-mount, beforeunload, of snel achter elkaar sluiten.
+  const vijfMinuutGeleden = new Date(Date.now() - 5 * 60 * 1000)
+  const recent = await prisma.gesprekSamenvatting.findFirst({
+    where: { userId, createdAt: { gte: vijfMinuutGeleden } },
+    select: { id: true },
+  })
+  if (recent) {
+    return new Response(JSON.stringify({ skipped: true, reason: "dedup" }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    })
+  }
+
   try {
     const transcript = echteBerichten
       .map((m) => `${m.role === "user" ? "Mantelzorger" : "Ger"}: ${m.content}`)
@@ -110,12 +127,31 @@ onderwerpen vangen — gebruikt om bij volgende chat snel context te tonen.`,
       prompt: `Vat de volgende chat samen:\n\n${transcript}`,
     })
 
+    // Tel actiepunten die Ger in het laatste half uur via slaActiepuntOp
+    // heeft aangemaakt voor deze gebruiker. Het laatste half uur dekt een
+    // typisch gesprek; preciezer (per-bericht-timestamps) zit niet in de
+    // data die de UI naar deze endpoint stuurt.
+    const dertigMinGeleden = new Date(Date.now() - 30 * 60 * 1000)
+    const caregiver = await prisma.caregiver.findUnique({
+      where: { userId },
+      select: { id: true },
+    })
+    const actiepuntenAangemaakt = caregiver
+      ? await prisma.task.count({
+          where: {
+            caregiverId: caregiver.id,
+            isSuggested: true,
+            createdAt: { gte: dertigMinGeleden },
+          },
+        })
+      : 0
+
     const saved = await prisma.gesprekSamenvatting.create({
       data: {
         userId,
         samenvatting: result.object.samenvatting,
         onderwerpen: result.object.onderwerpen,
-        actiepuntenAangemaakt: typeof body.actiepuntenAangemaakt === "number" ? body.actiepuntenAangemaakt : 0,
+        actiepuntenAangemaakt,
         berichtenAantal: echteBerichten.length,
       },
       select: { id: true, samenvatting: true, onderwerpen: true, createdAt: true },

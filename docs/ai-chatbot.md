@@ -596,7 +596,54 @@ src/
 
 ---
 
-## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12 + 13 + 14)
+## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12 + 13 + 14 + 15)
+
+### Ronde 15 — Cleanup-roundup: feedback-loop herstellen + tegenspraken oplossen + hardening
+
+Een onafhankelijke kritische review legde drie categorieën problemen bloot. Deze ronde adresseert ze allemaal in één PR.
+
+#### 1. Kapotte feedback-loop hersteld
+
+De prompt vertelde Ger over openstaande actiepunten ("vorige keer spraken we over X — is dat gelukt?"), en `/api/ai/samenvat` verwachtte een `actiepuntenAangemaakt`-count, maar **de tool om actiepunten op te slaan ontbrak in `/api/ai/balanscoach`**. Resultaat: het hele "vorige keer spraken we over..."-mechanisme was een fopspeen.
+
+| Fix | Bestand |
+|---|---|
+| `slaActiepuntOp` toegevoegd aan tool-set | `app/api/ai/balanscoach/route.ts` |
+| `bekijkGemeenteAdvies` toegevoegd aan prompt-tool-header | `prompts/balanscoach.ts` |
+| `stepCountIs(3)` → `(5)` (ruimte voor ketens balanstest → gemeente → actiepunt) | `app/api/ai/balanscoach/route.ts` |
+| `actiepuntenAangemaakt` server-side getelt (laatste 30 min) | `app/api/ai/samenvat/route.ts` |
+
+#### 2. Drie prompt-tegenspraken opgelost
+
+| Tegenspraak | Resolutie |
+|---|---|
+| "max 1-2 zinnen" vs "max 2-3 zinnen" | Eén regel: **max 1-2 zinnen lopende tekst** in beide secties |
+| "GEEN hulpkaarten in eerste bericht" vs "Bij HOOG altijd Mantelzorglijn" | Expliciete uitzondering: bij HOOG **moet** Mantelzorglijn-hulpkaart in het eerste bericht (veiligheidsnet) |
+| "Niet je score noemen" vs "Je doet [X] uur per week" | Onderscheid: **uren noemen mag** (concreet, herkenbaar); **score-getallen, "niveau", "deelgebied", "draaglast" niet** |
+
+#### 3. Twee gaten gevuld
+
+| Onderwerp | Wat |
+|---|---|
+| **Afscheid** | Nieuwe sectie: bij "doei" / "tot ziens" / "bedankt, ik ga weer" — sluit warm en kort af in 1-2 zinnen, GEEN 3 vraagknoppen meer onderaan, geen nieuwe open vraag |
+| **Off-topic / scheldwoorden / prompt-injection** | Nieuwe sectie met instructies per type: off-topic → terug naar rol; schelden → erken gevoel zonder corrigeren; prompt-injection ("ignore previous") → beleefd terug naar rol |
+
+#### 4. Hardening + performance
+
+| Fix | Effect |
+|---|---|
+| **Rate-limiting** op `/api/ai/balanscoach` (60/10min/user) en `/api/ai/samenvat` (al hoger) | Beschermt tegen scraping/abuse |
+| **Dedup op `/api/ai/samenvat`** — max 1 samenvatting per 5 min per user | Voorkomt dubbele records bij re-mount/beforeunload |
+| **TTL 90 dagen op `eerdereGesprekken`** in prefetch | Oude gesprekken blokkeren de prompt niet meer |
+| **Coach-adviezen gecached op module-niveau** (5 min TTL) | Bespaart een DB-query per chat-beurt |
+| **Pagina-veld validatie** — alleen bekende strings toegestaan | Voorkomt prompt-injection via `body.pagina` |
+| **`shownHulpbronnen` cap op 50** | Voorkomt payload-bloat |
+| **Dubbele caregiver-fetch verwijderd** | Eén query in plaats van twee |
+| **JSON-status-dump weggehaald** | Was redundant met `dynamicContext` |
+
+#### Niet gedaan in deze ronde
+
+De review noemde ook ~30-40% redundantie in de prompt (4× "verzin geen taken", 6× "B1", 5× "één onderwerp"). Die opschoning is **bewust uitgesteld** — een bulk-edit zou subtiele nuances kunnen verwijderen die eerder met reden zijn toegevoegd. Pakken we in een aparte ronde aan met een meer chirurgische aanpak.
 
 ### Ronde 14 — Vraagknop-audit: alleen wensen, vragen, of zelf-uitspraken
 
@@ -849,6 +896,8 @@ Deze drie blijven ook midden in een sub-onderwerp aangeboden — de gebruiker ra
 ## 16. Bekende beperkingen & open punten
 
 - ~~**Geen cross-session-geheugen voor gesprekken zelf**~~ — opgelost in Ronde 11 via `GesprekSamenvatting` (zie sectie 15).
+- **Prompt-redundantie nog niet opgeschoond**: ~30-40% van de prompt (`balanscoach.ts`) bevat herhalingen ("verzin geen taken" 4×, "B1" 6×, "één onderwerp per bericht" 5×). Bewust uitgesteld omdat bulk-edit subtiele nuances kan wegnemen — toekomstige ronde.
+- **Geen telemetrie / observability**: kosten, latency, tool-call-frequentie en samenvat-success-rate worden niet gelogd. Lastig om kwaliteit en kosten te monitoren in productie.
 - **Geen multi-modal**: alleen tekst. Geen foto's of stem.
 - **Tweesplitsing + variatie nog niet overal**: `/api/ai/balanscoach` deelt sinds Ronde 8 dezelfde `prefetchUserContext` + `buildContextBlock` als `/api/ai/chat`, maar de aanroepende frontends (`FloatingGerChat`, `DashboardGerChat`) sturen `shownHulpbronnen` nog niet mee. `/checkin` en `/welkom` lopen ook nog niet via die laag.
 - **Geen A/B-testing van prompts**: aanpassingen aan het systeem-prompt gaan direct naar productie zonder framework om varianten te vergelijken.
