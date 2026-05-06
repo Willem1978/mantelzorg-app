@@ -6,14 +6,17 @@
  *
  * PERFORMANCE: De gebruikersstatus wordt PRE-FETCHED en in de prompt geïnjecteerd.
  * Dit bespaart 1-2 tool-call round-trips (= 10-15 seconden sneller).
- * Tools blijven beschikbaar voor vervolgacties (zoeken, hulp, etc.).
+ * Tools blijven beschikbaar voor vervolgacties (zoeken, hulp, actiepunten, etc.).
+ *
+ * RATE LIMITING: 60 requests per 10 minuten per gebruiker, om kostenrisico bij
+ * scraping/abuse te beperken.
  */
 import { getModelForAgent } from "@/lib/ai/models"
 import { streamText, stepCountIs } from "ai"
 import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
 import { buildBalanscoachPrompt } from "@/lib/ai/prompts/balanscoach"
 import { prefetchUserContext, buildContextBlock } from "@/lib/ai/prefetch-context"
+import { checkRateLimit } from "@/lib/rate-limit"
 import {
   fetchGebruikerStatus,
   createBekijkGebruikerStatusTool,
@@ -25,6 +28,7 @@ import {
   createRegistreerAlarmTool,
   createGenereerRapportSamenvattingTool,
   createBekijkGemeenteAdviesTool,
+  createSlaActiepuntOpTool,
 } from "@/lib/ai/tools"
 
 export const maxDuration = 60
@@ -55,6 +59,21 @@ export async function POST(req: Request) {
     )
   }
 
+  // Rate limit per gebruiker — 60 berichten per 10 minuten is ruim voor
+  // gewoon gebruik maar vangt scraping/abuse op.
+  const rateCheck = await checkRateLimit(session.user.id, "ai-balanscoach", {
+    maxRequests: 60,
+    windowSeconds: 600,
+  })
+  if (!rateCheck.allowed) {
+    return new Response(
+      JSON.stringify({
+        error: `Even rustig aan! Probeer over ${rateCheck.resetIn} seconden weer.`,
+      }),
+      { status: 429, headers: { "Content-Type": "application/json" } }
+    )
+  }
+
   let body
   try {
     body = await req.json()
@@ -73,10 +92,20 @@ export async function POST(req: Request) {
     )
   }
 
-  const pagina = body.pagina || null
   const userId = session.user.id
-  // Lijsten van hulpbronnen die de gebruiker eerder heeft gezien — voor variatie
-  const shownHulpbronnen: string[] = Array.isArray(body.shownHulpbronnen) ? body.shownHulpbronnen : []
+  // Pagina-context — alleen veilige bekende strings toestaan om
+  // prompt-injection via dit veld te voorkomen.
+  const TOEGESTANE_PAGINAS = new Set([
+    "informatie", "hulp", "mantelbuddy", "balanstest",
+    "checkin", "rapport", "agenda", "profiel", "dashboard", "algemeen",
+  ])
+  const paginaRaw = typeof body.pagina === "string" ? body.pagina.trim() : null
+  const pagina = paginaRaw && TOEGESTANE_PAGINAS.has(paginaRaw) ? paginaRaw : null
+  // Lijsten van hulpbronnen die de gebruiker eerder heeft gezien — voor variatie.
+  // Cap op 50 om payload-bloat te voorkomen.
+  const shownHulpbronnen: string[] = Array.isArray(body.shownHulpbronnen)
+    ? body.shownHulpbronnen.filter((s: unknown): s is string => typeof s === "string").slice(0, 50)
+    : []
 
   // Filter lege berichten (tool-call stappen zonder tekst) om API fouten te voorkomen
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -94,42 +123,35 @@ export async function POST(req: Request) {
     return { role: msg.role, content: "" }
   }).filter((msg: { content: string }) => msg.content.trim() !== "")
 
-  // PRE-FETCH: haal gemeente + status + volledige context (incl. hulpkaarten) op.
-  // Dit bespaart de AI tool-call round-trips én geeft het model de
-  // {{hulpkaart:...}} regels per zorgtaak/voor de mantelzorger letterlijk
-  // mee, zodat de prompt-instructie "kaarten zijn al geladen, niet zoeken"
-  // ook echt klopt.
+  // PRE-FETCH: haal status + volledige context (incl. hulpkaarten) op.
+  // De prefetchUserContext doet zelf al een caregiver-lookup; we hoeven
+  // hier alleen de gemeente-velden uit te halen via een korte tweede query.
   let gemeenteMantelzorger: string | null = null
   let gemeenteZorgvrager: string | null = null
   let statusContext = ""
   let dynamicContext = ""
 
   try {
-    const [caregiver, gebruikerStatus] = await Promise.all([
-      prisma.caregiver.findUnique({
-        where: { userId },
-        select: { municipality: true, city: true, careRecipientMunicipality: true, careRecipientCity: true },
-      }),
-      fetchGebruikerStatus(userId),
-    ])
-
-    gemeenteMantelzorger = caregiver?.municipality || caregiver?.city || null
-    gemeenteZorgvrager = caregiver?.careRecipientMunicipality || caregiver?.careRecipientCity || gemeenteMantelzorger
+    // fetchGebruikerStatus levert ook profiel.gemeente; we pakken hier
+    // careRecipient-gemeente apart voor zoekHulpbronnen-tooling.
+    const gebruikerStatus = await fetchGebruikerStatus(userId)
+    type StatusVelden = { profiel?: { gemeente?: string | null }; naaste?: { gemeente?: string | null } }
+    const statusTyped = gebruikerStatus as StatusVelden
+    gemeenteMantelzorger = statusTyped?.profiel?.gemeente || null
+    gemeenteZorgvrager = statusTyped?.naaste?.gemeente || gemeenteMantelzorger
 
     // Volledige context: balanstest, hulpkaarten per zorgtaak, hulp voor de
-    // mantelzorger, gemeentecontact, voorkeuren, weekkaarten, actiepunten.
+    // mantelzorger, gemeentecontact, voorkeuren, weekkaarten, actiepunten,
+    // eerdere gespreks-samenvattingen.
     const userContext = await prefetchUserContext(userId, gemeenteMantelzorger, gemeenteZorgvrager, {
       shownHulpbronnen,
     })
     dynamicContext = buildContextBlock(userContext)
 
-    // Status-blok dat de prompt expliciet noemt (naam, profiel-percentage,
-    // ontbrekende velden, check-in status etc.) — komt bovenop de context.
-    statusContext = `\n\n--- GEBRUIKERSSTATUS (AUTOMATISCH GELADEN) ---
-Je HOEFT bekijkGebruikerStatus NIET aan te roepen. De data is hier:
-${JSON.stringify(gebruikerStatus, null, 2)}
---- EINDE STATUS ---
-Gebruik deze data direct om de juiste flow te kiezen. Roep bekijkGebruikerStatus alleen aan als je VERNIEUWDE data nodig hebt.`
+    // De ruwe status-JSON werd voorheen ook geïnjecteerd, maar dat overlapte
+    // grotendeels met dynamicContext. We laten het nu weg — alle benodigde
+    // data zit al in dynamicContext.
+    statusContext = ""
   } catch (dbError) {
     console.error("[MantelCoach] Pre-fetch fout:", dbError)
     // Als pre-fetch faalt, kan de AI alsnog de tools aanroepen
@@ -144,7 +166,9 @@ Gebruik deze data direct om de juiste flow te kiezen. Roep bekijkGebruikerStatus
       system: systemPrompt,
       messages,
       maxOutputTokens: 1500,
-      stopWhen: stepCountIs(3),
+      // 5 stappen geeft ruimte voor ketens als balanstest → gemeente-advies
+      // → actiepunt opslaan zonder afgekapt te worden.
+      stopWhen: stepCountIs(5),
       tools: {
         bekijkGebruikerStatus: createBekijkGebruikerStatusTool({ userId }),
         bekijkBalanstest: createBekijkBalanstestTool({ userId, gemeenteZorgvrager, gemeenteMantelzorger }),
@@ -155,6 +179,7 @@ Gebruik deze data direct om de juiste flow te kiezen. Roep bekijkGebruikerStatus
         registreerAlarm: createRegistreerAlarmTool({ userId }),
         genereerRapportSamenvatting: createGenereerRapportSamenvattingTool({ userId }),
         bekijkGemeenteAdvies: createBekijkGemeenteAdviesTool({ gemeenteZorgvrager, gemeenteMantelzorger }),
+        slaActiepuntOp: createSlaActiepuntOpTool({ userId }),
       },
     })
 
