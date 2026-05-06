@@ -596,7 +596,40 @@ src/
 
 ---
 
-## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12 + 13)
+## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12 + 13 + 14)
+
+### Ronde 14 — Vraagknop-audit: alleen wensen, vragen, of zelf-uitspraken
+
+Live-test toonde twee fouten in vraagknoppen die het model genereerde:
+
+1. **"Ik bel het Mantelzorgloket"** — actie-uitspraak. De gebruiker klikt op een knop, dat is geen telefoongesprek. Een knop hoort een vraag of wens te zijn.
+2. **"En hoe gaat het eigenlijk met jou zelf?"** — wanneer de gebruiker hierop klikt, vraagt hij Ger hoe Ger zich voelt. Omgedraaid perspectief.
+
+Audit van alle voorgedefinieerde knoppen:
+
+| Locatie | Status |
+|---|---|
+| `DashboardGerChat` chips (4) | Alle goed — wensen/uitspraken |
+| `opener/route.ts` tegels (2) | Alle goed |
+| `balanscoach.ts` voorbeelden | 1 actie-uitspraak gevonden ("Bel Perspectief Zutphen voor het regelwerk") — vervangen door info-vraag |
+
+Nieuwe prompt-sectie *"WAT VRAAGKNOPPEN ZIJN, EN WAT NIET"* met:
+
+**Drie geldige soorten knoptekst:**
+- Een **wens** ("Ik wil hulp bij mijn energie")
+- Een **vraag** ("Wat doet een mantelzorgmakelaar?")
+- Een **uitspraak over zichzelf** ("Het gaat niet goed met mij")
+
+**Drie types die nu expliciet FOUT zijn:**
+- Vragen aan Ger over Ger ("Hoe gaat het met jou?")
+- Actie-uitspraken ("Ik bel het Mantelzorgloket", "Ik ga naar de gemeente")
+- Bedankjes/afronders ("Bedankt", "Oké")
+
+Plus een check-vraag voor het model: *"Kun je de knop-tekst lezen alsof de gebruiker hem hardop tegen jou zou zeggen? Zo niet — fout."*
+
+| Bestand | Wijziging |
+|---|---|
+| `prompts/balanscoach.ts` | Nieuwe KRITIEK-sectie met drie geldige + drie foute soorten vraagknoppen. Voorbeeld "Bel Perspectief..." vervangen door "Wat doet een mantelzorgmakelaar?". |
 
 ### Ronde 13 — Tweesplitsing-kennis borgen + nóg kortere B1-taal
 
