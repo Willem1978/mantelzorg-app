@@ -27,17 +27,18 @@ import { logAiInteractie } from "@/lib/ai/telemetrie"
 
 export const maxDuration = 30
 
+// Anthropic's structured output ondersteunt geen JSON-schema-constraints zoals
+// minItems/maxItems/minLength/maxLength op velden — die geven een 400 terug
+// ("output_format.schema: For 'array' type, property 'maxItems' is not supported").
+// We coderen de limieten daarom in de `describe()` (instructie aan het model)
+// en valideren ze pas na de call met een tweede Zod-pass.
 const samenvattingSchema = z.object({
   samenvatting: z
     .string()
-    .min(20)
-    .max(800)
-    .describe("Korte samenvatting van het gesprek in 3-5 zinnen, vanuit Ger's perspectief, in informele B1-Nederlandse stijl"),
+    .describe("Korte samenvatting van het gesprek in 3-5 zinnen (20-800 tekens), vanuit Ger's perspectief, in informele B1-Nederlandse stijl"),
   onderwerpen: z
     .array(z.string())
-    .min(1)
-    .max(5)
-    .describe("Lijst van 1-5 sleutelwoorden of korte zinnetjes die de besproken onderwerpen samenvatten, bv. 'PGB', 'zelfzorg', 'huishoudelijke hulp voor naaste'"),
+    .describe("Lijst van 1 tot 5 sleutelwoorden of korte zinnetjes die de besproken onderwerpen samenvatten, bv. 'PGB', 'zelfzorg', 'huishoudelijke hulp voor naaste'"),
 })
 
 export async function POST(req: Request) {
@@ -151,11 +152,19 @@ onderwerpen vangen — gebruikt om bij volgende chat snel context te tonen.`,
         })
       : 0
 
+    // Limieten worden niet via JSON-schema afgedwongen (zie comment bij
+    // samenvattingSchema), dus hier afkappen voordat we opslaan.
+    const samenvattingTekst = result.object.samenvatting.slice(0, 800)
+    const onderwerpen = result.object.onderwerpen
+      .map((o) => o.trim())
+      .filter((o) => o.length > 0)
+      .slice(0, 5)
+
     const saved = await prisma.gesprekSamenvatting.create({
       data: {
         userId,
-        samenvatting: result.object.samenvatting,
-        onderwerpen: result.object.onderwerpen,
+        samenvatting: samenvattingTekst,
+        onderwerpen,
         actiepuntenAangemaakt,
         berichtenAantal: echteBerichten.length,
       },
