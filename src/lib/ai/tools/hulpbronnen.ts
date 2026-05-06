@@ -19,6 +19,7 @@ import { prisma } from "@/lib/prisma"
 import { TAAK_NAAM_VARIANTEN, HULP_VOOR_MANTELZORGER } from "@/config/options"
 import { prioritizeUnshown, toKeySet } from "@/lib/ai/variation"
 import { bepaalGemeenteScope, gemeentenVoorScope } from "@/lib/ai/hulp-categorisatie"
+import { safeExecute } from "@/lib/ai/tools/_helpers"
 
 // Bouwt een lijst van alle mogelijke onderdeelTest waarden voor een categorie
 function getCategorieVarianten(categorie: string): string[] {
@@ -65,7 +66,7 @@ export function createZoekHulpbronnenTool(
         ),
       zoekterm: z.string().optional().describe("Zoekterm voor naam of beschrijving"),
     }),
-    execute: async ({ kant, categorie, zoekterm }) => {
+    execute: async ({ kant, categorie, zoekterm }) => safeExecute("zoekHulpbronnen", async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const where: Record<string, any> = { isActief: true }
 
@@ -175,6 +176,6 @@ export function createZoekHulpbronnenTool(
           openingstijden: r.openingstijden,
         })),
       }
-    },
+    }),
   })
 }

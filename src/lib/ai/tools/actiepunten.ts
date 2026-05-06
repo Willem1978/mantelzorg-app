@@ -7,6 +7,7 @@
 import { tool } from "ai"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
+import { safeExecute } from "@/lib/ai/tools/_helpers"
 
 /**
  * Haalt openstaande actiepunten op voor de pre-fetch context.
@@ -56,7 +57,7 @@ export function createSlaActiepuntOpTool(ctx: { userId: string }) {
         .optional()
         .describe("Waarom dit actiepunt belangrijk is"),
     }),
-    execute: async ({ titel, reden }) => {
+    execute: async ({ titel, reden }) => safeExecute("slaActiepuntOp", async () => {
       const caregiver = await prisma.caregiver.findUnique({
         where: { userId: ctx.userId },
         select: { id: true },
@@ -80,6 +81,6 @@ export function createSlaActiepuntOpTool(ctx: { userId: string }) {
       })
 
       return { opgeslagen: true, titel }
-    },
+    }),
   })
 }

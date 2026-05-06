@@ -9,6 +9,7 @@ import { tool } from "ai"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { generateEmbedding, toVectorSql } from "@/lib/ai/embeddings"
+import { safeExecute } from "@/lib/ai/tools/_helpers"
 
 interface SemanticResult {
   id: string
@@ -38,7 +39,7 @@ export function createSemantischZoekenTool(gemeente?: string | null) {
         .default(5)
         .describe("Maximum aantal resultaten"),
     }),
-    execute: async ({ vraag, type = "all", maxResultaten = 5 }) => {
+    execute: async ({ vraag, type = "all", maxResultaten = 5 }) => safeExecute("semantischZoeken", async () => {
       // Check of OPENAI_API_KEY beschikbaar is voor embeddings
       if (!process.env.OPENAI_API_KEY) {
         return fallbackTextSearch(vraag, type, maxResultaten, gemeente)
@@ -74,7 +75,7 @@ export function createSemantischZoekenTool(gemeente?: string | null) {
         console.warn("[Semantisch zoeken] Vector search mislukt, fallback naar tekst:", error)
         return fallbackTextSearch(vraag, type, maxResultaten, gemeente)
       }
-    },
+    }),
   })
 }
 

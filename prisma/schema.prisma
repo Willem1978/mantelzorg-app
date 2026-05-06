@@ -1526,3 +1526,26 @@ model GesprekSamenvatting {
 
   @@index([userId, createdAt])
 }
+
+// Telemetrie per AI-route-aanroep. Lichtgewicht logging zodat we kosten,
+// latency en tool-gebruik kunnen monitoren in productie. Geen berichten,
+// geen samenvatting van inhoud — alleen meta-data.
+model AiInteractie {
+  id            String   @id @default(cuid())
+  userId        String?  // null voor publieke /welkom-route zonder auth
+  route         String   // "balanscoach" | "chat" | "welkom" | "checkin" | "samenvat"
+  model         String?  // bv. "claude-haiku-4-5-20251001"
+  pagina        String?  // pagina-context (alleen voor balanscoach)
+  durationMs    Int      // duur van de hele request in milliseconden
+  toolsCalled   String[] // namen van gebruikte tools, bv. ["zoekHulpbronnen", "slaActiepuntOp"]
+  toolsFailed   String[] // namen van tools die een safeExecute-fout opleverden
+  inputTokens   Int?     // alleen als bekend (na stream-completion)
+  outputTokens  Int?
+  status        String   // "ok" | "error" | "rate-limited" | "auth-error"
+  errorBericht  String?  // alleen als status="error"
+  createdAt     DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([route, createdAt])
+  @@index([status, createdAt])
+}

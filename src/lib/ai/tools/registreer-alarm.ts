@@ -6,6 +6,7 @@
 import { tool } from "ai"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
+import { safeExecute } from "@/lib/ai/tools/_helpers"
 
 export function createRegistreerAlarmTool(ctx: { userId: string }) {
   return tool({
@@ -25,7 +26,7 @@ export function createRegistreerAlarmTool(ctx: { userId: string }) {
       beschrijving: z.string().describe("Korte beschrijving van het signaal, bijv. 'Gebruiker geeft aan moe en alleen te zijn'"),
       urgentie: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).describe("Urgentieniveau"),
     }),
-    execute: async ({ type, beschrijving, urgentie }) => {
+    execute: async ({ type, beschrijving, urgentie }) => safeExecute("registreerAlarm", async () => {
       // Zoek de meest recente test om het alarm aan te koppelen
       const test = await prisma.belastbaarheidTest.findFirst({
         where: { caregiver: { userId: ctx.userId }, isCompleted: true },
@@ -47,6 +48,6 @@ export function createRegistreerAlarmTool(ctx: { userId: string }) {
       })
 
       return { geregistreerd: true, bericht: `Alarm ${type} geregistreerd met urgentie ${urgentie}.` }
-    },
+    }),
   })
 }

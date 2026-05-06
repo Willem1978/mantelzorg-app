@@ -5,13 +5,14 @@
 import { tool } from "ai"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
+import { safeExecute } from "@/lib/ai/tools/_helpers"
 
 export function createBekijkCheckInTrendTool(ctx: { userId: string }) {
   return tool({
     description:
       "Bekijk de trend van maandelijkse check-ins. Vergelijk de huidige check-in met eerdere. Gebruik dit om te zien of het beter of slechter gaat.",
     inputSchema: z.object({}),
-    execute: async () => {
+    execute: async () => safeExecute("bekijkCheckInTrend", async () => {
       const checkIns = await prisma.monthlyCheckIn.findMany({
         where: {
           caregiver: { userId: ctx.userId },
@@ -71,6 +72,6 @@ export function createBekijkCheckInTrendTool(ctx: { userId: string }) {
           welzijn: c.overallWellbeing,
         })),
       }
-    },
+    }),
   })
 }

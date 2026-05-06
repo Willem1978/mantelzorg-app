@@ -12,6 +12,7 @@ import { resolveGemeenteContact } from "@/lib/ai/gemeente-resolver"
 import { DEELGEBIED_SLEUTEL_MAP, TAAK_ID_MAP } from "@/lib/ai/types"
 import { TAAK_NAAM_VARIANTEN } from "@/config/options"
 import type { HulpbronResult } from "@/lib/ai/types"
+import { safeExecute } from "@/lib/ai/tools/_helpers"
 
 export function createBekijkBalanstestTool(ctx: { userId: string; gemeenteZorgvrager: string | null; gemeenteMantelzorger: string | null } | { userId: string; gemeente: string | null }) {
   // Ondersteun zowel het nieuwe (twee gemeenten) als het oude (één gemeente) formaat
@@ -21,7 +22,7 @@ export function createBekijkBalanstestTool(ctx: { userId: string; gemeenteZorgvr
     description:
       "Bekijk de meest recente balanstest resultaten van de gebruiker. ROEP DIT ALTIJD AAN als de gebruiker vraagt hoe het gaat, over resultaten, of als je wilt coachen. Retourneert scores, deelgebieden, zorgtaken, alarmen, EN de gekoppelde gemeente-hulpbron.",
     inputSchema: z.object({}),
-    execute: async () => {
+    execute: async () => safeExecute("bekijkBalanstest", async () => {
       const test = await prisma.belastbaarheidTest.findFirst({
         where: { caregiver: { userId: ctx.userId }, isCompleted: true },
         orderBy: { completedAt: "desc" },
@@ -165,6 +166,6 @@ export function createBekijkBalanstestTool(ctx: { userId: string; gemeenteZorgvr
           .filter((a) => a.antwoord === "ja")
           .map((a) => a.vraagTekst),
       }
-    },
+    }),
   })
 }

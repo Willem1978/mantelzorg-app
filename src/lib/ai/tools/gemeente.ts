@@ -5,6 +5,7 @@
 import { tool } from "ai"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
+import { safeExecute } from "@/lib/ai/tools/_helpers"
 
 export function createGemeenteInfoTool() {
   return tool({
@@ -13,7 +14,7 @@ export function createGemeenteInfoTool() {
     inputSchema: z.object({
       gemeenteNaam: z.string().describe("Naam van de gemeente"),
     }),
-    execute: async ({ gemeenteNaam }) => {
+    execute: async ({ gemeenteNaam }) => safeExecute("gemeenteInfo", async () => {
       const gem = await prisma.gemeente.findFirst({
         where: {
           naam: { equals: gemeenteNaam, mode: "insensitive" },
@@ -53,6 +54,6 @@ export function createGemeenteInfoTool() {
           dagopvang: gem.dagopvangUrl,
         },
       }
-    },
+    }),
   })
 }

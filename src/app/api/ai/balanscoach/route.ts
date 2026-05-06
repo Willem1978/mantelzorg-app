@@ -11,12 +11,13 @@
  * RATE LIMITING: 60 requests per 10 minuten per gebruiker, om kostenrisico bij
  * scraping/abuse te beperken.
  */
-import { getModelForAgent } from "@/lib/ai/models"
+import { getModelForAgent, AGENT_MODELS } from "@/lib/ai/models"
 import { streamText, stepCountIs } from "ai"
 import { auth } from "@/lib/auth"
 import { buildBalanscoachPrompt } from "@/lib/ai/prompts/balanscoach"
 import { prefetchUserContext, buildContextBlock } from "@/lib/ai/prefetch-context"
 import { checkRateLimit } from "@/lib/rate-limit"
+import { logAiInteractie } from "@/lib/ai/telemetrie"
 import {
   fetchGebruikerStatus,
   createBekijkGebruikerStatusTool,
@@ -34,6 +35,10 @@ import {
 export const maxDuration = 60
 
 export async function POST(req: Request) {
+  const startTime = Date.now()
+  const ROUTE = "balanscoach"
+  const MODEL_ID = AGENT_MODELS["ger-balanscoach"]
+
   if (!process.env.ANTHROPIC_API_KEY) {
     return new Response(
       JSON.stringify({ error: "AI is niet beschikbaar." }),
@@ -46,6 +51,13 @@ export async function POST(req: Request) {
     session = await auth()
   } catch (authError) {
     console.error("[MantelCoach] Auth fout:", authError)
+    void logAiInteractie({
+      userId: null,
+      route: ROUTE,
+      durationMs: Date.now() - startTime,
+      status: "auth-error",
+      errorBericht: authError instanceof Error ? authError.message : "auth fout",
+    })
     return new Response(
       JSON.stringify({ error: "Sessie verlopen. Log opnieuw in." }),
       { status: 401, headers: { "Content-Type": "application/json" } }
@@ -53,6 +65,13 @@ export async function POST(req: Request) {
   }
 
   if (!session?.user?.id) {
+    void logAiInteractie({
+      userId: null,
+      route: ROUTE,
+      durationMs: Date.now() - startTime,
+      status: "auth-error",
+      errorBericht: "niet ingelogd",
+    })
     return new Response(
       JSON.stringify({ error: "Je bent niet ingelogd. Log eerst in." }),
       { status: 401, headers: { "Content-Type": "application/json" } }
@@ -66,6 +85,12 @@ export async function POST(req: Request) {
     windowSeconds: 600,
   })
   if (!rateCheck.allowed) {
+    void logAiInteractie({
+      userId: session.user.id,
+      route: ROUTE,
+      durationMs: Date.now() - startTime,
+      status: "rate-limited",
+    })
     return new Response(
       JSON.stringify({
         error: `Even rustig aan! Probeer over ${rateCheck.resetIn} seconden weer.`,
@@ -181,12 +206,44 @@ export async function POST(req: Request) {
         bekijkGemeenteAdvies: createBekijkGemeenteAdviesTool({ gemeenteZorgvrager, gemeenteMantelzorger }),
         slaActiepuntOp: createSlaActiepuntOpTool({ userId }),
       },
+      onFinish: async ({ toolCalls, toolResults, usage }) => {
+        // Telemetrie loggen — fire-and-forget, blokkeert de stream niet.
+        const calledNames = (toolCalls ?? []).map((c) => c.toolName)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const failedNames = (toolResults ?? [])
+          .filter((r: { output?: unknown }) => {
+            const out = r.output as { fout?: boolean } | undefined
+            return out?.fout === true
+          })
+          .map((r: { toolName: string }) => r.toolName)
+        void logAiInteractie({
+          userId,
+          route: ROUTE,
+          model: MODEL_ID,
+          pagina,
+          durationMs: Date.now() - startTime,
+          toolsCalled: calledNames,
+          toolsFailed: failedNames,
+          inputTokens: usage?.inputTokens ?? null,
+          outputTokens: usage?.outputTokens ?? null,
+          status: "ok",
+        })
+      },
     })
 
     return result.toUIMessageStreamResponse()
   } catch (error) {
     console.error("[MantelCoach] Fout:", error)
     const message = error instanceof Error ? error.message : "Onbekende fout"
+    void logAiInteractie({
+      userId,
+      route: ROUTE,
+      model: MODEL_ID,
+      pagina,
+      durationMs: Date.now() - startTime,
+      status: "error",
+      errorBericht: message,
+    })
     return new Response(
       JSON.stringify({ error: `MantelCoach fout: ${message}` }),
       { status: 500, headers: { "Content-Type": "application/json" } }

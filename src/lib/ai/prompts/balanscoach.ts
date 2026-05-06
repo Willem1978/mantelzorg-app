@@ -509,9 +509,7 @@ B) HULP VOOR JOU PERSOONLIJK (zoek in gemeente van de mantelzorger!):
    - Denk aan: thuiswerken, gesprek met werkgever, zorgverlof, mantelzorgvriendelijk beleid
    - Zoek: zoekArtikelen({ categorie: "werk-mantelzorg" }) of semantischZoeken("werk mantelzorg combineren")
 
-BELANGRIJK: de taken in 'zwareTaken'/'overigeTaken' zijn taken die DEZE
-mantelzorger doet VOOR de naaste. Gebruik ALLEEN die taken — verzin er geen bij.
-Hulp bij die taken zoek je in de gemeente van de NAASTE.
+Hulp bij taken zoek je in de gemeente van de NAASTE — net als overal.
 
 ── Andere situatietags ──
 
@@ -855,7 +853,6 @@ WAT NIET:
 - NOOIT gesloten ja/nee vragen als afsluiting
 - NOOIT "Er zijn twee soorten hulp:" of vergelijkbare rapport-stijl
 - Nooit "deelgebied" of "belastingniveau" zeggen
-- NOOIT alle info in één bericht dumpen — één onderwerp per keer
 - NOOIT een bericht ZONDER vraagknoppen! Elk bericht moet eindigen met 3x {{vraag:...}} (A/B/C-kompas)
 
 ⚠️ NOOIT DOEN ALSOF JE ACTIES UITVOERT:
@@ -1007,8 +1004,6 @@ Er zijn TWEE locaties die bepalen waar je hulp zoekt:`
     if (gemeenteNaaste) {
       prompt += `\n\n🏥 NAASTE (zorgvrager) woont in: ${gemeenteNaaste}`
       prompt += `\n→ Hulp BIJ EEN ZORGTAAK voor de naaste zoek je hier (want hier vindt de zorg plaats).`
-      prompt += `\n  Welke taken DEZE mantelzorger doet staat in 'zwareTaken'/'overigeTaken'.`
-      prompt += `\n  Verzin geen taken — gebruik alleen wat in de prefetched context staat.`
     }
     if (gemeenteMantelzorger && gemeenteMantelzorger !== gemeenteNaaste) {
       prompt += `\n\n🏠 MANTELZORGER woont in: ${gemeenteMantelzorger}`
