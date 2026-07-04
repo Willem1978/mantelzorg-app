@@ -349,11 +349,19 @@ Sinds Ronde 11. Aan het eind van elk gesprek vat Haiku het samen in 3-5 zinnen +
 #### Schrijven — wanneer en hoe
 
 ```
-Chat eindigt (handmatig sluiten of navigatie weg)
+Chat eindigt (X-klik, navigatie weg, tab sluiten, of tab-switch)
     ↓
-FloatingGerChat.handleClose / DashboardGerChat unmount
+FloatingGerChat / DashboardGerChat trigger op VIER events:
+  - handleClose (X-klik in floating chat)
+  - useEffect cleanup (component-unmount = navigatie weg)
+  - window.beforeunload (tab-sluit / refresh)
+  - window.pagehide (mobiel Safari, back-forward cache)
     ↓
-fetch /api/ai/samenvat met { messages[] }, keepalive: true
+triggerSamenvat(messages) in lib/ai/samenvat-trigger.ts
+    ↓
+navigator.sendBeacon(/api/ai/samenvat, blob) — primair, betrouwbaar
+  bij page-close. Valt terug op fetch keepalive als sendBeacon niet
+  beschikbaar is. Console-logt of het gelukt is.
     ↓
 Server: dedup-check (max 1 per 5 min per user)
     ↓
@@ -364,6 +372,8 @@ Server telt actiepunten gemaakt in laatste 30 min
 prisma.gesprekSamenvatting.create({ userId, samenvatting, onderwerpen,
                                     actiepuntenAangemaakt, berichtenAantal })
 ```
+
+**Debug-tip:** open DevTools → Console tijdens navigatie weg van een chat om `[SamenvatTrigger]` log-regels te zien. Die vertellen exact of `sendBeacon` gestart is en met hoeveel berichten. Verschijnt niets? Dan is de trigger niet gevuurd (bv. <4 echte berichten).
 
 Skip-criteria:
 - Minder dan 4 echte berichten (te kort)
@@ -715,7 +725,26 @@ src/
 
 ---
 
-## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12 + 13 + 14 + 15 + 16)
+## 15. Recente verbeteringen (Ronde 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11 + 12 + 13 + 14 + 15 + 16 + 17)
+
+### Ronde 17 — Geheugen-trigger repareren: sendBeacon + vier trigger-events
+
+Live-verificatie na Ronde 11 (geheugen-systeem): tabel `GesprekSamenvatting` bleef **volledig leeg**. De schrijf-trigger vuurde nauwelijks.
+
+**Oorzaken:**
+1. `FloatingGerChat` triggerde alleen op expliciete X-klik. Bij tab-sluit, refresh of navigatie: niets.
+2. `DashboardGerChat` triggerde wel op unmount + beforeunload, maar gebruikte `fetch` met `keepalive: true` — sommige browsers cancelen die alsnog bij page-close.
+
+**Fix:**
+
+| Wat | Bestand |
+|---|---|
+| Nieuwe helper `triggerSamenvat()` die primair `navigator.sendBeacon` gebruikt (expliciet ontworpen voor "opslaan-bij-verlaten"), met fetch keepalive als fallback | `lib/ai/samenvat-trigger.ts` (nieuw) |
+| Console-log `[SamenvatTrigger]` regels voor debug — DevTools laat zien of save gestart is en met hoeveel berichten | idem |
+| `FloatingGerChat`: nu ook triggers op unmount + `beforeunload` + `pagehide` (mobiel Safari), niet meer alleen X-klik | `FloatingGerChat.tsx` |
+| `DashboardGerChat`: gebruikt zelfde `triggerSamenvat` helper, ook `pagehide` toegevoegd | `DashboardGerChat.tsx` |
+
+**Verwacht effect:** vanaf deze deploy komen samenvattingen betrouwbaar in `GesprekSamenvatting` terecht, ongeacht hoe de gebruiker de chat verlaat.
 
 ### Ronde 16 — Stabilization: tool-fouten + telemetrie + prompt-duplicaten
 
