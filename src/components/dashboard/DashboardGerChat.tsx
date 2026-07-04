@@ -11,6 +11,7 @@ import { parseHulpkaarten, HulpKaart, cleanRemainingMarkers } from "@/components
 import type { ParsedHulpkaart } from "@/components/ai/HulpKaart"
 import { parseArtikelkaarten, ArtikelKaart } from "@/components/ai/ArtikelKaart"
 import type { ParsedArtikelkaart } from "@/components/ai/ArtikelKaart"
+import { triggerSamenvat } from "@/lib/ai/samenvat-trigger"
 
 const BUTTON_REGEX = /\{\{(knop|vraag):([^}]+)\}\}/g
 
@@ -214,38 +215,29 @@ export function DashboardGerChat({ context }: { context?: GerChatContext }) {
 
   // Vat het gesprek samen wanneer de gebruiker de dashboardpagina verlaat,
   // zodat Ger bij een volgend gesprek kan refereren aan wat besproken is.
-  // Werkt zowel bij navigatie weg van dashboard (component-unmount) als bij
-  // het sluiten van het tabblad (beforeunload).
+  // Werkt bij component-unmount (navigatie weg), beforeunload (tab-sluit)
+  // en pagehide (mobiel Safari). Gebruikt navigator.sendBeacon voor
+  // betrouwbaarheid; zie lib/ai/samenvat-trigger.ts voor de logica.
   const messagesRef = useRef(messages)
   useEffect(() => {
     messagesRef.current = messages
   }, [messages])
   useEffect(() => {
     const samenvatten = () => {
-      const echteBerichten = messagesRef.current
-        .map((m) => ({
-          role: m.role,
-          content: (m.parts ?? [])
-            .filter((p): p is { type: "text"; text: string } => p.type === "text")
-            .map((p) => p.text)
-            .join(""),
-        }))
-        .filter((m) => m.content.trim() !== "" && !m.content.startsWith("[pagina:"))
-      if (echteBerichten.length < 4) return
-      try {
-        fetch("/api/ai/samenvat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: echteBerichten }),
-          keepalive: true,
-        }).catch(() => {})
-      } catch {
-        // negeer
-      }
+      const echteBerichten = messagesRef.current.map((m) => ({
+        role: m.role,
+        content: (m.parts ?? [])
+          .filter((p): p is { type: "text"; text: string } => p.type === "text")
+          .map((p) => p.text)
+          .join(""),
+      }))
+      triggerSamenvat(echteBerichten)
     }
     window.addEventListener("beforeunload", samenvatten)
+    window.addEventListener("pagehide", samenvatten)
     return () => {
       window.removeEventListener("beforeunload", samenvatten)
+      window.removeEventListener("pagehide", samenvatten)
       samenvatten()
     }
   }, [])

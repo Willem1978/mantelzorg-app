@@ -11,6 +11,7 @@ import { parseHulpkaarten, HulpKaart, cleanRemainingMarkers } from "@/components
 import type { ParsedHulpkaart } from "@/components/ai/HulpKaart"
 import { parseArtikelkaarten, ArtikelKaart } from "@/components/ai/ArtikelKaart"
 import type { ParsedArtikelkaart } from "@/components/ai/ArtikelKaart"
+import { triggerSamenvat } from "@/lib/ai/samenvat-trigger"
 
 /**
  * Button syntax parsing:
@@ -185,28 +186,42 @@ export function FloatingGerChat() {
     setIsOpen(true)
   }
 
-  const handleClose = () => {
-    // Vat het gesprek samen op de achtergrond zodat Ger er volgende keer aan
-    // kan refereren. Faalt stil — de gebruiker hoeft hier niets van te merken.
-    const echteBerichten = messages
-      .map((m) => ({
-        role: m.role,
-        content: getMessageText(m),
-      }))
-      .filter((m) => m.content.trim() !== "" && !m.content.startsWith("[pagina:"))
+  // Bewaar messages in een ref zodat de trigger-effecten hieronder de
+  // laatste state kunnen lezen op unmount / beforeunload zonder dat we
+  // ze in de dependency-array hoeven te zetten.
+  const messagesRef = useRef(messages)
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
 
-    if (echteBerichten.length >= 4) {
-      try {
-        fetch("/api/ai/samenvat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: echteBerichten }),
-          keepalive: true,
-        }).catch(() => {})
-      } catch {
-        // negeer
-      }
+  const bouwEchteBerichten = useCallback(() => {
+    return messagesRef.current.map((m) => ({
+      role: m.role,
+      content: (m.parts ?? [])
+        .filter((p): p is { type: "text"; text: string } => p.type === "text")
+        .map((p) => p.text)
+        .join(""),
+    }))
+  }, [])
+
+  // Vat het gesprek samen op TWEE momenten:
+  //   1. component-unmount (gebruiker navigeert weg — meest voorkomend)
+  //   2. beforeunload (gebruiker sluit tab of ververst)
+  // Plus de expliciete X-klik van handleClose. Zo missen we nooit een
+  // afgesloten gesprek meer.
+  useEffect(() => {
+    const opSluiten = () => triggerSamenvat(bouwEchteBerichten())
+    window.addEventListener("beforeunload", opSluiten)
+    window.addEventListener("pagehide", opSluiten)
+    return () => {
+      window.removeEventListener("beforeunload", opSluiten)
+      window.removeEventListener("pagehide", opSluiten)
+      opSluiten()
     }
+  }, [bouwEchteBerichten])
+
+  const handleClose = () => {
+    triggerSamenvat(bouwEchteBerichten())
     setIsOpen(false)
   }
 
